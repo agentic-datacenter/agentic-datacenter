@@ -1,0 +1,15 @@
+# One air handler of a POD fails. The others ramp and static pressure recovers.
+schema_version: 1
+id: OP-05
+title: POD air handler failure
+track: A
+duration_s: 3600
+decision_every_s: 300
+objective: resilience
+timeline:
+  - {at_s: 900, module: "cooling.pod[03]", inject: ahu_fail, params: {unit: 1}}
+pass_criteria:
+  - {metric: critical_pod_minutes, max: 0}
+  - {metric: excursion_pod_minutes, max: 0}
+  - {metric: it_kwh_lost, max: 0}
+expected: Agent may propose a supply setpoint trim inside bounds.

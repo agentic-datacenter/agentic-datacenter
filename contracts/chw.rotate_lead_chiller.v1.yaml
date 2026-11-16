@@ -1,0 +1,17 @@
+# Rotate the lead chiller. Redundancy-aware sequencing; one operator approves.
+schema_version: 1
+id: chw.rotate_lead_chiller.v1
+title: Rotate lead chiller
+risk_tier: R2
+arguments:
+  lead: {type: choice, choices: ["1", "2", "3"]}
+writes:
+  - tag: "cooling.chw_plant[CHW].lead_chiller"
+    value: lead
+premises:
+  - {expr: "redundancy.chillers >= N_PLUS_1", max_age_s: 10}
+  - {expr: "all(pod.supply_air_c <= 25.0)", max_age_s: 10}
+  - {expr: "no_active_alarm(priority >= HIGH, system in [CHW, POD])", max_age_s: 5}
+limits:
+  rate: {max_per_hour: 1}
+approval: one_operator

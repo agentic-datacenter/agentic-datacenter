@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentic-datacenter-remora"
+version = "0.0.0"
+description = "Agentic Datacenter Binding: The REMORA gate binding and nothing else. The only distribution that imports REMORA."
+readme = "README.md"
+license = "BUSL-1.1"
+requires-python = ">=3.12"
+dependencies = [
+    "agentic-datacenter-governance",
+    "remora-assurance[security,sdk,api]",
+]
+
+[tool.uv.sources]
+agentic-datacenter-governance = { workspace = true }
+# The pin. Must equal the commit in REMORA_PIN (SDD 5.2, ADC-PIN-002).
+# A full 40-character commit SHA, never a branch, tag name or tag object.
+remora-assurance = { git = "https://github.com/darklordVirtual/REMORA-research", rev = "06e7a02b49563b4cbbfec1e573cde026462c3240" }
+
+[project.entry-points."agentic_datacenter.gates"]
+remora = "agentic_datacenter_remora.binding:create"
+remora_governed = "agentic_datacenter_remora.governed:create"
+remora_shadow = "agentic_datacenter_remora.governed:create_shadow"
+
+[project.entry-points."agentic_datacenter.commands"]
+contracts = "agentic_datacenter_remora.cli:contracts"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentic_datacenter_remora"]
+
+[dependency-groups]
+test = ["pytest", "hypothesis"]
+
+[tool.agentic-datacenter]
+requirements = [
+    "ADC-PIN-001", "ADC-PIN-002", "ADC-PIN-003", "ADC-PIN-005",
+    "ADC-GOV-006", "ADC-GOV-007",
+]

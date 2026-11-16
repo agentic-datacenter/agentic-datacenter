@@ -1,0 +1,10 @@
+# Points of the physical security signals. Every point is a status and tier T0:
+# no door, portal or zone can be commanded through Agentic Datacenter.
+- {name: events_granted, kind: counter, default: 0, tier: T0, description: "Access granted events so far", assumed: true}
+- {name: events_denied, kind: counter, default: 0, tier: T0, description: "Access denied events so far", assumed: true}
+- {name: events_forced, kind: counter, default: 0, tier: T0, description: "Door forced events so far", assumed: true}
+- {name: events_held, kind: counter, default: 0, tier: T0, description: "Door held open events so far", assumed: true}
+- {name: events_intrusion, kind: counter, default: 0, tier: T0, description: "Perimeter intrusion events so far", assumed: true}
+- {name: alarm_door_forced, kind: binary_in, default: false, tier: T0, description: "A door has been forced and the event is not cleared", assumed: true}
+- {name: alarm_door_held, kind: binary_in, default: false, tier: T0, description: "A door is held open", assumed: true}
+- {name: alarm_intrusion, kind: binary_in, default: false, tier: T0, description: "Perimeter intrusion and the event is not cleared", assumed: true}

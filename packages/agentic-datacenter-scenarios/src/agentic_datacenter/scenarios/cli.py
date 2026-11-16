@@ -1,0 +1,378 @@
+"""The ``agentic-datacenter bench`` command."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from collections.abc import Sequence
+from pathlib import Path
+
+from agentic_datacenter.core.profile import load_profile
+from agentic_datacenter.governance.contracts import ContractLibrary
+from agentic_datacenter.scenarios.agents import AGENTS
+from agentic_datacenter.scenarios.bench import (
+    TIERS,
+    BenchVersionError,
+    CardMergeError,
+    benchmark_version,
+    load_gates,
+    merge_cards,
+    run_benchmark,
+    write_card,
+)
+from agentic_datacenter.scenarios.demo import DEMO_AGENTS, build_demo, write_demo
+from agentic_datacenter.scenarios.evidence import (
+    build_bundle,
+    code_commit,
+    verify_bundle,
+    write_bundle,
+)
+from agentic_datacenter.scenarios.harness import RunResult, run_scenario
+from agentic_datacenter.scenarios.heldout import commitment
+from agentic_datacenter.scenarios.release_gate import check_card
+from agentic_datacenter.scenarios.scenario import Scenario, library_ids, load_scenario
+
+
+def bench(argv: Sequence[str]) -> int:
+    """Run ``agentic-datacenter bench run ...`` and return the exit status."""
+    parser = argparse.ArgumentParser(
+        prog="agentic-datacenter bench", description="Agentic Datacenter Bench."
+    )
+    actions = parser.add_subparsers(dest="action", required=True)
+    run = actions.add_parser("run", help="Benchmark gates and write a result card.")
+    run.add_argument("--gate", action="append", help="Gate entry point; repeat for several.")
+    run.add_argument(
+        "--agent", action="append", choices=["scripted_benign", "scripted_adversarial"]
+    )
+    run.add_argument("--scenario", action="append", choices=library_ids())
+    run.add_argument("--seeds", type=int, help="Number of seeds (default 1, or the tier's).")
+    run.add_argument(
+        "--first-seed", type=int, default=1,
+        help="The first seed. Runs a part of a benchmark, to be merged with the others.",
+    )  # fmt: skip
+    run.add_argument("--seconds", type=int, help="Shorten every scenario to this many seconds.")
+    run.add_argument("--profile", type=Path, default=Path("profiles/generic_dc.yaml"))
+    run.add_argument("--contracts", type=Path, default=Path("contracts"))
+    run.add_argument("--frozen", type=Path, default=Path("docs/bench/VERSION.json"))
+    run.add_argument(
+        "--allow-unfrozen",
+        action="store_true",
+        help="Run a development version; the card is labelled as such.",
+    )
+    run.add_argument("--no-counterfactual", action="store_true")
+    run.add_argument(
+        "--tier", choices=sorted(TIERS),
+        help="A preset of length, seeds and replay bounds (docs/bench/TIERS.md). "
+        "Options given beside it take precedence.",
+    )  # fmt: skip
+    run.add_argument(
+        "--horizon", type=int,
+        help="Replay each proposal this many seconds after its decision, not to the end.",
+    )  # fmt: skip
+    run.add_argument("--max-judged", type=int, help="Judge at most this many proposals per run.")
+    run.add_argument("--out", type=Path, default=Path("build/bench"))
+    run.add_argument(
+        "--heldout-secret-file", type=Path,
+        help="Also run held-out variants (Track D) drawn from the secret in this file.",
+    )  # fmt: skip
+    run.add_argument("--heldout-variants", type=int, default=3)
+    run.add_argument(
+        "--jobs", type=int, default=1,
+        help="Runs made at a time, each in a process of its own. The card is the same "
+        "whatever the number.",
+    )  # fmt: skip
+    merge = actions.add_parser(
+        "merge", help="Merge result cards made in parts (seed ranges, machines) into one."
+    )
+    merge.add_argument("cards", type=Path, nargs="+")
+    merge.add_argument("--out", type=Path, required=True)
+    freeze = actions.add_parser("freeze", help="Record the benchmark version, once.")
+    freeze.add_argument("--profile", type=Path, default=Path("profiles/generic_dc.yaml"))
+    freeze.add_argument("--contracts", type=Path, default=Path("contracts"))
+    freeze.add_argument("--out", type=Path, default=Path("docs/bench/VERSION.json"))
+    commit = actions.add_parser(
+        "heldout-commit", help="Print the commitment to a held-out secret, for publication."
+    )
+    commit.add_argument("secret_file", type=Path)
+    check = actions.add_parser(
+        "check", help="Refuse a result card with any harmful execution or invariant breach."
+    )
+    check.add_argument("card", type=Path, help="A result_card.json.")
+    check.add_argument("--gate", action="append", help="Gate to check; repeat for several.")
+    args = parser.parse_args(argv)
+
+    if args.action == "check":
+        return _check(args.card, args.gate or ["remora_governed"])
+
+    if args.action == "merge":
+        try:
+            card = merge_cards([json.loads(p.read_text(encoding="utf-8")) for p in args.cards])
+        except CardMergeError as exc:
+            print(f"agentic-datacenter bench merge: {exc}", file=sys.stderr)
+            return 1
+        write_card(card, args.out)
+        print(f"{len(args.cards)} cards merged into {args.out / 'result_card.json'}")
+        return 0
+    if args.action == "heldout-commit":
+        print(commitment(args.secret_file.read_text(encoding="utf-8").strip()))
+        return 0
+    if args.action == "freeze":
+        if args.out.exists():
+            print(
+                f"agentic-datacenter bench: {args.out} already holds a frozen version; "
+                "a new version is a new file, never a rewrite",
+                file=sys.stderr,
+            )
+            return 1
+        version = benchmark_version(
+            load_profile(args.profile), ContractLibrary.load(args.contracts), library_ids()
+        )
+        frozen_file = {
+            "version": version,
+            "scenarios": library_ids(),
+            "code_commit": code_commit(Path.cwd()),
+        }
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(json.dumps(frozen_file, indent=2, sort_keys=True) + "\n", "utf-8")
+        print(f"frozen benchmark version written to {args.out}")
+        return 0
+    installed = load_gates()
+    names = args.gate or sorted(installed)
+    unknown = [n for n in names if n not in installed]
+    if unknown:
+        print(
+            f"agentic-datacenter bench: no such gate: {', '.join(unknown)}; installed: "
+            f"{', '.join(sorted(installed))}",
+            file=sys.stderr,
+        )
+        return 2
+    frozen = None
+    if args.frozen.is_file():
+        frozen = json.loads(args.frozen.read_text(encoding="utf-8"))
+        frozen = frozen.get("version", frozen)
+    secret = None
+    if args.heldout_secret_file is not None:
+        secret = args.heldout_secret_file.read_text(encoding="utf-8").strip()
+    if args.jobs < 1:
+        print("agentic-datacenter bench: --jobs must be at least 1", file=sys.stderr)
+        return 2
+    preset = TIERS.get(args.tier or "", {})
+    seeds = args.seeds if args.seeds is not None else int(preset.get("seeds") or 1)
+    seconds = args.seconds if args.seconds is not None else preset.get("seconds")
+    horizon = args.horizon if args.horizon is not None else preset.get("horizon_s")
+    max_judged = args.max_judged if args.max_judged is not None else preset.get("max_judged")
+
+    def progress(done: int, total: int, run_id: str) -> None:
+        print(f"[{done}/{total}] {run_id}", file=sys.stderr, flush=True)
+
+    try:
+        card = run_benchmark(
+            load_profile(args.profile), ContractLibrary.load(args.contracts),
+            {name: installed[name] for name in names},
+            args.agent or sorted(AGENTS),
+            args.scenario or library_ids(),
+            list(range(args.first_seed, args.first_seed + seeds)), seconds,
+            counterfactual=not args.no_counterfactual, frozen_version=frozen,
+            allow_unfrozen=args.allow_unfrozen,
+            heldout_secret=secret, heldout_variants=args.heldout_variants if secret else 0,
+            jobs=args.jobs, progress=progress, horizon_s=horizon, max_judged=max_judged,
+        )  # fmt: skip
+    except BenchVersionError as exc:
+        print(
+            f"agentic-datacenter bench: {exc}. Use --allow-unfrozen for a development run.",
+            file=sys.stderr,
+        )
+        return 1
+    write_card(card, args.out)
+    print(f"{card['label']}: {args.out / 'result_card.json'} and {args.out / 'report.html'}")
+    for row in card["results"]:
+        assert isinstance(row, dict)
+        print(
+            f"  {row['gate']:18s} {row['agent']:22s} {row['operating_profile']:17s} "
+            f"safety {row['safety']}  false blocks {row['false_block_rate']}  "
+            f"without required approval {row['executed_without_required_approval']}"
+            f" of {row['approval_required']}  verdicts {' '.join(row['verdicts_used'])}"
+        )
+    return 0
+
+
+def _check(path: Path, gates: Sequence[str]) -> int:
+    """Print the release gate's findings for each gate; 1 if any gate fails."""
+    card = json.loads(path.read_text(encoding="utf-8"))
+    failed = False
+    for gate in gates:
+        report = check_card(card, gate)
+        verdict = "passed" if report.passed else "REFUSED"
+        print(f"{gate}: {verdict}, {report.runs_checked} runs checked")
+        for line in report.violations:
+            print(f"  violation: {line}")
+        for line in report.notes:
+            print(f"  note: {line}")
+        failed = failed or not report.passed
+    return 1 if failed else 0
+
+
+def demo(argv: Sequence[str]) -> int:
+    """Run ``agentic-datacenter demo`` and return the exit status."""
+    parser = argparse.ArgumentParser(
+        prog="agentic-datacenter demo",
+        description="Record three scenarios without a gate and with one, and write the dashboard.",
+    )
+    parser.add_argument(
+        "--gate", help="Gate for the right-hand side; default REMORA governed if installed."
+    )
+    parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--seconds", type=int, help="Shorten every scenario to this many seconds.")
+    parser.add_argument("--full", action="store_true", help="Play the week of optimization whole.")
+    parser.add_argument("--profile", type=Path, default=Path("profiles/generic_dc.yaml"))
+    parser.add_argument("--contracts", type=Path, default=Path("contracts"))
+    parser.add_argument("--out", type=Path, default=Path("build/demo"))
+    args = parser.parse_args(argv)
+
+    installed = load_gates()
+    preferred = [name for name in ("remora_governed", "remora") if name in installed]
+    gate = args.gate or (preferred[0] if preferred else "static_allowlist")
+    missing = [name for name in ("null_gate", gate) if name not in installed]
+    if missing:
+        print(
+            f"agentic-datacenter demo: no such gate: {', '.join(missing)}; installed: "
+            f"{', '.join(sorted(installed))}",
+            file=sys.stderr,
+        )
+        return 2
+    profile, contracts = load_profile(args.profile), ContractLibrary.load(args.contracts)
+    commit = code_commit(Path.cwd())
+
+    def keep(played: Scenario, gate_name: str, result: RunResult) -> None:
+        bundle = build_bundle(result, profile, played, contracts, commit)
+        write_bundle(bundle, args.out / "evidence" / f"{played.id}.{gate_name}")
+
+    recording = build_demo(
+        profile,
+        contracts,
+        installed,
+        gate,
+        seed=args.seed,
+        seconds=args.seconds,
+        full=args.full,
+        progress=lambda line: print(f"  {line}", file=sys.stderr),
+        on_result=keep,
+    )
+    write_demo(recording, args.out)
+    print(
+        f"evidence bundles: {args.out / 'evidence'} "
+        "(check one with: agentic-datacenter scenario verify)"
+    )
+    print(f"{recording['label']}: {args.out / 'index.html'} and {args.out / 'demo.json'}")
+    for scenario in recording["scenarios"]:
+        for side in scenario["sides"]:
+            verdict = "passed" if side["passed"] else "not passed"
+            print(f"  {scenario['scenario']}  {side['gate']:18s} {side['profile']:17s} {verdict}")
+    return 0
+
+
+def scenario(argv: Sequence[str]) -> int:
+    """Run ``agentic-datacenter scenario run|verify`` and return the exit status."""
+    parser = argparse.ArgumentParser(
+        prog="agentic-datacenter scenario", description="Run one scenario."
+    )
+    actions = parser.add_subparsers(dest="action", required=True)
+    run = actions.add_parser("run", help="Run a scenario and write its evidence bundle.")
+    run.add_argument("scenario", choices=library_ids())
+    run.add_argument("--gate", default="null_gate")
+    run.add_argument("--agent", choices=sorted(DEMO_AGENTS), default="scripted_benign")
+    run.add_argument("--seed", type=int, default=1)
+    run.add_argument("--seconds", type=int, help="Shorten the scenario to this many seconds.")
+    run.add_argument("--profile", type=Path, default=Path("profiles/generic_dc.yaml"))
+    run.add_argument("--contracts", type=Path, default=Path("contracts"))
+    run.add_argument("--out", type=Path, default=Path("build/evidence"))
+    verify = actions.add_parser("verify", help="Check an evidence bundle against its manifest.")
+    verify.add_argument("bundle", type=Path)
+    args = parser.parse_args(argv)
+
+    if args.action == "verify":
+        problems = verify_bundle(args.bundle)
+        for problem in problems:
+            print(problem, file=sys.stderr)
+        print(f"{args.bundle}: {'intact' if not problems else 'NOT intact'}")
+        return 1 if problems else 0
+    installed = load_gates()
+    if args.gate not in installed:
+        print(
+            f"agentic-datacenter scenario: no such gate: {args.gate}; "
+            f"installed: {', '.join(sorted(installed))}",
+            file=sys.stderr,
+        )
+        return 2
+    profile, contracts = load_profile(args.profile), ContractLibrary.load(args.contracts)
+    chosen = load_scenario(args.scenario)
+    gate = installed[args.gate](contracts)
+    operating = str(getattr(gate, "profile", "UNSPECIFIED"))
+    result = run_scenario(
+        chosen, profile, gate, operating, DEMO_AGENTS[args.agent](), args.seed, contracts,
+        args.seconds,
+    )  # fmt: skip
+    bundle = build_bundle(result, profile, chosen, contracts, code_commit(Path.cwd()))
+    write_bundle(bundle, args.out)
+    verdict = "passed" if result.passed else "not passed: " + "; ".join(result.failed_criteria)
+    print(f"{chosen.id} {args.gate} ({operating}) seed {args.seed}: {verdict}")
+    print(f"evidence bundle: {args.out}")
+    return 0 if result.passed else 1
+
+
+def gate(argv: Sequence[str]) -> int:
+    """Run ``agentic-datacenter gate list|check`` and return the exit status.
+
+    ``check`` is what a gate from outside this repository passes before it is
+    benchmarked: the gate interface suite (ADC-GOV-004) and a known operating
+    profile. It checks the shape of what the gate returns; the benchmark judges
+    its decisions.
+    """
+    from agentic_datacenter.governance.conformance import GateConformanceError, check_gate
+    from agentic_datacenter.governance.control_path import PROFILES
+
+    parser = argparse.ArgumentParser(
+        prog="agentic-datacenter gate", description="Gates installed here."
+    )
+    actions = parser.add_subparsers(dest="action", required=True)
+    actions.add_parser(
+        "list", help="Every gate under the agentic_datacenter.gates entry-point group."
+    )
+    check = actions.add_parser("check", help="Run the gate interface suite on one gate.")
+    check.add_argument(
+        "gate", help="Entry-point name, as `agentic-datacenter gate list` prints it."
+    )
+    check.add_argument("--contracts", type=Path, default=Path("contracts"))
+    args = parser.parse_args(argv)
+
+    installed = load_gates()
+    if args.action == "list":
+        for name in sorted(installed):
+            print(name)
+        return 0
+    if args.gate not in installed:
+        print(
+            f"agentic-datacenter gate: no such gate: {args.gate}; "
+            f"installed: {', '.join(sorted(installed))}",
+            file=sys.stderr,
+        )
+        return 2
+    contracts = ContractLibrary.load(args.contracts)
+    factory = installed[args.gate]
+    try:
+        made = factory(contracts)
+        operating = str(getattr(made, "profile", ""))
+        if operating not in PROFILES or operating == "BASELINE_RULES":
+            known = ", ".join(p for p in PROFILES if p != "BASELINE_RULES")
+            raise GateConformanceError(f"declares profile {operating!r}; expected one of {known}")
+        check_gate(lambda: factory(contracts))
+    except Exception as error:  # noqa: BLE001 - every failure of a foreign gate is reported
+        print(f"{args.gate}: FAILED: {type(error).__name__}: {error}")
+        return 1
+    print(f"{args.gate}: passed the gate interface suite ({made.name}, {operating})")
+    print(
+        "next: agentic-datacenter bench run --gate "
+        f"{args.gate} --seeds 3 --allow-unfrozen --out build/bench-{args.gate}"
+    )
+    return 0

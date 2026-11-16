@@ -1,0 +1,19 @@
+# A gate for Agentic Datacenter in its own distribution. Copy this directory, rename the
+# package and the entry point, and put your system behind `evaluate`.
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "example-gate"
+version = "0.1.0"
+description = "An example governance gate for Agentic Datacenter"
+requires-python = ">=3.12"
+dependencies = ["agentic-datacenter-governance"]
+
+# Agentic Datacenter finds the gate by this entry point; no Agentic Datacenter code changes.
+[project.entry-points."agentic_datacenter.gates"]
+example_gate = "example_gate:create"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/example_gate"]

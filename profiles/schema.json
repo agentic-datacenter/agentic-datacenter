@@ -1,0 +1,262 @@
+{
+  "$defs": {
+    "ConnectionRule": {
+      "additionalProperties": false,
+      "description": "One connection, or one per key or per table row.",
+      "properties": {
+        "consumer": {
+          "title": "Consumer",
+          "type": "string"
+        },
+        "for_each": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "For Each"
+        },
+        "provider": {
+          "title": "Provider",
+          "type": "string"
+        },
+        "with": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "With"
+        }
+      },
+      "required": [
+        "consumer",
+        "provider"
+      ],
+      "title": "ConnectionRule",
+      "type": "object"
+    },
+    "ModuleUse": {
+      "additionalProperties": false,
+      "description": "The instances of one module in the facility.",
+      "properties": {
+        "for_each": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "For Each"
+        },
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "instance": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instance"
+        },
+        "instances": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Instances"
+        },
+        "params": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Param"
+          },
+          "title": "Params",
+          "type": "object"
+        },
+        "stub": {
+          "default": false,
+          "title": "Stub",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "ModuleUse",
+      "type": "object"
+    },
+    "Param": {
+      "additionalProperties": false,
+      "description": "One parameter value and its provenance.",
+      "properties": {
+        "assumed": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Assumed"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source"
+        },
+        "unit": {
+          "default": "",
+          "title": "Unit",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            }
+          ],
+          "title": "Value"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "Param",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A facility profile.",
+  "properties": {
+    "connections": {
+      "items": {
+        "$ref": "#/$defs/ConnectionRule"
+      },
+      "title": "Connections",
+      "type": "array"
+    },
+    "description": {
+      "default": "",
+      "title": "Description",
+      "type": "string"
+    },
+    "economics": {
+      "additionalProperties": {
+        "$ref": "#/$defs/Param"
+      },
+      "title": "Economics",
+      "type": "object"
+    },
+    "key_sets": {
+      "additionalProperties": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "title": "Key Sets",
+      "type": "object"
+    },
+    "modules": {
+      "items": {
+        "$ref": "#/$defs/ModuleUse"
+      },
+      "title": "Modules",
+      "type": "array"
+    },
+    "name": {
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "title": "Name",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "site": {
+      "title": "Site",
+      "type": "string"
+    },
+    "tables": {
+      "additionalProperties": {
+        "items": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "type": "array"
+      },
+      "title": "Tables",
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "name",
+    "site",
+    "modules"
+  ],
+  "title": "Profile",
+  "type": "object"
+}

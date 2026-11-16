@@ -1,0 +1,13 @@
+id: cooling.pump_station
+version: 0.2.0
+fidelity: F1
+provides:
+  - {port: chw, type: hydronic}
+requires:
+  - {port: chws_in, type: hydronic}
+  - {port: power_1, type: electrical}
+  - {port: power_2, type: electrical}
+  - {port: power_3, type: electrical}
+zone: Z1-CHW
+requirements: [ADC-PRC-002, ADC-CTL-005, ADC-CTL-004]
+spec: docs/design/modules/cooling.pump_station.md

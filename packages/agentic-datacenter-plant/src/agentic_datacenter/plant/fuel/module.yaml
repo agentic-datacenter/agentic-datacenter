@@ -1,0 +1,10 @@
+id: fuel
+version: 0.2.0
+fidelity: F1
+provides:
+  - {port: supply, type: fuel, keyed_by: trains}
+requires:
+  - {port: power, type: electrical}
+zone: Z1-FUEL
+requirements: [ADC-SCN-001]
+spec: docs/design/modules/fuel.md

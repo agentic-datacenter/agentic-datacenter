@@ -1,0 +1,11 @@
+# Points of one generator controller. Only the test start is writable from the
+# supervisory layer (SDD 8.2); everything else is status.
+- {name: state, kind: enum_status, values: [STOPPED, CRANKING, RAMPING, READY_TO_LOAD, LOADED, COOLDOWN, FAULT], default: STOPPED, tier: T0, description: Generator state, assumed: true}
+- {name: ready_to_load, kind: binary_in, default: false, tier: T0, description: "Ready to load (hardwired to the transfer controller)", assumed: true}
+- {name: fault, kind: binary_in, default: false, tier: T0, description: "Generator fault (hardwired to the transfer controller)", assumed: true}
+- {name: load_kw, kind: analog_in, default: 0.0, tier: T0, description: "Real power delivered", unit: kW, range: [0, 100000], assumed: true}
+- {name: frequency_pu, kind: analog_in, default: 0.0, tier: T0, description: "Output frequency", unit: pu, range: [0, 2], assumed: true}
+- {name: voltage_pu, kind: analog_in, default: 0.0, tier: T0, description: "Output voltage", unit: pu, range: [0, 2], assumed: true}
+- {name: fuel_l_per_h, kind: analog_in, default: 0.0, tier: T0, description: "Fuel burn rate", unit: l/h, range: [0, 100000], assumed: true}
+- {name: starts, kind: counter, default: 0, tier: T0, description: "Start attempts", assumed: true}
+- {name: test_start_request, kind: binary_cmd, default: false, tier: T2, description: "Operator request to start for a test run", assumed: true}

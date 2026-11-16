@@ -1,0 +1,14 @@
+id: electrical.power_train
+version: 0.2.0
+fidelity: F1
+provides:
+  - {port: lv_bus, type: electrical}
+  - {port: gen_start_request, type: signal}
+requires:
+  - {port: utility_feed, type: electrical}
+  - {port: gen_output, type: electrical}
+  - {port: gen_ready_to_load, type: signal}
+  - {port: gen_fault, type: signal}
+zone: Z1-PWR-{instance}
+requirements: [ADC-CTL-001, ADC-CTL-002, ADC-PRC-001, ADC-CTL-005]
+spec: docs/design/modules/electrical.power_train.md

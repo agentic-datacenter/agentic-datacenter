@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentic-datacenter-governance"
+version = "0.0.0"
+description = "Agentic Datacenter L5 Governance: Gate adapter interface, contracts, premises, baseline bindings and the agent tool server."
+readme = "README.md"
+license = "BUSL-1.1"
+requires-python = ">=3.12"
+dependencies = [
+    "agentic-datacenter-core",
+    "agentic-datacenter-supervisory",
+    "pydantic>=2",
+    "pyyaml>=6",
+]
+
+[tool.uv.sources]
+agentic-datacenter-core = { workspace = true }
+agentic-datacenter-plant = { workspace = true }
+agentic-datacenter-supervisory = { workspace = true }
+
+[project.entry-points."agentic_datacenter.gates"]
+null_gate = "agentic_datacenter.governance.bindings.null_gate:create"
+static_allowlist = "agentic_datacenter.governance.bindings.static_allowlist:create"
+http_gate = "agentic_datacenter.governance.bindings.http_gate:create"
+command_gate = "agentic_datacenter.governance.bindings.http_gate:create_command"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentic_datacenter"]
+
+[dependency-groups]
+# The tests drive this layer on the real plant; the package itself does not import it.
+test = ["pytest", "hypothesis", "agentic-datacenter-plant"]
+
+[tool.agentic-datacenter]
+requirements = [
+    "ADC-GOV-001", "ADC-GOV-003", "ADC-GOV-004", "ADC-GOV-005", "ADC-GOV-008",
+]

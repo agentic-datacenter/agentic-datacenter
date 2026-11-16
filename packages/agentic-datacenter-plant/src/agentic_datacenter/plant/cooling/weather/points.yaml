@@ -1,0 +1,3 @@
+# Points of the weather station. Both are measurements.
+- {name: dry_bulb_c, kind: analog_in, default: 20.0, tier: T0, description: "Outdoor dry-bulb temperature", unit: degC, range: [-60, 70], assumed: true}
+- {name: rel_humidity_pct, kind: analog_in, default: 50.0, tier: T0, description: "Outdoor relative humidity", unit: "%", range: [0, 100], assumed: true}

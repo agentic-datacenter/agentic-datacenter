@@ -1,0 +1,4 @@
+# Points of one utility incomer. All are measurements.
+- {name: voltage_pu, kind: analog_in, default: 1.0, tier: T0, description: "Incomer voltage", unit: pu, range: [0, 2], assumed: true}
+- {name: frequency_pu, kind: analog_in, default: 1.0, tier: T0, description: "Incomer frequency", unit: pu, range: [0, 2], assumed: true}
+- {name: load_kw, kind: analog_in, default: 0.0, tier: T0, description: "Real power drawn from the incomer", unit: kW, range: [0, 1000000], assumed: true}

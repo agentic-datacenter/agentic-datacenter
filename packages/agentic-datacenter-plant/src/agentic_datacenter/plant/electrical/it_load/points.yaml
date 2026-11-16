@@ -1,0 +1,9 @@
+# Points of the IT load of one POD. All are measurements.
+- {name: served_kw, kind: analog_in, default: 0.0, tier: T0, description: "IT power served", unit: kW, range: [0, 100000], assumed: true}
+- {name: demand_kw, kind: analog_in, default: 0.0, tier: T0, description: "IT power the workload asks for", unit: kW, range: [0, 100000], assumed: true}
+- {name: kwh_lost, kind: analog_in, default: 0.0, tier: T0, description: "Energy the load could not draw", unit: kWh, range: [0, 1000000000], assumed: true}
+- {name: dropped, kind: binary_in, default: false, tier: T0, description: "The load is without power", assumed: true}
+- {name: inlet_c, kind: analog_in, default: 22.0, tier: T0, description: "Air temperature at the equipment inlet", unit: degC, range: [-40, 120], assumed: true}
+- {name: fan_kw, kind: analog_in, default: 0.0, tier: T0, description: "Server fan power", unit: kW, range: [0, 100000], assumed: true}
+- {name: workload_pct, kind: analog_in, default: 100.0, tier: T0, description: "Workload as a share of design", unit: "%", range: [0, 200], assumed: true}
+- {name: airflow_kg_s, kind: analog_in, default: 12.0, tier: T0, description: "Air drawn through the equipment", unit: kg/s, range: [0, 100000], assumed: true}

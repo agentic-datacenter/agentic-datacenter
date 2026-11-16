@@ -1,0 +1,26 @@
+# Started by a person, or by a release. Nothing here may start by itself: later stages run paid model APIs from this workflow only.
+# Every job runs in one digest-pinned image with the frozen lock, and every
+# third-party action is pinned by commit SHA (ADC-CI-003, SDD 12.4).
+name: bench
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+concurrency:
+  group: bench-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  bench:
+    runs-on: ubuntu-24.04
+    container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
+    timeout-minutes: 60
+    steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: uv sync --frozen
+      - name: The benchmark itself arrives in Stage 9; until then this records the performance baseline
+        run: uv run pytest -m nightly tests/scenario/test_performance.py

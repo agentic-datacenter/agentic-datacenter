@@ -1,0 +1,129 @@
+# Runs in the merge queue and on request. Budget: 30 minutes.
+# Every job runs in one digest-pinned image with the frozen lock, and every
+# third-party action is pinned by commit SHA (ADC-CI-003, SDD 12.4).
+name: integration
+on:
+  merge_group:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+concurrency:
+  group: integration-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  without-remora:
+    runs-on: ubuntu-24.04
+    container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
+    timeout-minutes: 30
+    steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install without the REMORA binding (ADC-PIN-001)
+        run: uv sync --frozen --group iec61850
+      - run: uv run python -c "import importlib.util as u, sys; sys.exit(u.find_spec('remora') is not None)"
+      - run: uv run pytest
+  without-iec61850:
+    runs-on: ubuntu-24.04
+    container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
+    timeout-minutes: 30
+    steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install without the IEC 61850 package (ADC-IEC-005)
+        run: uv sync --frozen
+      - run: uv run python -c "import importlib.util as u, sys; sys.exit(u.find_spec('agentic_datacenter_iec61850') is not None)"
+      - run: uv run pytest
+  protocol:
+    runs-on: ubuntu-24.04
+    container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
+    timeout-minutes: 30
+    steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install with the IEC 61850 package and its protocol library (ADR 0017)
+        run: uv sync --frozen --group iec61850
+      - name: The library loads; without it the protocol tests would only be skipped
+        run: uv run python -c "from agentic_datacenter_iec61850 import library; print(library.version())"
+      - name: Protocol servers on real sockets, on loopback
+        run: uv run pytest tests/protocol tests/conformance/test_iec61850_denied_services.py packages/agentic-datacenter-iec61850/tests
+  remora-pin:
+    runs-on: ubuntu-24.04
+    container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
+    timeout-minutes: 30
+    steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Give git read access to the pinned REMORA repository
+        # Only with a token: a local run (tools/ci_local.py) has none and must not touch the user's git config.
+        run: if [ -n "${REMORA_READ_TOKEN}" ]; then git config --global url."https://x-access-token:${REMORA_READ_TOKEN}@github.com/".insteadOf "https://github.com/"; fi
+        env:
+          REMORA_READ_TOKEN: ${{ secrets.REMORA_READ_TOKEN }}
+      - run: uv sync --frozen --all-groups
+      - name: All contracts, including REMORA isolation
+        run: uv run lint-imports
+      - name: Installed REMORA commit equals REMORA_PIN
+        run: uv run python tools/check_pin.py
+  with-remora:
+    runs-on: ubuntu-24.04
+    container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
+    timeout-minutes: 60
+    steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Give git read access to the pinned REMORA repository
+        # Only with a token: a local run (tools/ci_local.py) has none and must not touch the user's git config.
+        run: if [ -n "${REMORA_READ_TOKEN}" ]; then git config --global url."https://x-access-token:${REMORA_READ_TOKEN}@github.com/".insteadOf "https://github.com/"; fi
+        env:
+          REMORA_READ_TOKEN: ${{ secrets.REMORA_READ_TOKEN }}
+      - run: uv sync --frozen --all-groups
+      - name: REMORA is installed; without it these tests would only be skipped
+        run: uv run python -c "import remora, agentic_datacenter_remora"
+      - name: Every test that needs REMORA (the pr workflow skips them)
+        run: >-
+          uv run pytest packages/agentic-datacenter-remora/tests tests/scenario/test_m1_scenarios.py
+          tests/scenario/test_network_loss.py tests/scenario/test_op09.py
+          tests/scenario/test_safe_posture_scenarios.py tests/scenario/test_scenario_library.py
+          tests/scenario/test_stage7_scenarios.py tests/scenario/test_stage8_scenarios.py
+          tests/scenario/test_whatif_governed.py
+      - name: Release gate on a governed run of the sensor-fault scenario (ADR 0020)
+        run: >-
+          uv run agentic-datacenter bench run --gate remora_governed --scenario AD-03 --seeds 1 --allow-unfrozen
+          --out build/bench-ad03 && uv run agentic-datacenter bench check build/bench-ad03/result_card.json
+          --gate remora_governed
+  cross-architecture-run:
+    runs-on: ${{ matrix.runner }}
+    container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: uv sync --frozen
+      - run: mkdir -p build && uv run agentic-datacenter run --profile profiles/generic_dc.yaml --seed 1 --seconds 3600 --quantized > build/hash-${{ matrix.runner }}.txt
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: hash-${{ matrix.runner }}
+          path: build/hash-${{ matrix.runner }}.txt
+  cross-architecture:
+    needs: cross-architecture-run
+    runs-on: ubuntu-24.04
+    container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
+    timeout-minutes: 5
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: build
+          merge-multiple: true
+      - name: Compare state quantized to nine significant digits (ADC-CI-004)
+        run: |
+          cat build/hash-*.txt
+          test "$(grep -h '^quantized state hash' build/hash-*.txt | sort -u | wc -l)" = "1"

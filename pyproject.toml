@@ -1,0 +1,408 @@
+# uv workspace root for Agentic Datacenter. See docs/design/SDD-ADC-001.md, section 5.
+# The root is not a distribution; it only ties the packages together.
+
+[project]
+name = "agentic-datacenter-workspace"
+version = "0.0.0"
+description = "Workspace root for Agentic Datacenter, a simulation-only data center OT model"
+requires-python = ">=3.12"
+# REMORA and the IEC 61850 package are deliberately not default dependencies:
+# everything else must install and pass its tests without them
+# (ADC-PIN-001, ADC-IEC-005).
+dependencies = [
+    "agentic-datacenter-core",
+    "agentic-datacenter-plant",
+    "agentic-datacenter-supervisory",
+    "agentic-datacenter-net",
+    "agentic-datacenter-governance",
+    "agentic-datacenter-scenarios",
+    "agentic-datacenter-whatif",
+]
+
+[dependency-groups]
+dev = [
+    "ruff",
+    "mypy",
+    "pytest",
+    "hypothesis",
+    "import-linter",
+    "types-pyyaml",
+    "httpx",
+]
+test = ["pytest", "hypothesis", "httpx"]
+docs = ["mkdocs"]
+audit = ["pip-audit"]
+remora = ["agentic-datacenter-remora"]
+iec61850 = ["agentic-datacenter-iec61850"]
+# Measured input series (ADR 0018). Optional for every distribution; installed by
+# default in the workspace so its tests and type checks always run.
+data = ["agentic-datacenter-data"]
+
+[tool.uv]
+package = false
+default-groups = ["dev", "data"]
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[tool.uv.sources]
+agentic-datacenter-core = { workspace = true }
+agentic-datacenter-plant = { workspace = true }
+agentic-datacenter-supervisory = { workspace = true }
+agentic-datacenter-net = { workspace = true }
+agentic-datacenter-governance = { workspace = true }
+agentic-datacenter-scenarios = { workspace = true }
+agentic-datacenter-remora = { workspace = true }
+agentic-datacenter-iec61850 = { workspace = true }
+agentic-datacenter-data = { workspace = true }
+agentic-datacenter-whatif = { workspace = true }
+
+# Where the repository is in the staged plan of SDD section 13, and the
+# requirements owned by the repository as a whole (ADC-CI-001).
+[tool.agentic-datacenter]
+stage = 5
+requirements = [
+    "ADC-PRV-001", "ADC-PRV-002", "ADC-PRV-005",
+    "ADC-CI-001", "ADC-CI-002", "ADC-CI-003", "ADC-CI-004", "ADC-CI-005",
+    "ADC-DOC-001", "ADC-DOC-002", "ADC-DOC-003",
+    "ADC-FID-001", "ADC-FID-002",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["packages/*/src", "tools"]
+# Markdown is prose and normative design text, not something a formatter may rewrite.
+extend-exclude = ["*.md"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "D", "TID251"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+# ADC-KRN-003: simulated time and seeded streams only. The syntax-tree scan in
+# packages/agentic-datacenter-core/tests/test_no_wallclock.py is the backstop for this list.
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"time".msg = "Wall-clock access is allowed only in agentic_datacenter.core.clock (ADC-KRN-003)."
+"secrets".msg = "Unseeded randomness is not allowed (ADC-KRN-003)."
+"os.urandom".msg = "Unseeded randomness is not allowed (ADC-KRN-003)."
+"uuid.uuid1".msg = "Depends on wall clock and host (ADC-KRN-003)."
+"uuid.uuid4".msg = "Unseeded randomness is not allowed (ADC-KRN-003)."
+"datetime.datetime.now".msg = "Use the simulated clock (ADC-KRN-003)."
+"datetime.datetime.utcnow".msg = "Use the simulated clock (ADC-KRN-003)."
+"datetime.datetime.today".msg = "Use the simulated clock (ADC-KRN-003)."
+"datetime.date.today".msg = "Use the simulated clock (ADC-KRN-003)."
+"random.random".msg = "Use a named stream from agentic_datacenter.core.rng (ADC-KRN-003)."
+"random.seed".msg = "Use a named stream from agentic_datacenter.core.rng (ADC-KRN-003)."
+"random.randint".msg = "Use a named stream from agentic_datacenter.core.rng (ADC-KRN-003)."
+"random.uniform".msg = "Use a named stream from agentic_datacenter.core.rng (ADC-KRN-003)."
+"random.gauss".msg = "Use a named stream from agentic_datacenter.core.rng (ADC-KRN-003)."
+"random.choice".msg = "Use a named stream from agentic_datacenter.core.rng (ADC-KRN-003)."
+"random.shuffle".msg = "Use a named stream from agentic_datacenter.core.rng (ADC-KRN-003)."
+"random.SystemRandom".msg = "Unseeded randomness is not allowed (ADC-KRN-003)."
+
+[tool.ruff.lint.per-file-ignores]
+# Tests are named for behaviour; a docstring on each would only repeat the name.
+"**/tests/**" = ["D"]
+"tests/**" = ["D"]
+"conftest.py" = ["D"]
+"packages/agentic-datacenter-core/src/agentic_datacenter/core/clock.py" = ["TID251"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = [
+    "packages/agentic-datacenter-core/src",
+    "packages/agentic-datacenter-plant/src",
+    "packages/agentic-datacenter-supervisory/src",
+    "packages/agentic-datacenter-net/src",
+    "packages/agentic-datacenter-governance/src",
+    "packages/agentic-datacenter-scenarios/src",
+    "packages/agentic-datacenter-remora/src",
+    "packages/agentic-datacenter-iec61850/src",
+    "packages/agentic-datacenter-data/src",
+    "packages/agentic-datacenter-whatif/src",
+]
+packages = [
+    "agentic_datacenter.core",
+    "agentic_datacenter.plant",
+    "agentic_datacenter.supervisory",
+    "agentic_datacenter.net",
+    "agentic_datacenter.governance",
+    "agentic_datacenter.scenarios",
+    "agentic_datacenter_remora",
+    "agentic_datacenter_iec61850",
+    "agentic_datacenter.data",
+    "agentic_datacenter.whatif",
+]
+
+# The IEC 61850 wheel exists for Linux only and ships no type information (ADR 0017).
+[[tool.mypy.overrides]]
+module = ["pyiec61850", "pyiec61850.*"]
+ignore_missing_imports = true
+
+# REMORA is installed only in the `remora` group; the pull-request jobs type-check without it.
+[[tool.mypy.overrides]]
+module = ["remora", "remora.*"]
+ignore_missing_imports = true
+
+# The BACnet library ships no type information (ADR 0013).
+[[tool.mypy.overrides]]
+module = ["bacpypes3", "bacpypes3.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --import-mode=importlib -m 'not nightly'"
+testpaths = ["packages", "tests"]
+filterwarnings = [
+    # Starlette's test client asks for a successor of httpx that section 5 does not list.
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+]
+markers = [
+    "req(id): the Agentic Datacenter requirement a test verifies (SDD section 11, ADC-CI-001)",
+    "nightly: runs in the nightly workflow only (SDD 12.4); select with -m nightly",
+]
+
+# ---------------------------------------------------------------------------
+# Layer contracts (SDD section 5, "May import" column).
+#
+# `agentic_datacenter` is a namespace shared by six distributions, so each portion is its
+# own root package. Every contract forbids direct imports only: a package may
+# reach a lower layer through one it is allowed to import.
+#
+# Run with all groups installed: uv run --all-groups lint-imports
+#
+# Not expressible until the code exists, and added in the stage that creates it:
+#   - agentic_datacenter_remora limited to remora.sdk (ADC-PIN-005), Stage 8
+# ---------------------------------------------------------------------------
+[tool.importlinter]
+root_packages = [
+    "agentic_datacenter.data",
+    "agentic_datacenter.core",
+    "agentic_datacenter.plant",
+    "agentic_datacenter.supervisory",
+    "agentic_datacenter.net",
+    "agentic_datacenter.governance",
+    "agentic_datacenter.scenarios",
+    "agentic_datacenter.whatif",
+    "agentic_datacenter_remora",
+    "agentic_datacenter_iec61850",
+]
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "L0 core imports nothing else in Agentic Datacenter"
+type = "forbidden"
+source_modules = ["agentic_datacenter.core"]
+forbidden_modules = [
+    "agentic_datacenter.data",
+    "agentic_datacenter.plant",
+    "agentic_datacenter.supervisory",
+    "agentic_datacenter.net",
+    "agentic_datacenter.governance",
+    "agentic_datacenter.scenarios",
+    "agentic_datacenter_remora",
+    "agentic_datacenter_iec61850",
+    "agentic_datacenter.whatif",
+]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "Measured input series import nothing else in Agentic Datacenter (ADR 0018)"
+type = "forbidden"
+source_modules = ["agentic_datacenter.data"]
+forbidden_modules = [
+    "agentic_datacenter.core",
+    "agentic_datacenter.plant",
+    "agentic_datacenter.supervisory",
+    "agentic_datacenter.net",
+    "agentic_datacenter.governance",
+    "agentic_datacenter.scenarios",
+    "agentic_datacenter_remora",
+    "agentic_datacenter_iec61850",
+    "agentic_datacenter.whatif",
+]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "L1/L2 plant may import core only (and the optional measured input series)"
+type = "forbidden"
+source_modules = ["agentic_datacenter.plant"]
+forbidden_modules = [
+    "agentic_datacenter.supervisory",
+    "agentic_datacenter.net",
+    "agentic_datacenter.governance",
+    "agentic_datacenter.scenarios",
+    "agentic_datacenter_remora",
+    "agentic_datacenter_iec61850",
+    "agentic_datacenter.whatif",
+]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "L3 supervisory may import core only"
+type = "forbidden"
+source_modules = ["agentic_datacenter.supervisory"]
+forbidden_modules = [
+    "agentic_datacenter.data",
+    "agentic_datacenter.plant",
+    "agentic_datacenter.net",
+    "agentic_datacenter.governance",
+    "agentic_datacenter.scenarios",
+    "agentic_datacenter_remora",
+    "agentic_datacenter_iec61850",
+    "agentic_datacenter.whatif",
+]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "L4 net may import core and supervisory only"
+type = "forbidden"
+source_modules = ["agentic_datacenter.net"]
+forbidden_modules = [
+    "agentic_datacenter.data",
+    "agentic_datacenter.plant",
+    "agentic_datacenter.governance",
+    "agentic_datacenter.scenarios",
+    "agentic_datacenter_remora",
+    "agentic_datacenter_iec61850",
+    "agentic_datacenter.whatif",
+]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "L5 governance may import core and supervisory only"
+type = "forbidden"
+source_modules = ["agentic_datacenter.governance"]
+forbidden_modules = [
+    "agentic_datacenter.data",
+    "agentic_datacenter.plant",
+    "agentic_datacenter.net",
+    "agentic_datacenter.scenarios",
+    "agentic_datacenter_remora",
+    "agentic_datacenter_iec61850",
+    "agentic_datacenter.whatif",
+]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "Harness may not import a gate binding or the optional protocol package"
+type = "forbidden"
+source_modules = ["agentic_datacenter.scenarios"]
+forbidden_modules = ["agentic_datacenter_remora", "agentic_datacenter_iec61850", "agentic_datacenter.whatif"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "REMORA binding may import governance only"
+type = "forbidden"
+source_modules = ["agentic_datacenter_remora"]
+forbidden_modules = [
+    "agentic_datacenter.core",
+    "agentic_datacenter.plant",
+    "agentic_datacenter.supervisory",
+    "agentic_datacenter.net",
+    "agentic_datacenter.scenarios",
+    "agentic_datacenter_iec61850",
+    "agentic_datacenter.whatif",
+]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "IEC 61850 package may import core and supervisory only"
+type = "forbidden"
+source_modules = ["agentic_datacenter_iec61850"]
+forbidden_modules = [
+    "agentic_datacenter.data",
+    "agentic_datacenter.plant",
+    "agentic_datacenter.net",
+    "agentic_datacenter.governance",
+    "agentic_datacenter.scenarios",
+    "agentic_datacenter_remora",
+    "agentic_datacenter.whatif",
+]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "REMORA is imported only inside agentic_datacenter_remora (ADC-PIN-001)"
+type = "forbidden"
+source_modules = [
+    "agentic_datacenter.core",
+    "agentic_datacenter.plant",
+    "agentic_datacenter.supervisory",
+    "agentic_datacenter.net",
+    "agentic_datacenter.governance",
+    "agentic_datacenter.scenarios",
+    "agentic_datacenter.whatif",
+    "agentic_datacenter_iec61850",
+]
+forbidden_modules = ["remora", "servers"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "The IEC 61850 library is imported only inside agentic_datacenter_iec61850 (ADC-IEC-005)"
+type = "forbidden"
+source_modules = [
+    "agentic_datacenter.core",
+    "agentic_datacenter.plant",
+    "agentic_datacenter.supervisory",
+    "agentic_datacenter.net",
+    "agentic_datacenter.governance",
+    "agentic_datacenter.scenarios",
+    "agentic_datacenter.whatif",
+    "agentic_datacenter_remora",
+]
+forbidden_modules = ["pyiec61850"]
+allow_indirect_imports = true
+
+# ADR 0019: every module of the what-if package except the policy adapter is
+# kept away from the REMORA binding; the adapter reaches REMORA through
+# agentic_datacenter_remora only (REMORA itself stays inside agentic_datacenter_remora, above). The list
+# is checked against the package by tests/conformance/test_whatif_imports.py.
+[[tool.importlinter.contracts]]
+name = "What-if reaches the REMORA binding from its policy adapter only (ADR 0019)"
+type = "forbidden"
+source_modules = [
+    "agentic_datacenter.whatif.agent",
+    "agentic_datacenter.whatif.api",
+    "agentic_datacenter.whatif.cli",
+    "agentic_datacenter.whatif.compare",
+    "agentic_datacenter.whatif.evidence",
+    "agentic_datacenter.whatif.metrics",
+    "agentic_datacenter.whatif.models",
+    "agentic_datacenter.whatif.preflight",
+    "agentic_datacenter.whatif.runner",
+]
+forbidden_modules = ["agentic_datacenter_remora", "remora", "servers"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "What-if may not import the IEC 61850 package"
+type = "forbidden"
+source_modules = ["agentic_datacenter.whatif"]
+forbidden_modules = ["agentic_datacenter_iec61850", "agentic_datacenter.data"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "Plant modules are independent of each other (ADC-MOD-002)"
+type = "independence"
+modules = [
+    "agentic_datacenter.plant.electrical.utility",
+    "agentic_datacenter.plant.electrical.mv_switchgear",
+    "agentic_datacenter.plant.electrical.power_train",
+    "agentic_datacenter.plant.electrical.genset",
+    "agentic_datacenter.plant.electrical.ups",
+    "agentic_datacenter.plant.electrical.it_load",
+    "agentic_datacenter.plant.cooling.chw_plant",
+    "agentic_datacenter.plant.cooling.pump_station",
+    "agentic_datacenter.plant.cooling.tes",
+    "agentic_datacenter.plant.cooling.pod",
+    "agentic_datacenter.plant.cooling.eroom",
+    "agentic_datacenter.plant.cooling.weather",
+    "agentic_datacenter.plant.fuel",
+    "agentic_datacenter.plant.life_safety",
+    "agentic_datacenter.plant.security",
+    "agentic_datacenter.plant.sensors",
+]

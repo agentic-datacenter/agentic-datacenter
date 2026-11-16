@@ -1,0 +1,95 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 760 572' width='760' height='572' role='img' aria-labelledby='t d' font-family='system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif' font-size='13'>
+<title id='t'>Agentic Datacenter zone and conduit model</title><desc id='d'>Twelve IEC 62443 zones and eight conduits. The agent enclave reaches the plant only through the REMORA gate (conduits C4 and C5).</desc>
+<rect width='760' height='572' fill='#ffffff'/>
+<defs><marker id='ar' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='6' markerHeight='6' orient='auto-start-reverse'><path d='M0 0L10 5L0 10z' fill='#8a8a84'/></marker><marker id='arh' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='6' markerHeight='6' orient='auto-start-reverse'><path d='M0 0L10 5L0 10z' fill='#2f6fd6'/></marker></defs>
+<text x='24' y='30' fill='#1a1a18' font-size='15' font-weight='600'>The agent reaches the plant only through the REMORA gate</text>
+<rect x='24' y='148' width='712' height='100' rx='8' fill='#f1f0ec' stroke='#8a8a84' stroke-width='1.25'/>
+<text x='40' y='170' fill='#1a1a18' font-weight='600'>Z3 Operations DMZ · SL-T 2</text>
+<rect x='24' y='492' width='712' height='52' rx='8' fill='#f1f0ec' stroke='#8a8a84' stroke-width='1.25'/>
+<text x='40' y='514' fill='#1a1a18' font-weight='600'>Z0 Protection and life safety · hardwired</text>
+<text x='40' y='532' fill='#5f5e5a' font-size='11.5'>transfer interlocks, protective trips, emergency power off, fire alarm, fire pump: no network write path</text>
+<g fill='none' stroke='#8a8a84' stroke-width='1.25'>
+<path d='M148 148V110' marker-end='url(#ar)'/>
+<path d='M300 108V182' marker-end='url(#ar)'/>
+<path d='M148 288V234' marker-end='url(#ar)'/>
+<path d='M380 232V286' marker-end='url(#ar)'/>
+<path d='M260 344V368'/>
+<path d='M64 368H696'/>
+<path d='M520 316H498' marker-end='url(#ar)'/>
+<path d='M380 492V462'/>
+<path d='M64 462H696'/>
+<path d='M64 368V390' marker-end='url(#ar)'/>
+<path d='M64 462V446' marker-end='url(#ar)'/>
+<path d='M154 368V390' marker-end='url(#ar)'/>
+<path d='M154 462V446' marker-end='url(#ar)'/>
+<path d='M245 368V390' marker-end='url(#ar)'/>
+<path d='M245 462V446' marker-end='url(#ar)'/>
+<path d='M335 368V390' marker-end='url(#ar)'/>
+<path d='M335 462V446' marker-end='url(#ar)'/>
+<path d='M425 368V390' marker-end='url(#ar)'/>
+<path d='M425 462V446' marker-end='url(#ar)'/>
+<path d='M516 368V390' marker-end='url(#ar)'/>
+<path d='M516 462V446' marker-end='url(#ar)'/>
+<path d='M606 368V390' marker-end='url(#ar)'/>
+<path d='M606 462V446' marker-end='url(#ar)'/>
+<path d='M696 368V390' marker-end='url(#ar)'/>
+<path d='M696 462V446' marker-end='url(#ar)'/>
+</g>
+<g fill='none' stroke='#2f6fd6' stroke-width='2'><path d='M612 108V182' marker-end='url(#arh)'/><path d='M560 232V268H470V286' marker-end='url(#arh)'/></g>
+<rect x='24' y='52' width='340' height='56' rx='8' fill='none' stroke='#8a8a84' stroke-width='1.25'/>
+<text x='40' y='76' fill='#1a1a18' font-weight='600'>Z4 Enterprise and remote</text>
+<text x='40' y='94' fill='#5f5e5a' font-size='11.5'>DCIM, remote operations, vendors · SL-T 1</text>
+<rect x='396' y='52' width='340' height='56' rx='8' fill='#2f6fd6' fill-opacity='0.12' stroke='#2f6fd6' stroke-width='2'/>
+<text x='412' y='76' fill='#1a1a18' font-weight='600'>ZA Agent enclave</text>
+<text x='412' y='94' fill='#5f5e5a' font-size='11.5'>AI operations agent · untrusted principal</text>
+<rect x='40' y='184' width='216' height='48' rx='8' fill='#ffffff' stroke='#8a8a84' stroke-width='1.25'/>
+<text x='52' y='204' fill='#1a1a18' font-weight='600'>Data collector</text>
+<text x='52' y='222' fill='#5f5e5a' font-size='11.5'>historian replica, time relay</text>
+<rect x='272' y='184' width='216' height='48' rx='8' fill='#ffffff' stroke='#8a8a84' stroke-width='1.25'/>
+<text x='284' y='204' fill='#1a1a18' font-weight='600'>Jump host</text>
+<text x='284' y='222' fill='#5f5e5a' font-size='11.5'>vendor and engineer sessions</text>
+<rect x='504' y='184' width='216' height='48' rx='8' fill='#ffffff'/>
+<rect x='504' y='184' width='216' height='48' rx='8' fill='#2f6fd6' fill-opacity='0.12' stroke='#2f6fd6' stroke-width='2'/>
+<text x='516' y='204' fill='#1a1a18' font-weight='600'>REMORA gate</text>
+<text x='516' y='222' fill='#5f5e5a' font-size='11.5'>policy enforcement point</text>
+<rect x='24' y='288' width='472' height='56' rx='8' fill='none' stroke='#8a8a84' stroke-width='1.25'/>
+<text x='40' y='312' fill='#1a1a18' font-weight='600'>Z2 Supervisory · SL-T 3</text>
+<text x='40' y='330' fill='#5f5e5a' font-size='11.5'>BMS and power monitoring, historian, alarms, command service</text>
+<rect x='520' y='288' width='216' height='56' rx='8' fill='none' stroke='#8a8a84' stroke-width='1.25'/>
+<text x='536' y='312' fill='#1a1a18' font-weight='600'>Z2 Physical security</text>
+<text x='536' y='330' fill='#5f5e5a' font-size='11.5'>access, intrusion · SL-T 2</text>
+<rect x='24' y='392' width='80' height='52' rx='8' fill='none' stroke='#8a8a84' stroke-width='1.25'/>
+<text x='64' y='414' fill='#1a1a18' font-weight='600' text-anchor='middle'>MV</text>
+<text x='64' y='432' fill='#5f5e5a' font-size='11.5' text-anchor='middle'>SL-T 3</text>
+<rect x='114' y='392' width='80' height='52' rx='8' fill='none' stroke='#8a8a84' stroke-width='1.25'/>
+<text x='154' y='414' fill='#1a1a18' font-weight='600' text-anchor='middle'>PWR-A</text>
+<text x='154' y='432' fill='#5f5e5a' font-size='11.5' text-anchor='middle'>SL-T 3</text>
+<rect x='205' y='392' width='80' height='52' rx='8' fill='none' stroke='#8a8a84' stroke-width='1.25'/>
+<text x='245' y='414' fill='#1a1a18' font-weight='600' text-anchor='middle'>PWR-B</text>
+<text x='245' y='432' fill='#5f5e5a' font-size='11.5' text-anchor='middle'>SL-T 3</text>
+<rect x='295' y='392' width='80' height='52' rx='8' fill='none' stroke='#8a8a84' stroke-width='1.25'/>
+<text x='335' y='414' fill='#1a1a18' font-weight='600' text-anchor='middle'>PWR-C</text>
+<text x='335' y='432' fill='#5f5e5a' font-size='11.5' text-anchor='middle'>SL-T 3</text>
+<rect x='385' y='392' width='80' height='52' rx='8' fill='none' stroke='#8a8a84' stroke-width='1.25'/>
+<text x='425' y='414' fill='#1a1a18' font-weight='600' text-anchor='middle'>CHW</text>
+<text x='425' y='432' fill='#5f5e5a' font-size='11.5' text-anchor='middle'>SL-T 3</text>
+<rect x='476' y='392' width='80' height='52' rx='8' fill='none' stroke='#8a8a84' stroke-width='1.25'/>
+<text x='516' y='414' fill='#1a1a18' font-weight='600' text-anchor='middle'>POD x16</text>
+<text x='516' y='432' fill='#5f5e5a' font-size='11.5' text-anchor='middle'>SL-T 2</text>
+<rect x='566' y='392' width='80' height='52' rx='8' fill='none' stroke='#8a8a84' stroke-width='1.25'/>
+<text x='606' y='414' fill='#1a1a18' font-weight='600' text-anchor='middle'>FUEL</text>
+<text x='606' y='432' fill='#5f5e5a' font-size='11.5' text-anchor='middle'>SL-T 2</text>
+<rect x='656' y='392' width='80' height='52' rx='8' fill='none' stroke='#8a8a84' stroke-width='1.25'/>
+<text x='696' y='414' fill='#1a1a18' font-weight='600' text-anchor='middle'>BLDG</text>
+<text x='696' y='432' fill='#5f5e5a' font-size='11.5' text-anchor='middle'>SL-T 1</text>
+<text x='158' y='132' fill='#5f5e5a' font-size='11.5'>C3 read-only</text>
+<text x='310' y='132' fill='#5f5e5a' font-size='11.5'>C7</text>
+<text x='602' y='132' fill='#5f5e5a' font-size='11.5' text-anchor='end'>C4 proposals and reads</text>
+<text x='158' y='272' fill='#5f5e5a' font-size='11.5'>C2 data out</text>
+<text x='390' y='280' fill='#5f5e5a' font-size='11.5'>C7 sessions</text>
+<text x='572' y='264' fill='#5f5e5a' font-size='11.5'>C5 authorized writes</text>
+<text x='508' y='306' fill='#5f5e5a' font-size='11.5' text-anchor='middle'>C8</text>
+<text x='270' y='360' fill='#5f5e5a' font-size='11.5'>C1</text>
+<text x='736' y='360' fill='#5f5e5a' font-size='11.5' text-anchor='end'>Z1 control zones: no conduit between power trains or PODs</text>
+<text x='736' y='481' fill='#5f5e5a' font-size='11.5' text-anchor='end'>C6 hardwired status, one-way</text>
+</svg>

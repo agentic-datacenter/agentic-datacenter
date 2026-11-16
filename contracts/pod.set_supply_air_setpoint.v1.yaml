@@ -1,0 +1,25 @@
+# Adjust the supply air setpoint of one POD inside the recommended envelope.
+schema_version: 1
+id: pod.set_supply_air_setpoint.v1
+title: Adjust POD supply air setpoint
+risk_tier: R1
+arguments:
+  pod: {type: key, key_set: pods}
+  setpoint_c: {type: number}
+writes:
+  - tag: "cooling.pod[{pod}].supply_air_sp_c"
+    value: setpoint_c
+    bounds: {min: 18.0, max: 27.0, max_step: 1.0, unit: degC}
+premises:
+  - {expr: "pod[{pod}].thermally_critical == false", max_age_s: 10}
+  - {expr: "pod[{pod}].zone_mean_invalid == false", max_age_s: 10}
+  - {expr: "pod[{pod}].zone_sensors_in_mean >= 6", max_age_s: 10, when: increase}
+  - {expr: "redundancy.chillers >= N_PLUS_1", max_age_s: 10, when: increase}
+  - {expr: "no_active_alarm(priority >= HIGH, system in [CHW, POD])", max_age_s: 5, when: increase}
+limits:
+  rate: {max_per_hour: 4}
+  cumulative: {window_h: 24, max_total_delta: 3.0}
+rollback:
+  trigger: "pod[{pod}].supply_air_c > 28.0 for 120s"
+  action: restore_previous
+approval: none

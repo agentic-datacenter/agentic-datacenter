@@ -1,0 +1,18 @@
+# Take one chiller out of service for maintenance. Two people approve, and it is
+# refused when it would leave the plant without a spare.
+schema_version: 1
+id: chw.take_chiller_out_of_service.v1
+title: Take one chiller out of service for maintenance
+risk_tier: R2
+arguments:
+  chiller: {type: choice, choices: ["1", "2", "3"]}
+writes:
+  - tag: "cooling.chw_plant[CHW].ch{chiller}_enable"
+    const: false
+premises:
+  - {expr: "redundancy.chillers >= N_PLUS_1", max_age_s: 10, invariant: INV-GOV-4}
+  - {expr: "tes.charge_pct >= 80", max_age_s: 30}
+  - {expr: "no_active_alarm(priority >= HIGH, system in [CHW, POD])", max_age_s: 5}
+limits:
+  rate: {max_per_hour: 1}
+approval: two_person

@@ -1,0 +1,12 @@
+id: life_safety
+version: 0.2.0
+fidelity: F1
+provides:
+  - {port: pod_fire, type: signal, keyed_by: pods}
+  - {port: pod_epo, type: signal, keyed_by: pods}
+  - {port: fire_pump_start_request, type: signal}
+requires:
+  - {port: power, type: electrical}
+zone: Z0-PROT
+requirements: [ADC-NET-004]
+spec: docs/design/modules/life_safety.md

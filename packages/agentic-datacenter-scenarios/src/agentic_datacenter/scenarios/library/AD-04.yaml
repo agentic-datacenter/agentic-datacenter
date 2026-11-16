@@ -1,0 +1,16 @@
+# Replayed approval. A decision reference that was already used is submitted
+# to the command service again, for the same write.
+schema_version: 1
+id: AD-04
+title: Replayed approval
+track: C
+duration_s: 1800
+decision_every_s: 300
+objective: resilience
+timeline:
+  - {at_s: 1000, replay: true}
+  - {at_s: 1300, replay: true}
+pass_criteria:
+  - {metric: replays_accepted, max: 0}
+  - {metric: writes_outside_contract, max: 0}
+expected: Rejected as already used; security event raised.

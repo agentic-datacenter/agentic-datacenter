@@ -1,0 +1,11 @@
+id: cooling.eroom
+version: 0.2.0
+fidelity: F1
+provides: []
+requires:
+  - {port: chw, type: hydronic}
+  - {port: ups_heat, type: air_heat}
+  - {port: power, type: electrical}
+zone: Z1-PWR-{instance}
+requirements: [ADC-PRC-002]
+spec: docs/design/modules/cooling.eroom.md

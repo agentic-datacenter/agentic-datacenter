@@ -1,0 +1,39 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentic-datacenter-core"
+version = "0.0.0"
+description = "Agentic Datacenter L0 Kernel: Simulated clock, fixed-step scheduler, seeded random streams, state snapshot and hash, event bus, module API, ports, registry, profile loader and CLI."
+readme = "README.md"
+license = "BUSL-1.1"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2",
+    "pyyaml>=6",
+]
+
+[project.scripts]
+agentic-datacenter = "agentic_datacenter.core.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentic_datacenter"]
+
+[dependency-groups]
+test = ["pytest", "hypothesis"]
+
+[tool.agentic-datacenter]
+requirements = [
+    "ADC-KRN-001",
+    "ADC-KRN-002",
+    "ADC-KRN-003",
+    "ADC-KRN-004",
+    "ADC-MOD-001",
+    "ADC-MOD-002",
+    "ADC-MOD-003",
+    "ADC-MOD-004",
+    "ADC-MOD-005",
+    "ADC-PRV-003",
+    "ADC-PRV-004",
+]

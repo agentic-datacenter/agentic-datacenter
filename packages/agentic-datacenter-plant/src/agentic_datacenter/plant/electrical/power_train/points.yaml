@@ -1,0 +1,47 @@
+# I/O points of one power train's transfer controller.
+# Timers and thresholds are tier T1: adjustable at the device by an engineer,
+# never over the network (SDD 7.1, 8.2). Breaker commands and the interlock are T0.
+# The defaults are round values chosen for the generic profile.
+
+- {name: util_v_pu, kind: analog_in, unit: pu, range: [0, 2], default: 1.0, tier: T0, description: Utility source voltage, assumed: true}
+- {name: util_f_pu, kind: analog_in, unit: pu, range: [0, 2], default: 1.0, tier: T0, description: Utility source frequency, assumed: true}
+- {name: gen_v_pu, kind: analog_in, unit: pu, range: [0, 2], default: 0.0, tier: T0, description: Generator source voltage, assumed: true}
+- {name: gen_f_pu, kind: analog_in, unit: pu, range: [0, 2], default: 0.0, tier: T0, description: Generator source frequency, assumed: true}
+- {name: bus_kw, kind: analog_in, unit: kW, range: [0, 100000], default: 0.0, tier: T0, description: Real power drawn from the switchboard bus, assumed: true}
+- {name: gen_ready, kind: binary_in, default: false, tier: T0, description: Generator ready to load (hardwired), assumed: true}
+- {name: gen_fault, kind: binary_in, default: false, tier: T0, description: Generator fault (hardwired), assumed: true}
+- {name: util_brk_closed, kind: binary_in, default: true, tier: T0, description: Utility breaker closed, assumed: true}
+- {name: gen_brk_closed, kind: binary_in, default: false, tier: T0, description: Generator breaker closed, assumed: true}
+- {name: util_brk_trip, kind: enum_status, values: [NONE, PROTECTIVE, OTHER], default: NONE, tier: T0, description: Utility breaker trip indication, assumed: true}
+- {name: gen_brk_trip, kind: enum_status, values: [NONE, PROTECTIVE, OTHER], default: NONE, tier: T0, description: Generator breaker trip indication, assumed: true}
+- {name: util_brk_close_cmd, kind: binary_cmd, default: true, tier: T0, description: Utility breaker commanded closed, assumed: true}
+- {name: gen_brk_close_cmd, kind: binary_cmd, default: false, tier: T0, description: Generator breaker commanded closed, assumed: true}
+- {name: gen_start_request, kind: binary_cmd, default: false, tier: T0, description: Request to start the generator (hardwired), assumed: true}
+- {name: mode, kind: enum_status, values: [AUTO, MANUAL, DISABLE], default: AUTO, tier: T1, description: Mode switch at the controller, assumed: true}
+- name: state
+  kind: enum_status
+  values: [ON_UTILITY, START_DELAY, WAIT_GENERATOR, PRE_TRANSFER, OPENING_UTILITY, NEUTRAL_TO_GENERATOR, CLOSING_GENERATOR, ON_GENERATOR, RETURN_DELAY, OPENING_GENERATOR, NEUTRAL_TO_UTILITY, CLOSING_UTILITY, GENERATOR_FAULT, LOCKED_OUT]
+  default: ON_UTILITY
+  tier: T0
+  description: State of the transfer sequence
+  assumed: true
+- {name: transfers, kind: counter, default: 0, tier: T0, description: Completed transfers to generator, assumed: true}
+
+- {name: tdes_s, kind: analog_setting, unit: s, range: [0, 300], step: 0.5, default: 5.0, tier: T1, description: Engine start delay after utility failure, assumed: true}
+- {name: tdne_s, kind: analog_setting, unit: s, range: [0, 600], step: 0.5, default: 1.0, tier: T1, description: Normal-to-emergency delay after ready-to-load, assumed: true}
+- {name: tdpt_s, kind: analog_setting, unit: s, range: [0, 300], step: 0.5, default: 1.0, tier: T1, description: Neutral position time, assumed: true}
+- {name: tden_s, kind: analog_setting, unit: s, range: [0, 1800], step: 0.5, default: 30.0, tier: T1, description: Emergency-to-normal delay after utility return, assumed: true}
+- {name: tdec_s, kind: analog_setting, unit: s, range: [0, 600], step: 0.5, default: 300.0, tier: T1, description: Engine cooldown, assumed: true}
+- {name: feedback_s, kind: analog_setting, unit: s, range: [0.5, 10], step: 0.5, default: 1.0, tier: T1, description: Command-feedback time before a breaker failure alarm, assumed: true}
+- {name: dropout_low_pu, kind: analog_setting, unit: pu, range: [0.5, 1], default: 0.90, tier: T1, description: "Source drop-out limit, low (voltage and frequency)", assumed: true}
+- {name: pickup_low_pu, kind: analog_setting, unit: pu, range: [0.5, 1], default: 0.95, tier: T1, description: "Source pick-up limit, low", assumed: true}
+- {name: pickup_high_pu, kind: analog_setting, unit: pu, range: [1, 1.5], default: 1.05, tier: T1, description: "Source pick-up limit, high", assumed: true}
+- {name: dropout_high_pu, kind: analog_setting, unit: pu, range: [1, 1.5], default: 1.10, tier: T1, description: "Source drop-out limit, high", assumed: true}
+
+- {name: alarm_lockout, kind: binary_in, default: false, tier: T0, description: Transfers locked out after a protective trip, assumed: true}
+- {name: alarm_gen_fault, kind: binary_in, default: false, tier: T0, description: Generator fault, assumed: true}
+- {name: alarm_util_brk_fail_open, kind: binary_in, default: false, tier: T0, description: Utility breaker failed to open, assumed: true}
+- {name: alarm_util_brk_fail_close, kind: binary_in, default: false, tier: T0, description: Utility breaker failed to close, assumed: true}
+- {name: alarm_gen_brk_fail_open, kind: binary_in, default: false, tier: T0, description: Generator breaker failed to open, assumed: true}
+- {name: alarm_gen_brk_fail_close, kind: binary_in, default: false, tier: T0, description: Generator breaker failed to close, assumed: true}
+- {name: alarm_not_in_auto, kind: binary_in, default: false, tier: T0, description: Mode switch not in AUTO, assumed: true}

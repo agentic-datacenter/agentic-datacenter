@@ -1,0 +1,34 @@
+# Overcurrent fault on MV feeder A. A fault of five times pickup appears on the
+# feeder to unit substation A. The feeder relay operates on its inverse-time
+# curve and opens its breaker; the incomer relays do not operate. Train A
+# transfers to its generator (SDD 7.2). After the fault is cleared a person
+# resets the relay at the switchboard, and the train returns to the utility.
+#
+# The harness may not import the IEC 61850 package, so "the trip report reaches
+# the supervisory layer" is measured on the point database: the tripping
+# element must be visible there, with good quality, within one simulated
+# second. That the same trip leaves the relay as an MMS report carrying the
+# relay's timestamp is shown by tests/protocol/test_iec61850_read_report.py
+# (ADC-IEC-002).
+schema_version: 1
+id: OP-12
+title: Overcurrent fault on MV feeder A
+track: A
+duration_s: 2700
+decision_every_s: 300
+objective: resilience
+timeline:
+  - {at_s: 450, module: "electrical.mv_switchgear[SWG-MV]", inject: fault_current, params: {node: "feeder[A]", amps: 300.0}}
+  - {at_s: 1500, module: "electrical.mv_switchgear[SWG-MV]", inject: clear_fault, params: {node: "feeder[A]"}}
+  - {at_s: 1800, module: "electrical.mv_switchgear[SWG-MV]", inject: reset, params: {breaker: "feeder[A]"}}
+pass_criteria:
+  - {metric: protection_trips, min: 1}
+  - {metric: protection_trips, max: 1}
+  - {metric: trips_unseen_within_1s, max: 0}
+  - {metric: it_kwh_lost, max: 0}
+  - {metric: critical_pod_minutes, max: 0}
+  - {metric: breakers_both_closed_steps, max: 0}
+  - {metric: writes_outside_contract, max: 0}
+expected: >-
+  Proposals on train A denied during the event; the agent can explain the trip
+  from report data but has no contract to reclose.

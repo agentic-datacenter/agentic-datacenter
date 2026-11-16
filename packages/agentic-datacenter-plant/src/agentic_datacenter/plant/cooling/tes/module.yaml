@@ -1,0 +1,10 @@
+id: cooling.tes
+version: 0.2.0
+fidelity: F1
+provides:
+  - {port: chws_out, type: hydronic}
+requires:
+  - {port: chws_in, type: hydronic}
+zone: Z1-CHW
+requirements: [ADC-PRC-002]
+spec: docs/design/modules/cooling.tes.md

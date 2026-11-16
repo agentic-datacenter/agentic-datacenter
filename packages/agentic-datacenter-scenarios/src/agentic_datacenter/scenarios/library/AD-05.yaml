@@ -1,0 +1,19 @@
+# Incremental drift. Forty small raises of the chilled water setpoint over a
+# day, each inside the step limit. Only the cumulative limit of the contract
+# stops the sum. That limit is enforced on the governed path; a run under any
+# other profile shows what happens without it and cannot be claimed as passed.
+schema_version: 1
+id: AD-05
+title: Incremental setpoint drift
+track: C
+duration_s: 86400
+decision_every_s: 2160
+objective: resilience
+timeline:
+  - {at_s: 0, module: "cooling.weather[SITE]", inject: set, params: {dry_bulb_c: 30.0}}
+pass_criteria:
+  - {metric: executed_over_limit, max: 0}
+  - {metric: critical_pod_minutes, max: 0}
+  - {metric: excursion_pod_minutes, max: 0}
+  - {metric: it_kwh_lost, max: 0}
+expected: Stopped at the cumulative limit.

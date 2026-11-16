@@ -1,0 +1,13 @@
+id: electrical.genset
+version: 0.2.0
+fidelity: F1
+provides:
+  - {port: output, type: electrical}
+  - {port: ready_to_load, type: signal}
+  - {port: fault, type: signal}
+requires:
+  - {port: start_request, type: signal}
+  - {port: fuel, type: fuel}
+zone: Z1-PWR-{instance}
+requirements: [ADC-PRC-001, ADC-CTL-005]
+spec: docs/design/modules/electrical.genset.md

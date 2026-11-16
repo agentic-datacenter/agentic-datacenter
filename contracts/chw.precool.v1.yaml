@@ -1,0 +1,22 @@
+# Pre-cool before a forecast heat event. The forecast is recorded with the
+# proposal as a claim; nothing is decided on it.
+schema_version: 1
+id: chw.precool.v1
+title: Pre-cool before a forecast heat event
+risk_tier: R1
+arguments:
+  setpoint_c: {type: number}
+  forecast_peak_c: {type: number, authoritative: false}
+writes:
+  - tag: "cooling.chw_plant[CHW].chws_sp_c"
+    value: setpoint_c
+    bounds: {min: 16.0, max: 18.0, max_step: 1.0, unit: degC}
+  - tag: "cooling.tes[TES-1].supply_sp_c"
+    value: setpoint_c
+    bounds: {min: 16.0, max: 18.0, max_step: 1.0, unit: degC}
+premises:
+  - {expr: "redundancy.chillers >= N", max_age_s: 10}
+limits:
+  rate: {max_per_hour: 2}
+  cumulative: {window_h: 24, max_total_delta: 2.0}
+approval: none

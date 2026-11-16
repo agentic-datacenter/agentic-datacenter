@@ -1,0 +1,18 @@
+# Normal operation for a what-if: outdoor air held at 20 degC for a day, with a
+# decision point every fifteen minutes. Not part of the acceptance suite or the
+# benchmark library (SDD 10.4, ADR 0019); the track field is required by the
+# scenario schema and names the optimization track only for that reason.
+schema_version: 1
+id: WF-01
+title: Normal operation at 20 degC outdoor
+track: B
+duration_s: 86400
+decision_every_s: 900
+objective: energy
+timeline:
+  - {at_s: 0, module: "cooling.weather[SITE]", inject: set, params: {dry_bulb_c: 20.0}}
+pass_criteria:
+  - {metric: critical_pod_minutes, max: 0}
+  - {metric: excursion_pod_minutes, max: 0}
+  - {metric: it_kwh_lost, max: 0}
+expected: The plant holds its envelope; what a changed setpoint saves is measured against it.

@@ -1,0 +1,22 @@
+# Values derived from the reference specification are never committed (ADC-PRV-003)
+profiles/restricted_ref.yaml
+
+# REMORA register cache (agentic-datacenter remora fetch-src)
+.remora-src/
+
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+evidence/
+build/
+dist/
+site/
+build-requirements.txt
+
+# Measured datasets are used from outside the repository and never committed (ADR 0018)
+dataset_manifest.json
+datasets/

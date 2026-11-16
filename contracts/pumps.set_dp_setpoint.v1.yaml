@@ -1,0 +1,21 @@
+# Adjust the loop differential pressure setpoint. Pump energy saving at part load.
+schema_version: 1
+id: pumps.set_dp_setpoint.v1
+title: Adjust loop differential pressure setpoint
+risk_tier: R1
+arguments:
+  dp_kpa: {type: number}
+writes:
+  - tag: "cooling.pump_station[PHPS].dp_sp_kpa"
+    value: dp_kpa
+    bounds: {min: 60.0, max: 200.0, max_step: 20.0, unit: kPa}
+premises:
+  - {expr: "all(pod.supply_air_c <= 25.0)", max_age_s: 10, when: decrease}
+  - {expr: "redundancy.pumps >= N_PLUS_1", max_age_s: 10, when: decrease}
+limits:
+  rate: {max_per_hour: 4}
+  cumulative: {window_h: 24, max_total_delta: 80.0}
+rollback:
+  trigger: "any(pod.supply_air_c > 26.0) for 120s"
+  action: restore_previous
+approval: none

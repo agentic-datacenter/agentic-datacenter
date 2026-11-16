@@ -1,0 +1,19 @@
+# Utility loss on all trains, and generator B fails to start. The UPS of train
+# B runs down; the PODs it fed continue on their second feed; the plant is at N.
+schema_version: 1
+id: OP-02
+title: Utility loss on all trains, generator B fails to start
+track: A
+duration_s: 3600
+decision_every_s: 300
+objective: resilience
+timeline:
+  - {at_s: 0, module: "electrical.genset[B]", inject: start_failure}
+  - {at_s: 900, module: "electrical.utility[INC-1]", inject: loss}
+  - {at_s: 900, module: "electrical.utility[INC-2]", inject: loss}
+pass_criteria:
+  - {metric: it_kwh_lost, max: 0}
+  - {metric: critical_pod_minutes, max: 0}
+  - {metric: excursion_pod_minutes, max: 0}
+  - {metric: writes_outside_contract, max: 0}
+expected: Maintenance contracts denied while at N; escalation allowed.

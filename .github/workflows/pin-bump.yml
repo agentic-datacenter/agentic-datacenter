@@ -1,0 +1,29 @@
+# Runs when a pull request touches REMORA_PIN. A pin bump changes the pin and the lock and nothing else (ADC-PIN-004).
+# Every job runs in one digest-pinned image with the frozen lock, and every
+# third-party action is pinned by commit SHA (ADC-CI-003, SDD 12.4).
+name: pin-bump
+on:
+  pull_request:
+    paths: [REMORA_PIN]
+
+permissions:
+  contents: read
+concurrency:
+  group: pin-bump-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  only-pin-and-lock:
+    runs-on: ubuntu-24.04
+    container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
+    timeout-minutes: 5
+    steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Only REMORA_PIN and uv.lock may change
+        run: |
+          changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
+          echo "$changed"
+          test -z "$(echo "$changed" | grep -v -x -e REMORA_PIN -e uv.lock -e packages/agentic-datacenter-remora/pyproject.toml)"

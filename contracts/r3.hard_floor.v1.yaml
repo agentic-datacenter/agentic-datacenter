@@ -1,0 +1,12 @@
+# The hard floor. Nothing on transfer timers, protection, alarms, fire or security
+# is ever automated: there is no contract for it and there will not be one.
+# A proposal that names this contract is refused, and the refusal is recorded.
+schema_version: 1
+id: r3.hard_floor.v1
+title: Anything on transfer timers, protection, alarms, fire or security
+risk_tier: R3
+arguments:
+  request: {type: text, authoritative: false}
+writes: []
+premises: []
+approval: not_available

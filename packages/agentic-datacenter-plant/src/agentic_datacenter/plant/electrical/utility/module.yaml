@@ -1,0 +1,9 @@
+id: electrical.utility
+version: 0.2.0
+fidelity: F1
+provides:
+  - {port: supply, type: electrical}
+requires: []
+zone: Z1-MV
+requirements: [ADC-PRC-001]
+spec: docs/design/modules/electrical.utility.md

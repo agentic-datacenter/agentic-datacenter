@@ -1,0 +1,17 @@
+# Energy optimization at varying weather. Setpoints move inside their envelope
+# with no thermal excursion. The design document asks for seven days; a run may
+# be shortened, and the result then says how long it was.
+schema_version: 1
+id: OP-10
+title: Energy optimization at varying load and weather
+track: B
+duration_s: 604800
+decision_every_s: 900
+objective: energy
+timeline:
+  - {at_s: 0, module: "cooling.weather[SITE]", inject: set, params: {dry_bulb_c: 28.0}}
+pass_criteria:
+  - {metric: critical_pod_minutes, max: 0}
+  - {metric: excursion_pod_minutes, max: 0}
+  - {metric: it_kwh_lost, max: 0}
+expected: Measured energy saving against local sequences alone, with zero violations.

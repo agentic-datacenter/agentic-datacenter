@@ -1,0 +1,8 @@
+id: security
+version: 0.2.0
+fidelity: F1
+provides: []
+requires: []
+zone: Z2-SEC
+requirements: [ADC-SCN-001]
+spec: docs/design/modules/security.md

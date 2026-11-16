@@ -1,0 +1,364 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "agentic_datacenter.gate.http/1",
+  "title": "Agentic Datacenter gate over HTTP, version 1",
+  "description": "The requests Agentic Datacenter's http_gate binding sends and the answers it accepts. Every message carries \"schema\": \"agentic_datacenter.gate.http/1\". An answer that does not validate is read as ABSTAIN. The same messages go to a command gate on standard input, as {\"endpoint\": \"/evaluate\" or \"/outcome\", \"request\": ...}, with the answer on standard output.",
+  "$defs": {
+    "scalar": {
+      "type": [
+        "boolean",
+        "integer",
+        "number",
+        "string"
+      ]
+    },
+    "write": {
+      "type": "object",
+      "required": [
+        "tag",
+        "value",
+        "previous"
+      ],
+      "properties": {
+        "tag": {
+          "type": "string",
+          "description": "The simulated point the write sets."
+        },
+        "value": {
+          "$ref": "#/$defs/scalar"
+        },
+        "previous": {
+          "$ref": "#/$defs/scalar",
+          "description": "Its value when the premises were read."
+        }
+      }
+    },
+    "premise": {
+      "type": "object",
+      "required": [
+        "expr",
+        "holds",
+        "detail",
+        "invariant"
+      ],
+      "properties": {
+        "expr": {
+          "type": "string"
+        },
+        "holds": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "null: it could not be established (stale, bad quality, too old)."
+        },
+        "detail": {
+          "type": "string"
+        },
+        "invariant": {
+          "type": "string"
+        }
+      }
+    },
+    "evaluate_request": {
+      "type": "object",
+      "description": "POST /evaluate. Everything under premises was read by Agentic Datacenter from the simulated plant, not taken from the agent.",
+      "required": [
+        "schema",
+        "session",
+        "tool_call",
+        "proposal",
+        "premises",
+        "actor"
+      ],
+      "properties": {
+        "schema": {
+          "const": "agentic_datacenter.gate.http/1"
+        },
+        "session": {
+          "type": "string",
+          "description": "Names one gate: Agentic Datacenter builds a gate per run and per counterfactual replay. A service that keeps state keys it by this (ADC_GATE_STATEFUL=1)."
+        },
+        "tool_call": {
+          "type": "object",
+          "required": [
+            "name",
+            "arguments",
+            "writes"
+          ],
+          "description": "The same proposal seen as a tool call, for a gate that decides on the action rather than on an intent contract.",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The contract id, used as the tool name."
+            },
+            "arguments": {
+              "type": "object"
+            },
+            "writes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "tag",
+                  "value"
+                ],
+                "properties": {
+                  "tag": {
+                    "type": "string"
+                  },
+                  "value": {
+                    "$ref": "#/$defs/scalar"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "proposal": {
+          "type": "object",
+          "required": [
+            "proposal_id",
+            "contract_id",
+            "arguments",
+            "rationale",
+            "claimed_actor"
+          ],
+          "properties": {
+            "proposal_id": {
+              "type": "string"
+            },
+            "contract_id": {
+              "type": "string",
+              "description": "An intent contract from contracts/."
+            },
+            "arguments": {
+              "type": "object"
+            },
+            "rationale": {
+              "type": "string",
+              "description": "The agent's own words. Never evidence."
+            },
+            "claimed_actor": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Who the agent says it acts for. A claim only."
+            }
+          }
+        },
+        "premises": {
+          "type": "object",
+          "required": [
+            "time_ms",
+            "contract_known",
+            "risk_tier",
+            "approval",
+            "writes",
+            "schema_errors",
+            "bound_errors",
+            "limit_errors",
+            "premises",
+            "rollback_available",
+            "restore"
+          ],
+          "properties": {
+            "time_ms": {
+              "type": "integer",
+              "description": "Simulated time. Use it, not the wall clock, so runs repeat."
+            },
+            "contract_known": {
+              "type": "boolean"
+            },
+            "risk_tier": {
+              "enum": [
+                "R0",
+                "R1",
+                "R2",
+                "R3"
+              ]
+            },
+            "approval": {
+              "enum": [
+                "none",
+                "one_operator",
+                "two_person",
+                "not_available"
+              ]
+            },
+            "writes": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/write"
+              }
+            },
+            "schema_errors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "bound_errors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "limit_errors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "premises": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/premise"
+              }
+            },
+            "rollback_available": {
+              "type": "boolean"
+            },
+            "restore": {
+              "type": "boolean",
+              "description": "Every write moves its point back toward safety (INV-GOV-8)."
+            }
+          }
+        },
+        "actor": {
+          "type": "object",
+          "required": [
+            "principal",
+            "credential"
+          ],
+          "properties": {
+            "principal": {
+              "type": "string"
+            },
+            "credential": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "evaluate_answer": {
+      "type": "object",
+      "description": "The answer to POST /evaluate. The writes an ALLOW authorizes, the decision reference, its nonce and its expiry are made by Agentic Datacenter; fields that try to set them are ignored.",
+      "required": [
+        "schema",
+        "verdict",
+        "reasons"
+      ],
+      "properties": {
+        "schema": {
+          "const": "agentic_datacenter.gate.http/1"
+        },
+        "verdict": {
+          "type": "string",
+          "description": "ALLOW, DENY, VERIFY (a person must approve) or ABSTAIN (evidence missing, stale or contradicted). A word listed in verdict_aliases is read as the verdict it stands for, without regard to case, '-' or spaces, and kept on the decision."
+        },
+        "reasons": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "type": "string",
+            "maxLength": 500
+          }
+        },
+        "required_approvers": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "For VERIFY; at least 1."
+        },
+        "escalated": {
+          "type": "boolean"
+        },
+        "decision_id": {
+          "type": "string",
+          "description": "The service's own reference, kept on the decision for cross-checking."
+        }
+      }
+    },
+    "outcome_request": {
+      "type": "object",
+      "description": "POST /outcome: what became of a decision. Any 2xx answer, or none, is fine.",
+      "required": [
+        "schema",
+        "session",
+        "decision_ref",
+        "status",
+        "detail"
+      ],
+      "properties": {
+        "schema": {
+          "const": "agentic_datacenter.gate.http/1"
+        },
+        "session": {
+          "type": "string"
+        },
+        "decision_ref": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "APPLIED",
+            "REJECTED",
+            "ROLLED_BACK",
+            "UNKNOWN",
+            "NOT_EXECUTED"
+          ]
+        },
+        "detail": {
+          "type": "string"
+        }
+      }
+    },
+    "verdict_aliases": {
+      "description": "Words a service may answer with, and the verdict each is read as.",
+      "const": {
+        "abstain": "ABSTAIN",
+        "abstained": "ABSTAIN",
+        "accept": "ALLOW",
+        "accepted": "ALLOW",
+        "admit": "ALLOW",
+        "admitted": "ALLOW",
+        "allow": "ALLOW",
+        "allowed": "ALLOW",
+        "approve": "ALLOW",
+        "approved": "ALLOW",
+        "ask": "VERIFY",
+        "block": "DENY",
+        "blocked": "DENY",
+        "denied": "DENY",
+        "deny": "DENY",
+        "escalate": "VERIFY",
+        "escalated": "VERIFY",
+        "execute": "ALLOW",
+        "forbid": "DENY",
+        "forbidden": "DENY",
+        "human_review": "VERIFY",
+        "insufficient_evidence": "ABSTAIN",
+        "no_decision": "ABSTAIN",
+        "out_of_scope": "ABSTAIN",
+        "permit": "ALLOW",
+        "permitted": "ALLOW",
+        "proceed": "ALLOW",
+        "refuse": "DENY",
+        "refused": "DENY",
+        "reject": "DENY",
+        "rejected": "DENY",
+        "require_approval": "VERIFY",
+        "require_auth": "VERIFY",
+        "requires_approval": "VERIFY",
+        "review": "VERIFY",
+        "skip": "ABSTAIN",
+        "skipped": "ABSTAIN",
+        "unknown": "ABSTAIN",
+        "verify": "VERIFY"
+      }
+    }
+  }
+}

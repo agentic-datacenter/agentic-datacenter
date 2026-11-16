@@ -1,0 +1,11 @@
+id: electrical.mv_switchgear
+version: 0.2.0
+fidelity: F1
+provides:
+  - {port: feeder, type: electrical, keyed_by: trains}
+requires:
+  - {port: incomer_1, type: electrical}
+  - {port: incomer_2, type: electrical}
+zone: Z1-MV
+requirements: [ADC-PRC-001, ADC-IEC-004]
+spec: docs/design/modules/electrical.mv_switchgear.md

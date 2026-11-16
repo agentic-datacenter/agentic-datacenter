@@ -1,0 +1,13 @@
+id: cooling.pod
+version: 0.2.0
+fidelity: F1
+provides: []
+requires:
+  - {port: chw, type: hydronic}
+  - {port: it_heat, type: air_heat}
+  - {port: fan_power, type: electrical}
+  - {port: fan_power_b, type: electrical}
+  - {port: fire_stop, type: signal}
+zone: Z1-POD-{instance}
+requirements: [ADC-PRC-004, ADC-CTL-003, ADC-CTL-006, ADC-CTL-004, ADC-CTL-005]
+spec: docs/design/modules/cooling.pod.md

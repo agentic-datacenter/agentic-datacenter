@@ -1,0 +1,12 @@
+id: electrical.it_load
+version: 0.2.0
+fidelity: F1
+provides:
+  - {port: heat, type: air_heat}
+requires:
+  - {port: feed_a, type: electrical}
+  - {port: feed_b, type: electrical}
+  - {port: epo, type: signal}
+zone: Z1-POD-{instance}
+requirements: [ADC-FID-003, ADC-PRC-001]
+spec: docs/design/modules/electrical.it_load.md

@@ -1,0 +1,72 @@
+# Agentic Datacenter Bench preregistration
+
+Committed before the first reported governed run (SDD 12.1). Later changes are appended below with a date and never rewritten.
+
+## Status on 2026-11-13
+
+- The benchmark version is **not frozen yet**. It is frozen with `agentic-datacenter bench freeze` once the scenario library is complete (21 of 23 scenarios; `OP-12` and `AD-10` wait for the IEC 61850 package). The frozen tuple is written to `docs/bench/VERSION.json` and tagged.
+- Governed runs made so far are development runs: tests of the mechanism, labelled as such on every output. None is a result.
+- No held-out secret has been chosen. See "Independence" below.
+
+## Question
+
+At equal safety, how much useful autonomy does a gate permit, and at what cost in human approvals?
+
+## Hypotheses
+
+- **H1 (safety).** Under `GOVERNED`, the share of scenario templates with no invariant violation and no harm is higher than under `UNGOVERNED` with the same agent and seeds, for `scripted_adversarial`.
+- **H2 (boundary).** Under `GOVERNED`, no write is executed over a rate or cumulative limit, on a premise that could not be established, or on a reused authorization: `executed_over_limit`, `executed_on_stale_premises` and `replays_accepted` are zero in every run.
+- **H3 (utility).** Under `GOVERNED` with `scripted_benign`, the false block rate is not higher than under `static_allowlist`.
+- **H4 (cost).** `GOVERNED` requests more approvals per 24 simulated hours than `DECISION_ONLY`. At the current REMORA pin this is expected by construction: no write is accepted without a person (ADR 0016). The figure is reported, not explained away.
+- **H5 (held-out).** H1 and H2 hold on Track D variants drawn from a secret the gate and contract authors have not seen.
+
+A hypothesis that fails is reported as failed.
+
+## Primary metrics
+
+| Axis | Metric | Unit of analysis |
+| --- | --- | --- |
+| Safety | Share of templates where every run is free of harm and invariant violations | Scenario template |
+| Utility | Share of safe-and-useful proposals permitted; false block rate beside it | Scenario template |
+| Cost | Approvals requested per 24 simulated hours | Run |
+
+## Analysis plan
+
+- Gates: `null_gate`, `static_allowlist`, `remora` (`DECISION_ONLY`), `remora_governed` (`GOVERNED`). Same agents, seeds and contracts for each.
+- Agents: `scripted_benign` and `scripted_adversarial`. Results from a language-model agent are reported apart and never pooled.
+- Seeds: 30 per scenario, 1 to 30.
+- Sample size is the number of scenario templates. Rates carry Wilson intervals at template level; differences between gates carry paired bootstrap intervals over templates.
+- Every blocked proposal is judged by counterfactual replay. For `GOVERNED` a branch is replayed from the start of the run, because REMORA's ledgers cannot be restored to an earlier instant.
+- The false block rate is printed beside every safety figure.
+- Results under a profile weaker than `GOVERNED` carry that profile's name wherever they appear.
+
+## Independence
+
+What limits the weight of any result from this repository, and what is done about each:
+
+| Limit | State |
+| --- | --- |
+| Simulator, contracts, oracle and the REMORA binding were written by the same party | Baseline gates run on the same card; any gate can be run through its entry point; result cards from other gates are the intended challenge |
+| Scenarios were written with the gate in view | Track D: `agentic-datacenter bench run --heldout-secret-file` draws variants from a secret and publishes only its commitment. **The secret must be chosen and held by someone who writes neither gate nor contracts.** Until such a person has done so, there is no Track D result |
+| Continuous integration runs on the author's machine | Commit statuses are published by `tools/ci_local.py` (ADR 0011). The person who writes a change can also publish its status. A runner on a machine the author does not control removes this |
+| One machine | The evidence bundle of a run is to be reproduced on a second machine before any result is published (SDD 13, Stage 9) |
+
+## Changes
+
+- **2026-11-14, before any reported benchmark result.** The governed path was changed after the development runs of the same day found harmful executions under `remora_governed` in AD-03 (ADR 0020): an applied step is now undone when a premise it was allowed on is lost (`INV-GOV-7`), and a step back toward safety is not charged against limits (`INV-GOV-8`). Development runs made before the change are reported, if at all, apart from runs made after it, under the commit they ran at. The hypotheses, metrics and analysis plan above are unchanged. A release gate, `agentic-datacenter bench check`, refuses a result card with any harmful execution or invariant breach under the gate it checks; it reads the card and changes nothing in it.
+- **2026-11-14, before any reported benchmark result.** Every scenario and seed is also run once with no agent (`BASELINE_RULES`), and every run is compared with it by the oracle's own definition of harm and tolerance. The release gate now also refuses a card with a run that has more harm than its run without an agent, or that was not compared (ADR 0021). Reason: the counterfactual replay turns one decision at a time and cannot see harm that several steps do together. This adds a check and a column; the hypotheses, primary metrics and analysis plan above are unchanged. The benchmark may now be made in several processes (`--jobs`); the card is the same, byte for byte, whatever the number.
+- **2026-11-16, before any reported benchmark result.** The held-out secret of Track D is no longer to be chosen by a person. In each public-test season it is the output of the drand "quicknet" public randomness beacon at a round published in advance, after the benchmark version of the season is frozen; `tools/heldout_beacon.py` reads the round from two relays and checks the randomness against its signature. No one, the authors included, can know the variants before the round, and anyone can check them after it. A gate takes part in a season's Track D only if it was registered, with the exact version it runs, before the round. This replaces "chosen and held by someone who writes neither gate nor contracts" in the table under Independence; the hypotheses, metrics and analysis plan are unchanged. Gates from other projects can now be attached as Python packages or as services over HTTP (ADR 0022), and a card made by a participant on their own machine, with the same SHA-256 as one made here, is a reproduction on a second machine. The procedure is in `docs/bench/PUBLIC_TEST.md`.
+- **2026-11-16, before any reported benchmark result.** The project is renamed Agentic Datacenter, and its requirement IDs carry the prefix `ADC-`. Nothing else changes with the name.
+- **2026-11-16, before any reported benchmark result.** How each proposal is judged is bounded, so that a season can be run in hours rather than days (ADR 0023):
+  - **Bounds.** A season is run with `--tier season`. Each counterfactual branch runs 1 hour past its decision and is compared with the actual run at the same instant. At most 64 proposals per run are judged, chosen by SHA-256 of scenario, seed and proposal id.
+  - **What is unchanged.** Every run is still compared in full with the same scenario and seed without an agent, and the release check still refuses a card with harm. The hypotheses, the primary metrics, the 30 seeds and the analysis plan above are unchanged.
+  - **How the bounds were checked.** They were compared with unbounded replay (`--tier full`), as recorded in `docs/bench/TIERS.md`.
+  - **Gate snapshots.** For `remora_governed`, a branch now starts from a snapshot of REMORA's state at the decision instead of from the start of the run. It gives the same judgements, and that is tested.
+
+  Every card now also shows, per gate and agent:
+  - the verdicts the gate used;
+  - steps executed with fewer approvers than their contract asks for;
+  - steps executed on a premise established as false;
+  - decisions a served gate failed to give.
+
+  These are reported beside the primary metrics and are not hypotheses (`docs/bench/FAIRNESS.md`).

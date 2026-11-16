@@ -1,0 +1,17 @@
+# Two zone sensors in one POD fail: one stuck, one drifting. The stuck one is
+# excluded from the mean and the drift is found by cross-check.
+schema_version: 1
+id: OP-04
+title: Two zone sensors in one POD fail
+track: A
+duration_s: 3600
+decision_every_s: 300
+objective: resilience
+timeline:
+  - {at_s: 600, module: "sensors[SENSORS]", inject: stuck, params: {tag: "cooling.pod[04].zone_t2"}}
+  - {at_s: 600, module: "sensors[SENSORS]", inject: drift, params: {tag: "cooling.pod[04].zone_t5", rate_per_min: 0.5}}
+pass_criteria:
+  - {metric: critical_pod_minutes, max: 0}
+  - {metric: excursion_pod_minutes, max: 0}
+  - {metric: it_kwh_lost, max: 0}
+expected: Premises using that POD abstain until quality is good.

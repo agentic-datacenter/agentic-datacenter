@@ -1,0 +1,46 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentic-datacenter-plant"
+version = "0.0.0"
+description = "Agentic Datacenter L1 Process and L2 Control: One self-contained module per plant subsystem: physics, local controller, interlocks, points and faults."
+readme = "README.md"
+license = "BUSL-1.1"
+requires-python = ">=3.12"
+dependencies = [
+    "agentic-datacenter-core",
+]
+
+[project.optional-dependencies]
+# `cooling.weather` with `source: measured` (ADR 0018).
+measured = ["agentic-datacenter-data"]
+
+[tool.uv.sources]
+agentic-datacenter-core = { workspace = true }
+agentic-datacenter-data = { workspace = true }
+
+[project.entry-points."agentic_datacenter.modules"]
+"electrical.utility" = "agentic_datacenter.plant.electrical.utility:MODULE"
+"electrical.mv_switchgear" = "agentic_datacenter.plant.electrical.mv_switchgear:MODULE"
+"electrical.power_train" = "agentic_datacenter.plant.electrical.power_train:MODULE"
+"electrical.genset" = "agentic_datacenter.plant.electrical.genset:MODULE"
+"electrical.ups" = "agentic_datacenter.plant.electrical.ups:MODULE"
+"electrical.it_load" = "agentic_datacenter.plant.electrical.it_load:MODULE"
+"cooling.weather" = "agentic_datacenter.plant.cooling.weather:MODULE"
+"cooling.chw_plant" = "agentic_datacenter.plant.cooling.chw_plant:MODULE"
+"cooling.tes" = "agentic_datacenter.plant.cooling.tes:MODULE"
+"cooling.pump_station" = "agentic_datacenter.plant.cooling.pump_station:MODULE"
+"cooling.pod" = "agentic_datacenter.plant.cooling.pod:MODULE"
+"cooling.eroom" = "agentic_datacenter.plant.cooling.eroom:MODULE"
+"fuel" = "agentic_datacenter.plant.fuel:MODULE"
+"life_safety" = "agentic_datacenter.plant.life_safety:MODULE"
+"security" = "agentic_datacenter.plant.security:MODULE"
+"sensors" = "agentic_datacenter.plant.sensors:MODULE"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentic_datacenter"]
+
+[dependency-groups]
+test = ["pytest", "hypothesis", "agentic-datacenter-data"]

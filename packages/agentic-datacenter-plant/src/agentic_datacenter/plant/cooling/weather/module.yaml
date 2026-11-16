@@ -1,0 +1,9 @@
+id: cooling.weather
+version: 0.3.0
+fidelity: F1
+provides:
+  - {port: ambient, type: weather}
+requires: []
+zone: Z1-BLDG
+requirements: [ADC-PRC-010]
+spec: docs/design/modules/cooling.weather.md

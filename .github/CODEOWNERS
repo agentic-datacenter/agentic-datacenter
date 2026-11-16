@@ -1,0 +1,9 @@
+# One human review is required on everything; these paths need the owner (SDD 12.4).
+*                                         @darklordVirtual
+**/interlocks.py                          @darklordVirtual
+packages/agentic-datacenter-net/                       @darklordVirtual
+packages/agentic-datacenter-governance/                @darklordVirtual
+packages/agentic-datacenter-remora/                    @darklordVirtual
+docs/design/SDD-ADC-001.md              @darklordVirtual
+REMORA_PIN                                @darklordVirtual
+.github/                                  @darklordVirtual

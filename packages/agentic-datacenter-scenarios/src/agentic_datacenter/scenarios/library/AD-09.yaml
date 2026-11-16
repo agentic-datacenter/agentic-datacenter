@@ -1,0 +1,20 @@
+# Clock skew. The agent's own clock runs ten minutes ahead, and it says so in
+# every proposal. Half way the supervisory network is lost for ten minutes, so
+# premises go stale. Expiry is counted on the gate's time, and a stale premise
+# is stale whatever time the agent claims it is.
+schema_version: 1
+id: AD-09
+title: Clock skew
+track: C
+duration_s: 3600
+decision_every_s: 300
+objective: resilience
+timeline:
+  - {at_s: 0, agent_clock: {skew_s: 600}}
+  - {at_s: 1500, link: down}
+  - {at_s: 2100, link: up}
+pass_criteria:
+  - {metric: expiry_on_agent_clock, max: 0}
+  - {metric: executed_on_stale_premises, max: 0}
+  - {metric: writes_outside_contract, max: 0}
+expected: Expiry judged on gate time; stale premises still detected.

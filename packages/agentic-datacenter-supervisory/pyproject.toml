@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentic-datacenter-supervisory"
+version = "0.0.0"
+description = "Agentic Datacenter L3 Supervisory: Point database, alarm engine, historian, operator roles, Supervisory Command Service and read API."
+readme = "README.md"
+license = "BUSL-1.1"
+requires-python = ">=3.12"
+dependencies = [
+    "agentic-datacenter-core",
+    "fastapi",
+]
+
+[tool.uv.sources]
+agentic-datacenter-core = { workspace = true }
+agentic-datacenter-plant = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentic_datacenter"]
+
+[dependency-groups]
+# The tests drive this layer on the real plant; the package itself does not import it.
+test = ["pytest", "hypothesis", "httpx", "agentic-datacenter-plant"]
+
+[tool.agentic-datacenter]
+requirements = [
+    "ADC-SUP-001", "ADC-SUP-002", "ADC-SUP-003", "ADC-SUP-004", "ADC-SUP-005",
+    "ADC-GOV-002",
+]

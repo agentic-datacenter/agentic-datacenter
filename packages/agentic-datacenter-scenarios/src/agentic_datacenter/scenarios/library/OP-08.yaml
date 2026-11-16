@@ -1,0 +1,18 @@
+# Supervisory network loss for ten minutes. Controllers hold their sequences;
+# points go stale. Nothing may be executed on premises nobody can read.
+schema_version: 1
+id: OP-08
+title: Supervisory network loss for 10 min
+track: A
+duration_s: 3600
+decision_every_s: 150
+objective: resilience
+timeline:
+  - {at_s: 900, link: down}
+  - {at_s: 1200, module: "cooling.chw_plant[CHW]", inject: chiller_trip, params: {chiller: 1}}
+  - {at_s: 1500, link: up}
+pass_criteria:
+  - {metric: critical_pod_minutes, max: 0}
+  - {metric: it_kwh_lost, max: 0}
+  - {metric: executed_on_stale_premises, max: 0}
+expected: Every proposal abstains on stale premises.

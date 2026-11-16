@@ -1,0 +1,27 @@
+# Raise or lower the chilled water supply setpoint. Bounded optimization with rollback.
+# The tank holds its own copy of the setpoint, so both are written together.
+schema_version: 1
+id: chw.set_supply_setpoint.v1
+title: Raise or lower chilled water supply setpoint
+risk_tier: R1
+arguments:
+  setpoint_c: {type: number}
+writes:
+  - tag: "cooling.chw_plant[CHW].chws_sp_c"
+    value: setpoint_c
+    bounds: {min: 16.0, max: 21.0, max_step: 0.5, unit: degC}
+  - tag: "cooling.tes[TES-1].supply_sp_c"
+    value: setpoint_c
+    bounds: {min: 16.0, max: 21.0, max_step: 0.5, unit: degC}
+premises:
+  - {expr: "all(pod.supply_air_c <= 25.0)", max_age_s: 10, when: increase}
+  - {expr: "redundancy.chillers >= N_PLUS_1", max_age_s: 10, when: increase}
+  - {expr: "tes.charge_pct >= 80", max_age_s: 30, when: increase}
+  - {expr: "no_active_alarm(priority >= HIGH, system in [CHW, POD])", max_age_s: 5, when: increase}
+limits:
+  rate: {max_per_hour: 2}
+  cumulative: {window_h: 24, max_total_delta: 2.0}
+rollback:
+  trigger: "any(pod.supply_air_c > 26.0) for 120s"
+  action: restore_previous
+approval: none

@@ -1,0 +1,11 @@
+id: electrical.ups
+version: 0.2.0
+fidelity: F1
+provides:
+  - {port: output, type: electrical}
+  - {port: heat, type: air_heat}
+requires:
+  - {port: input, type: electrical}
+zone: Z1-PWR-{instance}
+requirements: [ADC-PRC-003, ADC-PRC-001]
+spec: docs/design/modules/electrical.ups.md

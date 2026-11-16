@@ -1,0 +1,60 @@
+site_name: Agentic Datacenter
+site_description: Simulation-only data center OT model for benchmarking governance gates.
+docs_dir: docs
+strict: true
+nav:
+  - Home: index.md
+  - Design:
+      - Design document: design/SDD-ADC-001.md
+      - Zone and conduit model: design/zone_model.md
+      - Threat model: design/threat_model.md
+      - REMORA binding: design/remora_binding.md
+      - Stage 0 review: design/stage0_review.md
+  - Decisions:
+      - 0001 Module system: design/adr/0001-module-system.md
+      - 0002 REMORA pin: design/adr/0002-remora-pin.md
+      - 0003 Library choices: design/adr/0003-library-choices.md
+      - 0004 Licence position: design/adr/0004-licence-position.md
+      - 0005 Workspace and import contracts: design/adr/0005-workspace-and-import-contracts.md
+      - 0006 Kernel determinism: design/adr/0006-kernel-determinism.md
+      - 0007 Stage-aware traceability and CI tooling: design/adr/0007-traceability-and-ci-tooling.md
+      - 0008 Measurement service: design/adr/0008-measurement-service.md
+      - 0009 Supervisory storage and API: design/adr/0009-supervisory-storage-and-api.md
+      - 0010 Network model and protocol maps: design/adr/0010-network-model-and-protocol-maps.md
+      - 0011 Local CI: design/adr/0011-local-ci.md
+      - 0012 Modbus server: design/adr/0012-modbus-server.md
+      - 0013 BACnet server: design/adr/0013-bacnet-server.md
+      - 0014 SNMP agent: design/adr/0014-snmp-agent.md
+      - 0015 OPC UA server: design/adr/0015-opcua-server.md
+      - 0016 Governed path on REMORA: design/adr/0016-governed-path-on-remora.md
+      - 0017 IEC 61850 server: design/adr/0017-iec61850-server.md
+      - 0018 Measured input series: design/adr/0018-measured-input-series.md
+      - 0019 What-if: design/adr/0019-what-if.md
+      - 0020 Safe posture: design/adr/0020-safe-posture.md
+      - 0021 Parallel runs and the no-agent baseline: design/adr/0021-parallel-runs-and-no-agent-baseline.md
+      - 0022 Gates from other projects: design/adr/0022-gates-from-other-projects.md
+      - 0023 Bounded replay and fair comparison: design/adr/0023-bounded-replay-and-fair-comparison.md
+  - Guides:
+      - Run a scenario on measured weather: guides/measured-weather.md
+      - Check a result card before release: guides/release-gate.md
+      - Test your own gate: guides/bring-your-own-gate.md
+      - Which way in for your project: guides/which-way-in.md
+  - Benchmark:
+      - Preregistration: bench/PREREGISTRATION.md
+      - Public test: bench/PUBLIC_TEST.md
+      - Comparing gates fairly: bench/FAIRNESS.md
+      - Tiers: bench/TIERS.md
+  - Reference:
+      - Module registry: reference/modules.md
+      - Wiring of the generic profile: reference/wiring.md
+      - Requirement-to-test matrix: reference/requirements.md
+      - Command line: reference/cli.md
+      - Profile schema: reference/profile_schema.md
+validation:
+  nav:
+    omitted_files: ignore
+  links:
+    not_found: warn
+    anchors: ignore
+exclude_docs: |
+  superpowers/

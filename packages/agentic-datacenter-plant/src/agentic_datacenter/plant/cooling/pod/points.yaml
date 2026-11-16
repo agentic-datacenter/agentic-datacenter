@@ -1,0 +1,25 @@
+# Points of one POD's packaged controller. The supply air setpoint is tier T3:
+# an operator, or the agent under an approved contract, may change it (SDD 7.1).
+- {name: supply_air_c, kind: analog_in, default: 22.0, tier: T0, description: "Zone mean supply air temperature (IT inlet)", unit: degC, range: [-40, 150], assumed: true}
+- {name: return_air_c, kind: analog_in, default: 34.0, tier: T0, description: "Return air temperature", unit: degC, range: [-40, 200], assumed: true}
+- {name: mass_c, kind: analog_in, default: 33.0, tier: T0, description: "Equipment mass temperature", unit: degC, range: [-40, 200], assumed: true}
+- {name: coil_kw, kind: analog_in, default: 0.0, tier: T0, description: "Heat moved to chilled water", unit: kW, range: [0, 100000], assumed: true}
+- {name: valve_pct, kind: analog_in, default: 0.0, tier: T0, description: "Chilled water valve position", unit: "%", range: [0, 100], assumed: true}
+- {name: fan_kw, kind: analog_in, default: 0.0, tier: T0, description: "Air handler fan power", unit: kW, range: [0, 10000], assumed: true}
+- {name: fans_running, kind: binary_in, default: true, tier: T0, description: "Air handlers running", assumed: true}
+- {name: thermally_critical, kind: binary_in, default: false, tier: T0, description: "Supply air above the critical threshold for longer than the hold time", assumed: true}
+- {name: critical_minutes, kind: analog_in, default: 0.0, tier: T0, description: "Time spent thermally critical", unit: min, range: [0, 100000000], assumed: true}
+- {name: leak_alarm, kind: binary_in, default: false, tier: T0, description: "Leak detected in the POD", assumed: true}
+- {name: supply_air_sp_c, kind: analog_setting, default: 22.0, tier: T3, description: "Supply air temperature setpoint", unit: degC, range: [18, 27], assumed: true}
+- {name: zone_t1_c, kind: analog_in, default: 22.0, tier: T0, description: "Zone supply air sensor 1", unit: degC, range: [-40, 150], assumed: true}
+- {name: zone_t2_c, kind: analog_in, default: 22.0, tier: T0, description: "Zone supply air sensor 2", unit: degC, range: [-40, 150], assumed: true}
+- {name: zone_t3_c, kind: analog_in, default: 22.0, tier: T0, description: "Zone supply air sensor 3", unit: degC, range: [-40, 150], assumed: true}
+- {name: zone_t4_c, kind: analog_in, default: 22.0, tier: T0, description: "Zone supply air sensor 4", unit: degC, range: [-40, 150], assumed: true}
+- {name: zone_t5_c, kind: analog_in, default: 22.0, tier: T0, description: "Zone supply air sensor 5", unit: degC, range: [-40, 150], assumed: true}
+- {name: zone_t6_c, kind: analog_in, default: 22.0, tier: T0, description: "Zone supply air sensor 6", unit: degC, range: [-40, 150], assumed: true}
+- {name: zone_sensors_in_mean, kind: counter, default: 6, tier: T0, description: "Zone sensors used in the mean", assumed: true}
+- {name: zone_mean_invalid, kind: binary_in, default: false, tier: T0, description: "No zone sensor is usable", assumed: true}
+- {name: ahu_running, kind: counter, default: 4, tier: T0, description: "Air handlers running", assumed: true}
+- {name: fan_speed_pct, kind: analog_in, default: 75.0, tier: T0, description: "Speed of the running air handlers", unit: "%", range: [0, 100], assumed: true}
+- {name: static_pressure_pa, kind: analog_in, default: 50.0, tier: T0, description: "Supply static pressure", unit: Pa, range: [0, 1000], assumed: true}
+- {name: static_pressure_sp_pa, kind: analog_setting, default: 50.0, tier: T3, description: "Supply static pressure setpoint", unit: Pa, range: [30, 80], assumed: true}

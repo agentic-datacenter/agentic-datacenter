@@ -1,0 +1,26 @@
+# Point templates of the 36 kV switchboard. `{b}` is replaced by the breaker:
+# `inc_1`, `inc_2`, and `fdr_<train>` for each feeder. `for` says which breakers
+# a template applies to. Protection settings are tier T1 (local engineering
+# only); everything else is status. Nothing here is writable over the network,
+# and tripping is tier T0 (SDD 8.5).
+
+- {for: bus, name: bus_v_pu, kind: analog_in, unit: pu, range: [0, 2], default: 0.0, tier: T0, description: Bus voltage, assumed: true}
+- {for: bus, name: bus_f_pu, kind: analog_in, unit: pu, range: [0, 2], default: 0.0, tier: T0, description: Bus frequency, assumed: true}
+- {for: bus, name: bus_undervoltage, kind: binary_in, default: false, tier: T0, description: Undervoltage element operated (PTUV), assumed: true}
+- {for: bus, name: bus_overvoltage, kind: binary_in, default: false, tier: T0, description: Overvoltage element operated (PTOV), assumed: true}
+- {for: bus, name: bus_underfrequency, kind: binary_in, default: false, tier: T0, description: Underfrequency element operated (PTUF), assumed: true}
+- {for: bus, name: bus_overfrequency, kind: binary_in, default: false, tier: T0, description: Overfrequency element operated (PTOF), assumed: true}
+- {for: bus, name: bus_element_delay_s, kind: analog_setting, unit: s, range: [0, 60], default: 2.0, tier: T1, description: Definite time of the bus voltage and frequency elements, assumed: true}
+
+- {for: any, name: "{b}_brk_closed", kind: binary_in, default: true, tier: T0, description: Breaker closed (XCBR), assumed: true}
+- {for: any, name: "{b}_trip", kind: enum_status, values: [NONE, PTOC, PIOC], default: NONE, tier: T0, description: Element that tripped the breaker (PTRC), assumed: true}
+- {for: any, name: "{b}_current_a", kind: analog_in, unit: A, range: [0, 1000000], default: 0.0, tier: T0, description: Phase current (MMXU), assumed: true}
+- {for: any, name: "{b}_kw", kind: analog_in, unit: kW, range: [0, 1000000], default: 0.0, tier: T0, description: Real power (MMXU), assumed: true}
+- {for: any, name: "{b}_operate_s", kind: analog_in, unit: s, range: [0, 100000], default: 0.0, tier: T0, description: Time from pickup to operation at the last trip, assumed: true}
+
+- {for: feeder, name: "{b}_pickup_a", kind: analog_setting, unit: A, range: [1, 10000], default: 60.0, tier: T1, description: Inverse-time pickup current (PTOC), assumed: true}
+- {for: feeder, name: "{b}_tms", kind: analog_setting, range: [0.025, 1.5], default: 0.1, tier: T1, description: Time multiplier setting (PTOC), assumed: true}
+- {for: feeder, name: "{b}_inst_a", kind: analog_setting, unit: A, range: [1, 100000], default: 600.0, tier: T1, description: Instantaneous pickup current (PIOC), assumed: true}
+- {for: incomer, name: "{b}_pickup_a", kind: analog_setting, unit: A, range: [1, 10000], default: 180.0, tier: T1, description: Inverse-time pickup current (PTOC), assumed: true}
+- {for: incomer, name: "{b}_tms", kind: analog_setting, range: [0.025, 1.5], default: 0.2, tier: T1, description: Time multiplier setting (PTOC), assumed: true}
+- {for: incomer, name: "{b}_inst_a", kind: analog_setting, unit: A, range: [1, 100000], default: 2000.0, tier: T1, description: Instantaneous pickup current (PIOC), assumed: true}

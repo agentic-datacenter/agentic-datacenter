@@ -1,0 +1,19 @@
+# Points of the chiller plant controller. Enables are tier T2; the supply
+# setpoint and the staging thresholds are tier T3 (SDD 7.1, 8.2).
+- {name: ch1_state, kind: enum_status, values: ["OFF", STARTING, RUNNING, TRIPPED, LOCKED_OUT], default: RUNNING, tier: T0, description: State of chiller 1, assumed: true}
+- {name: ch1_enable, kind: binary_cmd, default: true, tier: T2, description: Chiller 1 enabled, assumed: true}
+- {name: ch2_state, kind: enum_status, values: ["OFF", STARTING, RUNNING, TRIPPED, LOCKED_OUT], default: RUNNING, tier: T0, description: State of chiller 2, assumed: true}
+- {name: ch2_enable, kind: binary_cmd, default: true, tier: T2, description: Chiller 2 enabled, assumed: true}
+- {name: ch3_state, kind: enum_status, values: ["OFF", STARTING, RUNNING, TRIPPED, LOCKED_OUT], default: "OFF", tier: T0, description: State of chiller 3, assumed: true}
+- {name: ch3_enable, kind: binary_cmd, default: true, tier: T2, description: Chiller 3 enabled, assumed: true}
+- {name: lead_chiller, kind: enum_status, values: ["1", "2", "3"], default: "1", tier: T2, description: Lead chiller of the rotation, assumed: true}
+- {name: chws_c, kind: analog_in, default: 18.0, tier: T0, description: "Chilled water supply temperature", unit: degC, range: [-10, 150], assumed: true}
+- {name: cooling_kw, kind: analog_in, default: 0.0, tier: T0, description: "Heat removed by the running chillers", unit: kW, range: [0, 1000000], assumed: true}
+- {name: power_kw, kind: analog_in, default: 0.0, tier: T0, description: "Electrical power of the running chillers", unit: kW, range: [0, 1000000], assumed: true}
+- {name: plr_pct, kind: analog_in, default: 0.0, tier: T0, description: "Part-load ratio of the running chillers", unit: "%", range: [0, 200], assumed: true}
+- {name: capacity_kw, kind: analog_in, default: 0.0, tier: T0, description: "Capacity of the running chillers at this ambient", unit: kW, range: [0, 1000000], assumed: true}
+- {name: chws_sp_c, kind: analog_setting, default: 18.0, tier: T3, description: "Chilled water supply setpoint", unit: degC, range: [16, 21], assumed: true}
+- {name: stage_up_pct, kind: analog_setting, default: 85.0, tier: T3, description: "Part-load ratio above which another chiller is started", unit: "%", range: [60, 100], assumed: true}
+- {name: stage_down_pct, kind: analog_setting, default: 50.0, tier: T3, description: "Part-load ratio below which a chiller is stopped", unit: "%", range: [20, 70], assumed: true}
+- {name: load_kw, kind: analog_in, default: 0.0, tier: T0, description: "Heat returned to the plant", unit: kW, range: [0, 1000000], assumed: true}
+- {name: unit_capacity_kw, kind: analog_in, default: 0.0, tier: T0, description: "Capacity of one chiller at this ambient", unit: kW, range: [0, 1000000], assumed: true}

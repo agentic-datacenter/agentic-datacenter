@@ -1,0 +1,9 @@
+# Pinned REMORA commit for Agentic Datacenter. See docs/design/SDD-ADC-001.md, section 5.2.
+# The commit SHA below is the value for uv.lock. Never use the tag object's SHA.
+repo:        https://github.com/darklordVirtual/REMORA-research
+tag:         dcsim-pin-2026-11-13c
+commit:      06e7a02b49563b4cbbfec1e573cde026462c3240
+tag_object:  1b8ac6975bd109b6b4b20c4c5aabf0f43d221420   # reference only
+date:        2026-11-13
+reason:      Adds the policy what-if to remora.sdk (REMORA #1236), for Agentic Datacenter What-If.
+supersedes:  dcsim-pin-2026-11-13b (fb7f25020284ffac01a85ff39ce6fdb06614c90f)

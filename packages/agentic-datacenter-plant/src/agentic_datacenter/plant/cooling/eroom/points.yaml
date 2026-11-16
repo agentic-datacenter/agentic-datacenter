@@ -1,0 +1,6 @@
+# Points of the cooling units of one electrical room.
+- {name: room_c, kind: analog_in, default: 24.0, tier: T0, description: "Return air temperature of the room", unit: degC, range: [-40, 200], assumed: true}
+- {name: coil_kw, kind: analog_in, default: 0.0, tier: T0, description: "Heat moved to chilled water", unit: kW, range: [0, 100000], assumed: true}
+- {name: valve_pct, kind: analog_in, default: 0.0, tier: T0, description: "Control valve position", unit: "%", range: [0, 100], assumed: true}
+- {name: fan_kw, kind: analog_in, default: 0.0, tier: T0, description: "Fan power of the units", unit: kW, range: [0, 10000], assumed: true}
+- {name: return_air_sp_c, kind: analog_setting, default: 24.0, tier: T3, description: "Return air temperature setpoint", unit: degC, range: [18, 30], assumed: true}

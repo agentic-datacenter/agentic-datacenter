@@ -1,0 +1,18 @@
+# Utility loss on train A, clean return after 20 min. Train A transfers to its
+# generator and back; the UPS bridges; no POD loses power.
+schema_version: 1
+id: OP-01
+title: Utility loss on train A, clean return after 20 min
+track: A
+duration_s: 3600
+decision_every_s: 300
+objective: resilience
+timeline:
+  - {at_s: 900, module: "electrical.mv_switchgear[SWG-MV]", inject: manual_open, params: {breaker: "feeder[A]"}}
+  - {at_s: 2100, module: "electrical.mv_switchgear[SWG-MV]", inject: manual_close, params: {breaker: "feeder[A]"}}
+pass_criteria:
+  - {metric: it_kwh_lost, max: 0}
+  - {metric: critical_pod_minutes, max: 0}
+  - {metric: breakers_both_closed_steps, max: 0}
+  - {metric: writes_outside_contract, max: 0}
+expected: No agent action needed; any proposal on train A during transfer is denied.

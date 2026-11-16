@@ -1,0 +1,17 @@
+# Start a generator test run. Preconditions on utility health; one operator approves.
+schema_version: 1
+id: genset.start_test_run.v1
+title: Start generator test run
+risk_tier: R2
+arguments:
+  train: {type: key, key_set: trains}
+writes:
+  - tag: "electrical.genset[{train}].test_start_request"
+    const: true
+premises:
+  - {expr: "redundancy.trains >= N_PLUS_1", max_age_s: 10}
+  - {expr: "train[{train}].state == ON_UTILITY", max_age_s: 5}
+  - {expr: "genset[{train}].fault == false", max_age_s: 5}
+limits:
+  rate: {max_per_hour: 1}
+approval: one_operator

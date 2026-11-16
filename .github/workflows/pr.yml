@@ -1,0 +1,112 @@
+# Runs on every pull request. Budget: 10 minutes. Pull requests from forks get no secrets.
+# Every job runs in one digest-pinned image with the frozen lock, and every
+# third-party action is pinned by commit SHA (ADC-CI-003, SDD 12.4).
+name: pr
+on:
+  pull_request:
+  merge_group:
+
+permissions:
+  contents: read
+concurrency:
+  group: pr-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  static:
+    runs-on: ubuntu-24.04
+    container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
+    timeout-minutes: 10
+    steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: uv sync --frozen --group iec61850
+      - run: uv lock --check
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run mypy
+      - name: Layer and module contracts (without the REMORA binding, which needs repository access)
+        run: uv run python tools/core_contracts.py build/importlinter-core.toml && uv run lint-imports --config build/importlinter-core.toml
+      - run: uv run agentic-datacenter modules lock --check
+      - run: uv run agentic-datacenter profile schema --check
+      - name: Validate every profile
+        run: for f in profiles/*.yaml; do uv run agentic-datacenter profile validate "$f"; done
+  unit:
+    runs-on: ubuntu-24.04
+    container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [agentic-datacenter-core, agentic-datacenter-data, agentic-datacenter-governance, agentic-datacenter-net, agentic-datacenter-plant, agentic-datacenter-scenarios, agentic-datacenter-supervisory, agentic-datacenter-whatif]
+    steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install only this distribution and what it declares
+        run: uv sync --frozen --package ${{ matrix.package }} --group test
+      - name: Test it alone
+        run: if [ -d "packages/${{ matrix.package }}/tests" ]; then uv run --frozen --no-sync pytest "packages/${{ matrix.package }}/tests"; else echo "no tests yet"; fi
+  property:
+    runs-on: ubuntu-24.04
+    container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
+    timeout-minutes: 10
+    steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: uv sync --frozen
+      - name: Property tests, derandomized
+        run: uv run pytest tests/property
+        env:
+          ADC_HYPOTHESIS_PROFILE: pr
+  conformance:
+    runs-on: ubuntu-24.04
+    container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
+    timeout-minutes: 10
+    steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: uv sync --frozen
+      - run: uv run pytest tests/conformance
+  traceability:
+    runs-on: ubuntu-24.04
+    container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
+    timeout-minutes: 10
+    steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: uv sync --frozen
+      - name: Whole suite, recording which requirement each test verifies
+        run: uv run pytest --req-report build/requirements.json
+      - name: Every requirement due at this stage has a passing test and an owner
+        run: uv run python tools/traceability.py --report build/requirements.json
+  docs:
+    runs-on: ubuntu-24.04
+    container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
+    timeout-minutes: 10
+    steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: uv sync --frozen --group docs
+      - name: Generated reference pages are current
+        run: uv run python tools/gen_reference.py --check
+      - name: Site builds in strict mode
+        run: uv run mkdocs build --strict
+  supply-chain:
+    runs-on: ubuntu-24.04
+    container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
+    timeout-minutes: 10
+    steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: uv sync --frozen --group audit
+      - run: uv lock --check
+      - name: Known vulnerabilities
+        run: uv export --frozen --no-emit-workspace --no-hashes --format requirements-txt > build-requirements.txt && uv run pip-audit -r build-requirements.txt
+      - name: Provenance terms and committed secrets
+        run: uv run pytest tests/conformance/test_ci.py -k "forbidden_term or notices"

@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentic-datacenter-whatif"
+version = "0.0.0"
+description = "Agentic Datacenter what-if: one proposed change played as baseline, hypothetical physical and governed branches, with a contract preflight and REMORA's policy analysis beside them (ADR 0019)."
+readme = "README.md"
+license = "BUSL-1.1"
+requires-python = ">=3.12"
+dependencies = [
+    "agentic-datacenter-core",
+    "agentic-datacenter-supervisory",
+    "agentic-datacenter-governance",
+    "agentic-datacenter-scenarios",
+    "fastapi",
+    "pydantic>=2",
+    "pyyaml",
+]
+
+[tool.uv.sources]
+agentic-datacenter-core = { workspace = true }
+agentic-datacenter-supervisory = { workspace = true }
+agentic-datacenter-governance = { workspace = true }
+agentic-datacenter-scenarios = { workspace = true }
+
+[project.entry-points."agentic_datacenter.commands"]
+whatif = "agentic_datacenter.whatif.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentic_datacenter"]
+
+[dependency-groups]
+test = ["pytest", "hypothesis", "httpx"]
+
+[tool.agentic-datacenter]
+requirements = [
+    "ADC-WIF-001", "ADC-WIF-002", "ADC-WIF-003", "ADC-WIF-004", "ADC-WIF-005",
+]

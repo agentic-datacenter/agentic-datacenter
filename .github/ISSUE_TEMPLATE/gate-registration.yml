@@ -1,0 +1,53 @@
+name: Gate registration
+description: Register a gate for a public-test season before its beacon round (docs/bench/PUBLIC_TEST.md).
+title: "Gate registration: <gate> for season <n>"
+labels: ["gate-registration"]
+body:
+  - type: input
+    id: season
+    attributes:
+      label: Season
+    validations:
+      required: true
+  - type: input
+    id: gate
+    attributes:
+      label: Gate name and project
+    validations:
+      required: true
+  - type: dropdown
+    id: attached
+    attributes:
+      label: Attached as
+      options:
+        - Python package (agentic_datacenter.gates entry point)
+        - Service over HTTP (http_gate)
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Exact version that will run
+      description: Commit SHA, package hash or container digest. A gate changed after the round is a different gate.
+    validations:
+      required: true
+  - type: input
+    id: profile
+    attributes:
+      label: Operating profile
+      description: DECISION_ONLY, SHADOW, ... as `agentic-datacenter gate check` prints it.
+    validations:
+      required: true
+  - type: textarea
+    id: check
+    attributes:
+      label: Output of agentic-datacenter gate check
+      render: text
+    validations:
+      required: true
+  - type: checkboxes
+    id: authors
+    attributes:
+      label: Independence
+      options:
+        - label: The people who wrote this gate did not write Agentic Datacenter's contracts, scenarios or oracle.

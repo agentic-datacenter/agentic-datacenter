@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentic-datacenter-iec61850"
+version = "0.0.0"
+description = "Agentic Datacenter Protocol, optional: IEC 61850 MMS server per relay and SCL generation. The only distribution that may use the GPLv3 protocol library."
+readme = "README.md"
+license = "GPL-3.0-or-later"
+requires-python = ">=3.12"
+dependencies = [
+    "agentic-datacenter-core",
+    "agentic-datacenter-supervisory",
+    # libiec61850 1.6.1 as a wheel (GPL-3.0). Linux only: there is no wheel and no
+    # source distribution for other systems, where this package still installs
+    # and generates SCL but serves nothing (ADR 0017).
+    "pyiec61850-ng>=1.6.1.10,<1.6.2; sys_platform == 'linux'",
+]
+
+[project.entry-points."agentic_datacenter.commands"]
+scl = "agentic_datacenter_iec61850.cli:main"
+
+[tool.uv.sources]
+agentic-datacenter-core = { workspace = true }
+agentic-datacenter-supervisory = { workspace = true }
+agentic-datacenter-plant = { workspace = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentic_datacenter_iec61850"]
+
+[dependency-groups]
+# The tests build the relays from the real plant; the package itself does not import it.
+test = ["pytest", "hypothesis", "agentic-datacenter-plant"]
+
+[tool.agentic-datacenter]
+requirements = ["ADC-IEC-001", "ADC-IEC-002", "ADC-IEC-003", "ADC-IEC-005"]

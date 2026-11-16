@@ -1,0 +1,208 @@
+# The public default facility (ADC-PRV-003).
+#
+# A single-building modular data center: 2,400 kW of IT load in 16 PODs, three
+# N+1 power trains and three N+1 air-cooled chillers. Every value here was
+# chosen independently as a round number so the plant balances; none is taken
+# from a restricted source. Each value carries `source` or `assumed: true`
+# (ADC-PRV-004).
+#
+# Modules still at fidelity F0 are stubs; their sizing parameters are added
+# with the model that uses them.
+
+schema_version: 1
+name: generic_dc
+description: Generic 2.4 MW modular data center, three trains, sixteen PODs.
+site: DC1
+
+key_sets:
+  trains: [A, B, C]
+  pods: ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16"]
+
+tables:
+  # Each POD is fed from two of the three trains, in rotation A+B, B+C, C+A.
+  pod_feeds:
+    - {pods: "01", a: A, b: B}
+    - {pods: "02", a: B, b: C}
+    - {pods: "03", a: C, b: A}
+    - {pods: "04", a: A, b: B}
+    - {pods: "05", a: B, b: C}
+    - {pods: "06", a: C, b: A}
+    - {pods: "07", a: A, b: B}
+    - {pods: "08", a: B, b: C}
+    - {pods: "09", a: C, b: A}
+    - {pods: "10", a: A, b: B}
+    - {pods: "11", a: B, b: C}
+    - {pods: "12", a: C, b: A}
+    - {pods: "13", a: A, b: B}
+    - {pods: "14", a: B, b: C}
+    - {pods: "15", a: C, b: A}
+    - {pods: "16", a: A, b: B}
+
+modules:
+  - id: electrical.utility
+    instances: [INC-1, INC-2]
+  - id: electrical.mv_switchgear
+    instances: [SWG-MV]
+  - id: electrical.power_train
+    for_each: trains
+    instance: "{trains}"
+  - id: electrical.genset
+    for_each: trains
+    instance: "{trains}"
+    params:
+      rated_kw: {value: 1800.0, unit: kW, assumed: true}
+      start_s: {value: 10.0, unit: s, assumed: true}
+      fuel_l_per_h_full: {value: 430.0, unit: l/h, assumed: true}
+      fuel_l_per_h_quarter: {value: 130.0, unit: l/h, assumed: true}
+  - id: electrical.ups
+    for_each: trains
+    instance: "{trains}"
+    params:
+      rated_kw: {value: 1200.0, unit: kW, assumed: true}
+      autonomy_s: {value: 300.0, unit: s, assumed: true}
+      efficiency: {value: 0.96, unit: "-", assumed: true}
+  - id: electrical.it_load
+    for_each: pods
+    instance: "{pods}"
+    params:
+      design_kw: {value: 150.0, unit: kW, assumed: true}
+      airflow_kg_s: {value: 12.0, unit: kg/s, assumed: true}
+  - id: cooling.weather
+    instances: [SITE]
+    params:
+      dry_bulb_c: {value: 20.0, unit: degC, assumed: true}
+      daily_swing_c: {value: 0.0, unit: K, assumed: true}
+      rel_humidity_pct: {value: 50.0, unit: "%", assumed: true}
+  - id: cooling.chw_plant
+    instances: [CHW]
+    params:
+      # Sized so that two chillers carry the design heat load below the
+      # stage-up threshold, which leaves the third as standby.
+      chiller_kw: {value: 1600.0, unit: kW, assumed: true}
+      cop: {value: 4.5, unit: "-", assumed: true}
+      design_ambient_c: {value: 35.0, unit: degC, assumed: true}
+      restart_lockout_s: {value: 180.0, unit: s, assumed: true}
+      loop_kj_per_k: {value: 83720.0, unit: kJ/K, assumed: true}
+  - id: cooling.tes
+    instances: [TES-1]
+    params:
+      volume_m3: {value: 45.0, unit: m3, assumed: true}
+      usable_rise_k: {value: 8.0, unit: K, assumed: true}
+      recharge_kw: {value: 250.0, unit: kW, assumed: true}
+  - id: cooling.pump_station
+    instances: [PHPS]
+    params:
+      pump_flow_kg_s: {value: 45.0, unit: kg/s, assumed: true}
+      pump_kw: {value: 30.0, unit: kW, assumed: true}
+  - id: cooling.pod
+    for_each: pods
+    instance: "{pods}"
+    params:
+      design_it_kw: {value: 150.0, unit: kW, assumed: true}
+      design_airflow_kg_s: {value: 12.0, unit: kg/s, assumed: true}
+      # Calibrated to the 3 to 6 minute time-to-critical target (SDD 6.2).
+      thermal_mass_kj_per_k: {value: 4500.0, unit: kJ/K, assumed: true}
+      fan_kw: {value: 6.0, unit: kW, assumed: true}
+      critical_c: {value: 32.0, unit: degC, assumed: true}
+  - id: cooling.eroom
+    for_each: trains
+    instance: "{trains}"
+    params:
+      design_heat_kw: {value: 33.3, unit: kW, assumed: true}
+      fan_kw: {value: 4.0, unit: kW, assumed: true}
+  - id: fuel
+    instances: [FUEL]
+    params:
+      bulk_tank_m3: {value: 25.0, unit: m3, assumed: true}
+      sub_base_tank_l: {value: 4000.0, unit: l, assumed: true}
+      low_switch_pct: {value: 50.0, unit: "%", assumed: true}
+      high_switch_pct: {value: 90.0, unit: "%", assumed: true}
+      transfer_l_per_h: {value: 1500.0, unit: l/h, assumed: true}
+  - id: life_safety
+    instances: [LS]
+  - id: security
+    instances: [SEC]
+  - id: sensors
+    instances: [SENSORS]
+
+connections:
+  # --- medium voltage -------------------------------------------------------
+  - {consumer: "electrical.mv_switchgear[SWG-MV].incomer_1", provider: "electrical.utility[INC-1].supply"}
+  - {consumer: "electrical.mv_switchgear[SWG-MV].incomer_2", provider: "electrical.utility[INC-2].supply"}
+
+  # --- one power train per key ---------------------------------------------
+  - consumer: "electrical.power_train[{trains}].utility_feed"
+    provider: "electrical.mv_switchgear[SWG-MV].feeder[{trains}]"
+    for_each: trains
+  - consumer: "electrical.power_train[{trains}].gen_output"
+    provider: "electrical.genset[{trains}].output"
+    for_each: trains
+  - consumer: "electrical.power_train[{trains}].gen_ready_to_load"
+    provider: "electrical.genset[{trains}].ready_to_load"
+    for_each: trains
+  - consumer: "electrical.power_train[{trains}].gen_fault"
+    provider: "electrical.genset[{trains}].fault"
+    for_each: trains
+  - consumer: "electrical.genset[{trains}].start_request"
+    provider: "electrical.power_train[{trains}].gen_start_request"
+    for_each: trains
+  - consumer: "electrical.genset[{trains}].fuel"
+    provider: "fuel[FUEL].supply[{trains}]"
+    for_each: trains
+  - consumer: "electrical.ups[{trains}].input"
+    provider: "electrical.power_train[{trains}].lv_bus"
+    for_each: trains
+
+  # --- IT load: two UPS feeds per POD --------------------------------------
+  - consumer: "electrical.it_load[{pods}].feed_a"
+    provider: "electrical.ups[{a}].output"
+    with: pod_feeds
+  - consumer: "electrical.it_load[{pods}].feed_b"
+    provider: "electrical.ups[{b}].output"
+    with: pod_feeds
+  - consumer: "electrical.it_load[{pods}].epo"
+    provider: "life_safety[LS].pod_epo[{pods}]"
+    for_each: pods
+
+  # --- chilled water, in series: plant, storage, pumps, consumers ----------
+  - {consumer: "cooling.chw_plant[CHW].ambient", provider: "cooling.weather[SITE].ambient"}
+  - {consumer: "cooling.chw_plant[CHW].power_1", provider: "electrical.power_train[A].lv_bus"}
+  - {consumer: "cooling.chw_plant[CHW].power_2", provider: "electrical.power_train[B].lv_bus"}
+  - {consumer: "cooling.chw_plant[CHW].power_3", provider: "electrical.power_train[C].lv_bus"}
+  - {consumer: "cooling.tes[TES-1].chws_in", provider: "cooling.chw_plant[CHW].chws"}
+  - {consumer: "cooling.pump_station[PHPS].chws_in", provider: "cooling.tes[TES-1].chws_out"}
+  - {consumer: "cooling.pump_station[PHPS].power_1", provider: "electrical.power_train[A].lv_bus"}
+  - {consumer: "cooling.pump_station[PHPS].power_2", provider: "electrical.power_train[B].lv_bus"}
+  - {consumer: "cooling.pump_station[PHPS].power_3", provider: "electrical.power_train[C].lv_bus"}
+
+  # --- POD cooling ----------------------------------------------------------
+  - consumer: "cooling.pod[{pods}].chw"
+    provider: "cooling.pump_station[PHPS].chw"
+    for_each: pods
+  - consumer: "cooling.pod[{pods}].it_heat"
+    provider: "electrical.it_load[{pods}].heat"
+    for_each: pods
+  - consumer: "cooling.pod[{pods}].fan_power"
+    provider: "electrical.power_train[{a}].lv_bus"
+    with: pod_feeds
+  - consumer: "cooling.pod[{pods}].fan_power_b"
+    provider: "electrical.power_train[{b}].lv_bus"
+    with: pod_feeds
+  - consumer: "cooling.pod[{pods}].fire_stop"
+    provider: "life_safety[LS].pod_fire[{pods}]"
+    for_each: pods
+
+  # --- electrical room cooling ---------------------------------------------
+  - consumer: "cooling.eroom[{trains}].chw"
+    provider: "cooling.pump_station[PHPS].chw"
+    for_each: trains
+  - consumer: "cooling.eroom[{trains}].ups_heat"
+    provider: "electrical.ups[{trains}].heat"
+    for_each: trains
+  - consumer: "cooling.eroom[{trains}].power"
+    provider: "electrical.power_train[{trains}].lv_bus"
+    for_each: trains
+
+  # --- auxiliaries ----------------------------------------------------------
+  - {consumer: "fuel[FUEL].power", provider: "electrical.power_train[A].lv_bus"}
+  - {consumer: "life_safety[LS].power", provider: "electrical.power_train[B].lv_bus"}

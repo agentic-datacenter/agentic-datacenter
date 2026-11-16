@@ -1,0 +1,15 @@
+# Points of fire and life safety. A name that starts with `pod_` is declared
+# once here and exists once per POD: `pod_smoke_level` becomes
+# `pod_07_smoke_level` for POD 07. Every point is tier T0: nothing here can be
+# written through any network path.
+- {name: panel_state, kind: enum_status, values: [NORMAL, PRE_ALARM, ALARM, FAULT], default: NORMAL, tier: T0, description: "State of the fire alarm panel", assumed: true}
+- {name: alarm_fire, kind: binary_in, default: false, tier: T0, description: "Fire alarm: air sampling at a fire threshold in at least one POD", assumed: true}
+- {name: alarm_panel_fault, kind: binary_in, default: false, tier: T0, description: "Fire alarm panel fault, or the panel has lost its supply", assumed: true}
+- {name: sprinkler_pressure_ok, kind: binary_in, default: true, tier: T0, description: "Sprinkler main at pressure", assumed: true}
+- {name: fire_pump_called, kind: binary_in, default: false, tier: T0, description: "Fire pump called by a sprinkler pressure drop", assumed: true}
+- {name: fire_pump_running, kind: binary_in, default: false, tier: T0, description: "Fire pump running", assumed: true}
+- {name: alarm_fire_pump_failed, kind: binary_in, default: false, tier: T0, description: "Fire pump called and not running", assumed: true}
+- {name: power_kw, kind: analog_in, default: 0.0, tier: T0, description: "Power drawn by the fire pump", unit: kW, range: [0, 1000], assumed: true}
+- {name: pod_smoke_level, kind: enum_status, values: [NORMAL, ALERT, ACTION, FIRE_1, FIRE_2], default: NORMAL, tier: T0, description: "Air-sampling detection threshold reached", assumed: true}
+- {name: pod_fire_confirmed, kind: binary_in, default: false, tier: T0, description: "Confirmed fire: air handlers stopped and dampers closed, latched until reset at the panel", assumed: true}
+- {name: pod_epo_active, kind: binary_in, default: false, tier: T0, description: "Emergency power off operated, latched until reset at the station", assumed: true}

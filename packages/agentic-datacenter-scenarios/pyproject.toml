@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentic-datacenter-scenarios"
+version = "0.0.0"
+description = "Agentic Datacenter Harness: Scenario runner, fault and attack primitives, oracle, metrics and evidence bundles."
+readme = "README.md"
+license = "BUSL-1.1"
+requires-python = ">=3.12"
+dependencies = [
+    "agentic-datacenter-core",
+    "agentic-datacenter-plant",
+    "agentic-datacenter-supervisory",
+    "agentic-datacenter-net",
+    "agentic-datacenter-governance",
+]
+
+[project.optional-dependencies]
+# Evidence for runs on a measured input series (ADR 0018).
+measured = ["agentic-datacenter-data"]
+
+[tool.uv.sources]
+agentic-datacenter-core = { workspace = true }
+agentic-datacenter-data = { workspace = true }
+agentic-datacenter-plant = { workspace = true }
+agentic-datacenter-supervisory = { workspace = true }
+agentic-datacenter-net = { workspace = true }
+agentic-datacenter-governance = { workspace = true }
+
+[project.entry-points."agentic_datacenter.commands"]
+bench = "agentic_datacenter.scenarios.cli:bench"
+demo = "agentic_datacenter.scenarios.cli:demo"
+scenario = "agentic_datacenter.scenarios.cli:scenario"
+gate = "agentic_datacenter.scenarios.cli:gate"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentic_datacenter"]
+
+[dependency-groups]
+test = ["pytest", "hypothesis"]
+
+[tool.agentic-datacenter]
+requirements = [
+    "ADC-FID-004",
+    "ADC-BEN-001", "ADC-BEN-002", "ADC-BEN-003", "ADC-BEN-004", "ADC-BEN-005",
+    "ADC-BEN-006", "ADC-BEN-007", "ADC-BEN-008", "ADC-BEN-009",
+    "ADC-EVD-001",
+]
