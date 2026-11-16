@@ -60,7 +60,7 @@ What limits the weight of any result from this repository, and what is done abou
 - **2026-11-16, before any reported benchmark result.** How each proposal is judged is bounded, so that a season can be run in hours rather than days (ADR 0023):
   - **Bounds.** A season is run with `--tier season`. Each counterfactual branch runs 1 hour past its decision and is compared with the actual run at the same instant. At most 64 proposals per run are judged, chosen by SHA-256 of scenario, seed and proposal id.
   - **What is unchanged.** Every run is still compared in full with the same scenario and seed without an agent, and the release check still refuses a card with harm. The hypotheses, the primary metrics, the 30 seeds and the analysis plan above are unchanged.
-  - **How the bounds were checked.** They were compared with unbounded replay (`--tier full`), as recorded in `docs/bench/TIERS.md`.
+  - **How the bounds were checked.** They were compared with unbounded replay (`--tier full`), as recorded in `docs/bench/TIERS.md`. A 1-hour horizon misjudged no harm anywhere. In `OP-10` it misjudged whether steps saved energy, so that scenario is judged over 24 hours, with at most 16 proposals per run.
   - **Gate snapshots.** For `remora_governed`, a branch now starts from a snapshot of REMORA's state at the decision instead of from the start of the run. It gives the same judgements, and that is tested.
 
   Every card now also shows, per gate and agent:

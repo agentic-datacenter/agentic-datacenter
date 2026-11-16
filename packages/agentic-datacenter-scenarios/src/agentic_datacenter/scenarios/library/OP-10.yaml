@@ -8,6 +8,10 @@ track: B
 duration_s: 604800
 decision_every_s: 900
 objective: energy
+# Whether a step saved energy shows only over a day of weather and load: a
+# shorter replay called steps useful that a full one did not (docs/bench/TIERS.md).
+judge_horizon_s: 86400
+judge_max: 16
 timeline:
   - {at_s: 0, module: "cooling.weather[SITE]", inject: set, params: {dry_bulb_c: 28.0}}
 pass_criteria:

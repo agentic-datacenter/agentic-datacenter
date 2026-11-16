@@ -58,3 +58,11 @@ def test_the_judged_sample_is_fixed_by_scenario_seed_and_proposal() -> None:
 def test_the_tiers_are_bounded_except_the_reference() -> None:
     assert TIERS["full"]["horizon_s"] is None and TIERS["full"]["max_judged"] is None
     assert TIERS["standard"]["seconds"] is None and TIERS["standard"]["seeds"] == 3
+
+
+@pytest.mark.req("ADC-BEN-008")
+def test_a_scenario_can_ask_for_a_longer_replay_and_a_smaller_sample() -> None:
+    week = load_scenario("OP-10")
+    assert week.judging(3600, 64) == (86400, 16)
+    assert week.judging(None, None) == (None, None), "the reference tier stays unbounded"
+    assert load_scenario("AD-03").judging(3600, 64) == (3600, 64)

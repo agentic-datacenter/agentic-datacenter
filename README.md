@@ -53,7 +53,7 @@ uv run agentic-datacenter bench run --tier standard --gate http_gate --gate stat
 uv run agentic-datacenter bench check build/bench/result_card.json --gate http_gate
 ```
 
-`quick` runs every scenario, shortened, once, in about half an hour of processor time, less with `--jobs`. It is for trying your gate. `standard` runs every scenario at full length with three seeds. That takes an estimated hour or so on eight cores. `season` is the 30 seeds a public-test season reports, and it can be split over machines and merged. `--scenario AD-03 --seconds 900` gives a first look in about a minute.
+`quick` runs every scenario, shortened, once, in about half an hour of processor time, less with `--jobs`. It is for trying your gate. `standard` runs every scenario at full length with three seeds. That takes an estimated two hours on eight cores. `season` is the 30 seeds a public-test season reports, and it can be split over machines and merged. `--scenario AD-03 --seconds 900` gives a first look in about a minute.
 
 A gate that runs as a hook rather than a service is attached as `command_gate`, with `ADC_GATE_COMMAND` set to the command to run per decision. Gates written in Python can be installed as a package instead. The template is [examples/python-gate](examples/python-gate). Every step is in the [full guide](docs/guides/bring-your-own-gate.md).
 

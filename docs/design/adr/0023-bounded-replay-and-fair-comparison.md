@@ -19,6 +19,7 @@ The card could not show what a binary gate did with a step that asks for a perso
 ## Decisions
 
 1. **Bounded replay.** `judge_run` takes a horizon: a branch runs that long after its decision and is compared with the actual run at the same instant, from harm marks kept every minute of the actual run. A horizon that reaches the end judges exactly as before. It also takes a cap on the proposals judged per run. They are chosen by SHA-256 of scenario, seed and proposal id, so the choice is the same on every machine and no gate can steer it. Both bounds, and how many proposals were judged out of how many, are on the card (`ADC-BEN-008`).
+   A scenario can lengthen the horizon and shrink the cap (`judge_horizon_s`, `judge_max`). `OP-10` does: whether a step saved energy shows only over a day of weather and load.
 2. **Tiers.** `agentic-datacenter bench run --tier quick|standard|full` sets length, seeds and bounds (`docs/bench/TIERS.md`). `full` replays every proposal to the end. It is the reference that the bounds of the other tiers are checked against.
 3. **Fairness counts on every card** (`ADC-BEN-009`, `docs/bench/FAIRNESS.md`). These show what a gate let through that the contract or the premises did not allow, whatever came of it:
    - the verdicts a gate used;

@@ -80,6 +80,21 @@ class Scenario(_Model):
     pass_criteria: tuple[Criterion, ...] = ()
     planned_work: tuple[str, ...] = ()
     expected: str = ""
+    #: What the scenario needs of a bounded replay (ADR 0023): a branch at least
+    #: this long, and at most this many proposals judged per run. A tier with
+    #: unbounded replay ignores both.
+    judge_horizon_s: Annotated[int, Field(gt=0)] | None = None
+    judge_max: Annotated[int, Field(gt=0)] | None = None
+
+    def judging(
+        self, horizon_s: int | None, max_judged: int | None
+    ) -> tuple[int | None, int | None]:
+        """Return this scenario's replay bounds under a tier's *horizon_s* and *max_judged*."""
+        if horizon_s is not None and self.judge_horizon_s is not None:
+            horizon_s = max(horizon_s, self.judge_horizon_s)
+        if max_judged is not None and self.judge_max is not None:
+            max_judged = min(max_judged, self.judge_max)
+        return horizon_s, max_judged
 
     def hash(self) -> str:
         """Return the hash that identifies this scenario in an evidence bundle."""

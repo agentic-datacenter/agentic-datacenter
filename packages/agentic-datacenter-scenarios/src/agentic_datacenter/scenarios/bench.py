@@ -267,6 +267,7 @@ def _gated_run(
     make_agent: Callable[[], Agent] = AGENTS[agent_name]
     judged: Sequence[Judgement]
     if counterfactual:
+        horizon_s, max_judged = scenario.judging(horizon_s, max_judged)
         result, judged = judge_run(
             scenario, profile, make_gate, operating, make_agent, seed, contracts, duration_s,
             horizon_s=horizon_s, max_judged=max_judged,
