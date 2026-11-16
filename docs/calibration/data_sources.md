@@ -1,15 +1,15 @@
-# Candidate measurement datasets for Agentic Datacenter calibration
+# Candidate measurement datasets for Agentic-Datacenter calibration
 
 **Recorded:** 2026-11-14  
 **Status:** Source register and calibration plan only. No dataset was imported, calibrated or validated as part of this note.
 
 ## Purpose
 
-Replace unnecessarily static assumptions in Agentic Datacenter's energy and thermal What-If calculations with traceable, time-varying measurements. Calibrate individual physical submodels first; do **not** claim that a mixed collection of datasets validates one complete data center.
+Replace unnecessarily static assumptions in Agentic-Datacenter's energy and thermal What-If calculations with traceable, time-varying measurements. Calibrate individual physical submodels first; do **not** claim that a mixed collection of datasets validates one complete data center.
 
 ## Source register
 
-| Priority | Source | Measurement scope | Intended Agentic Datacenter use | Rights / caveats |
+| Priority | Source | Measurement scope | Intended Agentic-Datacenter use | Rights / caveats |
 | --- | --- | --- | --- | --- |
 | P1 | [BodenType Data Center One (BTDC), RISE / Fraunhofer](https://fordatis.fraunhofer.de/handle/fordatis/171?locale=en), [DOI 10.24406/fordatis/87](https://doi.org/10.24406/fordatis/87) | Published hourly records covering 364 days / 8,736 hours, including energy, temperatures, humidity, server utilisation, fan speed and weather | Annual and daily demand profiles, outdoor-temperature sensitivity, aggregate facility/IT/cooling model checks where measurement boundaries align | Confirm the exact Creative Commons licence and use conditions before redistribution |
 | P1 | [Aalborg University high-resolution server-room measurements](https://doi.org/10.5281/zenodo.21262042), [earlier Zenodo record](https://zenodo.org/records/19398358) | Experimental server load, temperature, airflow and power series, with high-frequency measurements and defined load points | Transient temperature response, heat transfer, airflow and server-load sensitivity | Verify record version and attribution/licence at ingestion; experimental room, not a representative whole facility |
@@ -29,13 +29,13 @@ Replace unnecessarily static assumptions in Agentic Datacenter's energy and ther
 
 ## Validation boundary
 
-These sources can improve **individual submodels** and scenario realism, but none is sufficient to validate the fidelity of the entire Agentic Datacenter plant, UPS dynamics, protection, chiller controls or real-world autonomous execution. Measurements from distinct sites must not be spliced into a fictional "measured site-wide PUE".
+These sources can improve **individual submodels** and scenario realism, but none is sufficient to validate the fidelity of the entire Agentic-Datacenter plant, UPS dynamics, protection, chiller controls or real-world autonomous execution. Measurements from distinct sites must not be spliced into a fictional "measured site-wide PUE".
 
 A valuable later step is an NDA-governed, aggregated export from a willing data-center operator: timestamp, outdoor air temperature/humidity, IT power, site or cooling power, supply/return temperature, and operating mode where safely shareable. Exclude tenant identities, network maps, credentials, network logs and physical-security details.
 
 ## Proposed acceptance criteria for a calibration claim
 
-- Reproducible run pinned to Agentic Datacenter commit, dataset version and SHA-256.
+- Reproducible run pinned to Agentic-Datacenter commit, dataset version and SHA-256.
 - Traceable measurement units, time alignment and meter boundaries.
 - Separate fit and holdout evidence; metrics and error distributions disclosed.
 - Same exogenous inputs and initial conditions for baseline and proposed strategy.

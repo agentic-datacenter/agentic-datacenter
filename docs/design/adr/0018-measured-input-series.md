@@ -21,19 +21,19 @@ Measured data raises questions that synthetic data does not:
 
 ### 1. A general measured-input layer, in its own optional distribution
 
-A new distribution `agentic-datacenter-data`, import path `agentic_datacenter.data`, holds everything that reads measured data: the dataset manifest, the CSV reader, hash verification, unit conversion, interpolation and the `agentic-datacenter data` command. It is source-neutral: Agentic Datacenter defines its own series format and manifest, and a dataset from any publisher is converted into that format outside the repository before use. No source-specific code, name or parameter is in the repository.
+A new distribution `agentic-datacenter-data`, import path `agentic_datacenter.data`, holds everything that reads measured data: the dataset manifest, the CSV reader, hash verification, unit conversion, interpolation and the `agentic-datacenter data` command. It is source-neutral: Agentic-Datacenter defines its own series format and manifest, and a dataset from any publisher is converted into that format outside the repository before use. No source-specific code, name or parameter is in the repository.
 
 Why a separate distribution rather than code in `agentic-datacenter-core` or in the weather module:
 
-- The kernel stays free of file reading and dataset concerns; it still imports nothing else in Agentic Datacenter and needs no change.
+- The kernel stays free of file reading and dataset concerns; it still imports nothing else in Agentic-Datacenter and needs no change.
 - Weather is the first measured input, not the last (an IT load trace is the obvious second). A layer shared by modules avoids one reader per module, while modules stay independent of each other (`ADC-MOD-002`).
 - It is optional. No distribution requires it. `agentic-datacenter-plant[measured]` and `agentic-datacenter-scenarios[measured]` pull it in; the workspace installs it by default (dependency group `data`) so its tests and type checks always run. `cooling.weather` and the evidence code import it only when a profile selects a measured source, and fail with a message naming the missing distribution otherwise.
 
-Layering: `agentic_datacenter.data` imports nothing else in Agentic Datacenter (a new import contract). `agentic_datacenter.plant` and `agentic_datacenter.scenarios` may import it; core, supervisory, net, governance and the IEC 61850 package may not. SDD section 5 lists it as a ninth distribution.
+Layering: `agentic_datacenter.data` imports nothing else in Agentic-Datacenter (a new import contract). `agentic_datacenter.plant` and `agentic_datacenter.scenarios` may import it; core, supervisory, net, governance and the IEC 61850 package may not. SDD section 5 lists it as a ninth distribution.
 
 A source-specific distribution (for example one named after the first dataset) was considered and rejected: it would tie package names, and so the repository, to one publisher's data and terms, and a second dataset would need a second package.
 
-### 2. Format and manifest, defined by Agentic Datacenter
+### 2. Format and manifest, defined by Agentic-Datacenter
 
 - **Series.** UTF-8 CSV. First column `time_utc`, ISO 8601 in UTC with the `Z` designator, to the second. Value columns from a fixed list (`dry_bulb`, `dew_point`, `rel_humidity`). Rows strictly increasing and on the declared step; a missing row or an empty cell means "no measured value". Timestamps without the UTC designator are refused, never guessed: converting from local time, with or without daylight saving, is the converter's job and is recorded in the manifest's `derivation`.
 - **`dataset_manifest.json`** beside the series, schema version 1: `dataset_id`, `title`, `source`, `version`, `doi`, `licence` (as the source states it, verbatim; not an interpretation), `redistribution` (`not_cleared` or `cleared`), `quality_status`, `period` (first and last timestamp), `step_s`, `gap_tolerance_s`, `columns` with the unit of each, `series_file`, `files` (path and SHA-256 of every file, the series included), `derivation`, `notes`.
@@ -84,10 +84,10 @@ Scenario inputs keep their meaning in measured mode: `set` and `heat_wave` overr
 
 ### 9. Licence position
 
-- No dataset, extract or series derived from one is committed to this repository or distributed with any Agentic Datacenter distribution, evidence bundle published from it, or release. Datasets are fetched and converted by the user, kept outside the repository, and read at run time from a path the profile gives.
+- No dataset, extract or series derived from one is committed to this repository or distributed with any Agentic-Datacenter distribution, evidence bundle published from it, or release. Datasets are fetched and converted by the user, kept outside the repository, and read at run time from a path the profile gives.
 - Evidence bundles of runs on measured data contain hashes and metadata, not the series. Metric summaries derived from such runs are kept with the user's local data, not committed.
 - Distribution of any derived dataset stays blocked until the owner holds a written licence clarification from the publisher. The manifest field `redistribution` defaults to `not_cleared` and is changed only on that basis.
-- The publisher's licence is recorded verbatim in the manifest; Agentic Datacenter does not interpret it.
+- The publisher's licence is recorded verbatim in the manifest; Agentic-Datacenter does not interpret it.
 
 ### 10. Dependencies
 
@@ -98,5 +98,5 @@ None added. The reader uses the standard library (`csv`, `hashlib`, `json`, `bis
 - Scenarios can run on recorded outdoor conditions without any change to the kernel, to the port types or to the default profile.
 - A run on measured data stops instead of inventing values when the data runs out or has a hole larger than declared. Choosing the anchor and the tolerance is the user's responsibility, and `agentic-datacenter data check` shows before a run whether a window is covered.
 - Weather that changes every second keeps the thermal models awake; ADR 0006 measured such a day at about 65 s of stepping on the development machine. Long runs on measured weather are slower than on the constant default.
-- The manifest format is a public interface of Agentic Datacenter; changing it needs a new schema version.
+- The manifest format is a public interface of Agentic-Datacenter; changing it needs a new schema version.
 - Not done here: a reader for other formats (such as EPW, SDD 6.6), measured IT load, and a field on the result card. Each is added through this layer when needed.

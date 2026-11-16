@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "agentic-datacenter-governance"
 version = "0.0.0"
-description = "Agentic Datacenter L5 Governance: Gate adapter interface, contracts, premises, baseline bindings and the agent tool server."
+description = "Agentic-Datacenter L5 Governance: Gate adapter interface, contracts, premises, baseline bindings and the agent tool server."
 readme = "README.md"
 license = "BUSL-1.1"
 requires-python = ">=3.12"

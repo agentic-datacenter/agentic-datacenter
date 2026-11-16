@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "agentic-datacenter-supervisory"
 version = "0.0.0"
-description = "Agentic Datacenter L3 Supervisory: Point database, alarm engine, historian, operator roles, Supervisory Command Service and read API."
+description = "Agentic-Datacenter L3 Supervisory: Point database, alarm engine, historian, operator roles, Supervisory Command Service and read API."
 readme = "README.md"
 license = "BUSL-1.1"
 requires-python = ">=3.12"

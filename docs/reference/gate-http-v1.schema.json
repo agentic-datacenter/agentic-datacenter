@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "agentic_datacenter.gate.http/1",
-  "title": "Agentic Datacenter gate over HTTP, version 1",
-  "description": "The requests Agentic Datacenter's http_gate binding sends and the answers it accepts. Every message carries \"schema\": \"agentic_datacenter.gate.http/1\". An answer that does not validate is read as ABSTAIN. The same messages go to a command gate on standard input, as {\"endpoint\": \"/evaluate\" or \"/outcome\", \"request\": ...}, with the answer on standard output.",
+  "title": "Agentic-Datacenter gate over HTTP, version 1",
+  "description": "The requests Agentic-Datacenter's http_gate binding sends and the answers it accepts. Every message carries \"schema\": \"agentic_datacenter.gate.http/1\". An answer that does not validate is read as ABSTAIN. The same messages go to a command gate on standard input, as {\"endpoint\": \"/evaluate\" or \"/outcome\", \"request\": ...}, with the answer on standard output.",
   "$defs": {
     "scalar": {
       "type": [
@@ -62,7 +62,7 @@
     },
     "evaluate_request": {
       "type": "object",
-      "description": "POST /evaluate. Everything under premises was read by Agentic Datacenter from the simulated plant, not taken from the agent.",
+      "description": "POST /evaluate. Everything under premises was read by Agentic-Datacenter from the simulated plant, not taken from the agent.",
       "required": [
         "schema",
         "session",
@@ -77,7 +77,7 @@
         },
         "session": {
           "type": "string",
-          "description": "Names one gate: Agentic Datacenter builds a gate per run and per counterfactual replay. A service that keeps state keys it by this (ADC_GATE_STATEFUL=1)."
+          "description": "Names one gate: Agentic-Datacenter builds a gate per run and per counterfactual replay. A service that keeps state keys it by this (ADC_GATE_STATEFUL=1)."
         },
         "tool_call": {
           "type": "object",
@@ -245,7 +245,7 @@
     },
     "evaluate_answer": {
       "type": "object",
-      "description": "The answer to POST /evaluate. The writes an ALLOW authorizes, the decision reference, its nonce and its expiry are made by Agentic Datacenter; fields that try to set them are ignored.",
+      "description": "The answer to POST /evaluate. The writes an ALLOW authorizes, the decision reference, its nonce and its expiry are made by Agentic-Datacenter; fields that try to set them are ignored.",
       "required": [
         "schema",
         "verdict",

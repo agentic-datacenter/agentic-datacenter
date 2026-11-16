@@ -29,7 +29,7 @@ def main(argv: Sequence[str]) -> int:
     )
     actions = parser.add_subparsers(dest="action", required=True)
     make = actions.add_parser("manifest", help="Write dataset_manifest.json beside a series.")
-    make.add_argument("series", type=Path, help="The series CSV in Agentic Datacenter's format.")
+    make.add_argument("series", type=Path, help="The series CSV in Agentic-Datacenter's format.")
     make.add_argument("--dataset-id", required=True)
     make.add_argument("--title", required=True)
     make.add_argument("--source", required=True, help="Where the data comes from.")

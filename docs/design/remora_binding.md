@@ -4,7 +4,7 @@ Stage 0 deliverable required by SDD-ADC-001, section 9.2 ("Binding rule"). It re
 
 - **Checked on:** 2026-11-12
 - **Pin:** tag `dcsim-pin-2026-11-12b`, commit `dfc44de2b4ebc579b0c5e76c541eeecd414961d6` (see `REMORA_PIN`)
-- **Result:** the surface in SDD 9.2 exists at the pin. Three statements in the SDD differ from the code and one could not be confirmed; they are listed in section 3 as proposed SDD changes. Nothing was patched around in Agentic Datacenter.
+- **Result:** the surface in SDD 9.2 exists at the pin. Three statements in the SDD differ from the code and one could not be confirmed; they are listed in section 3 as proposed SDD changes. Nothing was patched around in Agentic-Datacenter.
 
 ## 1. Method
 
@@ -38,7 +38,7 @@ Not stated in the SDD and relevant to ADR 0004: REMORA declares its licence as `
 | --- | --- | --- |
 | `remora export-contract-files <dir>` writes `public_api_v1.json`, `openapi.json` and the ToolSpec schemas `tool_spec_v1` to `v5` and `toolspec_signing_ed25519_v1` from the installed wheel (5.2) | CONFIRMED | Ran from the installed package: 8 files written. The six schema files are YAML. `public_api_v1.json`, `openapi.json` and `tool_spec_v5.yaml` were compared byte for byte with the tree at the pin and are identical |
 | The public API snapshot has 46 symbols; recount at the current pin (5.2) | CONFIRMED | 46 symbols in the exported file, module `remora.sdk`, snapshot version 1 |
-| `remora sign-limits <policy> --out <limits.json>` validates and signs a limit policy (5.2, 9.2) | CONFIRMED, NOT EXERCISED | Subcommand present with positional `policy` (JSON or YAML), `--out` and `--new-key`. Run without arguments it answers "policy and --out are required". No policy has been signed yet because no Agentic Datacenter contract has been compiled |
+| `remora sign-limits <policy> --out <limits.json>` validates and signs a limit policy (5.2, 9.2) | CONFIRMED, NOT EXERCISED | Subcommand present with positional `policy` (JSON or YAML), `--out` and `--new-key`. Run without arguments it answers "policy and --out are required". No policy has been signed yet because no Agentic-Datacenter contract has been compiled |
 | Signing key is supplied as a seed in `REMORA_LIMITS_SIGNING_SEED` (9.2) | CONFIRMED | Read by the command; it refuses to run when unset and prints the public key to trust on stderr |
 | Policy schema `remora-cumulative-limits/v1`, signed form `remora-cumulative-limits-signed/v1`, field `dual_control_above` (9.2) | CONFIRMED | Both identifiers and the field are in the cumulative-limits module and the CLI |
 | There is no packaged `remora build-toolspec`; the only flow is `deploy/ot-pilot/build_toolspec.py` (5.2, 9.2) | CONFIRMED | No such subcommand in the CLI; the pilot script exists at the pin. Stage 8 entry condition is therefore still unmet |
@@ -58,7 +58,7 @@ Not stated in the SDD and relevant to ADR 0004: REMORA declares its licence as `
 | "Consume and execute: `execute()`" | DIFFERS | Two calls exist. `execute_accepted(execution_token, tool_call)` redeems an ACCEPT token. `execute(review_item_id, tool_call)` runs an approved review item. See 3.2 |
 | A second execute on the same grant is refused with `ReplayRefusedError` | CONFIRMED, NOT EXERCISED | The exception is public and documented on `execute_accepted`, together with `ApprovalExpiredError` and `BindingRefusedError` |
 | `record_effect()`, `verify_audit_chain()`, `export_evidence()` | CONFIRMED, NOT EXERCISED | All three exist |
-| `list_unresolved()`, `resolve_unknown()` | CONFIRMED, NOT EXERCISED | Both exist. Conditions that matter to Agentic Datacenter are in section 4 |
+| `list_unresolved()`, `resolve_unknown()` | CONFIRMED, NOT EXERCISED | Both exist. Conditions that matter to Agentic-Datacenter are in section 4 |
 | REMORA keeps the `tool_call_hash`, not the raw arguments; the review packet carries the hash | CONFIRMED | `ReviewPacketView` has `tool_call_hash`, `arguments_available` and `arguments_note`, and no arguments |
 | The binding can compute `tool_call_hash` deterministically and set it on the observation | CONFIRMED | `PolicyObservation.tool_call_hash` exists. `PolicyObservation.from_tool_call(...)` fills it with a SHA-256 over the canonical name, arguments, tenant and target. That constructor is reachable through `remora.sdk`. The underlying helper function is not a public symbol, so the binding must use the constructor |
 | `rollback_available` is reported by REMORA | CONFIRMED | Field on `ToolCall` and on `PolicyObservation` |
@@ -103,25 +103,25 @@ The capability register's `status` field has five values at the pin: `IMPLEMENTE
 
 The rule itself (reproduce the word unchanged) is sound and does not depend on the list.
 
-- **Proposed SDD text, `ADC-PIN-006`:** replace "(ESTABLISHED, PARTIAL or NOT\_ESTABLISHED)" with "(whatever status value that register holds for the capability at the pin; Agentic Datacenter does not translate or rank these words)".
+- **Proposed SDD text, `ADC-PIN-006`:** replace "(ESTABLISHED, PARTIAL or NOT\_ESTABLISHED)" with "(whatever status value that register holds for the capability at the pin; Agentic-Datacenter does not translate or rank these words)".
 - **Needs an owner decision:** which of the four registers is the source for the IEC 62443 matrix. The capability register is the only one keyed by `CAP-nnn`.
 
 ### 3.4 Rollback "PARTIAL" could not be found
 
 Section 9.2 says REMORA's own register lists rollback as PARTIAL. The word occurs once across the four register files, in the boundary register, on an entry about an external vocabulary project and not about rollback. No capability entry is named for rollback.
 
-- **Proposed SDD text:** state the split as Agentic Datacenter's own description ("REMORA reports `rollback_available` and verifies effects; trigger and restore belong to Agentic Datacenter") and drop the attribution to a register, or cite the register entry by identifier once the maintainer points to it.
+- **Proposed SDD text:** state the split as Agentic-Datacenter's own description ("REMORA reports `rollback_available` and verifies effects; trigger and restore belong to Agentic-Datacenter") and drop the attribution to a register, or cite the register entry by identifier once the maintainer points to it.
 
 ## 4. Conditions the binding has to meet (for Stage 8)
 
 Found while reading the surface. None blocks Stage 0; each needs a design answer before the governed path is built.
 
-| Topic | What the pin requires | Consequence for Agentic Datacenter |
+| Topic | What the pin requires | Consequence for Agentic-Datacenter |
 | --- | --- | --- |
 | Governed path is a service | `RemoraClient` speaks REST to a control plane. Its constructor accepts a prepared `httpx.Client`, documented for in-process use against the application object | `inproc` mode needs the REMORA service running in-process behind that client. Which extra and entry point that takes was not verified |
 | Time in the governed path | Tokens and approvals expire; an unresolved operation carries a timestamp | It is not yet known whether the service can take its time from the simulated clock. This decides how `AD-09` is run and whether `SHADOW` and `GOVERNED` can be reproducible end to end. Tokens are already outside the state hash (9.2), which limits the damage. To be raised with the maintainer |
 | Approver identity | The approver recorded is the authenticated principal of the caller's token; an "on behalf of" value is an annotation only | The scripted operator model needs its own credentials, and `two_person` needs two distinct principals |
-| Resolving an unknown outcome | The resolver must not be the principal the call was charged to, and must name evidence that the service checks through the deployment's evidence module | `ADC-GOV-007` needs a reviewer identity separate from the agent, and Agentic Datacenter must supply the evidence module backed by an independent read of plant state |
+| Resolving an unknown outcome | The resolver must not be the principal the call was charged to, and must name evidence that the service checks through the deployment's evidence module | `ADC-GOV-007` needs a reviewer identity separate from the agent, and Agentic-Datacenter must supply the evidence module backed by an independent read of plant state |
 | Limit arithmetic | The limit fields seen (`dual_control_above`, the charge amount) are integers | A contract limit such as a total change of 2.0 °C must be compiled to an integer unit. The scaling belongs in `agentic-datacenter contracts compile` and must be recorded in the artifact |
 | Limits across contracts | CAP-031 is described as per principal or resource, and is opt-in | `INV-GOV-6` needs the counter keyed by tag, not by contract. To be confirmed when the first limits file is compiled |
 | Async dispatch | See 3.2 | Binding branch on the result type |
@@ -145,11 +145,11 @@ git -C <remora clone> rev-parse 'dcsim-pin-2026-11-12b^{commit}'
 
 The last command must print the commit in `REMORA_PIN`.
 
-## 7. The `DECISION_ONLY` binding: what Agentic Datacenter tells REMORA
+## 7. The `DECISION_ONLY` binding: what Agentic-Datacenter tells REMORA
 
 Added with Milestone M1. `packages/agentic-datacenter-remora/src/agentic_datacenter_remora/binding.py` uses four public symbols and nothing else: `evaluate_policy`, `PolicyObservation`, `GateDecision` and `GateVerdict`. A test exports the public API snapshot from the installed package and requires every imported symbol to be in it.
 
-**This mapping is Agentic Datacenter's interpretation and has not been confirmed by the REMORA maintainer.** It decides what REMORA is asked, so it decides what the benchmark measures.
+**This mapping is Agentic-Datacenter's interpretation and has not been confirmed by the REMORA maintainer.** It decides what REMORA is asked, so it decides what the benchmark measures.
 
 ### 7.1 Refused before the policy is asked
 
@@ -174,7 +174,7 @@ Nothing the agent wrote reaches the observation except the contract id and argum
 
 ### 7.3 What comes back, observed at the pin
 
-| Situation | REMORA action and first reason | Agentic Datacenter verdict |
+| Situation | REMORA action and first reason | Agentic-Datacenter verdict |
 | --- | --- | --- |
 | `R1`, every premise holds | ACCEPT, `ordered_high_trust` | ALLOW |
 | A premise could not be established | ABSTAIN, `disordered_no_evidence` | ABSTAIN |
@@ -186,7 +186,7 @@ If REMORA accepts a contract whose own approval rule asks for a person, the verd
 
 ### 7.4 What needs the maintainer's eye
 
-1. **`phase` and `trust_score` are REMORA's consensus signals, and Agentic Datacenter has no model ensemble behind them.** They are set from deterministic premise checks: "every premise the contract names was read fresh, in good quality, and holds" is reported as `ordered` with trust 1.0. Without them `evaluate_policy` never accepts anything (`default_safe_abstain`). Whether a host may stand in for those signals this way, or whether another field is meant for host-verified preconditions, is the question.
+1. **`phase` and `trust_score` are REMORA's consensus signals, and Agentic-Datacenter has no model ensemble behind them.** They are set from deterministic premise checks: "every premise the contract names was read fresh, in good quality, and holds" is reported as `ordered` with trust 1.0. Without them `evaluate_policy` never accepts anything (`default_safe_abstain`). Whether a host may stand in for those signals this way, or whether another field is meant for host-verified preconditions, is the question.
 2. **A premise that does not hold gives ABSTAIN, not DENY.** The scenario table expects "deny" in several places (OP-03, OP-11). The pure decision never returns DENY, so under `DECISION_ONLY` these are abstentions. Both count as blocked.
 3. **A write outside its bounds is escalated to two approvers rather than refused.** That is REMORA's decision on `schema_valid = false`. On the governed path the ToolSpec would refuse it. The approval path re-reads bounds and would reject, so nothing unsafe executes, but an approver is asked a question with only one answer.
 4. **Rate and cumulative limits are not enforced.** The control path computes them and the binding reports them in the decision detail as not enforced. Scenarios AD-04 and AD-05 cannot be claimed under this profile, as the design document says.
@@ -199,4 +199,4 @@ Built on the pin that carries `remora build-toolspec` and the SDK hand-over of t
 2. The signed ToolSpec and the tool metadata file are not cross-checked, so a tool declared `read` in the metadata is accepted although its signed spec says `write`.
 3. A host cannot state through the SDK that a call did not run; such a call is held as unknown until a reviewer resolves it.
 
-Of the conditions in section 4: time on the governed path is answered by the host time source (REMORA #1221); approver identity by one credential per person; the resolver of an unknown outcome is a reviewer principal with Agentic Datacenter's evidence module; limit arithmetic is in thousandths, recorded in the compile manifest; the counter is keyed by point through a shared quantity; asynchronous dispatch is treated as unknown.
+Of the conditions in section 4: time on the governed path is answered by the host time source (REMORA #1221); approver identity by one credential per person; the resolver of an unknown outcome is a reviewer principal with Agentic-Datacenter's evidence module; limit arithmetic is in thousandths, recorded in the compile manifest; the counter is keyed by point through a shared quantity; asynchronous dispatch is treated as unknown.

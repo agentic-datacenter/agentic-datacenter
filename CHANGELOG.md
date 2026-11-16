@@ -1,6 +1,6 @@
 # Changelog
 
-Changes that matter to someone using or reviewing Agentic Datacenter. Each distribution follows semantic versioning once it has a first release; until then everything is version 0.0.0.
+Changes that matter to someone using or reviewing Agentic-Datacenter. Each distribution follows semantic versioning once it has a first release; until then everything is version 0.0.0.
 
 ## Unreleased
 
@@ -20,7 +20,7 @@ Added
 Added
 
 - `agentic-datacenter gate list` and `agentic-datacenter gate check <gate>`: the gate interface suite and a known operating profile, for a gate installed from anywhere (`ADC-GOV-004`).
-- The `http_gate` binding: a gate served over HTTP in any language, wire format `agentic_datacenter.gate.http/1` (`docs/reference/gate-http-v1.schema.json`). Agentic Datacenter makes the authorization, its reference, nonce and expiry; a service that does not answer, or answers with no valid verdict, gets `ABSTAIN`; loopback only unless allowed (`ADC-GOV-008`).
+- The `http_gate` binding: a gate served over HTTP in any language, wire format `agentic_datacenter.gate.http/1` (`docs/reference/gate-http-v1.schema.json`). Agentic-Datacenter makes the authorization, its reference, nonce and expiry; a service that does not answer, or answers with no valid verdict, gets `ABSTAIN`; loopback only unless allowed (`ADC-GOV-008`).
 - Templates: `examples/python-gate` (an entry-point package) and `examples/http-gate` (a standard-library service), each tested against the interface suite.
 - Guide `docs/guides/bring-your-own-gate.md` and a "Gate result" issue form.
 
@@ -73,7 +73,7 @@ Fixed
 
 Changed
 
-- `agentic-datacenter contracts compile` declares each contract at its own REMORA risk tier: an R0 or R1 contract with a rollback is `low`, every other executable contract `high` (it was `critical` for all). The embedded REMORA service runs with its opt-in bounded-write path on (pin `dcsim-pin-2026-11-13b`, REMORA #1234), so a bounded, reversible R1 step runs without a person inside the signed ToolSpec and limits. Approvers carry the role REMORA asks for at `high` (`domain_expert`). ADR 0016 decision 4 and SDD 9.6 are revised; the intent requirement is switched off because Agentic Datacenter has no intent source (a reading for the owner).
+- `agentic-datacenter contracts compile` declares each contract at its own REMORA risk tier: an R0 or R1 contract with a rollback is `low`, every other executable contract `high` (it was `critical` for all). The embedded REMORA service runs with its opt-in bounded-write path on (pin `dcsim-pin-2026-11-13b`, REMORA #1234), so a bounded, reversible R1 step runs without a person inside the signed ToolSpec and limits. Approvers carry the role REMORA asks for at `high` (`domain_expert`). ADR 0016 decision 4 and SDD 9.6 are revised; the intent requirement is switched off because Agentic-Datacenter has no intent source (a reading for the owner).
 - GitHub workflow triggers are disabled; local CI is unchanged (ADR 0011 addendum).
 
 ### Stage 9, first part: freezing, held-out variants, evidence beside the demo

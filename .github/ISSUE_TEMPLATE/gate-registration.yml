@@ -50,4 +50,4 @@ body:
     attributes:
       label: Independence
       options:
-        - label: The people who wrote this gate did not write Agentic Datacenter's contracts, scenarios or oracle.
+        - label: The people who wrote this gate did not write Agentic-Datacenter's contracts, scenarios or oracle.

@@ -1,4 +1,4 @@
-"""REMORA's governed execution path as a Agentic Datacenter gate: the GOVERNED and SHADOW profiles.
+"""REMORA's governed execution path as a Agentic-Datacenter gate: the GOVERNED and SHADOW profiles.
 
 Every proposal is first decided by the pure policy function, exactly as in
 ``DECISION_ONLY``, from premises the control path read itself. A proposal
@@ -150,7 +150,7 @@ class GovernedService:
             "REMORA_API_TOKENS": json.dumps(table, sort_keys=True),
             "REMORA_REQUIRE_DISTINCT_APPROVER": "1",
             # A bounded, reversible R1 step inside the signed ToolSpec and limits
-            # may run without a person (REMORA #1234). Agentic Datacenter supplies no semantic
+            # may run without a person (REMORA #1234). Agentic-Datacenter supplies no semantic
             # bundle, so there is no intent source to resolve; the requirement
             # for one is switched off explicitly (ADR 0016, decision 4).
             "REMORA_BOUNDED_WRITE_ACCEPT": "1",

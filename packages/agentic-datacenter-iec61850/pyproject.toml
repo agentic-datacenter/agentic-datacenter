@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "agentic-datacenter-iec61850"
 version = "0.0.0"
-description = "Agentic Datacenter Protocol, optional: IEC 61850 MMS server per relay and SCL generation. The only distribution that may use the GPLv3 protocol library."
+description = "Agentic-Datacenter Protocol, optional: IEC 61850 MMS server per relay and SCL generation. The only distribution that may use the GPLv3 protocol library."
 readme = "README.md"
 license = "GPL-3.0-or-later"
 requires-python = ">=3.12"

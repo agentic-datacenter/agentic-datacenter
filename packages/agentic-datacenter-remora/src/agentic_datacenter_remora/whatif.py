@@ -1,4 +1,4 @@
-"""REMORA's policy what-if on a Agentic Datacenter proposal (ADR 0019). Advisory: it grants nothing.
+"""REMORA's policy what-if on a Agentic-Datacenter proposal (ADR 0019). Advisory: it grants nothing.
 
 ``remora.sdk.what_if`` answers, for one observation, which verdict REMORA's
 policy gives it, which hard guard applies and which smallest sets of facts
@@ -9,7 +9,7 @@ so it is analysed twice:
   (:func:`agentic_datacenter_remora.binding.observe`), under the library engine, exactly as
   :class:`agentic_datacenter_remora.binding.RemoraGate` asks ``evaluate_policy``. Under
   ``GOVERNED`` a proposal this stage abstains on never reaches the service.
-- ``execution_service``: Agentic Datacenter's reconstruction of the observation REMORA's
+- ``execution_service``: Agentic-Datacenter's reconstruction of the observation REMORA's
   execution API builds on its registry-only path from the compiled tool
   metadata (risk tier, action type, the downgrade-only schema and rollback
   facts, the two bounded-write facts the server sets for a signed, metered
@@ -25,7 +25,7 @@ The search shares one evaluation budget between its parts and reports one flag
 for all of them, ``search.exhausted``. When the budget stopped the search, a
 part that found nothing has not shown that nothing exists, yet REMORA's report
 still says ``False`` and its text "cannot reach". Each stage therefore carries
-``conclusions``, Agentic Datacenter's reading of the report: a negative from a search that
+``conclusions``, Agentic-Datacenter's reading of the report: a negative from a search that
 was cut short is ``unknown``, and the text is written from that reading. What
 was found stands either way; every path in the report was decided by the engine.
 """
@@ -51,7 +51,7 @@ _SHOWN = (
 )  # fmt: skip
 #: Where the REMORA code the service observation mirrors lives, at the pin.
 SERVICE_SOURCE = (
-    "Agentic Datacenter's reconstruction of the observation REMORA's execution API builds on its "
+    "Agentic-Datacenter's reconstruction of the observation REMORA's execution API builds on its "
     "registry-only path (servers/execution_api.py: _registry_only_observation, "
     "_with_bounded_write_facts), from the compiled tool metadata; not read from the service"
 )

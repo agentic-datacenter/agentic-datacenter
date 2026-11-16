@@ -454,9 +454,9 @@ def render_demo(demo: Mapping[str, Any]) -> str:
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Agentic Datacenter demonstration run</title>
+<title>Agentic-Datacenter demonstration run</title>
 <style>{_STYLE}</style></head><body>
-<h1>Agentic Datacenter demonstration run</h1>
+<h1>Agentic-Datacenter demonstration run</h1>
 <p><span class="label">{html.escape(str(demo["label"]))}</span>
 The same plant, scenario and seed ({html.escape(str(demo["seed"]))}) played twice: with no gate,
 and with the gate <code>{html.escape(str(demo["governed_gate"]))}</code>.

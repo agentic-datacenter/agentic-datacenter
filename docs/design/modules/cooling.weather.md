@@ -50,7 +50,7 @@ Scenario inputs `set`, `heat_wave` with `peak_c`, and `clear`.
 
 ## Known limits
 
-- A measured series must first be converted to Agentic Datacenter's CSV format with its manifest (ADR 0018). A reader for EPW files (SDD 6.6) is not written.
+- A measured series must first be converted to Agentic-Datacenter's CSV format with its manifest (ADR 0018). A reader for EPW files (SDD 6.6) is not written.
 - Values derived from a measured series describe where and when they were measured, not the simulated site; they do not make this module, or any result, field-calibrated.
 - Humidity has no effect on any model.
 - No forecast is offered, so the pre-cooling contract has nothing to read yet.

@@ -463,7 +463,7 @@ class BacnetServer:
                 objectIdentifier=("device", number),
                 objectName=name,
                 vendorIdentifier=VENDOR_IDENTIFIER,
-                vendorName="Agentic Datacenter",
+                vendorName="Agentic-Datacenter",
                 modelName=name.split("[", 1)[0],
                 description="Simulated controller; not real equipment",
             )

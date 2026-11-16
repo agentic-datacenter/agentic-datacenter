@@ -23,7 +23,7 @@ class ExampleGate:
 
     name = "example_gate"
     #: The operating profile (SDD 9.6). DECISION_ONLY: this gate decides and
-    #: Agentic Datacenter's command service executes.
+    #: Agentic-Datacenter's command service executes.
     profile = "DECISION_ONLY"
 
     def __init__(self) -> None:
@@ -33,7 +33,7 @@ class ExampleGate:
     def evaluate(
         self, proposal: Proposal, premises: PremiseSnapshot, actor: AuthenticatedActor
     ) -> Decision:
-        """Decide from what Agentic Datacenter established, never from the agent's words."""
+        """Decide from what Agentic-Datacenter established, never from the agent's words."""
         reasons = list(premises.schema_errors + premises.bound_errors + premises.limit_errors)
         if not premises.contract_known:
             reasons.insert(0, "unknown contract")
@@ -65,5 +65,5 @@ class ExampleGate:
 
 
 def create(contracts: object) -> ExampleGate:
-    """Build one gate per run. Agentic Datacenter calls this once for each run and replay."""
+    """Build one gate per run. Agentic-Datacenter calls this once for each run and replay."""
     return ExampleGate()

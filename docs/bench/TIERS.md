@@ -31,10 +31,10 @@ The merged card is the card one machine would have made, byte for byte, as long 
 
 ## Gates that keep state
 
-A gate whose state a capture cannot hold costs more, because each counterfactual branch needs the gate as it was at the decision. Agentic Datacenter handles such a gate in one of three ways, and the card says which under `judging.branches_from`:
+A gate whose state a capture cannot hold costs more, because each counterfactual branch needs the gate as it was at the decision. Agentic-Datacenter handles such a gate in one of three ways, and the card says which under `judging.branches_from`:
 
 - **`capture`:** the gate keeps no state of its own, or none that matters. The branch starts from the instant of the decision.
-- **`gate snapshot`:** the gate offers `snapshot_state()` and `restore_state()`. Agentic Datacenter runs the scenario once more, keeps the gate's state at each instant to be judged, and starts each branch from there. The built-in `remora_governed` does this. Its branches give the same judgements as branches played from the start, and that is tested.
+- **`gate snapshot`:** the gate offers `snapshot_state()` and `restore_state()`. Agentic-Datacenter runs the scenario once more, keeps the gate's state at each instant to be judged, and starts each branch from there. The built-in `remora_governed` does this. Its branches give the same judgements as branches played from the start, and that is tested.
 - **`start of run`:** a served gate with `ADC_GATE_STATEFUL=1`, or a Python gate with `restorable = False` and no snapshot. Each branch is played from the start of the run.
 
 ## How the bounds were chosen

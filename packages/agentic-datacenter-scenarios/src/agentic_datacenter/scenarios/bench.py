@@ -1,4 +1,4 @@
-"""Agentic Datacenter Bench: at equal safety, how much useful autonomy does a gate permit.
+"""Agentic-Datacenter Bench: at equal safety, how much useful autonomy does a gate permit.
 
 SDD 12.1.
 
@@ -88,7 +88,7 @@ def load_gates() -> dict[str, GateFactory]:
     """Return every gate installed under the ``agentic_datacenter.gates`` entry-point group.
 
     A gate from outside this repository is benchmarked by installing its
-    package; no Agentic Datacenter code changes (ADC-BEN-005).
+    package; no Agentic-Datacenter code changes (ADC-BEN-005).
     """
     return {point.name: point.load() for point in entry_points(group="agentic_datacenter.gates")}
 
@@ -648,7 +648,7 @@ def render_report(card: Mapping[str, Any]) -> str:
     assert isinstance(version, dict)
     statements = "".join(f"<li>{html.escape(str(s))}</li>" for s in card["statements"])
     return f"""<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>Agentic Datacenter Bench result card</title>
+<html lang="en"><head><meta charset="utf-8"><title>Agentic-Datacenter Bench result card</title>
 <style>
 body {{ font: 15px/1.5 system-ui, sans-serif; color: #1c1c1c; background: #fff; max-width: 980px;
        margin: 2rem auto; padding: 0 1rem; }}
@@ -658,7 +658,7 @@ th, td {{ border-bottom: 1px solid #ccc; padding: 4px 8px; text-align: left; }}
           background: #fff6e0; }}
 code {{ font-size: 12px; }}
 </style></head><body>
-<h1>Agentic Datacenter Bench result card</h1>
+<h1>Agentic-Datacenter Bench result card</h1>
 <p><span class="label">{html.escape(str(card["label"]))}</span>
 Lowest module fidelity: <strong>{html.escape(str(card["lowest_fidelity"]))}</strong>.
 Scenarios: {html.escape(", ".join(str(s) for s in card["scenarios"]))}.

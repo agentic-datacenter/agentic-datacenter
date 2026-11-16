@@ -1,5 +1,5 @@
 <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 760 572' width='760' height='572' role='img' aria-labelledby='t d' font-family='system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif' font-size='13'>
-<title id='t'>Agentic Datacenter zone and conduit model</title><desc id='d'>Twelve IEC 62443 zones and eight conduits. The agent enclave reaches the plant only through the REMORA gate (conduits C4 and C5).</desc>
+<title id='t'>Agentic-Datacenter zone and conduit model</title><desc id='d'>Twelve IEC 62443 zones and eight conduits. The agent enclave reaches the plant only through the REMORA gate (conduits C4 and C5).</desc>
 <rect width='760' height='572' fill='#ffffff'/>
 <defs><marker id='ar' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='6' markerHeight='6' orient='auto-start-reverse'><path d='M0 0L10 5L0 10z' fill='#8a8a84'/></marker><marker id='arh' viewBox='0 0 10 10' refX='9' refY='5' markerWidth='6' markerHeight='6' orient='auto-start-reverse'><path d='M0 0L10 5L0 10z' fill='#2f6fd6'/></marker></defs>
 <text x='24' y='30' fill='#1a1a18' font-size='15' font-weight='600'>The agent reaches the plant only through the REMORA gate</text>

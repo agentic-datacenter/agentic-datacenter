@@ -1,9 +1,9 @@
-"""A measured series in Agentic Datacenter's CSV format, read against its manifest.
+"""A measured series in Agentic-Datacenter's CSV format, read against its manifest.
 
-The format is Agentic Datacenter's own, independent of any source:
+The format is Agentic-Datacenter's own, independent of any source:
 
 - UTF-8 CSV with a header row. The first column is ``time_utc``; the others are
-  columns Agentic Datacenter knows
+  columns Agentic-Datacenter knows
   (:data:`agentic_datacenter.data.manifest.COLUMNS`), each declared with its
   unit in the manifest.
 - ``time_utc`` is ISO 8601 in UTC with the ``Z`` designator, to the second
@@ -116,19 +116,19 @@ def _check_columns(manifest: DatasetManifest) -> None:
         if name not in COLUMNS:
             known = ", ".join(sorted(COLUMNS))
             raise ManifestInvalid(
-                f"column {name!r} is not one Agentic Datacenter reads; known: {known}"
+                f"column {name!r} is not one Agentic-Datacenter reads; known: {known}"
             )
         accepted = COLUMNS[name][1]
         if column.unit not in accepted:
             raise UnitNotUnderstood(
-                f"column {name!r} is declared in {column.unit!r}, which Agentic Datacenter "
+                f"column {name!r} is declared in {column.unit!r}, which Agentic-Datacenter "
                 f"does not convert; use one of {', '.join(accepted)}"
             )
 
 
 @dataclass(frozen=True)
 class MeasuredSeries:
-    """A verified measured series, with values in Agentic Datacenter units (°C, %).
+    """A verified measured series, with values in Agentic-Datacenter units (°C, %).
 
     Attributes:
         manifest: The validated manifest.
@@ -255,7 +255,7 @@ def load_series(manifest_path: Path) -> MeasuredSeries:
     Raises:
         DatasetFileMissing: If the manifest or a file it lists does not exist.
         ManifestInvalid: If the manifest or the series does not follow the format.
-        UnitNotUnderstood: If a column is declared in a unit Agentic Datacenter does not convert.
+        UnitNotUnderstood: If a column is declared in a unit Agentic-Datacenter does not convert.
         HashMismatch: If a file differs from its recorded SHA-256.
     """
     raw = _read(manifest_path, "dataset manifest")
@@ -352,7 +352,7 @@ def write_manifest(
 
     Raises:
         ManifestInvalid: If the series does not follow the format, or a field is invalid.
-        UnitNotUnderstood: If a unit is not one Agentic Datacenter converts.
+        UnitNotUnderstood: If a unit is not one Agentic-Datacenter converts.
     """
     directory = series_path.parent
     text = _read(series_path, "series").decode("utf-8")

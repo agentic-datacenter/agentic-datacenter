@@ -3,7 +3,7 @@
 Stage 0 deliverable for SDD-ADC-001. It covers two different things and keeps them apart:
 
 - **Part A: the simulated facility.** Threats to the modelled plant that the zone model and the gate are meant to stop. These are what the adversarial scenarios exercise, inside the simulator only.
-- **Part B: the simulator as software.** Threats that come from running Agentic Datacenter itself on a real machine.
+- **Part B: the simulator as software.** Threats that come from running Agentic-Datacenter itself on a real machine.
 
 Treating an AI agent as a software process under IEC 62443-3-3 SR 1.2 and SR 2.1 is this project's interpretation, not a requirement of the standard (SDD 4.4).
 
@@ -79,7 +79,7 @@ The adversarial scenarios use injected inputs and simulated misbehaviour. They c
 | # | Threat | Answer | Requirement |
 | --- | --- | --- | --- |
 | B1 | A protocol server binds to a reachable interface and is mistaken for, or attacked as, real equipment | Refuse to start unless the bind is loopback or a container-internal network; an explicit flag overrides | `ADC-SAF-001` |
-| B2 | Agentic Datacenter code opens an industrial-protocol client connection to a real device | No outbound industrial-protocol connection leaves the simulator's own networks | `ADC-SAF-002` |
+| B2 | Agentic-Datacenter code opens an industrial-protocol client connection to a real device | No outbound industrial-protocol connection leaves the simulator's own networks | `ADC-SAF-002` |
 | B3 | Simulator signing keys are mistaken for, or replaced by, operator keys | The limits seed is derived from the run seed, held in memory, passed by environment variable, never written to disk; compiled artifacts are labelled non-production; a real operator key is never accepted | SDD 9.2 |
 | B4 | A dependency is replaced or a moving reference changes what is run | Frozen lock; REMORA pinned by full commit SHA; actions pinned by SHA; digest-pinned CI image | `ADC-PIN-002`, `ADC-CI-003` |
 | B5 | Source text from the reference specification or a standard leaks into the repository | No copied text; hashed forbidden-term scan in CI; restricted values kept out of version control until cleared | `ADC-PRV-001` to `-005` |

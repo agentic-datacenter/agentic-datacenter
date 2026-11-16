@@ -1,4 +1,4 @@
-"""The same interface suite Agentic Datacenter runs on its own gates (ADC-GOV-004)."""
+"""The same interface suite Agentic-Datacenter runs on its own gates (ADC-GOV-004)."""
 
 from example_gate import ExampleGate
 

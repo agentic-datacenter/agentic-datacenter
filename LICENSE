@@ -6,9 +6,9 @@ Licensor:
 Stian Skogbrott
 
 Licensed Work:
-Agentic Datacenter version 0.0.0 and all later versions that explicitly reference
+Agentic-Datacenter version 0.0.0 and all later versions that explicitly reference
 this license, including the source code, tests, profiles, intent
-contracts, scenarios, tools and documentation contained in the Agentic Datacenter
+contracts, scenarios, tools and documentation contained in the Agentic-Datacenter
 repository, except for files or directories that explicitly state a
 different license or contain third-party material governed by separate
 terms. The distribution in packages/agentic-datacenter-iec61850 is such an exception

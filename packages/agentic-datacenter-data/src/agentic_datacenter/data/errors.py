@@ -24,7 +24,7 @@ class HashMismatch(MeasuredSeriesError):
 
 
 class UnitNotUnderstood(MeasuredSeriesError):
-    """A column is declared in a unit Agentic Datacenter does not convert."""
+    """A column is declared in a unit Agentic-Datacenter does not convert."""
 
 
 class OutsideSeries(MeasuredSeriesError):

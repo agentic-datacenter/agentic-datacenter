@@ -1,6 +1,6 @@
-"""The address guard: Agentic Datacenter talks only to itself.
+"""The address guard: Agentic-Datacenter talks only to itself.
 
-Agentic Datacenter is a simulation and must never be mistaken for, or connected to, real
+Agentic-Datacenter is a simulation and must never be mistaken for, or connected to, real
 equipment. Every protocol server asks :func:`check_bind` before it binds, and
 every protocol client asks :func:`check_connect` before it connects.
 
@@ -92,7 +92,7 @@ def check_bind(
         else "it is neither loopback nor inside a declared internal network"
     )
     raise ExternalAddressError(
-        f"refusing to bind {host}: {reason}. Agentic Datacenter is simulation-only; "
+        f"refusing to bind {host}: {reason}. Agentic-Datacenter is simulation-only; "
         "pass --allow-external-bind only if you are sure nothing real can reach it"
     )
 
@@ -100,7 +100,7 @@ def check_bind(
 def check_connect(host: str, *, internal_networks: Sequence[str] = ()) -> None:
     """Refuse an outbound connection outside the simulator's own networks.
 
-    There is no override: Agentic Datacenter never connects to real equipment (ADC-SAF-002).
+    There is no override: Agentic-Datacenter never connects to real equipment (ADC-SAF-002).
 
     Raises:
         ExternalAddressError: If the destination is not internal.

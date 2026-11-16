@@ -32,7 +32,7 @@ def check_bind(host: str, *, allow_external: bool = False) -> None:
     """
     if not (allow_external or _loopback(host)):
         raise ExternalAddressError(
-            f"refusing to bind {host}: it is not loopback. Agentic Datacenter is simulation-only; "
+            f"refusing to bind {host}: it is not loopback. Agentic-Datacenter is simulation-only; "
             "allow an external bind only if you are sure nothing real can reach it"
         )
 

@@ -57,7 +57,7 @@ def _token(authorization: str | None) -> str | None:
 def create_app(station: Supervisory) -> FastAPI:
     """Return the API of *station*."""
     app = FastAPI(
-        title="Agentic Datacenter supervisory API",
+        title="Agentic-Datacenter supervisory API",
         version=API_VERSION,
         docs_url=None,
         redoc_url=None,

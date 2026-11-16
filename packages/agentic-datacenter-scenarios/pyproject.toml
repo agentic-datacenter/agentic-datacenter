@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "agentic-datacenter-scenarios"
 version = "0.0.0"
-description = "Agentic Datacenter Harness: Scenario runner, fault and attack primitives, oracle, metrics and evidence bundles."
+description = "Agentic-Datacenter Harness: Scenario runner, fault and attack primitives, oracle, metrics and evidence bundles."
 readme = "README.md"
 license = "BUSL-1.1"
 requires-python = ">=3.12"

@@ -1,4 +1,4 @@
-"""A governance gate served over HTTP, for Agentic Datacenter's ``http_gate`` binding.
+"""A governance gate served over HTTP, for Agentic-Datacenter's ``http_gate`` binding.
 
 Standard library only. Replace ``decide`` with a call into your own system;
 everything else is the wire format (``agentic_datacenter.gate.http/1``).

@@ -1,10 +1,10 @@
 """Measured input series (ADR 0018).
 
-A measured series is a fixed-step time series in Agentic Datacenter's CSV format with a
+A measured series is a fixed-step time series in Agentic-Datacenter's CSV format with a
 ``dataset_manifest.json`` beside it. :func:`load_series` verifies the hash of
 every file and returns a :class:`MeasuredSeries` whose values can be read at
 any instant inside it, by linear interpolation, without extrapolation and
-without silently filling gaps. No dataset ships with Agentic Datacenter.
+without silently filling gaps. No dataset ships with Agentic-Datacenter.
 """
 
 from agentic_datacenter.data.errors import (

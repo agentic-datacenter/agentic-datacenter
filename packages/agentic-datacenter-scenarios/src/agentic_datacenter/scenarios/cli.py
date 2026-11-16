@@ -37,7 +37,7 @@ from agentic_datacenter.scenarios.scenario import Scenario, library_ids, load_sc
 def bench(argv: Sequence[str]) -> int:
     """Run ``agentic-datacenter bench run ...`` and return the exit status."""
     parser = argparse.ArgumentParser(
-        prog="agentic-datacenter bench", description="Agentic Datacenter Bench."
+        prog="agentic-datacenter bench", description="Agentic-Datacenter Bench."
     )
     actions = parser.add_subparsers(dest="action", required=True)
     run = actions.add_parser("run", help="Benchmark gates and write a result card.")

@@ -1,4 +1,4 @@
-"""The REMORA gate binding. The only place in Agentic Datacenter that imports REMORA.
+"""The REMORA gate binding. The only place in Agentic-Datacenter that imports REMORA.
 
 This binding implements the ``DECISION_ONLY`` operating profile (SDD 9.6, 13):
 REMORA decides through ``remora.sdk.evaluate_policy``, a pure function of an
@@ -32,7 +32,7 @@ from agentic_datacenter.governance.gate import (
     Verdict,
 )
 
-#: Agentic Datacenter risk tier -> REMORA risk tier.
+#: Agentic-Datacenter risk tier -> REMORA risk tier.
 RISK_TIER = {"R0": "low", "R1": "low", "R2": "high"}
 _APPROVERS = {"none": 0, "one_operator": 1, "two_person": 2}
 _VERDICT = {
@@ -117,7 +117,7 @@ def observe(proposal: Proposal, premises: PremiseSnapshot) -> PolicyObservation:
 
 
 class RemoraGate:
-    """REMORA as a Agentic Datacenter gate, deciding through the pure policy function."""
+    """REMORA as a Agentic-Datacenter gate, deciding through the pure policy function."""
 
     name = "remora"
     profile = PROFILE

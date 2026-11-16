@@ -1,10 +1,10 @@
-# uv workspace root for Agentic Datacenter. See docs/design/SDD-ADC-001.md, section 5.
+# uv workspace root for Agentic-Datacenter. See docs/design/SDD-ADC-001.md, section 5.
 # The root is not a distribution; it only ties the packages together.
 
 [project]
 name = "agentic-datacenter-workspace"
 version = "0.0.0"
-description = "Workspace root for Agentic Datacenter, a simulation-only data center OT model"
+description = "Workspace root for Agentic-Datacenter, a simulation-only data center OT model"
 requires-python = ">=3.12"
 # REMORA and the IEC 61850 package are deliberately not default dependencies:
 # everything else must install and pass its tests without them
@@ -162,7 +162,7 @@ filterwarnings = [
     "ignore:Using `httpx` with `starlette.testclient` is deprecated",
 ]
 markers = [
-    "req(id): the Agentic Datacenter requirement a test verifies (SDD section 11, ADC-CI-001)",
+    "req(id): the Agentic-Datacenter requirement a test verifies (SDD section 11, ADC-CI-001)",
     "nightly: runs in the nightly workflow only (SDD 12.4); select with -m nightly",
 ]
 
@@ -194,7 +194,7 @@ root_packages = [
 include_external_packages = true
 
 [[tool.importlinter.contracts]]
-name = "L0 core imports nothing else in Agentic Datacenter"
+name = "L0 core imports nothing else in Agentic-Datacenter"
 type = "forbidden"
 source_modules = ["agentic_datacenter.core"]
 forbidden_modules = [
@@ -211,7 +211,7 @@ forbidden_modules = [
 allow_indirect_imports = true
 
 [[tool.importlinter.contracts]]
-name = "Measured input series import nothing else in Agentic Datacenter (ADR 0018)"
+name = "Measured input series import nothing else in Agentic-Datacenter (ADR 0018)"
 type = "forbidden"
 source_modules = ["agentic_datacenter.data"]
 forbidden_modules = [

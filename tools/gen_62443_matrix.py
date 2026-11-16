@@ -1,7 +1,7 @@
 """Generate the IEC 62443-3-3 matrix from test results (ADC-EVD-002).
 
 The matrix of section 4.3 pairs each group of system requirements with the
-mechanism in Agentic Datacenter and the requirements whose tests are the evidence.
+mechanism in Agentic-Datacenter and the requirements whose tests are the evidence.
 This tool reads the requirement report of a test run (``pytest --req-report``)
 and writes the matrix with what that run showed. Nothing in the output is
 typed by hand: the status of a row is computed, and the page carries the hash
@@ -94,7 +94,7 @@ STATEMENTS = (
 
 
 def status(requirement: str, report: Mapping[str, Mapping[str, list[str]]]) -> str:
-    """Return what the test run showed for one Agentic Datacenter requirement."""
+    """Return what the test run showed for one Agentic-Datacenter requirement."""
     entry = report.get(requirement, {})
     passed, failed = len(entry.get("passed", [])), len(entry.get("failed", []))
     if failed:
@@ -113,7 +113,7 @@ def render(report: Mapping[str, Mapping[str, list[str]]], report_hash: str) -> s
         "",
         f"Requirement report: `sha256:{report_hash}`",
         "",
-        "| Foundational requirement | System requirements | Mechanism in Agentic Datacenter "
+        "| Foundational requirement | System requirements | Mechanism in Agentic-Datacenter "
         "| Evidence | Result of this run | Role of the gate |",
         "| --- | --- | --- | --- | --- | --- |",
     ]

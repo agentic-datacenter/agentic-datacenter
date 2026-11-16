@@ -1,8 +1,8 @@
-# Agentic Datacenter
+# Agentic-Datacenter
 
 **A test bench for the governance gates that stand between AI operations agents and critical infrastructure.**
 
-Agentic Datacenter simulates the control systems of a data center: power, cooling, fuel, fire safety and physical security. An AI agent proposes changes to the plant. A governance gate decides whether each change may happen. Agentic Datacenter then executes what was allowed, and measures what the gate let through and what it blocked without need. Any project's gate can sit in that seat and is judged on the same scenarios, agents and seeds as every other.
+Agentic-Datacenter simulates the control systems of a data center: power, cooling, fuel, fire safety and physical security. An AI agent proposes changes to the plant. A governance gate decides whether each change may happen. Agentic-Datacenter then executes what was allowed, and measures what the gate let through and what it blocked without need. Any project's gate can sit in that seat and is judged on the same scenarios, agents and seeds as every other.
 
 <p align="center">
   <a href="docs/media/agentic_datacenter_visual.mp4"><img src="docs/media/agentic_datacenter_visual.webp" alt="Fly-over of a rendered modular data center: the site, generator enclosures, air-cooled chillers, thermal storage and the gatehouse" width="100%"></a>
@@ -17,14 +17,14 @@ Not a gate in that sense, for example a project that keeps budgets, gives scores
 
 **You need** git, Python 3.12 or later and [uv](https://docs.astral.sh/uv/).
 
-**1. Get Agentic Datacenter.**
+**1. Get Agentic-Datacenter.**
 
 ```sh
 git clone https://github.com/darklordVirtual/agentic-datacenter && cd agentic-datacenter
 uv sync
 ```
 
-**2. Serve your gate.** For each proposal Agentic Datacenter sends `POST /evaluate` with the facts it read from the simulated plant (never the agent's own word). You answer with a verdict and your reasons:
+**2. Serve your gate.** For each proposal Agentic-Datacenter sends `POST /evaluate` with the facts it read from the simulated plant (never the agent's own word). You answer with a verdict and your reasons:
 
 | Verdict | Meaning |
 | --- | --- |
@@ -35,9 +35,9 @@ uv sync
 
 Only `ALLOW` and `DENY` are required. A gate that knows nothing else answers with those two, passes the check and is scored like any other gate. Your own words work too: `permit`, `block`, `ask`, `require_approval`, `skip` and others are read as the verdict they mean. The rules that keep gates with different verdicts comparable are in [docs/bench/FAIRNESS.md](docs/bench/FAIRNESS.md).
 
-Afterwards Agentic Datacenter tells you on `POST /outcome` what became of the decision. The message format is [`agentic_datacenter.gate.http/1`](docs/reference/gate-http-v1.schema.json). For a working service to copy, see [examples/http-gate/server.py](examples/http-gate/server.py) (standard-library Python, about 80 lines).
+Afterwards Agentic-Datacenter tells you on `POST /outcome` what became of the decision. The message format is [`agentic_datacenter.gate.http/1`](docs/reference/gate-http-v1.schema.json). For a working service to copy, see [examples/http-gate/server.py](examples/http-gate/server.py) (standard-library Python, about 80 lines).
 
-**3. Check that Agentic Datacenter can talk to it.**
+**3. Check that Agentic-Datacenter can talk to it.**
 
 ```sh
 export ADC_GATE_URL=http://127.0.0.1:8787   # where your service listens
@@ -59,20 +59,20 @@ A gate that runs as a hook rather than a service is attached as `command_gate`, 
 
 ## Participating gates
 
-| Gate | Project | Attached as | Operating profile | Written by Agentic Datacenter's authors | Result |
+| Gate | Project | Attached as | Operating profile | Written by Agentic-Datacenter's authors | Result |
 | --- | --- | --- | --- | --- | --- |
-| `null_gate` | Agentic Datacenter baseline: no gate | built in | `UNGOVERNED` | yes | development runs only |
-| `static_allowlist` | Agentic Datacenter baseline: role and range checks | built in | `STATIC_ALLOWLIST` | yes | development runs only |
+| `null_gate` | Agentic-Datacenter baseline: no gate | built in | `UNGOVERNED` | yes | development runs only |
+| `static_allowlist` | Agentic-Datacenter baseline: role and range checks | built in | `STATIC_ALLOWLIST` | yes | development runs only |
 | `remora` | REMORA, decision service | built in, [pinned](REMORA_PIN) | `DECISION_ONLY` | yes | development runs only |
 | `remora_governed` | REMORA, execution service | built in, [pinned](REMORA_PIN) | `GOVERNED` | yes | development runs only |
 | `remora_shadow` | REMORA, shadow | built in, [pinned](REMORA_PIN) | `SHADOW` | yes | development runs only |
 | *your gate* | | HTTP or Python package | | | register with the "Gate registration" issue form |
 
-A row is added when a gate is registered. Its result is filled in from a result card that passed `agentic-datacenter bench check`, with a link to the "Gate result" issue that carries the card. Results of gates written by Agentic Datacenter's authors are reported apart from the rest.
+A row is added when a gate is registered. Its result is filled in from a result card that passed `agentic-datacenter bench check`, with a link to the "Gate result" issue that carries the card. Results of gates written by Agentic-Datacenter's authors are reported apart from the rest.
 
 ## Public test
 
-The public test runs in seasons ([docs/bench/PUBLIC_TEST.md](docs/bench/PUBLIC_TEST.md)). Each season freezes one version of the benchmark. Part of the scenarios are hidden variants, drawn from a public randomness beacon at a date announced in advance. Nobody can know them before that date, Agentic Datacenter's authors included, so no gate can be tuned to them. Gates are registered with their exact version before the date. Anyone can reproduce a result: the same version, gate and seeds give the same result card, byte for byte, on any machine.
+The public test runs in seasons ([docs/bench/PUBLIC_TEST.md](docs/bench/PUBLIC_TEST.md)). Each season freezes one version of the benchmark. Part of the scenarios are hidden variants, drawn from a public randomness beacon at a date announced in advance. Nobody can know them before that date, Agentic-Datacenter's authors included, so no gate can be tuned to them. Gates are registered with their exact version before the date. Anyone can reproduce a result: the same version, gate and seeds give the same result card, byte for byte, on any machine.
 
 **Status:** season 1 is being prepared. No benchmark result has been reported. The benchmark version is not frozen, and every run so far is a development run and labelled as one. The hypotheses and the analysis plan are fixed in advance in [docs/bench/PREREGISTRATION.md](docs/bench/PREREGISTRATION.md).
 
@@ -82,7 +82,7 @@ The public test runs in seasons ([docs/bench/PUBLIC_TEST.md](docs/bench/PUBLIC_T
 | --- | --- |
 | Gate | The system under test. It decides on each proposal. It never writes to the plant itself. |
 | Operating profile | What a gate is allowed to do: decide only (`DECISION_ONLY`), decide and execute (`GOVERNED`), watch only (`SHADOW`), and so on. Results are always shown beside the profile. |
-| Counterfactual replay | For each blocked proposal, Agentic Datacenter replays the run as if it had been allowed. This shows whether the block prevented harm or was a false block. |
+| Counterfactual replay | For each blocked proposal, Agentic-Datacenter replays the run as if it had been allowed. This shows whether the block prevented harm or was a false block. |
 | Result card | The JSON file a benchmark writes: safety, false blocks and approvals per gate and agent. |
 | `agentic-datacenter bench check` | Refuses a result card in which harm got through, or that is incomplete. |
 | Development run | Any run made with `--allow-unfrozen`. It cannot be reported as a benchmark result. |
@@ -115,6 +115,6 @@ The code is ten Python packages under `packages/` with one `uv` lock. The layer 
 - [docs/design/SDD-ADC-001.md](docs/design/SDD-ADC-001.md): the design document. Its opening table says which sections to read for your role.
 - [docs/design/zone_model.md](docs/design/zone_model.md), [docs/design/threat_model.md](docs/design/threat_model.md) and the decisions in [docs/design/adr/](docs/design/adr/).
 - [docs/guides/release-gate.md](docs/guides/release-gate.md): what makes `agentic-datacenter bench check` refuse a card.
-- [CONTRIBUTING.md](CONTRIBUTING.md): rules for changes to Agentic Datacenter itself.
+- [CONTRIBUTING.md](CONTRIBUTING.md): rules for changes to Agentic-Datacenter itself.
 - The simulated facility is generic. It was informed by an unpublished construction specification, which nothing in this repository identifies or quotes; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 - Licence: Business Source License 1.1, see [LICENSE](LICENSE); `packages/agentic-datacenter-iec61850` is GPLv3.

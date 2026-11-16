@@ -1,13 +1,13 @@
 # Public test
 
-How a governance gate from any project is tested on Agentic Datacenter in the open, and what makes the result worth something. The question, hypotheses and analysis are those of the [preregistration](PREREGISTRATION.md); this page is the procedure.
+How a governance gate from any project is tested on Agentic-Datacenter in the open, and what makes the result worth something. The question, hypotheses and analysis are those of the [preregistration](PREREGISTRATION.md); this page is the procedure.
 
 ## Seasons
 
 A public test runs in seasons. A season fixes three things before any participant can know the held-out scenarios:
 
 1. **A frozen benchmark version.** `agentic-datacenter bench freeze` writes `docs/bench/VERSION.json`, the hashes of the profile, contracts, scenarios and oracle, and the version is tagged. A card from any other version is refused for the season.
-2. **A beacon round.** The secret that draws the held-out variants of Track D is the output of the drand "quicknet" public randomness beacon at a round chosen and published here in advance, at least two weeks after the season opens. No one, the authors of Agentic Datacenter included, can know it before the round is emitted; afterwards anyone can fetch it and check it (`tools/heldout_beacon.py`).
+2. **A beacon round.** The secret that draws the held-out variants of Track D is the output of the drand "quicknet" public randomness beacon at a round chosen and published here in advance, at least two weeks after the season opens. No one, the authors of Agentic-Datacenter included, can know it before the round is emitted; afterwards anyone can fetch it and check it (`tools/heldout_beacon.py`).
 3. **A registration deadline**, the time the round is emitted. A gate takes part in the season's Track D only if it was registered before then, with the exact version it will run.
 
 | Season | Frozen version | Beacon round | Emitted (UTC) | Status |
@@ -46,5 +46,5 @@ A gate that is not deterministic, or a served gate that keeps state between runs
 ## What a season does not settle
 
 - The scenarios of the public tracks are in this repository, and a gate may have been tuned to them. Only Track D is held out.
-- The simulator, contracts and oracle are written by Agentic Datacenter's authors. A gate written by them is reported apart from the others.
+- The simulator, contracts and oracle are written by Agentic-Datacenter's authors. A gate written by them is reported apart from the others.
 - A card is a simulation result. It says nothing about a real facility.

@@ -3,7 +3,7 @@
 A manifest is ``dataset_manifest.json`` beside the files it describes. It
 records the source, version and licence as the source states them, whether the
 data may be redistributed, the period, the step, the units of each column, the
-gap tolerance, and the SHA-256 of every file. Agentic Datacenter refuses a series whose
+gap tolerance, and the SHA-256 of every file. Agentic-Datacenter refuses a series whose
 files do not match their hashes.
 """
 
@@ -17,7 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field
 MANIFEST_NAME = "dataset_manifest.json"
 SCHEMA_VERSION = 1
 
-#: Columns Agentic Datacenter reads, the quantity each holds and the units it converts.
+#: Columns Agentic-Datacenter reads, the quantity each holds and the units it converts.
 COLUMNS: dict[str, tuple[str, tuple[str, ...]]] = {
     "dry_bulb": ("outdoor dry-bulb temperature", ("degC", "K", "degF")),
     "dew_point": ("outdoor dew-point temperature", ("degC", "K", "degF")),

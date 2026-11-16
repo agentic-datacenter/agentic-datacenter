@@ -22,7 +22,7 @@ configures every process the same way:
     The name the gate reports on cards and evidence. Default ``http_gate``.
 ``ADC_GATE_PROFILE``
     The operating profile (SDD 9.6) the gate runs under. Default
-    ``DECISION_ONLY``: the gate decides and Agentic Datacenter's command service executes.
+    ``DECISION_ONLY``: the gate decides and Agentic-Datacenter's command service executes.
 ``ADC_GATE_TIMEOUT_S``
     Seconds to wait for an answer. Default 10.
 ``ADC_GATE_ALLOW_REMOTE``
@@ -31,12 +31,12 @@ configures every process the same way:
 ``ADC_GATE_STATEFUL``
     Set to ``1`` for a service that remembers earlier requests (a session,
     a budget, a ledger). It keys what it keeps by the request's ``session``;
-    Agentic Datacenter then replays a counterfactual branch from the start of the run in
+    Agentic-Datacenter then replays a counterfactual branch from the start of the run in
     a new session, instead of from the instant of the decision.
 
 A service that answers in words of its own (``permit``, ``block``, ``ask``,
 ``require_approval``, ``skip`` and the others in :data:`VERDICT_ALIASES`) is
-read as the Agentic Datacenter verdict they mean, and its own word is kept on the decision.
+read as the Agentic-Datacenter verdict they mean, and its own word is kept on the decision.
 
 ``command_gate`` is the same binding over a command instead of a URL, for a
 gate that runs as a hook: ``ADC_GATE_COMMAND`` is run once per request, the
@@ -78,9 +78,9 @@ SCHEMA = "agentic_datacenter.gate.http/1"
 SERVED_PROFILES = ("DECISION_ONLY", "STATIC_ALLOWLIST", "UNGOVERNED", "SHADOW")
 _MAX_REASONS = 16
 _MAX_TEXT = 500
-#: Words governance systems use for their verdicts, and the Agentic Datacenter verdict each
+#: Words governance systems use for their verdicts, and the Agentic-Datacenter verdict each
 #: one means. Matched without regard to case, ``-`` or spaces. A word that
-#: names an allowance with conditions Agentic Datacenter cannot enforce is not here.
+#: names an allowance with conditions Agentic-Datacenter cannot enforce is not here.
 VERDICT_ALIASES: dict[str, Verdict] = {
     **{w: Verdict.ALLOW for w in (
         "allow", "allowed", "accept", "accepted", "permit", "permitted", "approve",
@@ -103,7 +103,7 @@ _SESSIONS = itertools.count(1)
 
 
 def read_verdict(word: object) -> Verdict | None:
-    """Return the Agentic Datacenter verdict a service's word means, or None if it means none."""
+    """Return the Agentic-Datacenter verdict a service's word means, or None if it means none."""
     key = str(word).strip().lower().replace("-", "_").replace(" ", "_")
     try:
         return Verdict(key.upper())
@@ -210,7 +210,7 @@ class HttpGate:
         self.timeout_s = timeout_s
         #: A service that keeps state cannot be put back to an earlier instant.
         self.restorable = not stateful
-        #: One per gate, and Agentic Datacenter builds a gate per run and per replay.
+        #: One per gate, and Agentic-Datacenter builds a gate per run and per replay.
         self.session = f"{name}-{os.getpid()}-{next(_SESSIONS)}"
         self.outcomes: dict[str, Outcome] = {}
 

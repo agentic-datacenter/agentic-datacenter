@@ -1,4 +1,4 @@
-"""A gate from another project is checked and benchmarked without changing Agentic Datacenter.
+"""A gate from another project is checked and benchmarked without changing Agentic-Datacenter.
 
 Covers ``agentic-datacenter gate list|check`` (ADC-GOV-004) and a gate served over HTTP
 taken through a benchmark and the release gate (ADC-GOV-008, ADC-BEN-005).

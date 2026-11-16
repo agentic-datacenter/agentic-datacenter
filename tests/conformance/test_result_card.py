@@ -218,7 +218,7 @@ def test_jobs_must_be_one_or_more_and_a_gate_another_process_can_import() -> Non
 
 
 SAMPLE = '''
-"""A gate package that knows nothing of Agentic Datacenter beyond the gate interface."""
+"""A gate package that knows nothing of Agentic-Datacenter beyond the gate interface."""
 from agentic_datacenter.governance.envelope_ref import decision_ref
 from agentic_datacenter.governance.gate import Decision, Verdict
 

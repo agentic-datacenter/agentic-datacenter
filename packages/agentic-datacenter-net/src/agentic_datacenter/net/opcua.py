@@ -231,7 +231,7 @@ class OpcUaServer:
         await server.init()
         literal = f"[{host}]" if ":" in host else host
         server.set_endpoint(f"opc.tcp://{literal}:{port}/")
-        server.set_server_name("Agentic Datacenter OPC UA server")
+        server.set_server_name("Agentic-Datacenter OPC UA server")
         await server.set_application_uri(self._application_uri)
         # The library would write the wall clock to its own Server object once a second.
         server.disable_clock(True)

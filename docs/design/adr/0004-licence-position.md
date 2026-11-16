@@ -13,12 +13,12 @@ Facts as of Stage 0:
 - **The repository has no licence.** It is private, and no `LICENSE` file or licence metadata has been added.
 - **`libiec61850`** is the practical open implementation of IEC 61850 MMS. It is published under GPLv3, with a commercial licence sold by its vendor. The Python wheel considered for it is also GPLv3 and describes itself as experimental.
 - **REMORA** declares `BUSL-1.1` with a separate commercial licence. It is a dependency of `agentic-datacenter-remora` only.
-- **The SDD already limits the exposure:** the protocol library is used only in the optional distribution `agentic-datacenter-iec61850`, which runs as its own process and talks to the rest of Agentic Datacenter over a local socket. No other package imports or links it (`ADC-IEC-005`).
+- **The SDD already limits the exposure:** the protocol library is used only in the optional distribution `agentic-datacenter-iec61850`, which runs as its own process and talks to the rest of Agentic-Datacenter over a local socket. No other package imports or links it (`ADC-IEC-005`).
 - **No code uses either library today.** `agentic-datacenter-iec61850` is an empty package with no dependency on the protocol library.
 
 ## Questions the owner needs to answer
 
-1. What licence does the Agentic Datacenter repository carry, if any, while private, and what is intended if it becomes public?
+1. What licence does the Agentic-Datacenter repository carry, if any, while private, and what is intended if it becomes public?
 2. Is `agentic-datacenter-iec61850` itself licensed under GPLv3 (the straightforward reading for code that imports a GPLv3 library), with the other seven distributions under the repository licence?
 3. Is the process boundary accepted as sufficient separation for the other distributions, or is the vendor's commercial licence preferred?
 4. Does the BUSL-1.1 licence of REMORA place any condition on publishing `agentic-datacenter-remora` or benchmark results obtained with it?

@@ -78,7 +78,7 @@ class Metrics:
     approval_required: int = 0
     #: Of those, executed with fewer distinct approvers than the contract asks for.
     executed_without_required_approval: int = 0
-    #: Executed although Agentic Datacenter had established that a premise does not hold.
+    #: Executed although Agentic-Datacenter had established that a premise does not hold.
     executed_on_failed_premises: int = 0
     #: How often the gate gave each verdict: what it can say is visible beside what it did.
     verdict_allow: int = 0

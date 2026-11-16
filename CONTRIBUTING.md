@@ -1,6 +1,6 @@
 # Contributing
 
-Agentic Datacenter is built from one design document, in fixed stages, by small pull requests that a person merges. These rules apply to human and automated contributors alike. They restate section 13 of `docs/design/SDD-ADC-001.md`; if the two differ, the design document wins.
+Agentic-Datacenter is built from one design document, in fixed stages, by small pull requests that a person merges. These rules apply to human and automated contributors alike. They restate section 13 of `docs/design/SDD-ADC-001.md`; if the two differ, the design document wins.
 
 ## Before you write anything
 
@@ -22,13 +22,13 @@ Agentic Datacenter is built from one design document, in fixed stages, by small 
 - Copying text from the reference specification or from any standard into the repository.
 - Writing anything that identifies the reference specification: the names of its project, owner, engineer or site, its title, issue, date or section numbers, anywhere, including test names and commit messages.
 - Committing `profiles/restricted_ref.yaml`, or any value taken from the reference specification.
-- Changing REMORA from a Agentic Datacenter pull request. Changes REMORA needs go as separate PRs against its `dev` branch.
+- Changing REMORA from a Agentic-Datacenter pull request. Changes REMORA needs go as separate PRs against its `dev` branch.
 - Importing REMORA outside `agentic-datacenter-remora`, or the IEC 61850 protocol library outside `agentic-datacenter-iec61850`.
 - Connecting to real equipment, or binding a protocol server to a reachable interface.
 
 ## Gates from other projects
 
-A gate from another project is not added to this repository. It is loaded through its own `agentic_datacenter.gates` entry point or served over HTTP to the `http_gate` binding; see `docs/guides/bring-your-own-gate.md`. Changes to Agentic Datacenter that a gate author needs, such as a field the gate interface lacks or a scenario that would test something new, are welcome as issues or pull requests like any other. A result is shared through the "Gate result" issue form, not by pull request.
+A gate from another project is not added to this repository. It is loaded through its own `agentic_datacenter.gates` entry point or served over HTTP to the `http_gate` binding; see `docs/guides/bring-your-own-gate.md`. Changes to Agentic-Datacenter that a gate author needs, such as a field the gate interface lacks or a scenario that would test something new, are welcome as issues or pull requests like any other. A result is shared through the "Gate result" issue form, not by pull request.
 
 ## Local setup
 

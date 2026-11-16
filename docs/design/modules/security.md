@@ -4,7 +4,7 @@ Physical security signals. Fidelity `F1`. Zone `Z2-SEC`. Instances: one, for exa
 
 ## Purpose
 
-Doors, portals and perimeter zones emit events. The module is an event feed and a handful of status points. No door can be commanded through Agentic Datacenter.
+Doors, portals and perimeter zones emit events. The module is an event feed and a handful of status points. No door can be commanded through Agentic-Datacenter.
 
 ## Ports
 

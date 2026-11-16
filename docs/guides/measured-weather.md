@@ -1,16 +1,16 @@
 # Run a scenario on measured weather
 
-`cooling.weather` can take its outdoor conditions from a measured historical series instead of the synthetic daily cycle. This guide shows how to put any fixed-step weather series into Agentic Datacenter's format, describe it with a manifest, and run a scenario on it. The rules behind it are in [ADR 0018](../design/adr/0018-measured-input-series.md).
+`cooling.weather` can take its outdoor conditions from a measured historical series instead of the synthetic daily cycle. This guide shows how to put any fixed-step weather series into Agentic-Datacenter's format, describe it with a manifest, and run a scenario on it. The rules behind it are in [ADR 0018](../design/adr/0018-measured-input-series.md).
 
 ## Before you start
 
-- **Keep the data outside the repository.** Put the dataset in a directory of its own outside the Agentic Datacenter checkout, for example `~/agentic-datacenter-datasets/<site>/`. No series, extract or converted file is committed, and `.gitignore` refuses the usual names as a backstop.
+- **Keep the data outside the repository.** Put the dataset in a directory of its own outside the Agentic-Datacenter checkout, for example `~/agentic-datacenter-datasets/<site>/`. No series, extract or converted file is committed, and `.gitignore` refuses the usual names as a backstop.
 - **Write down the licence as the source states it.** Copy the publisher's words into the manifest; do not paraphrase or resolve them. Leave `redistribution` at `not_cleared` unless the owner holds written permission to redistribute.
 - **Install the optional package.** `uv sync` in the workspace installs `agentic-datacenter-data`; elsewhere install `agentic-datacenter-plant[measured]` and `agentic-datacenter-scenarios[measured]`.
 
-## 1. Convert the series to Agentic Datacenter's format
+## 1. Convert the series to Agentic-Datacenter's format
 
-Agentic Datacenter reads one UTF-8 CSV per dataset:
+Agentic-Datacenter reads one UTF-8 CSV per dataset:
 
 ```text
 time_utc,dry_bulb,rel_humidity
@@ -21,7 +21,7 @@ time_utc,dry_bulb,rel_humidity
 
 - `time_utc`: ISO 8601 in UTC with the `Z` designator, to the second. Timestamps without it are refused. If the source gives local time, convert it, and say in the manifest how (in particular whether the source observes daylight saving time).
 - Rows strictly increasing, on one fixed step (usually 3600 s). A missing row or an empty cell means "not measured"; never write a placeholder such as `-9999` or `NaN`.
-- Value columns Agentic Datacenter reads: `dry_bulb` (temperature), `dew_point` (temperature), `rel_humidity` (%). Only the columns you have; `dry_bulb` is required by `cooling.weather`.
+- Value columns Agentic-Datacenter reads: `dry_bulb` (temperature), `dew_point` (temperature), `rel_humidity` (%). Only the columns you have; `dry_bulb` is required by `cooling.weather`.
 - Write a small conversion script for your source and keep it with the data, outside the repository. Record what it did (source columns used, time conversion, any derived column) in the manifest's `derivation`.
 
 ## 2. Write the manifest
@@ -44,7 +44,7 @@ uv run agentic-datacenter data manifest ~/agentic-datacenter-datasets/site-a/ser
 
 This writes `dataset_manifest.json` beside the series, with the period and the SHA-256 of every file taken from the files themselves. Temperatures may be declared in `degC`, `K` or `degF`; they are converted to °C.
 
-`--gap-tolerance-s` is the longest stretch of missing samples Agentic Datacenter may bridge by linear interpolation (3600 = one missing hour on an hourly series; 0 = bridge nothing). Reading inside a longer stretch stops the run. Choose it before looking at results, and state it in any report.
+`--gap-tolerance-s` is the longest stretch of missing samples Agentic-Datacenter may bridge by linear interpolation (3600 = one missing hour on an hourly series; 0 = bridge nothing). Reading inside a longer stretch stops the run. Choose it before looking at results, and state it in any report.
 
 ## 3. Choose the window and check it
 

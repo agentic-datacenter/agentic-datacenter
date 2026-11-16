@@ -1,4 +1,4 @@
-site_name: Agentic Datacenter
+site_name: Agentic-Datacenter
 site_description: Simulation-only data center OT model for benchmarking governance gates.
 docs_dir: docs
 strict: true

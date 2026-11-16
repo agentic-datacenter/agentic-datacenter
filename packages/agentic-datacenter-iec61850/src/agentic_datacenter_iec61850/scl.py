@@ -195,7 +195,7 @@ def _ied(root: ET.Element, name: str, tag: str, kind: str, settings: dict[str, s
         name=name,
         desc=tag,
         type=kind,
-        manufacturer="Agentic Datacenter",
+        manufacturer="Agentic-Datacenter",
         configVersion="1",
     )
     services = ET.SubElement(ied, "Services")

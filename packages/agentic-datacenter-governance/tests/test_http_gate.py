@@ -150,7 +150,7 @@ def test_the_service_cannot_widen_what_an_allow_authorizes() -> None:
         {
             "schema": SCHEMA,
             "verdict": "allow_with_caps",
-            "reasons": ["conditions Agentic Datacenter cannot hold"],
+            "reasons": ["conditions Agentic-Datacenter cannot hold"],
         },
         {"schema": SCHEMA, "verdict": "ALLOW", "reasons": []},
         ["not", "an", "object"],

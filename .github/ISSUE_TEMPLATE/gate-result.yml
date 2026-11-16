@@ -1,12 +1,12 @@
 name: Gate result
-description: Share a result card from your own governance gate run on Agentic Datacenter.
+description: Share a result card from your own governance gate run on Agentic-Datacenter.
 title: "Gate result: <gate> on <scenarios>"
 labels: ["gate-result"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thank you for running your gate on Agentic Datacenter. See docs/guides/bring-your-own-gate.md.
+        Thank you for running your gate on Agentic-Datacenter. See docs/guides/bring-your-own-gate.md.
         A result card is a simulation result, not a claim about any facility.
   - type: input
     id: gate
@@ -18,7 +18,7 @@ body:
   - type: input
     id: agentic-datacenter
     attributes:
-      label: Agentic Datacenter commit
+      label: Agentic-Datacenter commit
     validations:
       required: true
   - type: textarea
@@ -46,7 +46,7 @@ body:
     id: forge
     attributes:
       label: Could the gate forge or suppress evidence?
-      description: Agentic Datacenter keeps decision records and computes the figures itself. Say what your gate logs on its own and whether anyone but the gate can check it.
+      description: Agentic-Datacenter keeps decision records and computes the figures itself. Say what your gate logs on its own and whether anyone but the gate can check it.
     validations:
       required: true
   - type: dropdown
@@ -61,7 +61,7 @@ body:
   - type: textarea
     id: mapping
     attributes:
-      label: How your terms map to Agentic Datacenter's
+      label: How your terms map to Agentic-Datacenter's
       description: For verdict, authorization, premise, approval and outcome, an exact, partial (say what differs) or no match.
   - type: textarea
     id: files

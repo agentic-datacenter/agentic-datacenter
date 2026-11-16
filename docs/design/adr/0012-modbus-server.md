@@ -12,7 +12,7 @@ Section 5 names `pymodbus` for Modbus/TCP and asks that its current version be v
 - The data-store classes that most examples use (`ModbusDeviceContext`, `ModbusSequentialDataBlock`, `ModbusServerContext`) log that they are deprecated and will be removed in version 4. Their replacement is `SimDevice` with `SimData` blocks.
 - `SimDevice` takes an asynchronous `action` callback that is called for every request with the function code, the address, the count, the registers concerned and, for a write, the values. It may change the registers before a read is answered and may refuse a request with an exception code.
 
-A protocol server in Agentic Datacenter is a view of the point database (section 8): it must answer with the value and quality the database holds in that step, and it must refuse what the device would refuse.
+A protocol server in Agentic-Datacenter is a view of the point database (section 8): it must answer with the value and quality the database holds in that step, and it must refuse what the device would refuse.
 
 ## Decision
 

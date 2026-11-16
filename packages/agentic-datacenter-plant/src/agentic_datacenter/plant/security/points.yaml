@@ -1,5 +1,5 @@
 # Points of the physical security signals. Every point is a status and tier T0:
-# no door, portal or zone can be commanded through Agentic Datacenter.
+# no door, portal or zone can be commanded through Agentic-Datacenter.
 - {name: events_granted, kind: counter, default: 0, tier: T0, description: "Access granted events so far", assumed: true}
 - {name: events_denied, kind: counter, default: 0, tier: T0, description: "Access denied events so far", assumed: true}
 - {name: events_forced, kind: counter, default: 0, tier: T0, description: "Door forced events so far", assumed: true}

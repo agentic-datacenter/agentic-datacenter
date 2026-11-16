@@ -55,7 +55,7 @@ class Change(_Model):
 
 
 class EnergyPrice(_Model):
-    """A price per kWh, supplied by the requester. Agentic Datacenter never assumes one."""
+    """A price per kWh, supplied by the requester. Agentic-Datacenter never assumes one."""
 
     per_kwh: Annotated[float, Field(gt=0.0)]
     currency: Annotated[str, Field(pattern=r"^[A-Z]{3}$")]

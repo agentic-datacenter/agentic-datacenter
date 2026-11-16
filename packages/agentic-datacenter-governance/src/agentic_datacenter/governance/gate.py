@@ -150,7 +150,7 @@ class GateRefusal(Exception):  # noqa: N818 - a refusal is an answer, not an err
 
 @runtime_checkable
 class GovernanceGate(Protocol):
-    """What a governance system implements to be driven by Agentic Datacenter."""
+    """What a governance system implements to be driven by Agentic-Datacenter."""
 
     name: str
 

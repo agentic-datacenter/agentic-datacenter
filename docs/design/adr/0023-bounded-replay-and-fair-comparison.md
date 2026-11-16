@@ -23,13 +23,13 @@ The card could not show what a binary gate did with a step that asks for a perso
 3. **Fairness counts on every card** (`ADC-BEN-009`, `docs/bench/FAIRNESS.md`). These show what a gate let through that the contract or the premises did not allow, whatever came of it:
    - the verdicts a gate used;
    - proposals executed with fewer approvers than their contract asks for;
-   - proposals executed on a premise Agentic Datacenter established as false;
+   - proposals executed on a premise Agentic-Datacenter established as false;
    - decisions a served gate failed to give.
 
    Card schema version 3.
 4. **The served interface meets more projects** (`ADC-GOV-008`):
    - Common verdict words are read as the verdict they mean, and the service's own word is kept.
-   - Each request carries a tool-call view and a session that is new for every gate Agentic Datacenter builds.
+   - Each request carries a tool-call view and a session that is new for every gate Agentic-Datacenter builds.
    - `ADC_GATE_STATEFUL=1` makes branches replay from the start.
    - `command_gate` runs a command per request over standard input and output, for gates that run as hooks.
 

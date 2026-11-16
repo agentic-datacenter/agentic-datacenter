@@ -4,7 +4,7 @@ The held-out variants of Track D are only held out if nobody who writes a gate
 or the contracts knows the secret before the gate is fixed. This tool takes
 the secret from the drand "quicknet" beacon, run by independent organizations:
 a round is chosen and published before it is emitted, so no one, the authors
-of Agentic Datacenter included, can know the secret until then, and afterwards anyone can
+of Agentic-Datacenter included, can know the secret until then, and afterwards anyone can
 fetch the same round and check it.
 
     python tools/heldout_beacon.py round-at 2026-12-15T12:00:00Z

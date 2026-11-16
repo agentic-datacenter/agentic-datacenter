@@ -50,7 +50,7 @@ def test_the_scd_is_the_same_bytes_whatever_the_seed_and_the_order() -> None:
     text = scl.scd(RELAYS)
     assert text == scl.scd(list(reversed(RELAYS))) == scl.scd(site(seed=7)[1])
     assert text.startswith('<?xml version="1.0" encoding="UTF-8"?>\n<SCL ')
-    assert "2026" not in text.replace("Agentic Datacenter", ""), "no date in a generated file"
+    assert "2026" not in text.replace("Agentic-Datacenter", ""), "no date in a generated file"
 
 
 def test_the_scd_is_well_formed_and_every_type_it_names_is_defined() -> None:

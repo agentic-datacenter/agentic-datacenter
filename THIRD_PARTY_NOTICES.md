@@ -1,6 +1,6 @@
 # Third-party notices
 
-Required by `ADC-PRV-005`. This file lists what was consulted to design Agentic Datacenter and what third-party software it uses. It is updated in the same PR that adds a source or a dependency.
+Required by `ADC-PRV-005`. This file lists what was consulted to design Agentic-Datacenter and what third-party software it uses. It is updated in the same PR that adds a source or a dependency.
 
 ## Unpublished reference
 
@@ -12,11 +12,11 @@ Required by `ADC-PRV-005`. This file lists what was consulted to design Agentic 
 
 ## Measured datasets
 
-**No measured dataset is included in this repository or in any Agentic Datacenter distribution.** The measured-input layer (`agentic-datacenter-data`, ADR 0018) reads a series the user supplies at run time from outside the repository. The licence of such a dataset is recorded, as its source states it, in the dataset's own manifest, and derived data is not redistributed until its owner has cleared it in writing.
+**No measured dataset is included in this repository or in any Agentic-Datacenter distribution.** The measured-input layer (`agentic-datacenter-data`, ADR 0018) reads a series the user supplies at run time from outside the repository. The licence of such a dataset is recorded, as its source states it, in the dataset's own manifest, and derived data is not redistributed until its owner has cleared it in writing.
 
 ### Datasets named as candidates, not used
 
-`docs/calibration/data_sources.md` names the datasets below as candidates for calibrating submodels. **None of them is used, included, fetched or redistributed by Agentic Datacenter.** Each is named with its source only. Before any of them is used, its licence is confirmed from the source, the attribution it requires is added here, and the changes made to it are recorded in its manifest.
+`docs/calibration/data_sources.md` names the datasets below as candidates for calibrating submodels. **None of them is used, included, fetched or redistributed by Agentic-Datacenter.** Each is named with its source only. Before any of them is used, its licence is confirmed from the source, the attribution it requires is added here, and the changes made to it are recorded in its manifest.
 
 | Dataset | Creator | Source | Licence, as the source states it |
 | --- | --- | --- | --- |
@@ -27,7 +27,7 @@ Required by `ADC-PRV-005`. This file lists what was consulted to design Agentic 
 | Marconi A2 telemetry (HazardNet) | CINECA | [zenodo.org/records/10050368](https://zenodo.org/records/10050368) | To be confirmed |
 | PowerData2019 | Google | [github.com/google/cluster-data](https://github.com/google/cluster-data/blob/master/PowerData2019.md) | To be confirmed |
 
-Whoever runs Agentic Datacenter on a measured dataset of their own gives the attribution that dataset's licence requires.
+Whoever runs Agentic-Datacenter on a measured dataset of their own gives the attribution that dataset's licence requires.
 
 ## Media
 
@@ -77,7 +77,7 @@ Links are in the "Sources" section of `docs/design/SDD-ADC-001.md`.
 
 ## Software
 
-Agentic Datacenter is licensed under the Business Source License 1.1 (`LICENSE`). The components below are third-party; each keeps its own licence. None is vendored into this repository, and none is modified from it.
+Agentic-Datacenter is licensed under the Business Source License 1.1 (`LICENSE`). The components below are third-party; each keeps its own licence. None is vendored into this repository, and none is modified from it.
 
 ### Runtime dependencies
 
@@ -95,11 +95,11 @@ As installed from `uv.lock` on 2026-11-13, with the licence each project declare
 | REMORA (`remora-assurance`) | 0.12.0 at the commit in `REMORA_PIN` | BUSL-1.1, with a separate commercial licence, as declared by that project | `agentic-datacenter-remora` only |
 | `pyiec61850-ng`, carrying `libiec61850` 1.6.1 and Mbed TLS | 1.6.1.10 | GPLv3; Mbed TLS Apache-2.0 | `agentic-datacenter-iec61850` only, on Linux only (ADR 0017). That distribution is GPL-3.0-or-later; its licence text is `packages/agentic-datacenter-iec61850/LICENSE` |
 
-`asyncua` is under the GNU Lesser General Public License, version 3 or later. Agentic Datacenter uses it as an unmodified package installed separately from PyPI; it is not copied into this repository and not changed (ADR 0015). If Agentic Datacenter is ever distributed, the distribution must say that it uses `asyncua` under the LGPL, include the texts of the GPL-3.0 and the LGPL-3.0, and leave the recipient able to replace the library with a modified version, which rules out freezing it into a single executable.
+`asyncua` is under the GNU Lesser General Public License, version 3 or later. Agentic-Datacenter uses it as an unmodified package installed separately from PyPI; it is not copied into this repository and not changed (ADR 0015). If Agentic-Datacenter is ever distributed, the distribution must say that it uses `asyncua` under the LGPL, include the texts of the GPL-3.0 and the LGPL-3.0, and leave the recipient able to replace the library with a modified version, which rules out freezing it into a single executable.
 
 ### Development and test tools
 
-`uv`, `ruff`, `mypy`, `pytest`, `hypothesis`, `import-linter`, `hatchling`, `httpx`, `mkdocs`, `pip-audit`. Each under the licence its project declares; versions are fixed by `uv.lock`. They are not part of what Agentic Datacenter distributes.
+`uv`, `ruff`, `mypy`, `pytest`, `hypothesis`, `import-linter`, `hatchling`, `httpx`, `mkdocs`, `pip-audit`. Each under the licence its project declares; versions are fixed by `uv.lock`. They are not part of what Agentic-Datacenter distributes.
 
 ### Named in the design, not used yet
 

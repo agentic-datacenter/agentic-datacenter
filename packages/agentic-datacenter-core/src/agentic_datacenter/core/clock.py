@@ -1,7 +1,7 @@
 """The simulated clock.
 
 Simulated time is a whole number of milliseconds, so it never drifts. This is
-the only module in Agentic Datacenter that may read the wall clock (ADC-KRN-003).
+the only module in Agentic-Datacenter that may read the wall clock (ADC-KRN-003).
 :func:`wall_seconds` is that one reader. It exists to measure and pace a run
 from outside; nothing that affects simulator state may call it.
 """
