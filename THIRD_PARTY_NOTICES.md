@@ -99,7 +99,7 @@ As installed from `uv.lock` on 2026-11-13, with the licence each project declare
 
 ### Development and test tools
 
-`uv`, `ruff`, `mypy`, `pytest`, `hypothesis`, `import-linter`, `hatchling`, `httpx`, `mkdocs`, `pip-audit`. Each under the licence its project declares; versions are fixed by `uv.lock`. They are not part of what Agentic-Datacenter distributes.
+`uv`, `ruff`, `mypy`, `pytest`, `pytest-xdist`, `hypothesis`, `import-linter`, `hatchling`, `httpx`, `mkdocs`, `pip-audit`. Each under the licence its project declares; versions are fixed by `uv.lock`. They are not part of what Agentic-Datacenter distributes.
 
 ### Named in the design, not used yet
 

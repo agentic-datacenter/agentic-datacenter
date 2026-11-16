@@ -162,7 +162,7 @@ Agentic-Datacenter is a deterministic, fixed-step simulation kernel with plant, 
 
 | Concern | Choice | Note |
 | --- | --- | --- |
-| Language and tooling | Python 3.12, `uv`, `ruff`, `mypy --strict`, `pytest`, `hypothesis` | Match REMORA-research conventions where they differ |
+| Language and tooling | Python 3.12, `uv`, `ruff`, `mypy --strict`, `pytest` (with `pytest-xdist` to run the suite on all cores), `hypothesis` | Match REMORA-research conventions where they differ |
 | Schemas | `pydantic` v2; profiles and contracts in YAML | JSON Schema exported for external tools |
 | Modbus/TCP | `pymodbus` | Verify the current major version and pin it in Stage 6 |
 | BACnet/IP | `bacpypes3` | Same |

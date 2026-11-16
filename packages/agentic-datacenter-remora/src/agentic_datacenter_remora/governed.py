@@ -1,4 +1,4 @@
-"""REMORA's governed execution path as a Agentic-Datacenter gate: the GOVERNED and SHADOW profiles.
+"""REMORA's governed execution path as an Agentic-Datacenter gate: the GOVERNED and SHADOW profiles.
 
 Every proposal is first decided by the pure policy function, exactly as in
 ``DECISION_ONLY``, from premises the control path read itself. A proposal

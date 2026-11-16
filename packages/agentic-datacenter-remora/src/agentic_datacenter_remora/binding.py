@@ -117,7 +117,7 @@ def observe(proposal: Proposal, premises: PremiseSnapshot) -> PolicyObservation:
 
 
 class RemoraGate:
-    """REMORA as a Agentic-Datacenter gate, deciding through the pure policy function."""
+    """REMORA as an Agentic-Datacenter gate, deciding through the pure policy function."""
 
     name = "remora"
     profile = PROFILE

@@ -1,4 +1,4 @@
-"""REMORA's policy what-if on a Agentic-Datacenter proposal (ADR 0019). Advisory: it grants nothing.
+"""REMORA's policy what-if on a proposal (ADR 0019). Advisory: it grants nothing.
 
 ``remora.sdk.what_if`` answers, for one observation, which verdict REMORA's
 policy gives it, which hard guard applies and which smallest sets of facts

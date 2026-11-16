@@ -24,12 +24,13 @@ dev = [
     "ruff",
     "mypy",
     "pytest",
+    "pytest-xdist",
     "hypothesis",
     "import-linter",
     "types-pyyaml",
     "httpx",
 ]
-test = ["pytest", "hypothesis", "httpx"]
+test = ["pytest", "pytest-xdist", "hypothesis", "httpx"]
 docs = ["mkdocs"]
 audit = ["pip-audit"]
 remora = ["agentic-datacenter-remora"]

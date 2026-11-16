@@ -8,6 +8,11 @@ Agentic-Datacenter is built from one design document, in fixed stages, by small 
 - Work on the current stage only. A stage does not start until the exit criterion of the previous one is met.
 - If the design document is ambiguous or wrong, stop. Propose the change to the design document in the same PR instead of guessing.
 
+## Checking a change
+
+- A small change: run the tests that touch what changed, with `uv run ruff check`, `uv run ruff format --check` and `uv run python tools/gen_reference.py --check`.
+- A broad change: run the whole suite on all cores, `uv run pytest -n auto --dist loadfile`. It takes about 8 minutes on eight cores, against about 45 in one process.
+
 ## Every pull request
 
 - Names the requirement IDs it closes in its description.
@@ -22,7 +27,7 @@ Agentic-Datacenter is built from one design document, in fixed stages, by small 
 - Copying text from the reference specification or from any standard into the repository.
 - Writing anything that identifies the reference specification: the names of its project, owner, engineer or site, its title, issue, date or section numbers, anywhere, including test names and commit messages.
 - Committing `profiles/restricted_ref.yaml`, or any value taken from the reference specification.
-- Changing REMORA from a Agentic-Datacenter pull request. Changes REMORA needs go as separate PRs against its `dev` branch.
+- Changing REMORA from an Agentic-Datacenter pull request. Changes REMORA needs go as separate PRs against its `dev` branch.
 - Importing REMORA outside `agentic-datacenter-remora`, or the IEC 61850 protocol library outside `agentic-datacenter-iec61850`.
 - Connecting to real equipment, or binding a protocol server to a reachable interface.
 
