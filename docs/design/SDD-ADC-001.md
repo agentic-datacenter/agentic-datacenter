@@ -1057,7 +1057,7 @@ CI is how this SDD is enforced: every structural rule, requirement and reproduci
 
 ## 13. Staged build plan
 
-This section is build history. The simulator was built in the stages below, in this order, by small pull requests that a person merged. The table stays because the traceability check reads it: a requirement is due from the stage that closes it, and `[tool.agentic-datacenter] stage` in `pyproject.toml` says which stage the repository counts as reached (ADR 0007). Not every exit criterion has been met; section 14 says which.
+This section is build history. The simulator was built in the stages below, in this order, by small pull requests that a person merged. The table stays because the traceability check reads it: a requirement is due from the stage that closes it, and `[tool.agentic-datacenter] stage` in `pyproject.toml` says which stage the repository counts as reached (ADR 0007). Which requirements are due, and which of the later ones lack a test or an owner, is on the generated page `docs/reference/requirements.md`. Not every exit criterion has been met; section 14 says which.
 
 | Stage | Deliverable | Requirements closed | Exit criterion |
 | --- | --- | --- | --- |
@@ -1090,7 +1090,7 @@ The reference specification does not contain single-line diagrams, P&IDs, point 
 
 **Where the code differs from this document**
 
-- `compose` mode is not built. There is no `deploy/` directory, no conduit container and no REMORA service in a container. Everything runs, and is tested, in `inproc` mode (ADR 0010, ADR 0016, ADR 0017). Every sentence above about `compose` mode describes a design.
+- `compose` mode is not built. There is no `deploy/` directory, no conduit container and no REMORA service in a container. Everything runs, and is tested, in `inproc` mode (ADR 0010, ADR 0016, ADR 0017). `ADC-NET-001` asks for the zone matrix in both run modes and is tested in `inproc` only. Every sentence above about `compose` mode describes a design.
 - No language-model agent (`llm_agent`, 12.1) is implemented. The benchmark and the demonstration use scripted agents.
 - The binding surface in 5.2 and 9.2 differs from REMORA in four places (`remora_binding.md`, section 1).
 - Zones and conduits differ in the points listed in `zone_model.md`, section 6. No data collector and no alarm notification are modelled.

@@ -2,7 +2,9 @@
 
 # Requirement-to-test matrix
 
-The repository is at stage 5. A requirement is due when its stage is at or below that. This page lists which tests cite each requirement; whether they pass is decided by the traceability job on every pull request.
+The design document assigns each requirement to a stage of its build plan (section 13). The traceability check requires a passing test and an owner for every requirement up to stage 7; those are marked as due. This page lists which tests cite each requirement; whether they pass is decided by a run of the whole suite, in the `traceability` job of `.github/workflows/pr.yml`.
+
+A requirement of a later stage is not due. That does not mean it is not built: most have tests, listed below, that run with the others. A stage is counted only when every requirement up to it has a passing test and an owner. Requirements of later stages that lack a test or an owner: `ADC-EVD-002` (stage 9: no owner), `ADC-PIN-004` (stage 8: no test and no owner), `ADC-PIN-006` (stage 8: no test and no owner).
 
 | Requirement | Stage | Due | Claimed by | Tests citing it |
 | --- | --- | --- | --- | --- |
@@ -43,11 +45,11 @@ The repository is at stage 5. A requirement is due when its stage is at or below
 | `ADC-GOV-006` | 8 | no | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_contract_compile.py` |
 | `ADC-GOV-007` | 8 | no | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/scenario/test_op13_ad09_governed.py` |
 | `ADC-GOV-008` | 8 | no | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_http_gate.py`<br>`tests/conformance/test_gate_cli.py` |
-| `ADC-IEC-001` | 6 | no | `agentic-datacenter-iec61850` | `packages/agentic-datacenter-iec61850/tests/test_scl.py`<br>`tests/protocol/test_iec61850_model.py` |
-| `ADC-IEC-002` | 6 | no | `agentic-datacenter-iec61850` | `packages/agentic-datacenter-iec61850/tests/test_library.py`<br>`tests/protocol/test_iec61850_read_report.py` |
-| `ADC-IEC-003` | 6 | no | `agentic-datacenter-iec61850` | `tests/conformance/test_iec61850_denied_services.py`<br>`tests/scenario/test_iec61850_scenarios.py` |
+| `ADC-IEC-001` | 6 | yes | `agentic-datacenter-iec61850` | `packages/agentic-datacenter-iec61850/tests/test_scl.py`<br>`tests/protocol/test_iec61850_model.py` |
+| `ADC-IEC-002` | 6 | yes | `agentic-datacenter-iec61850` | `packages/agentic-datacenter-iec61850/tests/test_library.py`<br>`tests/protocol/test_iec61850_read_report.py` |
+| `ADC-IEC-003` | 6 | yes | `agentic-datacenter-iec61850` | `tests/conformance/test_iec61850_denied_services.py`<br>`tests/scenario/test_iec61850_scenarios.py` |
 | `ADC-IEC-004` | 2 | yes | `electrical.mv_switchgear` | `packages/agentic-datacenter-plant/tests/electrical/test_mv_protection_curves.py` |
-| `ADC-IEC-005` | 6 | no | `agentic-datacenter-iec61850` | `tests/conformance/test_iec61850_isolation.py` |
+| `ADC-IEC-005` | 6 | yes | `agentic-datacenter-iec61850` | `tests/conformance/test_iec61850_isolation.py` |
 | `ADC-KRN-001` | 1 | yes | `agentic-datacenter-core` | `packages/agentic-datacenter-core/tests/test_contract.py`<br>`packages/agentic-datacenter-core/tests/test_plant.py`<br>`packages/agentic-datacenter-remora/tests/test_binding.py`<br>`tests/property/test_counterfactual_identity.py`<br>`tests/property/test_determinism.py`<br>`tests/property/test_generic_profile.py`<br>`tests/scenario/test_measured_weather.py` |
 | `ADC-KRN-002` | 1 | yes | `agentic-datacenter-core` | `packages/agentic-datacenter-core/tests/test_contract.py`<br>`packages/agentic-datacenter-core/tests/test_plant.py`<br>`tests/property/test_generic_profile.py`<br>`tests/property/test_snapshot.py` |
 | `ADC-KRN-003` | 1 | yes | `agentic-datacenter-core` | `packages/agentic-datacenter-core/tests/test_no_wallclock.py` |
@@ -57,10 +59,10 @@ The repository is at stage 5. A requirement is due when its stage is at or below
 | `ADC-MOD-003` | 1 | yes | `agentic-datacenter-core` | `packages/agentic-datacenter-core/tests/test_io.py`<br>`tests/conformance/test_controller_isolation.py` |
 | `ADC-MOD-004` | 1 | yes | `agentic-datacenter-core` | `packages/agentic-datacenter-core/tests/test_contract.py`<br>`packages/agentic-datacenter-core/tests/test_plant.py`<br>`tests/conformance/test_module_manifests.py` |
 | `ADC-MOD-005` | 1 | yes | `agentic-datacenter-core` | `packages/agentic-datacenter-core/tests/test_plant.py`<br>`tests/conformance/test_cli.py`<br>`tests/conformance/test_module_manifests.py` |
-| `ADC-NET-001` | 6 | no | `agentic-datacenter-net` | `tests/conformance/test_zone_matrix.py` |
-| `ADC-NET-002` | 6 | no | `agentic-datacenter-net` | `tests/conformance/test_conduit_rules.py` |
-| `ADC-NET-003` | 6 | no | `agentic-datacenter-net` | `tests/conformance/test_conduit_rules.py`<br>`tests/scenario/test_scenario_library.py` |
-| `ADC-NET-004` | 6 | no | `agentic-datacenter-net`, `life_safety` | `tests/conformance/test_conduit_rules.py`<br>`tests/scenario/test_op06_op07.py` |
+| `ADC-NET-001` | 6 | yes | `agentic-datacenter-net` | `tests/conformance/test_zone_matrix.py` |
+| `ADC-NET-002` | 6 | yes | `agentic-datacenter-net` | `tests/conformance/test_conduit_rules.py` |
+| `ADC-NET-003` | 6 | yes | `agentic-datacenter-net` | `tests/conformance/test_conduit_rules.py`<br>`tests/scenario/test_scenario_library.py` |
+| `ADC-NET-004` | 6 | yes | `agentic-datacenter-net`, `life_safety` | `tests/conformance/test_conduit_rules.py`<br>`tests/scenario/test_op06_op07.py` |
 | `ADC-PIN-001` | 8 | no | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_binding.py`<br>`tests/conformance/test_ci.py` |
 | `ADC-PIN-002` | 8 | no | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_binding.py` |
 | `ADC-PIN-003` | 8 | no | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_binding.py`<br>`packages/agentic-datacenter-remora/tests/test_governed.py` |
@@ -72,8 +74,8 @@ The repository is at stage 5. A requirement is due when its stage is at or below
 | `ADC-PRC-003` | 2 | yes | `electrical.ups` | `packages/agentic-datacenter-plant/tests/electrical/test_sources_and_loads.py` |
 | `ADC-PRC-004` | 3 | yes | `cooling.pod` | `packages/agentic-datacenter-plant/tests/cooling/test_cooling_modules.py`<br>`tests/scenario/test_thermal_runaway.py` |
 | `ADC-PRC-010` | 3 | yes | `cooling.chw_plant`, `cooling.weather` | `tests/scenario/test_design_point.py` |
-| `ADC-PRO-001` | 6 | no | `agentic-datacenter-net` | `tests/protocol/test_bacnet_conformance.py`<br>`tests/protocol/test_modbus_conformance.py`<br>`tests/protocol/test_opcua_conformance.py`<br>`tests/protocol/test_snmp_conformance.py` |
-| `ADC-PRO-002` | 6 | no | `agentic-datacenter-net` | `tests/protocol/test_cross_protocol.py` |
+| `ADC-PRO-001` | 6 | yes | `agentic-datacenter-net` | `tests/protocol/test_bacnet_conformance.py`<br>`tests/protocol/test_modbus_conformance.py`<br>`tests/protocol/test_opcua_conformance.py`<br>`tests/protocol/test_snmp_conformance.py` |
+| `ADC-PRO-002` | 6 | yes | `agentic-datacenter-net` | `tests/protocol/test_cross_protocol.py` |
 | `ADC-PRV-001` | 0 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_ci.py` |
 | `ADC-PRV-002` | 0 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_ci.py` |
 | `ADC-PRV-003` | 0 | yes | `agentic-datacenter-core` | `tests/conformance/test_profiles.py` |
