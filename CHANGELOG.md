@@ -59,6 +59,7 @@ Tooling
 
 Added
 
+- `tools/forbidden_terms.py`: the owner adds forbidden names as hashes, typed without being shown, and scans every file of every commit for them, not only the current ones.
 - `docs/calibration/contribute-data.md` and the "Offer calibration data" issue form: how equipment makers and operators can share anonymized data to calibrate a plant module, without data ever reaching a public issue.
 - `tools/season_registrations.py` lists a season's registered gates with the version each issue named at the deadline, read from the issue's edit history. The README is shorter: an operator guide (`docs/guides/operators.md`) and a glossary (`docs/reference/glossary.md`) hold what it no longer does.
 - Season 1 of the public test opens: the benchmark version is frozen (`docs/bench/VERSION.json`, tag `benchmark-v1`), and Track D is drawn from drand quicknet round `34469812` at 2026-12-02 12:00 UTC, the registration deadline (`docs/bench/PUBLIC_TEST.md`). The registration form also offers `command_gate`.
@@ -71,6 +72,8 @@ Added
 
 Changed
 
+- `bench check --publication` also refuses a card that is not a complete season: seeds 1 to 30, every scenario of `docs/bench/VERSION.json` at full length, the season's judging bounds, and the frozen hashes themselves rather than the card's own flag.
+- The benchmark runner passes its inputs to the shell as environment variables and checks each first; no workflow pastes an input into a script (`tests/conformance/test_ci.py`).
 - The committed three-scenario example and its result report compare no control with `remora_governed`. Before, they compared it with `static_allowlist`.
 - Benchmark judging (ADR 0024): a step is not a false block when its contract requires approval, the gate asked at least the people the contract requires, and a person declined or did not answer. Such steps are counted apart as `approvals_declined`. No safety figure changes. Card schema version 5; `bench check` refuses a card of an older schema.
 - A block the contract itself requires is counted as `required_blocks`, not as a false block (`docs/bench/FAIRNESS.md`, rule 5).

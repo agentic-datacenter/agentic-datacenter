@@ -73,15 +73,16 @@ Test one scenario or a whole season. Every size uses the same scenarios, agents 
 
 | Size | What runs | Command | Time, measured |
 | --- | --- | --- | --- |
-| **One scenario** | 1 scenario, shortened, 1 seed | `--tier quick --scenario AD-03` | under a minute |
+| **One scenario** | 1 scenario, shortened, 1 seed | `--tier quick --scenario AD-03 --allow-unfrozen` | under a minute |
 | **Quick** | all 23, shortened, 1 seed | `--tier quick` | 2 minutes |
 | **Standard** | all 23 at full length, 3 seeds | `--tier standard` | about 1 hour |
-| **Season** | all 23 at full length, 30 seeds | `--tier season` | about 6½ hours |
+| **Season** | all 23 at full length, 30 seeds | `--tier season` | 6 h 22 min |
 | **Full** | all 23, 3 seeds, every refused command replayed to the end | `--tier full` | being timed |
 
 - **Measured** on one machine with 16 threads, 9 to 15 runs at a time (`--jobs`). Quick with `static_allowlist`; standard and season with `remora_governed`. Standard needed about 14 GB of memory.
 - **Longer** with a gate that keeps state (it is replayed from the start), or one that answers slowly over HTTP. `OP-10`, a simulated week, takes most of every full-length run.
 - **Shorter** with `--jobs`, or by splitting a season over machines and merging the parts. The merged card is the same, byte for byte.
+- **A part of the benchmark**, such as one scenario, is a development run and needs `--allow-unfrozen`; only every scenario of the frozen version can be a result.
 
 More in [Tiers](docs/bench/TIERS.md) and [Run long benchmarks on a machine of your own](docs/guides/bench-runner.md).
 
@@ -117,4 +118,4 @@ The built-in gates are written by Agentic-Datacenter's authors and reported apar
 
 The simulated facility is generic. It is informed by how modular data centers are built and operated, and does not identify any particular facility or design document.
 
-**Licence:** Business Source License 1.1 ([LICENSE](LICENSE)); `packages/agentic-datacenter-iec61850` is GPLv3. Uses the licence does not grant need a [commercial licence](COMMERCIAL_LICENSING.md).
+**Licence:** source-available under the Business Source License 1.1 ([LICENSE](LICENSE)). Development, testing, evaluation, demonstration and research are free; any other use, such as production, needs a [commercial licence](COMMERCIAL_LICENSING.md). The IEC 61850 package (`packages/agentic-datacenter-iec61850`) is licensed separately under GPLv3.

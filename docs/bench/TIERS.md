@@ -11,15 +11,18 @@
 
 ## What it costs
 
-Two runs were timed on 2026-11-17, on one machine with 16 threads and 11 GB of memory given to WSL2. Each is one run of one gate, so the figures are examples, not averages. A gate that keeps state costs more (see below).
+Five runs were timed on 2026-11-17, on one machine with 16 threads and 11 GB of memory given to WSL2. Each is one run of one gate, so the figures are examples, not averages. A gate that keeps state costs more (see below).
 
 | Tier | Gate | `--jobs` | Wall time | Processor time | Peak memory |
 | --- | --- | --- | --- | --- | --- |
 | `quick` | `static_allowlist` | 6 | 2 minutes | 11 minutes | not recorded |
 | `standard` | `remora_governed` | 9 | 59 minutes | not recorded | about 14 GB, 5 GB of it swap |
+| `season`, seeds 1–10 | `remora_governed` | 15 | 2 h 29 min | not recorded | not recorded |
+| `season`, seeds 11–20 | `remora_governed` | 15 | 1 h 58 min | not recorded | not recorded |
+| `season`, seeds 21–30 | `remora_governed` | 15 | 1 h 55 min | not recorded | not recorded |
 
 - Most of a `standard` run is the nine week-long runs of `OP-10`. They are also what the memory goes to ([Run long benchmarks on a machine of your own](../guides/bench-runner.md#memory)).
-- `season` and `full` have not been timed. `season` makes ten times the runs of `standard`.
+- A whole `season` on that machine, run as the three parts above one after another, took 6 h 22 min of benchmark time (GitHub Actions runs 44096628916, 44124809728 and 44136578381). `full` has not been timed yet.
 - Not measured again since ADR 0023, and kept as a rough guide only: one simulated hour runs in about 10 seconds of processor time.
 - A replay costs its horizon, not the rest of the scenario. In `OP-10`, a simulated week, the hostile agent proposes about 640 times. Replaying each one to the end costs about 320 simulated weeks of work per run. `standard` costs about 16 simulated days of replay per `OP-10` run, and about 64 simulated hours per run of any other scenario.
 
