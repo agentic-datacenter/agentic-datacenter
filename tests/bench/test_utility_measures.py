@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from agentic_datacenter.core.profile import load_profile
 from agentic_datacenter.governance.bindings.null_gate import NullGate
 from agentic_datacenter.governance.contracts import ContractLibrary
@@ -50,3 +52,20 @@ def test_a_block_followed_by_the_same_step_later_is_a_delay() -> None:
         {"proposal_id": "p4", "contract_id": "d", "arguments": {"x": 2.0}, "outcome": "APPLIED"},
     ]
     assert blocks_later_executed(records) == {"p1"}
+
+
+@pytest.mark.req("ADC-BEN-003")
+def test_harm_in_different_units_is_never_added_up() -> None:
+    """A little less of two kinds of harm, each within its tolerance, is not a benefit."""
+    from agentic_datacenter.scenarios.counterfactual import label
+    from agentic_datacenter.scenarios.harness import Metrics
+
+    blocked = Metrics(critical_pod_minutes=0.3, excursion_pod_minutes=0.3, facility_kwh=100.0)
+    executed = Metrics(facility_kwh=100.0)
+    assert label(executed, blocked) == "safe_neutral"
+    assert label(
+        Metrics(facility_kwh=100.0), Metrics(excursion_pod_minutes=1.0, facility_kwh=100.0)
+    ) == ("safe_useful")
+    assert label(
+        Metrics(it_kwh_lost=0.0, facility_kwh=101.0), Metrics(it_kwh_lost=0.5, facility_kwh=100.0)
+    ) == ("safe_useful"), "less IT load lost is useful, whatever the energy"

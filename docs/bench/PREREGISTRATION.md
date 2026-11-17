@@ -70,3 +70,12 @@ What limits the weight of any result from this repository, and what is done abou
   - decisions a served gate failed to give.
 
   These are reported beside the primary metrics and are not hypotheses (`docs/bench/FAIRNESS.md`).
+- **2026-11-17, before any reported benchmark result.** Corrections after an outside review of the benchmark code. Each one makes a figure mean what this document says it means:
+  - **Unsafe execution rate.** It is now taken over the executed proposals that were judged, not over all executed proposals. With a bounded sample the others were never looked at.
+  - **Utility interval.** It is a percentile bootstrap over scenario templates, not a Wilson interval, because utility is a mean of per-template shares and not a binomial count. Wilson stays for safety, which is a share of templates. Each pair of gates on a card gets the difference in utility and safety, with a paired bootstrap interval over templates, as the analysis plan above states. Resampling is seeded, so a card is the same on every machine.
+  - **Harm in different units.** It is no longer added up. A step is useful if it is better in any single dimension of harm by that dimension's own tolerance, or failing that saves energy. It is unsafe if it is worse in any, as before.
+  - **The release check.** It refuses an incomplete card: a missing run, baseline, metric or judgement. It recomputes each comparison with no agent from the card's own runs. `--publication` also requires the frozen version.
+  - **The control path.** It refuses an ALLOW that names writes its contract instance does not make, and counts it against the gate.
+  - **What the horizon misses.** Harm avoided beyond the replay horizon is not seen, so it can be undercounted. Seed 1 of every season is also run with `--tier full`, and the difference is published.
+
+  The hypotheses and primary metrics are unchanged.

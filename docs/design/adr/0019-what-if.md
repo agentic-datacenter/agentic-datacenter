@@ -53,7 +53,7 @@ Three things make that hard to do with the existing commands:
 - An owner sees the simulated saving of a change, its physical cost and how far the agent can take it under its contract, as three labelled branches with evidence, and REMORA's own analysis of why next to them.
 - A change the contract does not allow can still be studied physically, without any record suggesting it was allowed.
 - The governed branch needs REMORA at the pin; without it, that branch is not run and the result says so.
-- The policy analysis is unavailable until a pin contains REMORA PR #1236. The pin is not changed here.
+- The policy analysis is unavailable until a pin contains REMORA PR #1236. The pin is not changed here. *Update, 2026-11-13:* the pin `dcsim-pin-2026-11-13c` contains #1236 (see `REMORA_PIN`), so the policy analysis now runs with the pinned REMORA.
 
 ## Not done
 

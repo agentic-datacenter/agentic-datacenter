@@ -100,10 +100,14 @@ def bench(argv: Sequence[str]) -> int:
     )
     check.add_argument("card", type=Path, help="A result_card.json.")
     check.add_argument("--gate", action="append", help="Gate to check; repeat for several.")
+    check.add_argument(
+        "--publication", action="store_true",
+        help="Also require the frozen benchmark version: the check for a reported result.",
+    )  # fmt: skip
     args = parser.parse_args(argv)
 
     if args.action == "check":
-        return _check(args.card, args.gate or ["remora_governed"])
+        return _check(args.card, args.gate or ["remora_governed"], args.publication)
 
     if args.action == "merge":
         try:
@@ -197,12 +201,12 @@ def bench(argv: Sequence[str]) -> int:
     return 0
 
 
-def _check(path: Path, gates: Sequence[str]) -> int:
+def _check(path: Path, gates: Sequence[str], publication: bool = False) -> int:
     """Print the release gate's findings for each gate; 1 if any gate fails."""
     card = json.loads(path.read_text(encoding="utf-8"))
     failed = False
     for gate in gates:
-        report = check_card(card, gate)
+        report = check_card(card, gate, publication)
         verdict = "passed" if report.passed else "REFUSED"
         print(f"{gate}: {verdict}, {report.runs_checked} runs checked")
         for line in report.violations:
