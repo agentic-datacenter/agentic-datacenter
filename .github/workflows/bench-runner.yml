@@ -53,7 +53,7 @@ jobs:
       run:
         shell: bash
     env:
-      OUT: build/bench-${{ inputs.tier }}-${{ github.run_id }}
+      OUT: build/bench-${{ github.run_id }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Environment
@@ -61,23 +61,52 @@ jobs:
           uv --version
           if [ "$RUNNER_OS" = "Linux" ]; then uv sync --frozen --all-groups
           else uv sync --frozen --all-groups --no-group iec61850; fi
+      # Inputs reach the shell as environment variables, never pasted into the
+      # script, and each is checked against what it may be before it is used.
+      - name: Check the inputs
+        env:
+          TIER: ${{ inputs.tier }}
+          GATES: ${{ inputs.gates }}
+          SCENARIO: ${{ inputs.scenario }}
+          FIRST_SEED: ${{ inputs.first_seed }}
+          SEEDS: ${{ inputs.seeds }}
+          JOBS: ${{ inputs.jobs }}
+        run: |
+          fail() { echo "::error::$1"; exit 1; }
+          [[ "$TIER" =~ ^(quick|standard|season|full)$ ]] || fail "tier: quick, standard, season or full"
+          [[ "$GATES" =~ ^[a-z0-9_]+( [a-z0-9_]+)*$ ]] || fail "gates: names of letters, digits and _, separated by single spaces"
+          [[ -z "$SCENARIO" || "$SCENARIO" =~ ^(OP|AD)-[0-9]{2}$ ]] || fail "scenario: for example AD-03"
+          for value in "$FIRST_SEED" "$SEEDS" "$JOBS"; do
+            [[ -z "$value" || "$value" =~ ^[1-9][0-9]{0,3}$ ]] || fail "first_seed, seeds and jobs: whole numbers from 1"
+          done
       - name: Run
+        env:
+          TIER: ${{ inputs.tier }}
+          GATES: ${{ inputs.gates }}
+          SCENARIO: ${{ inputs.scenario }}
+          FIRST_SEED: ${{ inputs.first_seed }}
+          SEEDS: ${{ inputs.seeds }}
+          JOBS: ${{ inputs.jobs }}
         run: |
           set -o pipefail
-          args=(--tier "${{ inputs.tier }}" --allow-unfrozen --out "$OUT")
-          for gate in ${{ inputs.gates }}; do args+=(--gate "$gate"); done
-          [ -n "${{ inputs.scenario }}" ] && args+=(--scenario "${{ inputs.scenario }}")
-          [ -n "${{ inputs.first_seed }}" ] && args+=(--first-seed "${{ inputs.first_seed }}")
-          [ -n "${{ inputs.seeds }}" ] && args+=(--seeds "${{ inputs.seeds }}")
-          jobs="${{ inputs.jobs }}"
+          args=(--tier "$TIER" --allow-unfrozen --out "$OUT")
+          read -ra gates <<< "$GATES"
+          for gate in "${gates[@]}"; do args+=(--gate "$gate"); done
+          [ -n "$SCENARIO" ] && args+=(--scenario "$SCENARIO")
+          [ -n "$FIRST_SEED" ] && args+=(--first-seed "$FIRST_SEED")
+          [ -n "$SEEDS" ] && args+=(--seeds "$SEEDS")
+          jobs="$JOBS"
           if [ -z "$jobs" ]; then
             cores=$(uv run python -c "import os; print(os.cpu_count() or 2)")
             jobs=$(( cores > 1 ? cores - 1 : 1 ))
           fi
           uv run agentic-datacenter bench run "${args[@]}" --jobs "$jobs" 2>&1 | grep -v '^dispatch\.'
       - name: Release check
+        env:
+          GATES: ${{ inputs.gates }}
         run: |
-          for gate in ${{ inputs.gates }}; do
+          read -ra gates <<< "$GATES"
+          for gate in "${gates[@]}"; do
             uv run agentic-datacenter bench check "$OUT/result_card.json" --gate "$gate" | tee -a "$OUT/check.txt"
           done
       - name: Record the commit and the hash of every file made
@@ -91,7 +120,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: bench-${{ inputs.tier }}-${{ github.run_id }}
+          name: bench-${{ github.run_id }}
           path: ${{ env.OUT }}
           retention-days: 90
           if-no-files-found: warn

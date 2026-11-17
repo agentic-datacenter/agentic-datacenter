@@ -309,3 +309,19 @@ def test_the_benchmark_runner_is_started_by_hand_only() -> None:
     for path in WORKFLOWS:
         if path.name != "bench-runner.yml":
             assert "self-hosted" not in path.read_text(encoding="utf-8"), path.name
+
+
+def test_no_workflow_pastes_an_input_or_event_text_into_a_shell_script() -> None:
+    """GitHub pastes ${{ }} into a script before the shell reads it, so text there runs as code.
+
+    Inputs and event fields are passed as environment variables instead, and
+    the benchmark runner checks each before use.
+    """
+    risky = re.compile(r"\$\{\{\s*(inputs\.|github\.event\.|github\.head_ref)")
+    for path in WORKFLOWS:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        for job in data.get("jobs", {}).values():
+            for step in job.get("steps", []):
+                assert not risky.search(str(step.get("run", ""))), (path.name, step.get("name"))
+    runner = (REPO / ".github/workflows/bench-runner.yml").read_text(encoding="utf-8")
+    assert "Check the inputs" in runner
