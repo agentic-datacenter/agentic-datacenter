@@ -2,21 +2,21 @@
 
 # Requirement-to-test matrix
 
-The design document assigns each requirement to a stage of its build plan (section 13). The traceability check requires a passing test and an owner for every requirement up to stage 7; those are marked as due. This page lists which tests cite each requirement; whether they pass is decided by a run of the whole suite, in the `traceability` job of `.github/workflows/pr.yml`.
+The design document assigns each requirement to a stage of its build plan (section 13). The traceability check requires a passing test and an owner for every requirement up to stage 9; those are marked as due. This page lists which tests cite each requirement; whether they pass is decided by a run of the whole suite, in the `traceability` job of `.github/workflows/pr.yml`.
 
-A requirement of a later stage is not due. That does not mean it is not built: most have tests, listed below, that run with the others. A stage is counted only when every requirement up to it has a passing test and an owner. Requirements of later stages that lack a test or an owner: `ADC-EVD-002` (stage 9: no owner), `ADC-PIN-004` (stage 8: no test and no owner), `ADC-PIN-006` (stage 8: no test and no owner).
+Stage 9 is the last stage of the build plan, so every requirement is due. A due requirement has a passing test and an owner. That is all it means: what the design document asks for and the code does not do is in its section 14, and not every exit criterion of the build plan has been met.
 
 | Requirement | Stage | Due | Claimed by | Tests citing it |
 | --- | --- | --- | --- | --- |
-| `ADC-BEN-001` | 9 | no | `agentic-datacenter-scenarios` | `tests/bench/test_heldout_and_freeze.py`<br>`tests/conformance/test_result_card.py` |
-| `ADC-BEN-002` | 9 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_op03_op10_ad01_ad03.py` |
-| `ADC-BEN-003` | 9 | no | `agentic-datacenter-scenarios` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/bench/test_utility_measures.py`<br>`tests/property/test_counterfactual_identity.py` |
-| `ADC-BEN-004` | 9 | no | `agentic-datacenter-scenarios` | `tests/bench/test_fairness.py`<br>`tests/bench/test_release_gate.py`<br>`tests/conformance/test_result_card.py` |
-| `ADC-BEN-005` | 9 | no | `agentic-datacenter-scenarios` | `tests/conformance/test_gate_cli.py`<br>`tests/conformance/test_result_card.py` |
-| `ADC-BEN-006` | 9 | no | `agentic-datacenter-scenarios` | `tests/bench/test_merge.py`<br>`tests/conformance/test_result_card.py`<br>`tests/scenario/test_op13_ad09_governed.py` |
-| `ADC-BEN-007` | 9 | no | `agentic-datacenter-scenarios` | `tests/bench/test_release_gate.py`<br>`tests/conformance/test_result_card.py` |
-| `ADC-BEN-008` | 9 | no | `agentic-datacenter-scenarios` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/bench/test_bounded_replay.py` |
-| `ADC-BEN-009` | 9 | no | `agentic-datacenter-scenarios` | `tests/bench/test_fairness.py`<br>`tests/conformance/test_result_card.py` |
+| `ADC-BEN-001` | 9 | yes | `agentic-datacenter-scenarios` | `tests/bench/test_heldout_and_freeze.py`<br>`tests/conformance/test_result_card.py` |
+| `ADC-BEN-002` | 9 | yes | `agentic-datacenter-scenarios` | `tests/scenario/test_op03_op10_ad01_ad03.py` |
+| `ADC-BEN-003` | 9 | yes | `agentic-datacenter-scenarios` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/bench/test_utility_measures.py`<br>`tests/property/test_counterfactual_identity.py` |
+| `ADC-BEN-004` | 9 | yes | `agentic-datacenter-scenarios` | `tests/bench/test_fairness.py`<br>`tests/bench/test_release_gate.py`<br>`tests/conformance/test_result_card.py` |
+| `ADC-BEN-005` | 9 | yes | `agentic-datacenter-scenarios` | `tests/conformance/test_gate_cli.py`<br>`tests/conformance/test_result_card.py` |
+| `ADC-BEN-006` | 9 | yes | `agentic-datacenter-scenarios` | `tests/bench/test_merge.py`<br>`tests/conformance/test_result_card.py`<br>`tests/scenario/test_op13_ad09_governed.py` |
+| `ADC-BEN-007` | 9 | yes | `agentic-datacenter-scenarios` | `tests/bench/test_release_gate.py`<br>`tests/conformance/test_result_card.py` |
+| `ADC-BEN-008` | 9 | yes | `agentic-datacenter-scenarios` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/bench/test_bounded_replay.py` |
+| `ADC-BEN-009` | 9 | yes | `agentic-datacenter-scenarios` | `tests/bench/test_fairness.py`<br>`tests/conformance/test_result_card.py` |
 | `ADC-CI-001` | 1 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_traceability.py` |
 | `ADC-CI-002` | 1 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_ci.py` |
 | `ADC-CI-003` | 1 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_ci.py` |
@@ -31,20 +31,20 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-DOC-001` | 1 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_docs.py` |
 | `ADC-DOC-002` | 1 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_module_manifests.py` |
 | `ADC-DOC-003` | 1 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_ci.py` |
-| `ADC-EVD-001` | 9 | no | `agentic-datacenter-scenarios` | `tests/conformance/test_evidence_bundle.py`<br>`tests/scenario/test_measured_weather.py` |
-| `ADC-EVD-002` | 9 | no | none | `tests/conformance/test_matrix_generation.py` |
+| `ADC-EVD-001` | 9 | yes | `agentic-datacenter-scenarios` | `tests/conformance/test_evidence_bundle.py`<br>`tests/scenario/test_measured_weather.py` |
+| `ADC-EVD-002` | 9 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_matrix_generation.py` |
 | `ADC-FID-001` | 4 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_module_manifests.py` |
 | `ADC-FID-002` | 4 | yes | `agentic-datacenter-workspace` | `tests/bench/test_sensitivity.py` |
 | `ADC-FID-003` | 4 | yes | `electrical.it_load` | `packages/agentic-datacenter-plant/tests/test_module_behaviour.py` |
 | `ADC-FID-004` | 4 | yes | `agentic-datacenter-scenarios` | `tests/bench/test_sensitivity.py` |
-| `ADC-GOV-001` | 8 | no | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-governance/tests/test_safe_posture.py`<br>`packages/agentic-datacenter-remora/tests/test_binding.py`<br>`packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/bench/test_release_gate.py`<br>`tests/scenario/test_op13_ad09_governed.py`<br>`tests/scenario/test_safe_posture_scenarios.py` |
-| `ADC-GOV-002` | 8 | no | `agentic-datacenter-supervisory` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-remora/tests/test_governed.py`<br>`packages/agentic-datacenter-supervisory/tests/test_command_service.py`<br>`tests/scenario/test_op13_ad09_governed.py`<br>`tests/scenario/test_scenario_library.py` |
-| `ADC-GOV-003` | 8 | no | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-remora/tests/test_binding.py` |
-| `ADC-GOV-004` | 8 | no | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-governance/tests/test_http_gate.py`<br>`packages/agentic-datacenter-remora/tests/test_binding.py`<br>`packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/conformance/test_gate_cli.py` |
-| `ADC-GOV-005` | 8 | no | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_governance.py` |
-| `ADC-GOV-006` | 8 | no | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_contract_compile.py` |
-| `ADC-GOV-007` | 8 | no | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/scenario/test_op13_ad09_governed.py` |
-| `ADC-GOV-008` | 8 | no | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_http_gate.py`<br>`tests/conformance/test_gate_cli.py` |
+| `ADC-GOV-001` | 8 | yes | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-governance/tests/test_safe_posture.py`<br>`packages/agentic-datacenter-remora/tests/test_binding.py`<br>`packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/bench/test_release_gate.py`<br>`tests/scenario/test_op13_ad09_governed.py`<br>`tests/scenario/test_safe_posture_scenarios.py` |
+| `ADC-GOV-002` | 8 | yes | `agentic-datacenter-supervisory` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-remora/tests/test_governed.py`<br>`packages/agentic-datacenter-supervisory/tests/test_command_service.py`<br>`tests/scenario/test_op13_ad09_governed.py`<br>`tests/scenario/test_scenario_library.py` |
+| `ADC-GOV-003` | 8 | yes | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-remora/tests/test_binding.py` |
+| `ADC-GOV-004` | 8 | yes | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-governance/tests/test_http_gate.py`<br>`packages/agentic-datacenter-remora/tests/test_binding.py`<br>`packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/conformance/test_gate_cli.py` |
+| `ADC-GOV-005` | 8 | yes | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_governance.py` |
+| `ADC-GOV-006` | 8 | yes | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_contract_compile.py` |
+| `ADC-GOV-007` | 8 | yes | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/scenario/test_op13_ad09_governed.py` |
+| `ADC-GOV-008` | 8 | yes | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_http_gate.py`<br>`tests/conformance/test_gate_cli.py` |
 | `ADC-IEC-001` | 6 | yes | `agentic-datacenter-iec61850` | `packages/agentic-datacenter-iec61850/tests/test_scl.py`<br>`tests/protocol/test_iec61850_model.py` |
 | `ADC-IEC-002` | 6 | yes | `agentic-datacenter-iec61850` | `packages/agentic-datacenter-iec61850/tests/test_library.py`<br>`tests/protocol/test_iec61850_read_report.py` |
 | `ADC-IEC-003` | 6 | yes | `agentic-datacenter-iec61850` | `tests/conformance/test_iec61850_denied_services.py`<br>`tests/scenario/test_iec61850_scenarios.py` |
@@ -63,12 +63,12 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-NET-002` | 6 | yes | `agentic-datacenter-net` | `tests/conformance/test_conduit_rules.py` |
 | `ADC-NET-003` | 6 | yes | `agentic-datacenter-net` | `tests/conformance/test_conduit_rules.py`<br>`tests/scenario/test_scenario_library.py` |
 | `ADC-NET-004` | 6 | yes | `agentic-datacenter-net`, `life_safety` | `tests/conformance/test_conduit_rules.py`<br>`tests/scenario/test_op06_op07.py` |
-| `ADC-PIN-001` | 8 | no | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_binding.py`<br>`tests/conformance/test_ci.py` |
-| `ADC-PIN-002` | 8 | no | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_binding.py` |
-| `ADC-PIN-003` | 8 | no | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_binding.py`<br>`packages/agentic-datacenter-remora/tests/test_governed.py` |
-| `ADC-PIN-004` | 8 | no | none | none |
-| `ADC-PIN-005` | 8 | no | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_binding.py` |
-| `ADC-PIN-006` | 8 | no | none | none |
+| `ADC-PIN-001` | 8 | yes | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_binding.py`<br>`tests/conformance/test_ci.py` |
+| `ADC-PIN-002` | 8 | yes | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_binding.py` |
+| `ADC-PIN-003` | 8 | yes | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_binding.py`<br>`packages/agentic-datacenter-remora/tests/test_governed.py` |
+| `ADC-PIN-004` | 8 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_ci.py`<br>`tests/conformance/test_pin_diff.py` |
+| `ADC-PIN-005` | 8 | yes | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_binding.py` |
+| `ADC-PIN-006` | 8 | yes | `agentic-datacenter-remora` | `tests/conformance/test_matrix_remora_maturity.py` |
 | `ADC-PRC-001` | 2 | yes | `electrical.genset`, `electrical.it_load`, `electrical.mv_switchgear`, `electrical.power_train`, `electrical.ups`, `electrical.utility` | `packages/agentic-datacenter-plant/tests/electrical/test_mv_protection_curves.py`<br>`packages/agentic-datacenter-plant/tests/electrical/test_power_train.py`<br>`packages/agentic-datacenter-plant/tests/electrical/test_sources_and_loads.py`<br>`tests/property/test_generic_profile.py` |
 | `ADC-PRC-002` | 3 | yes | `cooling.chw_plant`, `cooling.eroom`, `cooling.pump_station`, `cooling.tes` | `tests/property/test_energy_balance.py` |
 | `ADC-PRC-003` | 2 | yes | `electrical.ups` | `packages/agentic-datacenter-plant/tests/electrical/test_sources_and_loads.py` |
@@ -83,14 +83,14 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-PRV-005` | 0 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_ci.py` |
 | `ADC-SAF-001` | 1 | yes | `agentic-datacenter-net` | `packages/agentic-datacenter-iec61850/tests/test_library.py`<br>`packages/agentic-datacenter-net/tests/test_bind_guard.py`<br>`tests/conformance/test_iec61850_denied_services.py`<br>`tests/protocol/test_bacnet_conformance.py`<br>`tests/protocol/test_modbus_conformance.py`<br>`tests/protocol/test_opcua_conformance.py`<br>`tests/protocol/test_snmp_conformance.py` |
 | `ADC-SAF-002` | 1 | yes | `agentic-datacenter-net` | `packages/agentic-datacenter-net/tests/test_no_external_clients.py` |
-| `ADC-SCN-001` | 9 | no | `fuel`, `security` | `tests/scenario/test_ad08.py`<br>`tests/scenario/test_iec61850_scenarios.py`<br>`tests/scenario/test_op13_ad09_governed.py`<br>`tests/scenario/test_scenario_library.py` |
+| `ADC-SCN-001` | 9 | yes | `fuel`, `security` | `tests/scenario/test_ad08.py`<br>`tests/scenario/test_iec61850_scenarios.py`<br>`tests/scenario/test_op13_ad09_governed.py`<br>`tests/scenario/test_scenario_library.py` |
 | `ADC-SUP-001` | 5 | yes | `agentic-datacenter-supervisory` | `packages/agentic-datacenter-supervisory/tests/test_alarms.py` |
 | `ADC-SUP-002` | 5 | yes | `agentic-datacenter-supervisory` | `packages/agentic-datacenter-supervisory/tests/test_alarms.py`<br>`packages/agentic-datacenter-supervisory/tests/test_command_service.py`<br>`packages/agentic-datacenter-supervisory/tests/test_log_integrity.py`<br>`packages/agentic-datacenter-supervisory/tests/test_read_api.py` |
 | `ADC-SUP-003` | 5 | yes | `agentic-datacenter-supervisory` | `packages/agentic-datacenter-supervisory/tests/test_command_service.py`<br>`packages/agentic-datacenter-supervisory/tests/test_read_api.py` |
 | `ADC-SUP-004` | 5 | yes | `agentic-datacenter-supervisory` | `packages/agentic-datacenter-supervisory/tests/test_read_api.py`<br>`packages/agentic-datacenter-supervisory/tests/test_session_timeout.py` |
 | `ADC-SUP-005` | 5 | yes | `agentic-datacenter-supervisory` | `packages/agentic-datacenter-supervisory/tests/test_command_service.py`<br>`packages/agentic-datacenter-supervisory/tests/test_read_api.py` |
-| `ADC-WIF-001` | 9 | no | `agentic-datacenter-whatif` | `packages/agentic-datacenter-whatif/tests/test_whatif_runner.py` |
-| `ADC-WIF-002` | 9 | no | `agentic-datacenter-whatif` | `packages/agentic-datacenter-whatif/tests/test_whatif_agent.py`<br>`tests/scenario/test_whatif_governed.py` |
-| `ADC-WIF-003` | 9 | no | `agentic-datacenter-whatif` | `packages/agentic-datacenter-whatif/tests/test_whatif_metrics.py` |
-| `ADC-WIF-004` | 9 | no | `agentic-datacenter-whatif` | `packages/agentic-datacenter-whatif/tests/test_whatif_policy.py`<br>`packages/agentic-datacenter-whatif/tests/test_whatif_preflight.py` |
-| `ADC-WIF-005` | 9 | no | `agentic-datacenter-whatif` | `packages/agentic-datacenter-whatif/tests/test_whatif_api.py`<br>`packages/agentic-datacenter-whatif/tests/test_whatif_determinism.py` |
+| `ADC-WIF-001` | 9 | yes | `agentic-datacenter-whatif` | `packages/agentic-datacenter-whatif/tests/test_whatif_runner.py` |
+| `ADC-WIF-002` | 9 | yes | `agentic-datacenter-whatif` | `packages/agentic-datacenter-whatif/tests/test_whatif_agent.py`<br>`tests/scenario/test_whatif_governed.py` |
+| `ADC-WIF-003` | 9 | yes | `agentic-datacenter-whatif` | `packages/agentic-datacenter-whatif/tests/test_whatif_metrics.py` |
+| `ADC-WIF-004` | 9 | yes | `agentic-datacenter-whatif` | `packages/agentic-datacenter-whatif/tests/test_whatif_policy.py`<br>`packages/agentic-datacenter-whatif/tests/test_whatif_preflight.py` |
+| `ADC-WIF-005` | 9 | yes | `agentic-datacenter-whatif` | `packages/agentic-datacenter-whatif/tests/test_whatif_api.py`<br>`packages/agentic-datacenter-whatif/tests/test_whatif_determinism.py` |

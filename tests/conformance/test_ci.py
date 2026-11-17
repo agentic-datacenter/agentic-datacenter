@@ -110,6 +110,80 @@ def test_cross_architecture_job_compares_two_architectures() -> None:
     assert "quantized" in compare
 
 
+def pin_bump() -> dict:  # type: ignore[type-arg]
+    data = yaml.safe_load((REPO / ".github/workflows/pin-bump.yml").read_text("utf-8"))
+    assert data[True] == {"pull_request": {"paths": ["REMORA_PIN"]}}
+    return data["jobs"]  # type: ignore[no-any-return]
+
+
+@pytest.mark.req("ADC-PIN-004")
+@pytest.mark.parametrize(
+    ("changed", "allowed"),
+    [
+        (["REMORA_PIN", "uv.lock"], True),
+        (["REMORA_PIN", "uv.lock", "packages/agentic-datacenter-remora/pyproject.toml"], True),
+        (["REMORA_PIN", "uv.lock", "contracts/chw.yaml"], False),
+        (["REMORA_PIN", "docs/uv.lock"], False),
+        (["REMORA_PIN", "uv.lock", "packages/agentic-datacenter-governance/pyproject.toml"], False),
+        (["REMORA_PIN", "uv.lock", ".github/workflows/pin-bump.yml"], False),
+    ],
+)
+def test_a_pin_bump_that_changes_anything_but_the_pin_and_the_lock_fails(
+    changed: list[str], allowed: bool
+) -> None:
+    """Runs the check of the workflow, as written, on a list of changed files."""
+    import shutil
+    import subprocess
+
+    shell = shutil.which("sh")
+    if shell is None:
+        pytest.skip("needs a POSIX shell to run the workflow's own command")
+    (step,) = [
+        s for s in pin_bump()["only-pin-and-lock"]["steps"] if "may change" in s.get("name", "")
+    ]
+    lines = step["run"].strip().splitlines()
+    assert 'git diff --name-only "origin/${{ github.base_ref }}...HEAD"' in lines[0]
+    assert lines[-1].startswith('test -z "$(echo "$changed" | grep -v -x ')
+    done = subprocess.run(
+        [shell, "-c", lines[-1]], env={"changed": "\n".join(changed), "PATH": "/usr/bin:/bin"}
+    )
+    assert (done.returncode == 0) is allowed
+
+
+@pytest.mark.req("ADC-PIN-004")
+def test_a_pin_bump_carries_the_metric_difference_against_the_previous_pin() -> None:
+    job = pin_bump()["metric-difference"]
+    runs = [step["run"] for step in job["steps"] if "run" in step]
+    old_tree = "build/pin-old-tree"
+    # The same benchmark at both pins: the commands differ only in where they run and write.
+    matrix = [r for r in runs if "agentic-datacenter bench run" in r]
+    assert len(matrix) == 2 and all("--gate remora_governed" in r for r in matrix)
+    new, old = (re.search(r"bench run (.*) --out (\S+?)\)?$", r) for r in matrix)
+    assert new and old and new.group(1) == old.group(1)
+    assert new.group(2) == "build/pin-new" and old.group(2) == "../pin-old"
+    assert old_tree not in matrix[0] and matrix[1].startswith(f"(cd {old_tree} && ")
+    # The old tree is the base of the pull request, with its own lock and environment,
+    # and each tree is checked to hold the REMORA its own pin names.
+    (base,) = [r for r in runs if "git worktree add" in r]
+    assert f'git worktree add --detach {old_tree} "origin/${{{{ github.base_ref }}}}"' in base
+    assert "UV_PROJECT_ENVIRONMENT=.venv uv sync --frozen --all-groups" in base
+    assert sum("tools/check_pin.py" in r for r in runs) == 2 and "tools/check_pin.py" in base
+    # The difference is made from the two cards and the two pins, fails the job when it
+    # blocks the bump, and is on the pull request as the run's summary and an artifact.
+    (diff,) = [r for r in runs if "tools/pin_diff.py" in r]
+    for argument in (
+        "--old-card build/pin-old/result_card.json", f"--old-pin {old_tree}/REMORA_PIN",
+        "--new-card build/pin-new/result_card.json", "--new-pin REMORA_PIN",
+        "--out build/pin-diff/pin-diff.md",
+    ):  # fmt: skip
+        assert argument in diff
+    assert "|| status=$?" in diff and diff.strip().endswith('exit "$status"')
+    assert 'cat build/pin-diff/pin-diff.md >> "${GITHUB_STEP_SUMMARY' in diff
+    (upload,) = [s for s in job["steps"] if "upload-artifact" in s.get("uses", "")]
+    assert upload["with"]["path"] == "build/pin-diff" and upload["if"] == "always()"
+    assert upload["with"]["if-no-files-found"] == "error"
+
+
 def test_no_job_that_calls_a_paid_model_api_starts_by_itself() -> None:
     data = yaml.safe_load((REPO / ".github/workflows/bench.yml").read_text("utf-8"))
     triggers = data[True] if True in data else data["on"]

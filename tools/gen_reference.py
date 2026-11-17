@@ -88,6 +88,19 @@ def requirements_page() -> str:
         ]
         if missing:
             gaps.append(f"`{req}` (stage {stage_of[req]}: no {' and no '.join(missing)})")
+    if any(stage > current for stage in stages):
+        later = (
+            "A requirement of a later stage is not due. That does not mean it is not built: most "
+            "have tests, listed below, that run with the others. A stage is counted only when "
+            "every requirement up to it has a passing test and an owner."
+        )
+    else:
+        later = (
+            f"Stage {current} is the last stage of the build plan, so every requirement is due. "
+            "A due requirement has a passing test and an owner. That is all it means: what the "
+            "design document asks for and the code does not do is in its section 14, and not "
+            "every exit criterion of the build plan has been met."
+        )
     lines = [
         NOTE + "# Requirement-to-test matrix\n",
         "The design document assigns each requirement to a stage of its build plan (section "
@@ -95,9 +108,7 @@ def requirements_page() -> str:
         f"requirement up to stage {current}; those are marked as due. This page lists which "
         "tests cite each requirement; whether they pass is decided by a run of the whole "
         "suite, in the `traceability` job of `.github/workflows/pr.yml`.\n",
-        "A requirement of a later stage is not due. That does not mean it is not built: most "
-        "have tests, listed below, that run with the others. A stage is counted only when "
-        "every requirement up to it has a passing test and an owner."
+        later
         + (
             " Requirements of later stages that lack a test or an owner: " + ", ".join(gaps) + ".\n"
             if gaps
