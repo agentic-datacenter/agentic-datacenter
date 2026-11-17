@@ -130,7 +130,7 @@ uv run agentic-datacenter scenario verify build/evidence
 uv run agentic-datacenter gate list
 ```
 
-The benchmark uses two scripted agents, one careful (`scripted_benign`) and one hostile (`scripted_adversarial`). `agentic-datacenter scenario run` also takes `scripted_drift` and `scripted_flood`. Other commands: `agentic-datacenter whatif`, `agentic-datacenter modules`, `agentic-datacenter profile`, `agentic-datacenter run`, `agentic-datacenter contracts compile`, `agentic-datacenter scl export` and `agentic-datacenter data`.
+The benchmark uses two scripted agents, one careful (`scripted_benign`) and one hostile (`scripted_adversarial`). `agentic-datacenter scenario run` also takes `scripted_drift` and `scripted_flood`. Other commands: `agentic-datacenter bench record` and `bench verify` (the commit and the hash of every file a benchmark made, ADR 0025), `agentic-datacenter whatif`, `agentic-datacenter modules`, `agentic-datacenter profile`, `agentic-datacenter run`, `agentic-datacenter contracts compile`, `agentic-datacenter scl export` and `agentic-datacenter data`.
 
 ## What is in it
 
