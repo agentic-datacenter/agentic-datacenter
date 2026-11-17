@@ -47,6 +47,16 @@ def test_matrix_is_expanded_and_no_expression_is_left() -> None:
     assert not [c for job in plan for c in job.commands if "${{" in c]
 
 
+def test_the_base_branch_of_a_pull_request_is_filled_in() -> None:
+    """Only GitHub knows the base branch; the pin-bump workflow compares with it."""
+    bump = REPO / ".github/workflows/pin-bump.yml"
+    assert "${{ github.base_ref }}" in bump.read_text()
+    commands = [c for job in tool().plan(bump, docker=False, base="release") for c in job.commands]
+    assert any('"origin/release...HEAD"' in c for c in commands)
+    assert any('"origin/release"' in c for c in commands)
+    assert not [c for c in commands if "${{" in c]
+
+
 def test_on_the_host_the_image_setup_step_is_left_out_and_nothing_else() -> None:
     ci = tool()
     host, image = ci.plan(PR, docker=False), ci.plan(PR, docker=True)

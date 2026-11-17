@@ -867,7 +867,7 @@ Each requirement below maps to at least one named test; a requirement without a 
 | `ADC-PIN-001` | REMORA is imported only inside `agentic-datacenter-remora`; every other package installs and passes its tests without REMORA. | `import-linter` contract plus a CI job without REMORA |
 | `ADC-PIN-002` | The REMORA dependency resolves to a full commit SHA in `uv.lock` that equals `REMORA_PIN`; branch or movable-tag references fail CI. | `conformance/test_remora_pin` |
 | `ADC-PIN-003` | `SHADOW` and `GOVERNED` runs refuse to start if the installed REMORA commit differs from the pin, and every evidence manifest records the REMORA SHA. | `unit/test_pin_runtime_check` |
-| `ADC-PIN-004` | A pin bump PR changes only the pin and lock files and carries the scenario-matrix metric difference against the previous pin. | PR template check in CI |
+| `ADC-PIN-004` | A pin bump PR changes only the pin and lock files and carries the scenario-matrix metric difference against the previous pin. | `conformance/test_ci`, `conformance/test_pin_diff` and the `pin-bump` workflow |
 | ADC-PIN-005 | agentic-datacenter-remora imports from remora.sdk only; every symbol it uses is present in REMORA's public API snapshot at the pinned commit. | import-linter contract plus conformance/test\_remora\_public\_surface |
 | ADC-PIN-006 | Wherever the IEC 62443 matrix or an evidence bundle credits REMORA with a capability, the maturity word is read from REMORA's capability register at the pinned commit and reproduced unchanged (ESTABLISHED, PARTIAL or NOT\_ESTABLISHED). | conformance/test\_matrix\_remora\_maturity |
 
@@ -1096,6 +1096,9 @@ The reference specification does not contain single-line diagrams, P&IDs, point 
 - Zones and conduits differ in the points listed in `zone_model.md`, section 6. No data collector and no alarm notification are modelled.
 - The checks of 12.4 are run locally and reported as commit statuses (ADR 0011).
 - Reproduction on a second machine, which the exit criteria of the last stage and of milestone M1 in section 13 ask for, has not been done.
+- The metric difference of a pin bump (5.2, `ADC-PIN-004`) is made at the `quick` tier, for the governed REMORA gate: every scenario shortened to 30 minutes, one seed. 5.2 asks for the full scenario matrix. The difference is the summary and an artifact of the run of the `pin-bump` workflow, not text in the pull request. No pin has been bumped since the job was added. The job has been run once, with `tools/ci_local.py`, on a replay of the last bump.
+- `agentic-datacenter remora fetch-src` (5.2) is not built, and the four register files named in 9.2 are not fetched or compared with `REMORA_PIN`. For `ADC-PIN-006` the maturity word is read from the capability catalogue inside the installed REMORA package, which REMORA builds from `docs/assurance/capability_register_v1.yaml` and holds to it with a test of its own. The words are those of REMORA's register, not the three the requirement names (`remora_binding.md`, section 1). Only the generated 62443 matrix credits REMORA with a capability. An evidence bundle credits it with none.
+- The generated 62443 matrix (`ADC-EVD-002`) computes the result of each row from the test report. The mechanism and the role of the gate in each row are fixed text in `tools/gen_62443_matrix.py`, shorter than the table in 4.3. No workflow makes the matrix; it is made by hand from a requirement report.
 
 **What became of the open questions**
 

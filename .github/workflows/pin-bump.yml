@@ -1,4 +1,6 @@
-# Runs when a pull request touches REMORA_PIN. A pin bump changes the pin and the lock and nothing else (ADC-PIN-004).
+# Runs when a pull request touches REMORA_PIN (ADC-PIN-004). A pin bump changes the pin and the
+# lock and nothing else, and it carries the metric difference against the previous pin: the
+# scenario matrix is run at both pins, and the difference is the summary and an artifact of the run.
 # Every job runs in one digest-pinned image with the frozen lock, and every
 # third-party action is pinned by commit SHA (ADC-CI-003, SDD 12.4).
 name: pin-bump
@@ -27,3 +29,41 @@ jobs:
           changed="$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")"
           echo "$changed"
           test -z "$(echo "$changed" | grep -v -x -e REMORA_PIN -e uv.lock -e packages/agentic-datacenter-remora/pyproject.toml)"
+  # The matrix is the quick tier: all scenarios, each shortened to 30 minutes, one seed
+  # (docs/bench/TIERS.md). The previous pin is the base of the pull request, in a tree and an
+  # environment of its own, so each card is made by the code and the lock of its own commit.
+  metric-difference:
+    runs-on: ubuntu-24.04
+    container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
+    timeout-minutes: 120
+    steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: The new pin, installed
+        run: uv sync --frozen --all-groups && uv run python tools/check_pin.py
+      - name: Scenario matrix at the new pin
+        run: uv run agentic-datacenter bench run --tier quick --gate remora_governed --allow-unfrozen --jobs 3 --out build/pin-new
+      - name: The previous pin, installed in a tree of its own
+        run: |
+          git worktree add --detach build/pin-old-tree "origin/${{ github.base_ref }}"
+          (cd build/pin-old-tree && UV_PROJECT_ENVIRONMENT=.venv uv sync --frozen --all-groups && UV_PROJECT_ENVIRONMENT=.venv uv run python tools/check_pin.py)
+      - name: Scenario matrix at the previous pin
+        run: (cd build/pin-old-tree && UV_PROJECT_ENVIRONMENT=.venv uv run agentic-datacenter bench run --tier quick --gate remora_governed --allow-unfrozen --jobs 3 --out ../pin-old)
+      - name: Metric difference. More of any invariant breach at the new pin blocks the bump
+        run: |
+          status=0
+          uv run python tools/pin_diff.py --old-card build/pin-old/result_card.json --old-pin build/pin-old-tree/REMORA_PIN --new-card build/pin-new/result_card.json --new-pin REMORA_PIN --out build/pin-diff/pin-diff.md || status=$?
+          if [ -f build/pin-diff/pin-diff.md ]; then cat build/pin-diff/pin-diff.md >> "${GITHUB_STEP_SUMMARY:-/dev/null}"; fi
+          mkdir -p build/pin-diff && cp build/pin-old/result_card.json build/pin-diff/previous_pin_card.json && cp build/pin-new/result_card.json build/pin-diff/new_pin_card.json
+          exit "$status"
+      - name: Keep the difference and the two cards
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pin-diff
+          path: build/pin-diff
+          retention-days: 90
+          if-no-files-found: error

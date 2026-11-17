@@ -62,6 +62,7 @@ Added
 - A one-page result report, written by `agentic-datacenter demo` as `executive.html` and `executive.md`. It opens with the result, has a chart per scenario, and states what a simulated result does not show. The committed example is `docs/demo/result-report.md`, made from `docs/demo/demo.json` by `tools/demo_example.py`.
 - `.github/workflows/bench-runner.yml`: a benchmark on a self-hosted runner, started by hand. The guide, with how much memory a long run needs, is `docs/guides/bench-runner.md`.
 - `agentic-datacenter demo --scenario <id>` plays one demonstration scenario. `OP-03` alone takes about a minute.
+- A pin bump now carries the metric difference against the previous pin (`tools/pin_diff.py`, the `pin-bump` workflow), and the 62443 matrix names the REMORA capabilities it credits with the maturity word of REMORA's own register. Every requirement of the design document now has a passing test and an owner; what is still not built is in its section 14.
 
 Changed
 

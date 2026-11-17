@@ -58,12 +58,13 @@ class Result:
     where: str
 
 
-def plan(workflow: Path, docker: bool) -> list[Job]:
+def plan(workflow: Path, docker: bool, base: str = "main") -> list[Job]:
     """Return the jobs of *workflow* with matrices expanded.
 
     On the host the step that prepares the image (it installs git with the
     image's package manager) is left out; every other command is kept as
-    written.
+    written. *base* stands in for the base branch of the pull request, which
+    only GitHub knows (the pin-bump workflow compares with it).
     """
     data = yaml.safe_load(workflow.read_text(encoding="utf-8"))
     jobs: list[Job] = []
@@ -79,6 +80,7 @@ def plan(workflow: Path, docker: bool) -> list[Job]:
                 command = str(step["run"])
                 for key, value in leg.items():
                     command = re.sub(r"\$\{\{\s*matrix\." + key + r"\s*\}\}", str(value), command)
+                command = re.sub(r"\$\{\{\s*github\.base_ref\s*\}\}", base, command)
                 if not docker and "apt-get" in command:
                     continue
                 commands.append(command)
@@ -167,9 +169,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--docker", action="store_true", help="Run inside the workflow's image.")
     parser.add_argument("--publish", action="store_true", help="Report commit statuses to GitHub.")
     parser.add_argument("--list", action="store_true", help="Print the plan and stop.")
+    parser.add_argument(
+        "--base", default="main", help="The branch a pull request would be merged into."
+    )
     args = parser.parse_args(argv)
 
-    jobs = plan(REPO / ".github/workflows" / f"{args.workflow}.yml", args.docker)
+    jobs = plan(REPO / ".github/workflows" / f"{args.workflow}.yml", args.docker, args.base)
     if args.job:
         unknown = set(args.job) - {j.context for j in jobs}
         if unknown:
