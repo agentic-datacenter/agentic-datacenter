@@ -2,7 +2,7 @@
 
 The model every measured point passes through: accuracy, resolution, update period and failure modes.
 
-- Fidelity: `F0` (stub only)
+- Fidelity: `F1`
 - Zone: `n/a`
 - Instances: one, for example `SENSORS`
 - Spec: [`docs/design/modules/sensors.md`](../../../../../../docs/design/modules/sensors.md)

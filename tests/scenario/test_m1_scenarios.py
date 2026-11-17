@@ -1,4 +1,4 @@
-"""Milestone M1: four scenarios under the baseline gates and REMORA (DECISION_ONLY)."""
+"""OP-03, OP-10, AD-01 and AD-03 under the baseline gates and REMORA (DECISION_ONLY)."""
 
 from pathlib import Path
 from typing import Any

@@ -2,7 +2,7 @@
 
 The chilled water air conditioners of one electrical POD, N+1 units on return-air control.
 
-- Fidelity: `F0` (stub only)
+- Fidelity: `F1`
 - Zone: `Z1-PWR-{instance}`
 - Instances: one per electrical POD: `A`, `B`, `C`
 - Spec: [`docs/design/modules/cooling.eroom.md`](../../../../../../../docs/design/modules/cooling.eroom.md)

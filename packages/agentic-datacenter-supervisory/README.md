@@ -17,5 +17,3 @@ L3 Supervisory. Point database, alarm engine, historian, operator roles, Supervi
 | `station`, `api` | The layer assembled, and its FastAPI application |
 
 Decisions specific to this package are in `docs/design/adr/0009-supervisory-storage-and-api.md`.
-
-Boundaries are defined in section 5 of `docs/design/SDD-ADC-001.md` and enforced by the import-linter contracts in the workspace root.

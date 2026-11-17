@@ -1,4 +1,4 @@
-"""Stage 7 exit criterion: scenarios OP-06 and OP-07 (SDD 10, 13)."""
+"""Scenarios OP-06 and OP-07, and the fuel, life safety and security points behind them (SDD 10)."""
 
 from pathlib import Path
 from typing import Any
