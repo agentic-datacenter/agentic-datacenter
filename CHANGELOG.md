@@ -6,6 +6,15 @@ Changes that matter to someone using or reviewing Agentic-Datacenter. Each distr
 
 ### A first look in a minute
 
+Added
+
+- A one-page result report for decision makers, `executive.html`, written by `agentic-datacenter demo` beside the technical page. Per scenario it gives, without a control and with the one under test:
+  - whether the plant was harmed, and the peak temperature;
+  - commands stopped, and whether stopping them avoided harm or cost a useful step;
+  - approvals asked, changes past a contract limit, and energy.
+
+  It also states what a simulated result does not show. Every figure is read from `demo.json`. Example: `docs/demo/result-report.html`.
+
 Changed
 
 - The README speaks to data center operators first: what the project tests, a chiller-trip example in plain terms, and what a result does and does not show. It has one entry point for operators and one for technology and AI developers.

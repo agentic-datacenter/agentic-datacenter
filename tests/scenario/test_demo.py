@@ -224,3 +224,22 @@ def test_one_scenario_can_be_played_alone() -> None:
     gates = {"null_gate": lambda contracts: NullGate(), "limit_gate": lambda contracts: LimitGate()}
     alone = build_demo(PROFILE, CONTRACTS, gates, "limit_gate", seconds=600, only=("OP-03",))
     assert [s["scenario"] for s in alone["scenarios"]] == ["OP-03"]
+
+
+def test_the_result_report_reads_every_figure_from_the_recording(
+    demo: dict[str, Any], tmp_path: Path
+) -> None:
+    from agentic_datacenter.scenarios.executive import LIMITS, render_executive
+
+    page = render_executive(demo)
+    assert page == render_executive(demo), "the same recording gives the same report"
+    for scenario in demo["scenarios"]:
+        assert scenario["title"] in page
+        without, governed = scenario["sides"][:2]
+        for side in (without, governed):
+            stopped = f"{side['metrics']['blocked']} of {side['metrics']['proposals']}"
+            assert f"<td>{stopped}</td>" in page
+    assert all(line in page for line in LIMITS)
+    assert "<script" not in page and "http" not in page.replace('lang="en"', "")
+    write_demo(demo, tmp_path)
+    assert (tmp_path / "executive.html").read_text(encoding="utf-8") == page

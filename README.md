@@ -12,7 +12,7 @@ Simulate cooling failures, power disturbances and AI-driven control decisions. S
 | For data center operators | For technology and AI developers |
 | --- | --- |
 | Explore failure scenarios, AI-driven control and the safety controls around it: temperatures, refused commands, consequences and how often a person is asked. | Connect your own safety control ("gate"), run reproducible benchmarks against the same scenarios as everyone else, and inspect the evidence. |
-| Start with [the example below](#what-happens-when-an-ai-agent-acts-during-a-chiller-trip), then [run it yourself](#run-the-same-experiment-on-your-machine). | Start with [Connect your gate](#connect-test-your-own-gate) and [Compare](#compare-participating-gates). |
+| Start with [the example below](#what-happens-when-an-ai-agent-acts-during-a-chiller-trip), read the [one-page result report](docs/demo/result-report.html) of three scenarios, then [run it yourself](#run-the-same-experiment-on-your-machine). | Start with [Connect your gate](#connect-test-your-own-gate) and [Compare](#compare-participating-gates). |
 
 ## What happens when an AI agent acts during a chiller trip?
 
@@ -42,7 +42,7 @@ uv sync
 uv run agentic-datacenter demo --scenario OP-03 --gate static_allowlist --out build/first-run
 ```
 
-Open `build/first-run/index.html`. Without `--scenario`, the demo also plays incremental setpoint drift (`AD-05`) and a day of energy optimization (`OP-10`), in about five minutes.
+Open `build/first-run/index.html` for every decision and its record, or `build/first-run/executive.html` for the one-page result report. Without `--scenario`, the demo also plays incremental setpoint drift (`AD-05`) and a day of energy optimization (`OP-10`), in about five minutes.
 
 ## Connect: test your own gate
 
