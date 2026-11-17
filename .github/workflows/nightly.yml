@@ -1,4 +1,5 @@
-# Scheduled. Budget: 3 hours. The scenario matrix and fidelity suite join in later stages.
+# Scheduled. Budget: 3 hours. Runs the randomized property tests and the performance budget.
+# The scenario matrix and the fidelity suite of SDD 12.4 are not part of it.
 # Every job runs in one digest-pinned image with the frozen lock, and every
 # third-party action is pinned by commit SHA (ADC-CI-003, SDD 12.4).
 name: nightly

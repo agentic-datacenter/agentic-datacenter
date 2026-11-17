@@ -66,7 +66,7 @@ class AgentTools:
         return out
 
     def query_history(self, tag: str, seconds: int) -> list[dict[str, JsonValue]]:
-        """Return recent history of one point. The historian arrives in Stage 5."""
+        """Return recent history of one point. Not connected to the historian: always empty."""
         return []
 
     def list_alarms(self) -> list[dict[str, JsonValue]]:

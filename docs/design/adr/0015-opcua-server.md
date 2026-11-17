@@ -1,6 +1,6 @@
 # ADR 0015: The OPC UA server is asyncua, one read-only node per mapped point
 
-- **Status:** Proposed. Decision 1 (an LGPL library under a BUSL-1.1 repository) is the owner's to confirm, as the licence position of ADR 0004 was. Nothing here is legal advice.
+- **Status:** Accepted; the server is built on it. Decision 1 (an LGPL library under a BUSL-1.1 repository) rests on this ADR's own reading of the licence, and no legal review of that reading is recorded. Nothing here is legal advice. See the addendum of 2026-11-17.
 - **Date:** 2026-11-13
 - **SDD:** 4.2 (`C2`), 5 ("verify the current major version and pin it in Stage 6"), 8.1, 8.3, 8.4; requirements `ADC-PRO-001`, `-002`
 
@@ -56,5 +56,13 @@ The same spike found that **the library does not enforce the security policy by 
 
 - The standard `Server` object in namespace 0 is the library's. Its start time and build date are wall-clock values set by the library, and its once-a-second current-time update is switched off. They never reach simulator state, and nothing in namespace 2 depends on them. Session timeouts and nonces inside the library also use the wall clock and the system random source; this is transport, not simulation.
 - `THIRD_PARTY_NOTICES.md` carries the LGPL obligations. Before any distribution: ship the licence texts, do not freeze the library into an executable, and do not vendor or patch it in this repository. A change the library needs goes upstream.
-- If the owner does not accept decision 1, the alternative is a different OPC UA stack; none under a permissive licence is known for Python, so the server would be dropped from Stage 6 by a design change.
+- If decision 1 is withdrawn, the alternative is a different OPC UA stack; none under a permissive licence is known for Python, so the server would be dropped by a design change.
 - The source address of a refused write is not known to the view, as for Modbus; the conduit records it.
+
+## Addendum 2026-11-17: the repository is public
+
+The licence reading under Context ends with "While the repository is private and nothing is conveyed, none of these is triggered", and leaves the three obligations "for the day Agentic-Datacenter is distributed". The repository is being made public, so that sentence no longer settles the matter. This addendum records the state. It decides nothing, and it is not legal advice.
+
+- **What is published.** Source code that names `asyncua` as a dependency. No copy of the library is in the repository. No wheel, image or frozen executable of Agentic-Datacenter has been published.
+- **State of the three obligations.** The notice that the library is used under the LGPL is in `THIRD_PARTY_NOTICES.md`. The library is not vendored, patched or frozen into an executable. The text of the GPL-3.0 is in the repository only as the licence of `packages/agentic-datacenter-iec61850`; the text of the LGPL-3.0 is not in the repository.
+- **Open, for the owner.** Whether a public source repository already counts as the distribution this ADR waited for; whether to add the two licence texts now; and whether the reading behind decision 1 should have a legal review before any release is built from this repository.

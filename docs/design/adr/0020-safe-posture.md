@@ -1,6 +1,6 @@
 # ADR 0020: Safe posture after a decision
 
-- **Status:** Proposed. Accepted when the PR that adds it is merged by the owner.
+- **Status:** Accepted.
 - **Date:** 2026-11-14
 - **SDD:** 7.3, 9.1, 9.2, 9.4 (`INV-GOV-3`, `INV-GOV-6`, new `INV-GOV-7` and `INV-GOV-8`); ADR 0016
 

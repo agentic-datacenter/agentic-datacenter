@@ -2,7 +2,7 @@
 
 One 36 kV utility incomer: the voltage and frequency the site is offered, driven by the scenario.
 
-- Fidelity: `F0` (stub only)
+- Fidelity: `F1`
 - Zone: `Z1-MV`
 - Instances: one per incomer, for example `INC-1`, `INC-2`
 - Spec: [`docs/design/modules/electrical.utility.md`](../../../../../../../docs/design/modules/electrical.utility.md)

@@ -1,8 +1,8 @@
-"""Stage 4 exit criterion and ADC-CTL-003, -004: the plant on local control alone.
+"""ADC-CTL-003, -004: the plant on local control alone.
 
-No supervisory layer exists in this stage, so "with the supervisory layer
-removed" is simply how the plant runs. Stage 5 repeats ADC-CTL-003 with a
-supervisory layer present and then cut off.
+The plant is built here without a supervisory layer, so "with the supervisory
+layer removed" is simply how it runs. ``test_network_loss.py`` repeats
+ADC-CTL-003 with a supervisory layer present and then cut off.
 """
 
 from pathlib import Path

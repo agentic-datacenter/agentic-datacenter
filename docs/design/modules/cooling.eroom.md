@@ -48,5 +48,5 @@ Room temperature, coil heat, valve position and fan power at tier `T0`; `return_
 
 - The N+1 pair of units is one lumped unit; a single unit failing is not modelled.
 - The room temperature is given back to the UPS but the UPS does not derate on it.
-- The zone of this module is an assumption (`zone_model.md`, open point 6).
+- The zone of this module is an assumption (`zone_model.md`, section 6, point 6).
 - The model advances once a second. Values that cross a port are reported at a resolution of 0.0001 (ADR 0006), and the module rests when it has reached steady state.

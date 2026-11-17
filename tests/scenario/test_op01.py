@@ -1,6 +1,6 @@
-"""OP-01: utility loss on train A, clean return after 20 minutes (Stage 2 exit criterion).
+"""OP-01: utility loss on train A, clean return after 20 minutes.
 
-Run on local control alone: no supervisory layer exists. Expected (SDD 10.1):
+Run on local control alone, without the supervisory layer. Expected (SDD 10.1):
 full transfer and retransfer per 7.2, UPS-A bridges, no POD loses power.
 """
 

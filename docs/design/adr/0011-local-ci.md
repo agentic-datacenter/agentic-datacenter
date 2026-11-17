@@ -28,3 +28,9 @@ The workflow files are still the best statement of what must pass: they are revi
 ## Addendum 2026-11-13: workflow triggers disabled on GitHub
 
 GitHub kept starting the workflows on every push, and each job was refused before it ran for lack of Actions minutes. The refused jobs carry the same names as the statuses `tools/ci_local.py` publishes, so a pull request with all local statuses green still showed red checks. The six workflows are disabled on GitHub (`gh workflow disable`); the files stay, and `tools/ci_local.py` reads them as before. `gh workflow enable <name>` turns one back on when hosted runners are available again.
+
+## Addendum 2026-11-17: what changes when the repository is public
+
+- **Actions minutes.** The decision rests on the account having no Actions minutes. GitHub does not meter standard hosted runners on public repositories, so that reason is expected to fall away once this repository is public. Nothing has been switched back on in expectation of it. Whether the hosted workflows are enabled again, and whether the commit statuses from `tools/ci_local.py` are kept beside them, is the owner's decision. `tools/ci_local.py` works either way.
+- **REMORA.** REMORA-research is a public repository. A job that installs it needs no credentials, on the host or in the reference image.
+- **A seventh workflow** was added after this record: `bench-runner`, started by hand, on a self-hosted machine. On a public repository such a machine needs the settings in `docs/guides/bench-runner.md`.

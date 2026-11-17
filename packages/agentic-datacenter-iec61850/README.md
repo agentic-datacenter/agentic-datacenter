@@ -18,5 +18,3 @@ Protocol, optional. One IEC 61850 MMS server per protection relay of the 36 kV s
 ```sh
 uv run --group iec61850 agentic-datacenter scl export --profile profiles/generic_dc.yaml --out build/scl
 ```
-
-Boundaries are defined in section 5 of `docs/design/SDD-ADC-001.md` and enforced by the import-linter contracts in the workspace root.
