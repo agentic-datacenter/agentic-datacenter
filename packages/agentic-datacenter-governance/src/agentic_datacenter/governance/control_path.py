@@ -175,7 +175,7 @@ class GovernedPath:
             "verdict": None, "decision_ref": None, "reasons": [], "writes": [],
             "premises": [], "limit_errors": [], "required_approvers": 0, "approvers": [],
             "escalated": False, "approval_refusals": [], "was_unknown": False,
-            "gate_overreach": False,
+            "gate_overreach": False, "contract_errors": [],
             "outcome": "NOT_EXECUTED", "outcome_detail": "",
         }  # fmt: skip
         self._records.append(record)
@@ -228,6 +228,7 @@ class GovernedPath:
             "writes": [[w.tag, w.value, w.previous] for w in decision.bounded_writes],
             "premises": [asdict(p) for p in snapshot.premises],
             "limit_errors": list(snapshot.limit_errors),
+            "contract_errors": [*snapshot.schema_errors, *snapshot.bound_errors],
             "required_approvers": decision.required_approvers,
             "expires_at_ms": decision.expires_at_ms,
         })  # fmt: skip

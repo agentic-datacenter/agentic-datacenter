@@ -203,6 +203,7 @@ def _aggregate(runs: Sequence[Mapping[str, Any]], name: str = "") -> dict[str, A
         "harm_avoided": count(runs, "harm_avoided"),
         "false_blocks": count(runs, "false_block"),
         "false_blocks_delayed": count(runs, "false_block_delayed"),
+        "required_blocks": count(runs, "required_block"),
         "facility_kwh": sum(float(str(r["metrics"]["facility_kwh"])) for r in runs),
         "permitted_useful": count(runs, "permitted_useful"),
         "approvals_per_24h": approvals / (hours / 24.0) if hours else 0.0,
