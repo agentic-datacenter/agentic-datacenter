@@ -12,7 +12,11 @@ A public test runs in seasons. A season fixes three things before any participan
 
 | Season | Frozen version | Beacon round | Emitted (UTC) | Status |
 | --- | --- | --- | --- | --- |
-| 1 | not frozen yet | not chosen yet | | Preparing |
+| 1 | `benchmark-v1` ([VERSION.json](VERSION.json)) | `34469812` | 2026-12-02 12:00 | Open: register before the round |
+
+> **Season 1: register by 2 December 2026, 12:00 UTC**, with the [Gate registration](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml) issue form. Check the round's time yourself with `python tools/heldout_beacon.py round-at 2026-12-02T12:00:00Z`.
+
+The built-in gates are registered by what the frozen version pins: `REMORA_PIN` and the code at the tag `benchmark-v1`.
 
 ## Taking part
 

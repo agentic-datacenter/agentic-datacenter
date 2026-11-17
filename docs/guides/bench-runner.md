@@ -71,7 +71,14 @@ For a run made by hand, `uv run agentic-datacenter bench record <directory>` wri
 
 A self-hosted runner executes whatever a workflow asks of it. On a public repository a pull request from a fork can add or change a workflow, so a runner that accepts such a job runs a stranger's code on the machine. For as long as a runner is registered:
 
-- Set **Settings → Actions → General → Fork pull request workflows** to require approval for all outside contributors, and do not approve a run of a pull request that touches `.github/workflows/`.
+- While the repository is private, workflows from fork pull requests do not run at all (**Settings → Actions → General → Fork pull request workflows in private repositories**, all unticked). That is how it is set now.
+- The moment it is made public, set **Fork pull request workflows from outside collaborators** to *Require approval for all external contributors*. GitHub offers that setting only on a public repository:
+
+  ```sh
+  gh api -X PUT repos/darklordVirtual/agentic-datacenter/actions/permissions/fork-pr-contributor-approval -f approval_policy=all_external_contributors
+  ```
+
+  Do not approve a run of a pull request that touches `.github/workflows/`.
 - Keep the label `bench` out of every other workflow, and keep `bench-runner.yml` started by hand only.
 
 `tests/conformance/test_ci.py` (`test_the_benchmark_runner_is_started_by_hand_only`) enforces the second point in part. It fails when `bench-runner.yml` has a trigger other than `workflow_dispatch`, or when any other workflow file names a self-hosted runner. It reads the workflow files only. It cannot see the repository's settings, so the first point is not checked by anything in this repository.
