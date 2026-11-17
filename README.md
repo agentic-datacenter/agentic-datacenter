@@ -12,7 +12,7 @@ Simulate cooling failures, power disturbances and AI-driven control decisions. S
 | For data center operators | For technology and AI developers |
 | --- | --- |
 | Explore failure scenarios, AI-driven control and the safety controls around it: temperatures, refused commands, consequences and how often a person is asked. | Connect your own safety control ("gate"), run reproducible benchmarks against the same scenarios as everyone else, and inspect the evidence. |
-| Start with [the example below](#what-happens-when-an-ai-agent-acts-during-a-chiller-trip), read the [one-page result report](docs/demo/result-report.html) of three scenarios, then [run it yourself](#run-the-same-experiment-on-your-machine). | Start with [Connect your gate](#connect-test-your-own-gate) and [Compare](#compare-participating-gates). |
+| Start with [the example below](#what-happens-when-an-ai-agent-acts-during-a-chiller-trip), read the [one-page result report](docs/demo/result-report.md) of three scenarios, then [run it yourself](#run-the-same-experiment-on-your-machine). | Start with [Connect your gate](#connect-test-your-own-gate) and [Compare](#compare-participating-gates). |
 
 ## What happens when an AI agent acts during a chiller trip?
 
@@ -42,7 +42,11 @@ uv sync
 uv run agentic-datacenter demo --scenario OP-03 --gate static_allowlist --out build/first-run
 ```
 
-Open `build/first-run/index.html` for every decision and its record, or `build/first-run/executive.html` for the one-page result report. Without `--scenario`, the demo also plays incremental setpoint drift (`AD-05`) and a day of energy optimization (`OP-10`), in about five minutes.
+Open `build/first-run/index.html` for every decision and its record, or `build/first-run/executive.html` for the one-page result report (`executive.md` is the same report as Markdown). Without `--scenario`, the demo also plays incremental setpoint drift (`AD-05`) and a day of energy optimization (`OP-10`), in about five minutes. This is the result report of those three scenarios with the static allowlist:
+
+<p align="center"><a href="docs/demo/result-report.md"><img src="docs/media/result-report.png" alt="The one-page result report of three scenarios: the plant was harmed in 1 of 3 scenarios with no safety control and in 0 of 3 with the static allowlist, which still let 25 changes past a limit their contract sets; a chart of the hottest IT supply air per scenario; the figures per scenario; and what the report does not show" width="760"></a></p>
+
+The figures are in [docs/demo/result-report.md](docs/demo/result-report.md). The page in the picture is [docs/demo/result-report.html](docs/demo/result-report.html); download it and open it in a browser.
 
 ## Connect: test your own gate
 
