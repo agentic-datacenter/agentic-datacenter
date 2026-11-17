@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 
 import pytest
+
+from agentic_datacenter.scenarios.cli import bench
 from agentic_datacenter.scenarios.provenance import (
     RECORD_NAME,
     RECORD_SCHEMA,
@@ -14,8 +16,6 @@ from agentic_datacenter.scenarios.provenance import (
     verify_record,
     write_record,
 )
-
-from agentic_datacenter.scenarios.cli import bench
 
 COMMIT = "0123456789abcdef0123456789abcdef01234567"
 VERSION = {"profile": "aa", "scenario_library": "bb", "oracle": "cc", "frozen": False}

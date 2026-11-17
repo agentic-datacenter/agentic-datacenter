@@ -52,6 +52,21 @@ memory=11GB
 swap=8GB
 ```
 
+## Where a result came from
+
+After the release check the job writes `provenance.json` beside the card: the commit of the code, the benchmark version, and the SHA-256 of every file the run made. On a public repository the job then attests that record, so that anyone can check which workflow run at which commit produced it (ADR 0025).
+
+Someone who has downloaded the result checks it in two steps:
+
+```sh
+gh attestation verify provenance.json --repo darklordVirtual/agentic-datacenter   # who made the record
+uv run agentic-datacenter bench verify .                                           # the files are the ones it lists
+```
+
+The first needs the GitHub CLI and says nothing if the record was not attested, which is the case for every run made while the repository was private. The second works anywhere. Neither says that the result is right, or that the runner was a clean machine; they say the files are the ones that workflow run wrote.
+
+For a run made by hand, `uv run agentic-datacenter bench record <directory>` writes the same record. It is not signed, so it shows only that the files have not changed since.
+
 ## On a public repository
 
 A self-hosted runner executes whatever a workflow asks of it. On a public repository a pull request from a fork can add or change a workflow, so a runner that accepts such a job runs a stranger's code on the machine. For as long as a runner is registered:
