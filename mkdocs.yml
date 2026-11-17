@@ -1,5 +1,5 @@
 site_name: Agentic-Datacenter
-site_description: Simulation-only data center OT model for benchmarking governance gates.
+site_description: Test autonomous data center operations before they reach production.
 docs_dir: docs
 strict: true
 nav:

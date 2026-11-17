@@ -6,6 +6,10 @@ Changes that matter to someone using or reviewing Agentic-Datacenter. Each distr
 
 ### A first look in a minute
 
+Changed
+
+- The README speaks to data center operators first: what the project tests, a chiller-trip example in plain terms, and what a result does and does not show. It has one entry point for operators and one for technology and AI developers.
+
 Added
 
 - The README opens with what a run shows. It has a figure and figures from `OP-03`, without a gate and with the static allowlist, then follows the order explore, run, connect, compare.
