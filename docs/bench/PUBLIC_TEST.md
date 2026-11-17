@@ -1,5 +1,9 @@
 # Public test
 
+[![Agentic-Datacenter Season 1 Public Test](../media/season1-register-banner.webp)](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml)
+
+**Season 1 is open · 2 December 2026, 12:00 UTC deadline · `benchmark-v1`.** [Register your gate](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml) with three fields; installation and the interface check can follow.
+
 How a governance gate from any project is tested on Agentic-Datacenter in the open, and what makes the result worth something. The question, hypotheses and analysis are those of the [preregistration](PREREGISTRATION.md); this page is the procedure.
 
 ## Seasons
@@ -20,8 +24,8 @@ The built-in gates are registered by what the frozen version pins: `REMORA_PIN` 
 
 ## Taking part
 
-1. **Check your gate.** `agentic-datacenter gate check <gate>` (see [Test your own gate](../guides/bring-your-own-gate.md)).
-2. **Register it before the round** with the "Gate registration" issue form: the gate's name, how it is attached, and the commit, package hash or container digest that will be run. The time of the issue is the record. A gate changed after the round is a different gate.
+1. **Register a fixed version first.** Use the [Season 1 gate registration form](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml). Only three fields are required: project name, exact immutable version (full commit SHA, package hash or image digest), and intended connection method (choose "not sure" if needed). You do **not** need to install anything or paste test output to register. The version in the original issue before the deadline is the Track D registration; edits or a new version after the deadline are not eligible for Track D.
+2. **Connect and check your gate later.** Run `agentic-datacenter gate check <gate>` (see [Test your own gate](../guides/bring-your-own-gate.md)), and add the output and operating profile to your issue before submitting a result. A registration alone is not a passing check or a benchmark result. If integration changes the version you registered, update it **before** the deadline to remain eligible for Track D.
 3. **Run the public tracks at any time** on the frozen version:
 
     ```sh

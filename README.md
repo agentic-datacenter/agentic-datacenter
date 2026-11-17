@@ -117,13 +117,18 @@ A gate that runs as a hook rather than a service is attached as `command_gate`, 
 
 A row is added when a gate is registered. Its result is filled in from a result card that passed `agentic-datacenter bench check`, with a link to the "Gate result" issue that carries the card. Results of gates written by Agentic-Datacenter's authors are reported apart from the rest.
 
-## Public test: season 1
+## Public test: Season 1
 
-> **Register your gate by 2 December 2026, 12:00 UTC.** Open a [Gate registration](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml) issue with the exact version you will run. At that moment the drand beacon emits round `34469812`, which draws the hidden scenario variants. Nobody can know them before, the authors included.
+[![Season 1 Public Test — Register your gate](docs/media/season1-register-banner.webp)](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml)
 
-1. **Check your gate:** `uv run agentic-datacenter gate check <gate>`.
-2. **Register it** before the deadline. A gate changed after it is a different gate.
-3. **Run the public tracks** whenever you like, on the frozen version (`benchmark-v1`). Run the hidden track after the round.
+**Registration is open. Deadline: 2 December 2026, 12:00 UTC.**  
+Frozen benchmark: `benchmark-v1` · 23 scenarios · Open to external governance gates.
+
+| 01 · Register | 02 · Connect | 03 · Benchmark |
+| :-- | :-- | :-- |
+| [Register your gate](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml) with its exact fixed version. **No setup required yet.** | Run `uv run agentic-datacenter gate check <gate>` and attach the output later. | Run the public tracks; submit your verified result card when ready. |
+
+**Why register before the deadline?** The drand beacon emits round `34469812` at that time. Its unpredictable output determines hidden Track D variants. Your gate's exact version must be registered first; subsequent code changes do not qualify under that registration.
 
 The steps, commands and rules are in [docs/bench/PUBLIC_TEST.md](docs/bench/PUBLIC_TEST.md), and the hypotheses and analysis plan, fixed in advance, are in [docs/bench/PREREGISTRATION.md](docs/bench/PREREGISTRATION.md). No benchmark result has been reported yet.
 

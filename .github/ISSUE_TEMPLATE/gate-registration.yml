@@ -1,54 +1,88 @@
-name: Gate registration
-description: Register a gate for a public-test season before its beacon round (docs/bench/PUBLIC_TEST.md).
-title: "Gate registration: <gate> for season <n>"
+name: Register a gate (Season 1)
+description: Join the public benchmark. Only three fields are required; setup and checks can follow.
+title: "Season 1 gate registration: "
 labels: ["gate-registration"]
 body:
-  - type: input
-    id: season
+  - type: markdown
     attributes:
-      label: Season
-    validations:
-      required: true
+      value: |
+        ![Agentic-Datacenter — Season 1 Public Test](https://github.com/darklordVirtual/agentic-datacenter/raw/refs/heads/main/docs/media/season1-register-banner.webp)
+
+        ### Register once. Test when ready.
+        **Season 1 is open** · `benchmark-v1` · **Deadline: 2 December 2026, 12:00 UTC**
+
+        | 1 · Register | 2 · Connect | 3 · Benchmark |
+        | :-- | :-- | :-- |
+        | Pin your exact version now | Run the interface check later | Submit results when ready |
+
+        **Only three fields are required.** You do not need to install anything or share code, credentials or test output to register.
+
+        Only the exact version recorded **by the deadline** is eligible for hidden Track D. You may update that version before the deadline; changes afterwards are not eligible for this track.
+
+        [How Season 1 works](https://github.com/darklordVirtual/agentic-datacenter/blob/main/docs/bench/PUBLIC_TEST.md) · [Integration guide](https://github.com/darklordVirtual/agentic-datacenter/blob/main/docs/guides/bring-your-own-gate.md)
+
+  - type: markdown
+    attributes:
+      value: |
+        ### 01 · Your registration
+        Complete these three fields to reserve your entry.
+
   - type: input
     id: gate
     attributes:
-      label: Gate name and project
+      label: "01 · Project / gate name"
+      placeholder: "e.g. My Safety Gate"
+      description: "A short name is enough. The GitHub account submitting this issue is the contact."
     validations:
       required: true
-  - type: dropdown
-    id: attached
-    attributes:
-      label: Attached as
-      options:
-        - Python package (agentic_datacenter.gates entry point)
-        - Service over HTTP (http_gate)
-        - A command per decision (command_gate)
-    validations:
-      required: true
+
   - type: input
     id: version
     attributes:
-      label: Exact version that will run
-      description: Commit SHA, package hash or container digest. A gate changed after the round is a different gate.
+      label: "02 · Exact version (must be fixed)"
+      description: "A full commit SHA, package hash or container digest. Do not use a moving branch or tag. This cannot change after the deadline for Track D."
+      placeholder: "e.g. 40-character commit SHA or sha256:..."
     validations:
       required: true
-  - type: input
-    id: profile
+
+  - type: dropdown
+    id: attached
     attributes:
-      label: Operating profile
-      description: DECISION_ONLY, SHADOW, ... as `agentic-datacenter gate check` prints it.
+      label: "03 · How will you connect it?"
+      description: "Choose the closest option. You may ask for help and complete the integration later."
+      options:
+        - "HTTP service (http_gate)"
+        - "Python package (entry point)"
+        - "Command per decision (command_gate)"
+        - "Not sure yet — need integration help"
     validations:
       required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+
+        ### Optional · Add details when you have them
+        You can register now and update the issue later. No check output is needed today.
+
+  - type: input
+    id: project_url
+    attributes:
+      label: Project URL (optional)
+      placeholder: "https://github.com/owner/project"
+
   - type: textarea
     id: check
     attributes:
-      label: Output of agentic-datacenter gate check
+      label: Gate check output (optional — can be added later)
+      description: "When ready, run `uv run agentic-datacenter gate check <gate>` and paste the output here or in a comment. Required before a result can be accepted, not to register."
       render: text
-    validations:
-      required: true
+
   - type: checkboxes
     id: authors
     attributes:
-      label: Independence
+      label: Independent gate (optional)
+      description: "Used to distinguish independent gate authors from the benchmark authors."
       options:
-        - label: The people who wrote this gate did not write Agentic-Datacenter's contracts, scenarios or oracle.
+        - label: "The people who wrote this gate did not write Agentic-Datacenter's contracts, scenarios or oracle."
