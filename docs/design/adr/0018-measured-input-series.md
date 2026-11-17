@@ -1,6 +1,6 @@
 # ADR 0018: Measured input series, starting with historical weather
 
-- **Status:** Proposed. Accepted when the PR that adds it is merged by the owner.
+- **Status:** Accepted.
 - **Date:** 2026-11-13
 - **SDD:** 5 (distributions and layers), 6.2 and 6.6 (weather), 6.7 (fidelity), 12 (evidence bundles); requirements `ADC-KRN-001`, `ADC-EVD-001`
 

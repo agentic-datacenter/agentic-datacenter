@@ -2,7 +2,7 @@
 
 The packaged pump station: three variable-speed pumps, one controller panel each, two duty and one standby.
 
-- Fidelity: `F0` (stub only)
+- Fidelity: `F1`
 - Zone: `Z1-CHW`
 - Instances: one, for example `PHPS`
 - Spec: [`docs/design/modules/cooling.pump_station.md`](../../../../../../../docs/design/modules/cooling.pump_station.md)

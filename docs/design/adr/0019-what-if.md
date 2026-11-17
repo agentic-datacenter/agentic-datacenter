@@ -1,6 +1,6 @@
 # ADR 0019: What-if, one proposed change played as three branches
 
-- **Status:** Proposed. Accepted when the PR that adds it is merged by the owner.
+- **Status:** Accepted.
 - **Date:** 2026-11-13
 - **SDD:** 5 (distributions and layers), 9.2 (binding surface), 9.6, 10.4, 11 (`ADC-WIF-001` to `-005`), 12.2; ADR 0016
 

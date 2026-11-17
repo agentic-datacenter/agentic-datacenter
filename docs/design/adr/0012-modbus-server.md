@@ -1,6 +1,6 @@
 # ADR 0012: The Modbus/TCP server is pymodbus, driven by its action callback
 
-- **Status:** Accepted for the design; the server itself is the next Stage 6 PR.
+- **Status:** Accepted.
 - **Date:** 2026-11-12
 - **SDD:** 5 ("verify the current major version and pin it in Stage 6"), 8.2, 8.4; requirements `ADC-PRO-001`, `-002`
 

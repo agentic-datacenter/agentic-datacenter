@@ -2,7 +2,7 @@
 
 The three air-cooled chillers and their plant controller: staging, rotation, restart after a power interruption.
 
-- Fidelity: `F0` (stub only)
+- Fidelity: `F1`
 - Zone: `Z1-CHW`
 - Instances: one, for example `CHW`
 - Spec: [`docs/design/modules/cooling.chw_plant.md`](../../../../../../../docs/design/modules/cooling.chw_plant.md)

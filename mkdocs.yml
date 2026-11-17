@@ -9,7 +9,6 @@ nav:
       - Zone and conduit model: design/zone_model.md
       - Threat model: design/threat_model.md
       - REMORA binding: design/remora_binding.md
-      - Stage 0 review: design/stage0_review.md
   - Decisions:
       - 0001 Module system: design/adr/0001-module-system.md
       - 0002 REMORA pin: design/adr/0002-remora-pin.md
@@ -59,5 +58,3 @@ validation:
   links:
     not_found: warn
     anchors: ignore
-exclude_docs: |
-  superpowers/

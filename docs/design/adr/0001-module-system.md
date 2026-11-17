@@ -1,6 +1,6 @@
 # ADR 0001: Plant built from self-contained modules joined by typed ports
 
-- **Status:** Proposed. Accepted when the Stage 0 PR is merged by the owner.
+- **Status:** Accepted.
 - **Date:** 2026-11-12
 - **SDD:** 5.1, 5.3; requirements `ADC-MOD-001` to `-005`
 
@@ -26,6 +26,6 @@ The simulator models a whole facility: power, cooling, fuel, life safety, securi
 - Values cross module boundaries once per step, so tightly coupled physics (for example chiller and loop) must be stable under that one-step delay or live in one module.
 - Each module adds a manifest, a spec and a stub to maintain. That cost is accepted for reviewability.
 
-## State at Stage 0
+## State when this was decided
 
-No module exists yet. The layer contracts are in place (ADR 0005). The contract that keeps plant modules independent of each other is added in Stage 1, together with the stubs it applies to, because import-linter cannot reference packages that do not exist.
+No module existed yet. The layer contracts were in place (ADR 0005). The contract that keeps plant modules independent of each other was left for the first modules, because import-linter cannot reference packages that do not exist.

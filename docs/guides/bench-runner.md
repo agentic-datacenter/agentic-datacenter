@@ -48,9 +48,11 @@ memory=11GB
 swap=8GB
 ```
 
-## Before the repository is public
+## On a public repository
 
-A self-hosted runner executes whatever a workflow asks of it. This workflow only starts by hand, but on a public repository any workflow a pull request adds could run on the machine. Before the repository is made public:
+A self-hosted runner executes whatever a workflow asks of it. On a public repository a pull request from a fork can add or change a workflow, so a runner that accepts such a job runs a stranger's code on the machine. For as long as a runner is registered:
 
-- set **Settings → Actions → General → Fork pull request workflows** to require approval for all outside contributors;
-- keep the runner's label `bench` out of every other workflow.
+- Set **Settings → Actions → General → Fork pull request workflows** to require approval for all outside contributors, and do not approve a run of a pull request that touches `.github/workflows/`.
+- Keep the label `bench` out of every other workflow, and keep `bench-runner.yml` started by hand only.
+
+`tests/conformance/test_ci.py` (`test_the_benchmark_runner_is_started_by_hand_only`) enforces the second point in part. It fails when `bench-runner.yml` has a trigger other than `workflow_dispatch`, or when any other workflow file names a self-hosted runner. It reads the workflow files only. It cannot see the repository's settings, so the first point is not checked by anything in this repository.

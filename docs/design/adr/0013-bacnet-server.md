@@ -1,6 +1,6 @@
 # ADR 0013: The BACnet/IP server is bacpypes3, one router in front of a virtual network of controllers
 
-- **Status:** Accepted for the design; the server is in the same PR.
+- **Status:** Accepted.
 - **Date:** 2026-11-13
 - **SDD:** 5, 8, 8.2, 8.4; requirement `ADC-PRO-001`
 

@@ -60,3 +60,12 @@ What follows:
 - The text of the GPL is added to `packages/agentic-datacenter-iec61850` with the first code there that uses the library. Until then the package is empty and only declares its licence.
 - The licence scan that keeps the library inside that package is added with the same code.
 - IEC 61850 is no longer blocked by this record.
+
+## Addendum 2026-11-17: the repositories are public
+
+REMORA-research is a public repository, and this repository is being made public. This addendum says which statements above no longer describe the present. It decides nothing, and it is not legal advice.
+
+- **"It is private"** (Context and Decision) described 2026-11-12. The licences chosen then are unchanged: BUSL-1.1 for the repository (`LICENSE`) and GPL-3.0-or-later for `agentic-datacenter-iec61850`, which now carries the text of the GPL (`packages/agentic-datacenter-iec61850/LICENSE`).
+- **"The other seven distributions".** The workspace now has ten. The nine other than `agentic-datacenter-iec61850` declare BUSL-1.1 in their `pyproject.toml`.
+- **Question 4 is open.** It was set aside "while both repositories are private" and was to be asked again before any publication. Whether REMORA's licence places a condition on publishing `agentic-datacenter-remora`, or benchmark results obtained with REMORA, has not been answered in this repository. It is the owner's to answer. No benchmark result has been reported.
+- **Question 1 asked what is intended if the repository becomes public.** The decision names BUSL-1.1 and states no other intent for a public repository. The licence parameters in the table above, among them an Additional Use Grant of none, were filled in while the repository was private. They are the owner's to review now that others can read and run the code.

@@ -1,12 +1,12 @@
-# SDD-ADC-001 — Data Center OT Simulator (IEC 62443) for REMORA
+# SDD-ADC-001 — Agentic-Datacenter: a data center OT simulator (IEC 62443)
 
 2026-11-12 · Stian Skogbrott · Luftfiber AS
 
-**Status:** draft for Stage 0 review. **Decision rule:** where this SDD and the code disagree, the SDD is changed first, by PR.
+**Status:** the design document the implementation followed. It is not a description of the code as built. Where the two differ, the code is what runs and the ADRs in `adr/` record the decision. The differences known today are listed in section 14. The numbered requirements in section 11 are what the tests are traced to.
 
 | If you are | Read |
 | --- | --- |
-| Building it (Claude Code, contributors) | 5 for structure, the module spec you are working on, 11 for the requirement you are closing, 12.4 for CI, 13 for order |
+| Contributing code | 5 for structure, the module spec you are working on, 11 for the requirement you are closing, 12.4 for CI |
 | A facility or controls engineer checking realism | 3, 6 and 7 |
 | An OT security reviewer | 4, 8 and 9.5 |
 | Evaluating REMORA or another gate | 9, 10, 12.1 to 12.3 |
@@ -14,7 +14,7 @@
 
 ## 1. Purpose, scope and non-goals
 
-Agentic-Datacenter is a simulation-only model of a complete data center's operational technology, built so that REMORA can be shown authorizing, constraining and auditing an AI operations agent in a facility whose zones, conduits and security requirements follow ISA/IEC 62443. This SDD is the single build input for Claude Code: every requirement in section 11 is numbered and testable, and section 13 orders the work into staged PRs.
+Agentic-Datacenter is a simulation-only model of a complete data center's operational technology, built so that a governance gate, REMORA being the first, can be shown authorizing, constraining and auditing an AI operations agent in a facility whose zones, conduits and security requirements follow ISA/IEC 62443. Every requirement in section 11 is numbered and testable. Section 13 records the order in which it was built.
 
 **In scope**
 
@@ -132,7 +132,7 @@ Each system requirement the simulator implements is paired with the mechanism an
 - Modbus/TCP and BACnet/IP carry no authentication. Agentic-Datacenter does not pretend otherwise; it applies compensating countermeasures at the zone boundary, which is the approach IEC 62443-3-3 allows for legacy components.
 - IEC 62443 does not yet define requirements for autonomous AI agents. Treating the agent as a software process under SR 1.2 and SR 2.1 is this project's interpretation and MUST be labelled as such in all outputs.
 - The simulator supports the risk-assessment workflow of 62443-3-2 (a documented zone model, SL-T and a countermeasure list) and the technical requirements of 62443-3-3. Programme-level parts (62443-2-1, 2-4) and product certification (4-1, 4-2) are referenced for vocabulary only.
-- The SR numbers and titles used in 4.3 were checked on 2026-11-12 against the table of contents of ISA-62443-3-3 that ISA publishes freely ([ISA table of contents](https://www.isa.org/getmedia/4379f3a1-2687-4a0a-9d0f-20d743233c1b/ISA-62443-3-3_TOC.pdf)); all of them exist under those numbers. Not covered by that source, and still to be checked against the standard text before Stage 6 closes: the requirement-enhancement numbers (in particular SR 2.1 RE 4 for dual approval) and the security level at which each requirement applies.
+- The SR numbers and titles used in 4.3 were checked on 2026-11-12 against the table of contents of ISA-62443-3-3 that ISA publishes freely ([ISA table of contents](https://www.isa.org/getmedia/4379f3a1-2687-4a0a-9d0f-20d743233c1b/ISA-62443-3-3_TOC.pdf)); all of them exist under those numbers. Not covered by that source, and not checked against the standard text: the requirement-enhancement numbers (in particular SR 2.1 RE 4 for dual approval) and the security level at which each requirement applies.
 
 ## 5. Simulator architecture
 
@@ -154,7 +154,7 @@ Agentic-Datacenter is a deterministic, fixed-step simulation kernel with plant, 
 **Run modes**
 
 - `inproc`: everything in one process on a virtual network. Simulated time advances as fast as the CPU allows. This is the mode CI and benchmarks use, and it MUST be bit-for-bit reproducible for a given profile, scenario and seed.
-- `compose`: one container per zone group and one Docker network per zone, with a conduit container enforcing the allowlists on real sockets. Simulated time is locked to wall-clock time at a configurable factor. This is the demo mode.
+- `compose`: one container per zone group and one Docker network per zone, with a conduit container enforcing the allowlists on real sockets. Simulated time is locked to wall-clock time at a configurable factor. This mode is designed here and is not built (section 14).
 
 **Time base.** Control and electrical logic step at 100 ms; thermal, hydraulic and fuel models step at 1 s; all timers are expressed in simulated time. No module may read the wall clock (lint rule, ADC-KRN-003).
 
@@ -208,20 +208,16 @@ spec: docs/design/modules/electrical.power_train.md
 
 Agentic-Datacenter depends on one exact REMORA commit, recorded in the repository, and only one small package is allowed to import it. Results from two runs are comparable only when their pins match, so the pin is part of every evidence bundle.
 
-| Tag | Commit (the value for `uv.lock` and `REMORA_PIN`) | Tag object (reference only, never the pin) | Adds | Status |
-| --- | --- | --- | --- | --- |
-| `dcsim-pin-2026-11-12b` | `dfc44de2b4ebc579b0c5e76c541eeecd414961d6` | `80a290e4cf13cbe6081416a51975a366fdc3cc58` | REMORA #1220: `remora sign-limits` and `remora export-contract-files` in the packaged CLI | Current; Stage 0 verifies against this commit |
-| `dcsim-pin-2026-11-12` | `c26a092d7092618c1004cf75db7eaf120ca3ab95` | `2e7d6b085c3ac60b70f3faef818ba83421d5c34a` | #1217 review-packet endpoint, #1218 SDK review-packet call and typed client, #1219 in-process policy gate facade | Superseded before any agentic-datacenter code existed |
+The current pin is recorded in the file `REMORA_PIN` at the repository root: repository, tag, full commit SHA, date, the reason for the last bump and the pin it supersedes. It is not repeated here, where it would go stale. The first pin is in ADR 0002.
 
 - **Isolation.** `agentic-datacenter-remora` is the only distribution that imports REMORA. All other packages install, type-check and pass their tests with REMORA absent.
 - **Pinned resource.** Distribution `remora-assurance`, import name `remora`, version 0.12.0, built with hatchling, packages `remora` and `servers`. `agentic-datacenter-remora` depends on it with the `security` extra, which the signing command needs. It installs at the pinned commit as a normal Git dependency through `uv`; no submodule and no vendoring.
-- **Pin anchor.** Each pin is an immutable annotated tag in REMORA on a commit that originates on `dev` (REMORA integrates on `dev` and releases on `master`). The tag keeps the commit reachable. `uv.lock` and `REMORA_PIN` record the full 40-character commit SHA from the table above, never the tag object's SHA, and CI rejects a dependency declared by branch or by tag name alone.
-- **What comes from the installed package.** At the current pin, `remora export-contract-files <dir>` writes `public_api_v1.json`, `openapi.json` and the ToolSpec schemas (`tool_spec_v1` to `v5`, `toolspec_signing_ed25519_v1`) from the installed wheel, and `remora sign-limits` validates and signs a limit policy. Agentic-Datacenter runs both as subprocesses of the installed package. No executable code is taken from an unpacked tree.
+- **Pin anchor.** Each pin is an immutable annotated tag in REMORA on a commit that originates on `dev` (REMORA integrates on `dev` and releases on `master`). The tag keeps the commit reachable. `uv.lock` and `REMORA_PIN` record the full 40-character commit SHA, never the tag object's SHA, and CI rejects a dependency declared by branch or by tag name alone.
+- **What comes from the installed package.** `remora export-contract-files <dir>` writes `public_api_v1.json`, `openapi.json` and the ToolSpec schemas (`tool_spec_v1` to `v5`, `toolspec_signing_ed25519_v1`) from the installed wheel,, `remora sign-limits` validates and signs a limit policy, and `remora build-toolspec` signs a ToolSpec bundle (ADR 0016). Agentic-Datacenter runs them as subprocesses of the installed package. No executable code is taken from an unpacked tree.
 - **What still comes from the Git tree.** The capability and boundary registers under `docs/` and `artifacts/interop/` are deliberately outside the wheel. `agentic-datacenter remora fetch-src` fetches those register files at the pinned SHA, as data only, verified against `REMORA_PIN`. Nothing from that tree is executed or committed to the agentic-datacenter repository.
-- **Not yet in any pin.** A general `remora build-toolspec`. It is the entry condition for Stage 8 (9.2, 13) and will arrive as a third pin.
 - **Run-time check.** Under the `DECISION_ONLY`, `SHADOW` and `GOVERNED` profiles the harness compares the installed REMORA commit and the fetched registers with `REMORA_PIN` and refuses to run on a mismatch. The evidence manifest records the REMORA SHA, tag, `remora-assurance` version and `agentic-datacenter-remora` version.
 - **Bumping.** A pin bump is its own PR that changes only the pin and lock, names the new tag, runs the full scenario matrix, and attaches the metric difference against the previous pin. A regression in invariant violations blocks the bump. Until Stage 8 has produced a first scenario baseline there is nothing to compare against, so earlier pin changes are recorded in `REMORA_PIN` with a reason and need no metric difference.
-- **Interface drift.** `agentic-datacenter-remora` binds only to the public surface in 9.2. REMORA snapshot-pins that surface in `artifacts/sdk/public_api_v1.json` (46 symbols at the first pin; recounted from the exported file at the current pin in Stage 0) and gates it with its own test. The binding's contract test diffs the symbols it uses against the exported copy. If a bump breaks it, the fix goes in the binding or upstream in REMORA, never in `agentic-datacenter-governance`.
+- **Interface drift.** `agentic-datacenter-remora` binds only to the public surface in 9.2. REMORA snapshot-pins that surface in `artifacts/sdk/public_api_v1.json` (46 symbols at the first pin) and gates it with its own test. The binding's contract test diffs the symbols it uses against the exported copy. If a bump breaks it, the fix goes in the binding or upstream in REMORA, never in `agentic-datacenter-governance`.
 
 ### 5.3 Extension points
 
@@ -251,9 +247,9 @@ Documentation lives in the repository, is built as a site in CI, and is partly g
 | `docs/design/SDD-ADC-001.md` | This document | Written |
 | `docs/design/modules/<id>.md` | One module spec per plant module, from a fixed template: purpose, ports, equations, state machine, points, parameters with source, faults, validation cases, known limits | Written, in the module's PR |
 | `docs/design/adr/NNNN-title.md` | One decision per file: context, decision, consequences, status | Written |
-| `docs/guides/` | How to add a module, a scenario, a gate, an agent, a protocol; how to run the benchmark; how to reproduce a result | Written |
-| `docs/reference/` | Point catalogue, requirement-to-test matrix, CLI reference, schema reference, module registry and wiring graph, IEC 62443 matrix | Generated in CI |
-| `docs/bench/` | Preregistration, benchmark versions, published result cards | Written and generated |
+| `docs/guides/` | How to test your own gate, which way in suits a project, how to check a result card, how to run on measured weather, how to run long benchmarks | Written |
+| `docs/reference/` | Module registry, wiring of the generic profile, requirement-to-test matrix, command line and profile schema, generated by `tools/gen_reference.py` and checked in CI; also the invariants page and the schema of the HTTP gate messages | Mostly generated |
+| `docs/bench/` | Preregistration, public test procedure, fairness rules, tiers | Written |
 | `CONTRIBUTING.md`, `SECURITY.md`, `CHANGELOG.md`, `THIRD_PARTY_NOTICES.md` | Process, disclosure, history, provenance | Written |
 
 Every public class and function has a docstring; module specs and guides are part of the definition of done for the PR that introduces the thing they describe.
@@ -273,20 +269,23 @@ agentic-datacenter/                           github.com/darklordVirtual/agentic
       cooling/                   chw_plant/  pump_station/  tes/  pod/  eroom/  weather/
       fuel/  life_safety/  security/
       sensors/
-        each module directory:   module.yaml  model.py  controller.py  interlocks.py
-                                 points.yaml  faults.py  stub.py  tests/  README.md
-    agentic-datacenter-supervisory/           points.py alarms.py historian.py roles.py command_service.py pue.py
-    agentic-datacenter-net/                   zones.py conduits.py virtual_net.py violations.py protocols/ maps/
-    agentic-datacenter-governance/            gate.py envelope_ref.py contracts.py premises.py
-                                 bindings/null_gate.py bindings/static_allowlist.py agent_tools/
-    agentic-datacenter-scenarios/             harness.py faults.py attacks.py oracle.py evidence/ library/*.yaml
-    agentic-datacenter-remora/                binding.py  (the only place REMORA is imported)
+        each module directory:   module.yaml  unit.py  faults.py  stub.py  README.md,
+                                 and points.yaml where the module has points
+    agentic-datacenter-supervisory/           points.py alarms.py historian.py sessions.py logs.py
+                                 command_service.py overview.py station.py api.py
+    agentic-datacenter-net/                   zones.py virtual_net.py maps.py guard.py
+                                 modbus.py bacnet.py snmp.py opcua.py
+    agentic-datacenter-governance/            gate.py envelope_ref.py contracts.py premises.py control_path.py
+                                 bindings/ agent_tools/
+    agentic-datacenter-scenarios/             harness.py scenario.py agents.py bench.py counterfactual.py
+                                 evidence.py release_gate.py library/*.yaml
+    agentic-datacenter-remora/                binding.py governed.py compile.py  (the only place REMORA is imported)
+    agentic-datacenter-iec61850/              model.py scl.py view.py server.py client.py library.py  (optional; ADR 0017)
     agentic-datacenter-data/                  manifest.py series.py cli.py  (optional; measured input series, ADR 0018)
     agentic-datacenter-whatif/                models.py preflight.py runner.py agent.py metrics.py compare.py
                                  evidence.py policy.py cli.py api.py library/WF-*.yaml  (ADR 0019)
   profiles/                      generic_dc.yaml  schema.json  (restricted_ref.yaml is git-ignored)
   contracts/                     *.yaml
-  deploy/compose/                docker-compose.yaml conduit/
   docs/design/                   SDD-ADC-001.md  adr/  modules/<module-id>.md
                                  zone_model.md  threat_model.md  remora_binding.md
   tests/                         cross-package only: property/ protocol/ scenario/ conformance/
@@ -571,7 +570,7 @@ A refused service returns the standard access error and raises a violation event
 **Library and licence.** The practical open implementation is `libiec61850`, a C library covering MMS client and server, GOOSE and Sampled Values, published under GPLv3 with a commercial licence sold by its vendor ([repository](https://github.com/mz-automation/libiec61850)). Its upstream Python bindings are labelled experimental and unsupported; a separately maintained wheel, `pyiec61850-ng`, is likewise GPLv3 and describes itself as experimental ([PyPI](https://pypi.org/project/pyiec61850-ng/)). Consequences for the build:
 
 - The library is used only inside the optional distribution `agentic-datacenter-iec61850`, which runs as its own process and talks to the rest of Agentic-Datacenter over a local socket. No other package imports or links it.
-- Stage 0 MUST record in an ADR how GPLv3 for this one component sits with the licence chosen for the agentic-datacenter repository. This is a licensing decision for the repository owner, not something the build may assume.
+- How GPLv3 for this one component sits with the licence of the repository is a decision of the repository owner. It is recorded in ADR 0004.
 - The server sits behind an `Iec61850Server` interface with its own conformance tests. If the Python bindings prove unstable, the fallback is the native `libiec61850` server driven by the generated model, with a thin bridge process.
 
 ## 9. REMORA integration
@@ -602,7 +601,7 @@ class GovernanceGate(Protocol):
 
 Bindings shipped: `remora` (the system under demonstration), `static_allowlist` (role and range checks only, representing a conventional BMS permission model) and `null_gate` (everything allowed, for the ungoverned baseline). REMORA receives no privileged treatment in the harness. The REMORA binding ships as the separate package agentic-datacenter-remora, pinned as described in 5.2.
 
-**Binding rule.** The binding surface below was supplied by the REMORA maintainer. Stage 0 MUST verify every symbol and file named there against the pinned commit, and document the result in `docs/design/remora_binding.md`. Where a concept already exists it is reused; nothing is re-implemented in Agentic-Datacenter. If a needed capability is missing, the gap is recorded as an issue against REMORA rather than patched around.
+**Binding rule.** The binding surface below was supplied by the REMORA maintainer. Every symbol and file named there was checked against the first pinned commit; where it differs from what is written here is in `docs/design/remora_binding.md`, section 1. Where a concept already exists it is reused; nothing is re-implemented in Agentic-Datacenter. If a needed capability is missing, the gap is recorded as an issue against REMORA rather than patched around.
 
 **REMORA binding surface at the pinned commit**
 
@@ -615,7 +614,7 @@ Bindings shipped: `remora` (the system under demonstration), `static_allowlist` 
 | Human approval | `get_review_packet()`, then `approve()` or `reject()` | The packet an approver reads: tool, decision, reasons, intent scope, dual-control limits and number of distinct approvers |
 | Consume and execute | `execute()` | One-time consumption of the token; cumulative limits, custody split and the hash-chained audit apply here |
 | Close the loop | `record_effect()`, `verify_audit_chain()`, `export_evidence()` | Effect verification and audit export for the evidence bundle |
-| Analyse a proposed change (what-if only) | `what_if(observation, *, target, max_depth, max_evaluations, engine_options)` with `EngineOptions` (REMORA PR #1236; not in the current pin) | The verdict the call gets, the smallest sets of declared facts that would change it, the hard guard that applies, each change tagged with who can bring it about. An analysis, never a grant |
+| Analyse a proposed change (what-if only) | `what_if(observation, *, target, max_depth, max_evaluations, engine_options)` with `EngineOptions` (REMORA #1236) | The verdict the call gets, the smallest sets of declared facts that would change it, the hard guard that applies, each change tagged with who can bring it about. An analysis, never a grant |
 
 In `compose` mode the same calls go to a running REMORA service whose REST contract is `schemas/openapi.json` at the pinned commit.
 
@@ -643,7 +642,7 @@ In `compose` mode the same calls go to a running REMORA service whose REST contr
 | Agentic-Datacenter contract field | Compiled to | How |
 | --- | --- | --- |
 | Rate, cumulative limit, tier, second approver | `limits.json` authored against schema `remora-cumulative-limits/v1`, signed to `remora-cumulative-limits-signed/v1` | `remora sign-limits <policy> --out <limits.json>` from the installed package (pin with #1220). It rejects any policy REMORA's loader would refuse, then signs with Ed25519. `dual_control_above` gives the second approver; limits apply across all calls on the same tag (CAP-031) |
-| Bounds and argument schema | Signed ToolSpec bundle | Not yet available as a packaged tool. A general `remora build-toolspec` is planned before Stage 8; the only existing flow is the pilot-specific `deploy/ot-pilot/build_toolspec.py` |
+| Bounds and argument schema | Signed ToolSpec bundle | `remora build-toolspec` from the installed package signs the bundle (REMORA #1232, ADR 0016) |
 | Premises and freshness | `PolicyObservation` fields | Built by the binding at decision time; stale or bad gives ABSTAIN |
 | Approval `one_operator` / `two_person` | `required_approvers` and dual control | Carried in the signed limits |
 | Rollback trigger and restore | Stays in Agentic-Datacenter | PARTIAL on the REMORA side, as above |
@@ -651,7 +650,7 @@ In `compose` mode the same calls go to a running REMORA service whose REST contr
 `agentic-datacenter contracts compile` turns `contracts/*.yaml` into these artifacts, and the REMORA service loads them as configuration. The binding's Python imports stay `remora.sdk` only; `remora.enforcement` and `remora.toolcall` are never imported, which is what `ADC-PIN-005` checks.
 
 - Limits are signed by running `remora sign-limits` as a subprocess of the installed package. Schemas for validating compiled ToolSpecs come from `remora export-contract-files`.
-- ToolSpec signing is a Stage 8 entry condition: Stage 8 starts only on a pin that contains `remora build-toolspec`. Agentic-Datacenter MUST NOT implement its own canonicalization and signing against the bundle schema, and MUST NOT run the pilot script from a fetched tree as a substitute.
+- ToolSpec bundles are signed with `remora build-toolspec`. Agentic-Datacenter MUST NOT implement its own canonicalization and signing against the bundle schema, and MUST NOT run the pilot script from a fetched tree as a substitute.
 - REMORA expects the limit policy to be signed with an operator-held key, supplied as a seed in `REMORA_LIMITS_SIGNING_SEED`. Agentic-Datacenter derives a simulator-only seed from the contract library, passes it to the subprocess in that environment variable, never writes it to disk, and configures the matching public key in the REMORA service. The same contract library therefore gives the same signed artifact. (The seed does not follow the run seed, because in `inproc` mode REMORA's service reads its configuration once per process; ADR 0016.) Agentic-Datacenter MUST NOT use `--new-key` in a scenario run and MUST NOT accept or store a real operator key.
 - Compiled artifacts are build outputs, labelled non-production. They are regenerated in CI and recorded by hash in the evidence manifest, so a run can be tied to the exact limits it was governed by.
 
@@ -1009,7 +1008,7 @@ No monetary figure, percentage saving or reliability claim may be printed that i
 | Threat | Effect | Mitigation in this design |
 | --- | --- | --- |
 | Simulator, contracts, oracle and gate share an author | Results may reflect shared assumptions | Baseline gates, Track D, counterfactual replay, external result cards, preregistration |
-| Plant sizing and several sequences are assumed | A domain expert may reject the scenario | `assumed` tags in the profile; independent engineering review of sections 3 and 7 before publication, named in the report |
+| Plant sizing and several sequences are assumed | A domain expert may reject the scenario | `assumed` tags in the profile. The review by a practising engineer that 6.7 asks for has not yet taken place |
 | Lumped thermal and electrical models | Absolute energy and timing figures are approximate | Report differences between profiles on the same model, not absolute savings; state model limits on the result card |
 | Language-model nondeterminism | Run-to-run variation | Scripted agents for the core result; multiple seeds and models for the rest |
 | Scenarios written with the gate in mind | Overfitting | Track D; scenario library frozen before governed runs |
@@ -1053,12 +1052,12 @@ CI is how this SDD is enforced: every structural rule, requirement and reproduci
 - **Performance.** `ADC-KRN-004` is tracked per commit; a slowdown above 20 % fails `nightly`.
 - **Cost control.** No job that calls a paid model API runs without a person starting it.
 - **Repository settings as code.** Branch protection, required checks, one human review, code owners for interlocks, network, governance and this SDD, and signed release tags are defined in a committed ruleset file that a conformance test reads.
-- **Local parity.** `pre-commit` runs the static job locally; `make ci` runs the whole `pr` workflow in the reference image.
+- **Local parity.** `tools/ci_local.py` runs the jobs of a workflow locally, on the host or in the reference image, and an opt-in pre-push hook runs the static job (ADR 0011).
 - **Artifacts.** Nightly evidence bundles are kept for 90 days; release bundles permanently.
 
 ## 13. Staged build plan
 
-Ten stages in fixed order, each delivered as a short series of small PRs and merged by a human; Claude Code never merges its own PR. Work is spec-first and test-first: requirement IDs in the PR description, failing tests committed before implementation, and no stage starts until the previous exit criterion is met.
+This section is build history. The simulator was built in the stages below, in this order, by small pull requests that a person merged. The table stays because the traceability check reads it: a requirement is due from the stage that closes it, and `[tool.agentic-datacenter] stage` in `pyproject.toml` says which stage the repository counts as reached (ADR 0007). Not every exit criterion has been met; section 14 says which.
 
 | Stage | Deliverable | Requirements closed | Exit criterion |
 | --- | --- | --- | --- |
@@ -1073,24 +1072,13 @@ Ten stages in fixed order, each delivered as a short series of small PRs and mer
 | 8 | Gate interface, three bindings, tool server, contract library, contract compiler to signed REMORA artifacts, register fetch at the pin. Entry condition: a pin that contains remora sign-limits, export-contract-files and build-toolspec | GOV-001 to 008, PIN-001 to 006 | Interface suite green for all bindings; `AD-02`, `AD-04`, `AD-06` pass |
 | 9 | Scenario suite, oracle, metrics, evidence bundles, 62443 matrix, demo dashboard, what-if (10.4), tagged release | SCN-001, EVD-001, EVD-002, BEN-001 to 009, WIF-001 to 005 | Nightly matrix green; evidence bundle reproduced on a second machine |
 
-**Milestone M1: benchmark slice, straight after Stage 4.** Before the breadth of Stages 5 to 7, build thin versions of the supervisory command path, the gate interface with all three bindings, the two scripted agents, counterfactual replay and the result card, and run four scenarios: `OP-03`, `OP-10`, `AD-01` and `AD-03`. This gives a first safety-utility chart from real runs while the simulator is still small.
+**Milestone M1.** After Stage 4, thin versions of the supervisory command path, the gate interface, the two scripted agents, counterfactual replay and the result card were built first, on four scenarios: `OP-03`, `OP-10`, `AD-01` and `AD-03`. They ran under the operating profile `DECISION_ONLY`: REMORA decides through `evaluate_policy`, and allowed proposals are applied by the command service with the hash of the decision as reference. There is no execution token, no cumulative-limit enforcement on the REMORA side and no audit chain in this profile. Its results MUST be labelled as such and MUST NOT be described as governed execution. `AD-04` and `AD-05` cannot be claimed as passed under it, since replay and cumulative limits are enforced only on the governed path.
 
-- M1 uses the operating profile `DECISION_ONLY`: REMORA decides through `evaluate_policy`, which is in the first pin, and allowed proposals are applied by the command service with the hash of the decision as reference. There is no execution token, no cumulative-limit enforcement on the REMORA side and no audit chain in this profile.
-- `DECISION_ONLY` exists so that M1 does not wait for the Stage 8 entry condition. Its results MUST be labelled as such, MUST NOT be described as governed execution, and `AD-04` and `AD-05` cannot be claimed as passed under it, since replay and cumulative limits are enforced only on the governed path.
-- M1 exit criterion: a result card for `null_gate`, `static_allowlist` and REMORA on the four scenarios with both scripted agents, reproduced on a second machine.
+The rules for changes are in `CONTRIBUTING.md`.
 
-**Instructions to Claude Code for every stage**
+## 14. Assumptions, known differences and open questions
 
-- Read this SDD and the ADRs before writing code. If the SDD is ambiguous or wrong, stop and propose an SDD change in the same PR rather than guessing.
-- Keep each PR under about 1,500 changed lines excluding generated maps and fixtures; split if larger.
-- Do not add dependencies beyond section 5 without an ADR.
-- Do not modify REMORA code from Agentic-Datacenter PRs. Changes REMORA needs go as separate PRs against its `dev` branch.
-- Do not copy text from the reference specification or from any standard into the repository.
-- No authorship or co-author trailers naming an AI tool in commits or files.
-
-## 14. Assumptions and open questions
-
-The reference specification does not contain single-line diagrams, P&IDs, point lists or the owner's detailed sequences (it refers to them as separate drawings), so plant sizing and several control sequences in this SDD are engineering assumptions that a data center engineer should review before the simulator is shown to a customer.
+The reference specification does not contain single-line diagrams, P&IDs, point lists or the owner's detailed sequences (it refers to them as separate drawings), so plant sizing and several control sequences in this SDD are engineering assumptions. They have not yet been reviewed by a practising data center or controls engineer.
 
 **Assumptions that most affect results**
 
@@ -1100,14 +1088,23 @@ The reference specification does not contain single-line diagrams, P&IDs, point 
 - Chiller staging thresholds, pump duty logic and fuel volumes.
 - Scalar SL-T values per zone; no formal risk assessment has been performed behind them.
 
-**Open questions**
+**Where the code differs from this document**
 
-- [ ] Repository placement is decided: Agentic-Datacenter lives in github.com/darklordVirtual/agentic-datacenter and consumes REMORA as a pinned dependency (5.2). The first pin is set (5.2). Limits signing and contract-file export are in the current pin, dcsim-pin-2026-11-12b (5.2). Still open: remora build-toolspec, which must be in a later pin before Stage 8 starts. This SDD is written for that repository.
-- [x] Values derived from the reference specification are not in the repository; they may live only in the git-ignored `profiles/restricted_ref.yaml` (ADC-PRV-003).
-- [ ] Which agent runtime drives the demonstration first, and whether a second, different harness is in scope for v1.
-- [ ] IEC 61850 MMS for the MV protection relays is decided for v1 (8.5); it is no longer deferred here. Still open: the licence position for the GPLv3 protocol library.
-- [ ] Whether the demo needs an operator-facing HMI beyond the read-only dashboard.
-- [ ] Access to licensed copies of IEC 62443-3-2 and 3-3 for the verification step in 4.4.
+- `compose` mode is not built. There is no `deploy/` directory, no conduit container and no REMORA service in a container. Everything runs, and is tested, in `inproc` mode (ADR 0010, ADR 0016, ADR 0017). Every sentence above about `compose` mode describes a design.
+- No language-model agent (`llm_agent`, 12.1) is implemented. The benchmark and the demonstration use scripted agents.
+- The binding surface in 5.2 and 9.2 differs from REMORA in four places (`remora_binding.md`, section 1).
+- Zones and conduits differ in the points listed in `zone_model.md`, section 6. No data collector and no alarm notification are modelled.
+- The checks of 12.4 are run locally and reported as commit statuses (ADR 0011).
+- Reproduction on a second machine, which the exit criteria of Stage 9 and of milestone M1 ask for, has not been done.
+
+**What became of the open questions**
+
+- Repository placement and the REMORA pin: decided (5.2, ADR 0002). `remora build-toolspec`, the last tool the governed path waited for, arrived in a later pin (ADR 0016). The current pin is in `REMORA_PIN`.
+- Values derived from the reference specification are not in the repository; they may live only in the git-ignored `profiles/restricted_ref.yaml` (ADC-PRV-003).
+- IEC 61850 MMS for the MV protection relays, and the licence position for the GPLv3 protocol library: decided (8.5, ADR 0004, ADR 0017).
+- Which agent runtime drives the demonstration: the scripted agents. A language-model agent, and a second harness, are still open.
+- An operator-facing HMI: none is built. The demonstration writes static HTML pages.
+- Access to licensed copies of IEC 62443-3-2 and 3-3 for the verification step in 4.4: still open. The check has not been made.
 
 ## Annex A. Glossary
 
@@ -1144,4 +1141,4 @@ External sources consulted for this SDD, all opened on 2026-11-12. Standards the
 - [ITI (CBEMA) curve application note, reproduced by PQBlog](https://powerquality.blog/2022/02/04/iti-cbema-curve-application-note/): IT equipment voltage tolerance (6.6)
 - [libiec61850 repository](https://github.com/mz-automation/libiec61850) and [pyiec61850-ng on PyPI](https://pypi.org/project/pyiec61850-ng/): library capabilities and licence (8.5)
 - The reference specification, unpublished: kinds of plant and control behaviour (section 2)
-- REMORA binding surface and pins: supplied by the REMORA maintainer; to be verified against the pinned commit in Stage 0 (5.2, 9.2)
+- REMORA binding surface and pins: supplied by the REMORA maintainer and checked against the first pinned commit (5.2, 9.2, `remora_binding.md`)

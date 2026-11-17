@@ -1,4 +1,5 @@
-# Started by a person, or by a release. Nothing here may start by itself: later stages run paid model APIs from this workflow only.
+# Started by a person, or by a release. Nothing here may start by itself: a run that calls a paid
+# model API may be added to this workflow only (SDD 12.4). No such run exists today.
 # Every job runs in one digest-pinned image with the frozen lock, and every
 # third-party action is pinned by commit SHA (ADC-CI-003, SDD 12.4).
 name: bench
@@ -22,5 +23,5 @@ jobs:
         run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: uv sync --frozen
-      - name: The benchmark itself arrives in Stage 9; until then this records the performance baseline
+      - name: Performance baseline. The benchmark itself is run by bench-runner.yml (docs/guides/bench-runner.md)
         run: uv run pytest -m nightly tests/scenario/test_performance.py

@@ -2,7 +2,7 @@
 
 One 400/230 V power train: unit substation, main switchboard with utility and generator breakers, and the automatic transfer controller.
 
-- Fidelity: `F0` (stub only)
+- Fidelity: `F1`
 - Zone: `Z1-PWR-{instance}`
 - Instances: one per train: `A`, `B`, `C`
 - Spec: [`docs/design/modules/electrical.power_train.md`](../../../../../../../docs/design/modules/electrical.power_train.md)

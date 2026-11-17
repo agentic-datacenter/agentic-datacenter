@@ -1,4 +1,4 @@
-"""Stage 4 behaviour of single modules: IT fans, workload traces, air handlers, reboot."""
+"""Behaviour of single modules: IT fans, workload traces, air handlers, reboot."""
 
 import importlib.util
 from pathlib import Path

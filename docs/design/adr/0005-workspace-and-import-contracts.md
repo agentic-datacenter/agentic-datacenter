@@ -1,6 +1,6 @@
 # ADR 0005: Workspace layout and layer import contracts
 
-- **Status:** Proposed. Accepted when the Stage 0 PR is merged by the owner.
+- **Status:** Accepted.
 - **Date:** 2026-11-12
 - **SDD:** 5 (distribution table and repository layout), 12.4; requirements `ADC-MOD-002`, `ADC-PIN-001`, `ADC-CI-002`
 
