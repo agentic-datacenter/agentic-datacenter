@@ -2,8 +2,8 @@
 
 A controller lives in ``controller.py`` and may import the kernel API and its
 own module's ``points``; it may not import the model, the interlocks or any
-other part of the plant. No module has a controller before Stage 2, so the
-scanner is also tested on samples to show it would catch a violation.
+other part of the plant. The scanner is also tested on samples, to show it
+would catch a violation.
 """
 
 import ast

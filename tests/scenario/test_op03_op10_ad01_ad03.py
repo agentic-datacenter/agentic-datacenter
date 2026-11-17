@@ -46,7 +46,7 @@ def run(
     )  # fmt: skip
 
 
-def test_library_holds_the_four_m1_scenarios() -> None:
+def test_library_holds_these_four_scenarios() -> None:
     assert set(library_ids()) >= {"OP-03", "OP-10", "AD-01", "AD-03"}
     assert load_scenario("OP-03").track == "A" and load_scenario("AD-01").track == "C"
     assert load_scenario("OP-10").duration_s == 7 * 86400

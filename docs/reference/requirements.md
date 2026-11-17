@@ -7,11 +7,11 @@ The repository is at stage 5. A requirement is due when its stage is at or below
 | Requirement | Stage | Due | Claimed by | Tests citing it |
 | --- | --- | --- | --- | --- |
 | `ADC-BEN-001` | 9 | no | `agentic-datacenter-scenarios` | `tests/bench/test_heldout_and_freeze.py`<br>`tests/conformance/test_result_card.py` |
-| `ADC-BEN-002` | 9 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_m1_scenarios.py` |
+| `ADC-BEN-002` | 9 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_op03_op10_ad01_ad03.py` |
 | `ADC-BEN-003` | 9 | no | `agentic-datacenter-scenarios` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/bench/test_utility_measures.py`<br>`tests/property/test_counterfactual_identity.py` |
 | `ADC-BEN-004` | 9 | no | `agentic-datacenter-scenarios` | `tests/bench/test_fairness.py`<br>`tests/bench/test_release_gate.py`<br>`tests/conformance/test_result_card.py` |
 | `ADC-BEN-005` | 9 | no | `agentic-datacenter-scenarios` | `tests/conformance/test_gate_cli.py`<br>`tests/conformance/test_result_card.py` |
-| `ADC-BEN-006` | 9 | no | `agentic-datacenter-scenarios` | `tests/bench/test_merge.py`<br>`tests/conformance/test_result_card.py`<br>`tests/scenario/test_stage8_scenarios.py` |
+| `ADC-BEN-006` | 9 | no | `agentic-datacenter-scenarios` | `tests/bench/test_merge.py`<br>`tests/conformance/test_result_card.py`<br>`tests/scenario/test_op13_ad09_governed.py` |
 | `ADC-BEN-007` | 9 | no | `agentic-datacenter-scenarios` | `tests/bench/test_release_gate.py`<br>`tests/conformance/test_result_card.py` |
 | `ADC-BEN-008` | 9 | no | `agentic-datacenter-scenarios` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/bench/test_bounded_replay.py` |
 | `ADC-BEN-009` | 9 | no | `agentic-datacenter-scenarios` | `tests/bench/test_fairness.py`<br>`tests/conformance/test_result_card.py` |
@@ -24,7 +24,7 @@ The repository is at stage 5. A requirement is due when its stage is at or below
 | `ADC-CTL-002` | 2 | yes | `electrical.power_train` | `packages/agentic-datacenter-plant/tests/electrical/test_power_train.py`<br>`tests/scenario/test_op01.py` |
 | `ADC-CTL-003` | 4 | yes | `cooling.pod` | `tests/scenario/test_local_control.py`<br>`tests/scenario/test_network_loss.py` |
 | `ADC-CTL-004` | 4 | yes | `cooling.chw_plant`, `cooling.pod`, `cooling.pump_station` | `tests/scenario/test_local_control.py` |
-| `ADC-CTL-005` | 4 | yes | `cooling.chw_plant`, `cooling.pod`, `cooling.pump_station`, `electrical.genset`, `electrical.power_train` | `packages/agentic-datacenter-plant/tests/test_stage4_behaviour.py` |
+| `ADC-CTL-005` | 4 | yes | `cooling.chw_plant`, `cooling.pod`, `cooling.pump_station`, `electrical.genset`, `electrical.power_train` | `packages/agentic-datacenter-plant/tests/test_module_behaviour.py` |
 | `ADC-CTL-006` | 4 | yes | `cooling.pod`, `sensors` | `packages/agentic-datacenter-plant/tests/sensors/test_zone_mean.py` |
 | `ADC-DOC-001` | 1 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_docs.py` |
 | `ADC-DOC-002` | 1 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_module_manifests.py` |
@@ -33,15 +33,15 @@ The repository is at stage 5. A requirement is due when its stage is at or below
 | `ADC-EVD-002` | 9 | no | none | `tests/conformance/test_matrix_generation.py` |
 | `ADC-FID-001` | 4 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_module_manifests.py` |
 | `ADC-FID-002` | 4 | yes | `agentic-datacenter-workspace` | `tests/bench/test_sensitivity.py` |
-| `ADC-FID-003` | 4 | yes | `electrical.it_load` | `packages/agentic-datacenter-plant/tests/test_stage4_behaviour.py` |
+| `ADC-FID-003` | 4 | yes | `electrical.it_load` | `packages/agentic-datacenter-plant/tests/test_module_behaviour.py` |
 | `ADC-FID-004` | 4 | yes | `agentic-datacenter-scenarios` | `tests/bench/test_sensitivity.py` |
-| `ADC-GOV-001` | 8 | no | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-governance/tests/test_safe_posture.py`<br>`packages/agentic-datacenter-remora/tests/test_binding.py`<br>`packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/bench/test_release_gate.py`<br>`tests/scenario/test_safe_posture_scenarios.py`<br>`tests/scenario/test_stage8_scenarios.py` |
-| `ADC-GOV-002` | 8 | no | `agentic-datacenter-supervisory` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-remora/tests/test_governed.py`<br>`packages/agentic-datacenter-supervisory/tests/test_command_service.py`<br>`tests/scenario/test_scenario_library.py`<br>`tests/scenario/test_stage8_scenarios.py` |
+| `ADC-GOV-001` | 8 | no | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-governance/tests/test_safe_posture.py`<br>`packages/agentic-datacenter-remora/tests/test_binding.py`<br>`packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/bench/test_release_gate.py`<br>`tests/scenario/test_op13_ad09_governed.py`<br>`tests/scenario/test_safe_posture_scenarios.py` |
+| `ADC-GOV-002` | 8 | no | `agentic-datacenter-supervisory` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-remora/tests/test_governed.py`<br>`packages/agentic-datacenter-supervisory/tests/test_command_service.py`<br>`tests/scenario/test_op13_ad09_governed.py`<br>`tests/scenario/test_scenario_library.py` |
 | `ADC-GOV-003` | 8 | no | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-remora/tests/test_binding.py` |
 | `ADC-GOV-004` | 8 | no | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-governance/tests/test_http_gate.py`<br>`packages/agentic-datacenter-remora/tests/test_binding.py`<br>`packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/conformance/test_gate_cli.py` |
 | `ADC-GOV-005` | 8 | no | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_governance.py` |
 | `ADC-GOV-006` | 8 | no | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_contract_compile.py` |
-| `ADC-GOV-007` | 8 | no | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/scenario/test_stage8_scenarios.py` |
+| `ADC-GOV-007` | 8 | no | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/scenario/test_op13_ad09_governed.py` |
 | `ADC-GOV-008` | 8 | no | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_http_gate.py`<br>`tests/conformance/test_gate_cli.py` |
 | `ADC-IEC-001` | 6 | no | `agentic-datacenter-iec61850` | `packages/agentic-datacenter-iec61850/tests/test_scl.py`<br>`tests/protocol/test_iec61850_model.py` |
 | `ADC-IEC-002` | 6 | no | `agentic-datacenter-iec61850` | `packages/agentic-datacenter-iec61850/tests/test_library.py`<br>`tests/protocol/test_iec61850_read_report.py` |
@@ -60,7 +60,7 @@ The repository is at stage 5. A requirement is due when its stage is at or below
 | `ADC-NET-001` | 6 | no | `agentic-datacenter-net` | `tests/conformance/test_zone_matrix.py` |
 | `ADC-NET-002` | 6 | no | `agentic-datacenter-net` | `tests/conformance/test_conduit_rules.py` |
 | `ADC-NET-003` | 6 | no | `agentic-datacenter-net` | `tests/conformance/test_conduit_rules.py`<br>`tests/scenario/test_scenario_library.py` |
-| `ADC-NET-004` | 6 | no | `agentic-datacenter-net`, `life_safety` | `tests/conformance/test_conduit_rules.py`<br>`tests/scenario/test_stage7_scenarios.py` |
+| `ADC-NET-004` | 6 | no | `agentic-datacenter-net`, `life_safety` | `tests/conformance/test_conduit_rules.py`<br>`tests/scenario/test_op06_op07.py` |
 | `ADC-PIN-001` | 8 | no | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_binding.py`<br>`tests/conformance/test_ci.py` |
 | `ADC-PIN-002` | 8 | no | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_binding.py` |
 | `ADC-PIN-003` | 8 | no | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_binding.py`<br>`packages/agentic-datacenter-remora/tests/test_governed.py` |
@@ -81,7 +81,7 @@ The repository is at stage 5. A requirement is due when its stage is at or below
 | `ADC-PRV-005` | 0 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_ci.py` |
 | `ADC-SAF-001` | 1 | yes | `agentic-datacenter-net` | `packages/agentic-datacenter-iec61850/tests/test_library.py`<br>`packages/agentic-datacenter-net/tests/test_bind_guard.py`<br>`tests/conformance/test_iec61850_denied_services.py`<br>`tests/protocol/test_bacnet_conformance.py`<br>`tests/protocol/test_modbus_conformance.py`<br>`tests/protocol/test_opcua_conformance.py`<br>`tests/protocol/test_snmp_conformance.py` |
 | `ADC-SAF-002` | 1 | yes | `agentic-datacenter-net` | `packages/agentic-datacenter-net/tests/test_no_external_clients.py` |
-| `ADC-SCN-001` | 9 | no | `fuel`, `security` | `tests/scenario/test_ad08.py`<br>`tests/scenario/test_iec61850_scenarios.py`<br>`tests/scenario/test_scenario_library.py`<br>`tests/scenario/test_stage8_scenarios.py` |
+| `ADC-SCN-001` | 9 | no | `fuel`, `security` | `tests/scenario/test_ad08.py`<br>`tests/scenario/test_iec61850_scenarios.py`<br>`tests/scenario/test_op13_ad09_governed.py`<br>`tests/scenario/test_scenario_library.py` |
 | `ADC-SUP-001` | 5 | yes | `agentic-datacenter-supervisory` | `packages/agentic-datacenter-supervisory/tests/test_alarms.py` |
 | `ADC-SUP-002` | 5 | yes | `agentic-datacenter-supervisory` | `packages/agentic-datacenter-supervisory/tests/test_alarms.py`<br>`packages/agentic-datacenter-supervisory/tests/test_command_service.py`<br>`packages/agentic-datacenter-supervisory/tests/test_log_integrity.py`<br>`packages/agentic-datacenter-supervisory/tests/test_read_api.py` |
 | `ADC-SUP-003` | 5 | yes | `agentic-datacenter-supervisory` | `packages/agentic-datacenter-supervisory/tests/test_command_service.py`<br>`packages/agentic-datacenter-supervisory/tests/test_read_api.py` |
