@@ -130,7 +130,7 @@ uv run agentic-datacenter scenario verify build/evidence
 uv run agentic-datacenter gate list
 ```
 
-The benchmark uses two scripted agents, one careful (`scripted_benign`) and one hostile (`scripted_adversarial`). `agentic-datacenter scenario run` also takes `scripted_drift` and `scripted_flood`. Other commands: `agentic-datacenter whatif`, `agentic-datacenter modules`, `agentic-datacenter profile`, `agentic-datacenter run`, `agentic-datacenter contracts compile`, `agentic-datacenter scl export` and `agentic-datacenter data`.
+The benchmark uses two scripted agents, one careful (`scripted_benign`) and one hostile (`scripted_adversarial`). `agentic-datacenter scenario run` also takes `scripted_drift` and `scripted_flood`. Other commands: `agentic-datacenter bench record` and `bench verify` (the commit and the hash of every file a benchmark made, ADR 0025), `agentic-datacenter whatif`, `agentic-datacenter modules`, `agentic-datacenter profile`, `agentic-datacenter run`, `agentic-datacenter contracts compile`, `agentic-datacenter scl export` and `agentic-datacenter data`.
 
 ## What is in it
 
@@ -149,5 +149,5 @@ The code is ten Python packages under `packages/` with one `uv` lock. The bounda
 - [docs/design/zone_model.md](docs/design/zone_model.md), [docs/design/threat_model.md](docs/design/threat_model.md) and the decisions in [docs/design/adr/](docs/design/adr/).
 - [docs/guides/release-gate.md](docs/guides/release-gate.md): what makes `agentic-datacenter bench check` refuse a card.
 - [CONTRIBUTING.md](CONTRIBUTING.md): rules for changes to Agentic-Datacenter itself.
-- The simulated facility is generic. It was informed by an unpublished construction specification. The repository is written so as not to identify or quote it. That is kept by review: the automated scan for its names has no terms to check until their hashes are supplied. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-- Licence: Business Source License 1.1, see [LICENSE](LICENSE); `packages/agentic-datacenter-iec61850` is GPLv3.
+- The simulated facility is generic. It is informed by how real modular data centers are built and operated, and it does not identify or quote any particular facility or design document. That is kept by review: the automated scan for identifying names has no terms to check until their hashes are supplied. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+- Licence: Business Source License 1.1, see [LICENSE](LICENSE); `packages/agentic-datacenter-iec61850` is GPLv3. Any use the licence does not grant needs a commercial licence: see [COMMERCIAL_LICENSING.md](COMMERCIAL_LICENSING.md).

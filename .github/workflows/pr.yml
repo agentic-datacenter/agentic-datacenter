@@ -113,3 +113,5 @@ jobs:
         run: uv export --frozen --no-emit-workspace --no-hashes --format requirements-txt > build-requirements.txt && uv run pip-audit -r build-requirements.txt
       - name: Provenance terms and committed secrets
         run: uv run pytest tests/conformance/test_ci.py -k "forbidden_term or notices"
+      - name: Every wheel and source distribution holds its licence text
+        run: uv build --all-packages --out-dir build/dist && uv run python tools/check_dist_licences.py build/dist

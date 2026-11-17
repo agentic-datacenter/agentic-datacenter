@@ -2,13 +2,13 @@
 
 Required by `ADC-PRV-005`. This file lists what was consulted to design Agentic-Datacenter and what third-party software it uses. It is updated in the same PR that adds a source or a dependency.
 
-## Unpublished reference
+## Real-world practice
 
-**The reference specification** (a construction specification for a modular data center, unpublished). Consulted for the kinds of plant, control behaviour and interfaces a facility of this type has. It is referred to only by that description.
+The facility model is informed by how real modular data centers are designed, built and operated: the kinds of plant, control behaviour and interfaces a facility of this type has. It does not identify or quote any particular facility or design document. Not everything consulted is public; what is not public is not named here.
 
-- No text from it is reproduced in this repository. Behaviour is restated as original requirements and state machines (`ADC-PRV-001`).
-- Nothing that identifies it appears in this repository: not the names of its project, owner, engineer or site, nor its title, issue or section numbers (`ADC-PRV-002`).
-- No value taken from it is in this repository. Such values may live only in `profiles/restricted_ref.yaml`, which is excluded from version control; the public profile `profiles/generic_dc.yaml` uses independently chosen values (`ADC-PRV-003`).
+- No text from any design document is reproduced in this repository. Behaviour is stated as original requirements and state machines (`ADC-PRV-001`).
+- Nothing that identifies a real facility appears in this repository: not the names of a project, owner, engineer or site, nor the title, issue or section numbers of a design document (`ADC-PRV-002`).
+- No value taken from a real facility is in this repository. Such values may live only in `profiles/restricted_ref.yaml`, which is excluded from version control; the public profile `profiles/generic_dc.yaml` uses independently chosen values (`ADC-PRV-003`).
 
 ## Measured datasets
 
@@ -86,10 +86,12 @@ As installed from `uv.lock` on 2026-11-13, with the licence each project declare
 
 `asyncua` is under the GNU Lesser General Public License, version 3 or later. Agentic-Datacenter uses it as an unmodified package installed separately from PyPI; it is not copied into this repository and not changed (ADR 0015). If Agentic-Datacenter is ever distributed, the distribution must say that it uses `asyncua` under the LGPL, include the texts of the GPL-3.0 and the LGPL-3.0, and leave the recipient able to replace the library with a modified version, which rules out freezing it into a single executable.
 
+`libiec61850` is under the GPLv3. It is not in this repository: whoever installs the `iec61850` group fetches it from PyPI. When it is loaded, it runs in one process with `agentic-datacenter-iec61850` (GPL-3.0-or-later) and with the packages that distribution loads, which are under the Business Source License 1.1. Running that is open to anyone under both licences. Conveying it as one work, for example a container image or an executable that holds the library together with those packages, is not, because the terms of the Business Source License 1.1 are not compatible with the GPLv3. No such image or executable is published from this repository (ADR 0004, addendum of 2026-11-17 on publication).
+
 ### Development and test tools
 
 `uv`, `ruff`, `mypy`, `pytest`, `pytest-xdist`, `hypothesis`, `import-linter`, `hatchling`, `httpx`, `mkdocs`, `pip-audit`. Each under the licence its project declares; versions are fixed by `uv.lock`. They are not part of what Agentic-Datacenter distributes.
 
 ## Licence of this repository
 
-Business Source License 1.1, in `LICENSE`, for everything except `packages/agentic-datacenter-iec61850`, which is GPL-3.0-or-later. Decided by the owner on 2026-11-12; see `docs/design/adr/0004-licence-position.md`.
+Business Source License 1.1, in `LICENSE`, for everything except `packages/agentic-datacenter-iec61850`, which is GPL-3.0-or-later. Decided by the owner on 2026-11-12; see `docs/design/adr/0004-licence-position.md`. Who the Licensor is, and who handles commercial licences, is in `COMMERCIAL_LICENSING.md`.

@@ -30,6 +30,7 @@ from agentic_datacenter.scenarios.evidence import (
 )
 from agentic_datacenter.scenarios.harness import RunResult, run_scenario
 from agentic_datacenter.scenarios.heldout import commitment
+from agentic_datacenter.scenarios.provenance import CARD_NAME, verify_record, write_record
 from agentic_datacenter.scenarios.release_gate import check_card
 from agentic_datacenter.scenarios.scenario import Scenario, library_ids, load_scenario
 
@@ -104,10 +105,30 @@ def bench(argv: Sequence[str]) -> int:
         "--publication", action="store_true",
         help="Also require the frozen benchmark version: the check for a reported result.",
     )  # fmt: skip
+    record = actions.add_parser(
+        "record", help="Write the commit and the hash of every file beside a result card."
+    )
+    record.add_argument("directory", type=Path, help="The directory a benchmark wrote.")
+    verify = actions.add_parser(
+        "verify", help="Check the files beside a result card against their record."
+    )
+    verify.add_argument("directory", type=Path, help="The directory a benchmark wrote.")
     args = parser.parse_args(argv)
 
     if args.action == "check":
         return _check(args.card, args.gate or ["remora_governed"], args.publication)
+    if args.action == "record":
+        if not (args.directory / CARD_NAME).is_file():
+            print(f"agentic-datacenter bench: no {CARD_NAME} in {args.directory}", file=sys.stderr)
+            return 1
+        print(f"record written to {write_record(args.directory, code_commit(Path.cwd()))}")
+        return 0
+    if args.action == "verify":
+        problems = verify_record(args.directory)
+        for problem in problems:
+            print(problem, file=sys.stderr)
+        print(f"{args.directory}: {'intact' if not problems else 'NOT intact'}")
+        return 1 if problems else 0
 
     if args.action == "merge":
         try:

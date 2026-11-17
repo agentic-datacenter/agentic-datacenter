@@ -39,9 +39,9 @@ For a small change, run the tests that touch what changed first. `uv run python 
 
 ## Things that are never done here
 
-- Copying text from the reference specification or from any standard into the repository.
-- Writing anything that identifies the reference specification: the names of its project, owner, engineer or site, its title, issue, date or section numbers, anywhere, including test names and commit messages.
-- Committing `profiles/restricted_ref.yaml`, or any value taken from the reference specification.
+- Copying text from a design document of a real facility or from any standard into the repository.
+- Writing anything that identifies a real facility: the names of a project, owner, engineer or site, or the title, issue, date or section numbers of a design document, anywhere, including test names and commit messages.
+- Committing `profiles/restricted_ref.yaml`, or any value taken from a real facility.
 - Changing REMORA from an Agentic-Datacenter pull request. Changes REMORA needs go as separate PRs against its `dev` branch.
 - Importing REMORA outside `agentic-datacenter-remora`, or the IEC 61850 protocol library outside `agentic-datacenter-iec61850`.
 - Connecting to real equipment, or binding a protocol server to a reachable interface.
@@ -61,3 +61,13 @@ A pin bump is its own PR. It changes only `REMORA_PIN` and `uv.lock`, names the 
 ## Gates from other projects
 
 A gate from another project is not added to this repository. It is loaded through its own `agentic_datacenter.gates` entry point or served over HTTP to the `http_gate` binding; see `docs/guides/bring-your-own-gate.md`. Changes to Agentic-Datacenter that a gate author needs are welcome as issues or pull requests like any other. A result is shared through the "Gate result" issue form, not by pull request.
+
+## Licence of contributions
+
+Agentic-Datacenter is under the Business Source License 1.1 (`LICENSE`), and the Licensor also issues separate commercial licences, through the representative named in `COMMERCIAL_LICENSING.md`. `packages/agentic-datacenter-iec61850` is GPL-3.0-or-later. So that this stays possible, a contribution from anyone other than the Licensor is merged only after its author has agreed to the following, in words, in the pull request:
+
+- You wrote the contribution or have the right to submit it, and it contains no third-party material that the pull request does not name.
+- You keep the copyright in your contribution.
+- You grant the Licensor named in `LICENSE` a perpetual, worldwide, non-exclusive, royalty-free and irrevocable licence to use, copy, modify and distribute your contribution, and to license it to others under any terms. Those terms include the Business Source License 1.1 and its Change License, GPL-3.0-or-later for `packages/agentic-datacenter-iec61850`, and commercial licences.
+
+A `Signed-off-by` line alone does not grant this. Opening an issue, or sharing a result through the "Gate result" form, is not a contribution in this sense.
