@@ -218,3 +218,9 @@ def test_demo_command_writes_the_dashboard(
     assert "index.html" in capsys.readouterr().out
     assert (tmp_path / "index.html").is_file() and (tmp_path / "demo.json").is_file()
     assert main(["demo", "--gate", "no_such_gate", "--out", str(tmp_path)]) == 2
+
+
+def test_one_scenario_can_be_played_alone() -> None:
+    gates = {"null_gate": lambda contracts: NullGate(), "limit_gate": lambda contracts: LimitGate()}
+    alone = build_demo(PROFILE, CONTRACTS, gates, "limit_gate", seconds=600, only=("OP-03",))
+    assert [s["scenario"] for s in alone["scenarios"]] == ["OP-03"]

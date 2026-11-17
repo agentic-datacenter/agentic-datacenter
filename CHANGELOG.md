@@ -4,6 +4,15 @@ Changes that matter to someone using or reviewing Agentic-Datacenter. Each distr
 
 ## Unreleased
 
+### A first look in a minute
+
+Added
+
+- The README opens with what a run shows. It has a figure and figures from `OP-03`, without a gate and with the static allowlist, then follows the order explore, run, connect, compare.
+- `agentic-datacenter demo --scenario <id>` plays one demonstration scenario. `OP-03` alone takes about a minute.
+- `docs/demo/op-03-static-allowlist.html`: the page the figure comes from. `tools/readme_figure.py` makes the figure from a demo page.
+- `.devcontainer/devcontainer.json`, for opening the repository in Codespaces with `uv` and the environment ready.
+
 ### Benchmark: stricter result check and corrected statistics
 
 Fixed
