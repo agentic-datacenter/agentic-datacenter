@@ -59,6 +59,8 @@ Tooling
 
 Added
 
+- `docs/calibration/contribute-data.md` and the "Offer calibration data" issue form: how equipment makers and operators can share anonymized data to calibrate a plant module, without data ever reaching a public issue.
+- `tools/season_registrations.py` lists a season's registered gates with the version each issue named at the deadline, read from the issue's edit history. The README is shorter: an operator guide (`docs/guides/operators.md`) and a glossary (`docs/reference/glossary.md`) hold what it no longer does.
 - Season 1 of the public test opens: the benchmark version is frozen (`docs/bench/VERSION.json`, tag `benchmark-v1`), and Track D is drawn from drand quicknet round `34469812` at 2026-12-02 12:00 UTC, the registration deadline (`docs/bench/PUBLIC_TEST.md`). The registration form also offers `command_gate`.
 - A one-page result report, written by `agentic-datacenter demo` as `executive.html` and `executive.md`. It opens with the result, has a chart per scenario, and states what a simulated result does not show. The committed example is `docs/demo/result-report.md`, made from `docs/demo/demo.json` by `tools/demo_example.py`.
 - `agentic-datacenter bench record` writes `provenance.json` beside a result card: the commit of the code and the SHA-256 of every file the benchmark made. `bench verify` checks the files against it. The benchmark runner attests the record, and a release attests every wheel and source distribution with its build provenance and a bill of materials (ADR 0025). The attesting steps run on a public repository only; none has run yet.
