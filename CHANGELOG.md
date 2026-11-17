@@ -51,7 +51,7 @@ Tooling
 
 - `compose` mode is not built. Everything runs in one process (`inproc`).
 - There is no language-model agent. The agents are scripted.
-- The benchmark version is not frozen, and every run so far is a development run.
+- No benchmark result has been reported. Season 1 runs on the frozen version `benchmark-v1`; its hidden track is drawn on 2026-12-02.
 - No result has been reproduced on a second machine.
 - The other differences from the design document are in its section 14.
 
@@ -59,6 +59,7 @@ Tooling
 
 Added
 
+- Season 1 of the public test opens: the benchmark version is frozen (`docs/bench/VERSION.json`, tag `benchmark-v1`), and Track D is drawn from drand quicknet round `34469812` at 2026-12-02 12:00 UTC, the registration deadline (`docs/bench/PUBLIC_TEST.md`). The registration form also offers `command_gate`.
 - A one-page result report, written by `agentic-datacenter demo` as `executive.html` and `executive.md`. It opens with the result, has a chart per scenario, and states what a simulated result does not show. The committed example is `docs/demo/result-report.md`, made from `docs/demo/demo.json` by `tools/demo_example.py`.
 - `agentic-datacenter bench record` writes `provenance.json` beside a result card: the commit of the code and the SHA-256 of every file the benchmark made. `bench verify` checks the files against it. The benchmark runner attests the record, and a release attests every wheel and source distribution with its build provenance and a bill of materials (ADR 0025). The attesting steps run on a public repository only; none has run yet.
 - Every distribution carries the text of its licence, and `tools/check_dist_licences.py` checks every built wheel and source distribution for it. `COMMERCIAL_LICENSING.md` names the Licensor and the commercial licensing representative.
