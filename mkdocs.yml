@@ -34,6 +34,7 @@ nav:
       - 0021 Parallel runs and the no-agent baseline: design/adr/0021-parallel-runs-and-no-agent-baseline.md
       - 0022 Gates from other projects: design/adr/0022-gates-from-other-projects.md
       - 0023 Bounded replay and fair comparison: design/adr/0023-bounded-replay-and-fair-comparison.md
+      - 0024 An approval a person declined: design/adr/0024-approval-a-person-declined.md
   - Guides:
       - Run a scenario on measured weather: guides/measured-weather.md
       - Check a result card before release: guides/release-gate.md
