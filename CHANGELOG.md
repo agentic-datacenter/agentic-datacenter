@@ -8,7 +8,7 @@ Changes that matter to someone using or reviewing Agentic-Datacenter. Each distr
 
 Added
 
-- `.github/workflows/bench.yml`: a benchmark on a self-hosted runner labelled `bench`, started by hand with `gh workflow run`. The card, report and release check come back as an artifact. Guide: `docs/guides/bench-runner.md`.
+- `.github/workflows/bench-runner.yml`: a benchmark on a self-hosted runner labelled `bench`, started by hand with `gh workflow run`. The card, report and release check come back as an artifact. Guide: `docs/guides/bench-runner.md`.
 
 Changed
 
