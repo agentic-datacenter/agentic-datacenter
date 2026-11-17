@@ -4,6 +4,12 @@ Changes that matter to someone using or reviewing Agentic-Datacenter. Each distr
 
 ## Unreleased
 
+### Third-party notices list only what is used
+
+Changed
+
+- `THIRD_PARTY_NOTICES.md` no longer lists datasets that are not used. They are suggestions for later calibration work, and are in `docs/calibration/suggested_resources.md` (before: `data_sources.md`).
+
 ### Long runs: how much memory they need
 
 Changed
