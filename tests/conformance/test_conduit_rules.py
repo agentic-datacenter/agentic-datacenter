@@ -117,7 +117,7 @@ def test_c1_passes_only_allowlisted_device_operation_and_address() -> None:
 @pytest.mark.req("ADC-NET-002")
 def test_only_the_generator_test_start_is_writable_in_a_power_zone() -> None:
     power = [m for m in MAPS if m.zone == "Z1-PWR-A" and m.protocol != "opcua"]
-    # The electrical room unit of the train sits in the same zone (zone_model.md, open point 6).
+    # The electrical room unit of the train sits in the same zone (zone_model.md, section 6).
     assert {m.tag for m in power if m.writable} == {
         TEST_START,
         "cooling.eroom[A].return_air_sp_c",
