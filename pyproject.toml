@@ -178,8 +178,9 @@ markers = [
 #
 # Run with all groups installed: uv run --all-groups lint-imports
 #
-# Not expressible until the code exists, and added in the stage that creates it:
-#   - agentic_datacenter_remora limited to remora.sdk (ADC-PIN-005), Stage 8
+# Not expressed as a contract here:
+#   - agentic_datacenter_remora limited to remora.sdk (ADC-PIN-005). A test in
+#     packages/agentic-datacenter-remora/tests/test_binding.py checks it.
 # ---------------------------------------------------------------------------
 [tool.importlinter]
 root_packages = [

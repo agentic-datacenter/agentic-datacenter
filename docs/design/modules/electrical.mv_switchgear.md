@@ -4,7 +4,7 @@
 
 ## Purpose
 
-The metal-clad 36 kV switchboard: two incomers onto one bus, one feeder per unit substation, and a relay on each of them. It supplies the three power trains and it clears faults, locally and at tier `T0`. The relays are the ones that later serve IEC 61850 MMS (SDD 8.5); the number and placement of relays is an assumption of the design document.
+The metal-clad 36 kV switchboard: two incomers onto one bus, one feeder per unit substation, and a relay on each of them. It supplies the three power trains and it clears faults, locally and at tier `T0`. The relays are the ones served over IEC 61850 MMS (SDD 8.5, ADR 0017); the number and placement of relays is an assumption of the design document.
 
 ## Ports
 
@@ -62,4 +62,4 @@ The curve is compared with its closed form, which is what `F1` asks for. Compari
 - A fault current is a number set by the scenario. There is no network model that would derive it from source impedance, and it does not depress the bus voltage.
 - The two incomers run in parallel onto one bus. There is no bus section breaker and no incomer transfer scheme.
 - No breaker-failure protection: if a feeder breaker did not open, only the slower incomer elements would clear the fault. Feeder breakers have no stuck-breaker fault to exercise that.
-- The relays do not yet serve any protocol; that is Stage 6.
+- The module serves no protocol itself. Its relays are served over IEC 61850 MMS by the package `agentic-datacenter-iec61850`, on Linux only (ADR 0017).

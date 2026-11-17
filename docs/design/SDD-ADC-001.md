@@ -164,10 +164,10 @@ Agentic-Datacenter is a deterministic, fixed-step simulation kernel with plant, 
 | --- | --- | --- |
 | Language and tooling | Python 3.12, `uv`, `ruff`, `mypy --strict`, `pytest` (with `pytest-xdist` to run the suite on all cores), `hypothesis` | Match REMORA-research conventions where they differ |
 | Schemas | `pydantic` v2; profiles and contracts in YAML | JSON Schema exported for external tools |
-| Modbus/TCP | `pymodbus` | Verify the current major version and pin it in Stage 6 |
-| BACnet/IP | `bacpypes3` | Same |
-| OPC UA | `asyncua` | Same |
-| SNMP | `pysnmp` or a maintained successor | Maintenance status has changed over time; choose at Stage 6 and record in an ADR |
+| Modbus/TCP | `pymodbus` | Version checked and pinned when the server was built (ADR 0012) |
+| BACnet/IP | `bacpypes3` | Same (ADR 0013) |
+| OPC UA | `asyncua` | Same (ADR 0015) |
+| SNMP | `pysnmp` or a maintained successor | Maintenance status has changed over time; `pysnmp` was chosen in ADR 0014 |
 | Historian | SQLite for metadata, Parquet for time series | 15 min energy records plus 1 s real-time ring buffer |
 | Operator and agent API | `FastAPI` over mutual TLS | Same service in both run modes |
 | Demo view | Single static HTML dashboard reading the read-only API | No operator actions from the dashboard in v1 |
@@ -208,7 +208,7 @@ spec: docs/design/modules/electrical.power_train.md
 
 Agentic-Datacenter depends on one exact REMORA commit, recorded in the repository, and only one small package is allowed to import it. Results from two runs are comparable only when their pins match, so the pin is part of every evidence bundle.
 
-The current pin is recorded in the file `REMORA_PIN` at the repository root: repository, tag, full commit SHA, date, the reason for the last bump and the pin it supersedes. It is not repeated here, where it would go stale. The first pin is in ADR 0002.
+The current pin is recorded in the file `REMORA_PIN` at the repository root: repository, tag, full commit SHA, date, the reason for the last bump and the pin it supersedes. It is not repeated here, where it would go stale. The first pin is in ADR 0002. The tags are named `dcsim-pin-<date>`. The prefix is historical: `dcsim` was the project's working name before Agentic-Datacenter, and the tags live in the REMORA repository, where they are not renamed.
 
 - **Isolation.** `agentic-datacenter-remora` is the only distribution that imports REMORA. All other packages install, type-check and pass their tests with REMORA absent.
 - **Pinned resource.** Distribution `remora-assurance`, import name `remora`, version 0.12.0, built with hatchling, packages `remora` and `servers`. `agentic-datacenter-remora` depends on it with the `security` extra, which the signing command needs. It installs at the pinned commit as a normal Git dependency through `uv`; no submodule and no vendoring.
@@ -216,7 +216,7 @@ The current pin is recorded in the file `REMORA_PIN` at the repository root: rep
 - **What comes from the installed package.** `remora export-contract-files <dir>` writes `public_api_v1.json`, `openapi.json` and the ToolSpec schemas (`tool_spec_v1` to `v5`, `toolspec_signing_ed25519_v1`) from the installed wheel,, `remora sign-limits` validates and signs a limit policy, and `remora build-toolspec` signs a ToolSpec bundle (ADR 0016). Agentic-Datacenter runs them as subprocesses of the installed package. No executable code is taken from an unpacked tree.
 - **What still comes from the Git tree.** The capability and boundary registers under `docs/` and `artifacts/interop/` are deliberately outside the wheel. `agentic-datacenter remora fetch-src` fetches those register files at the pinned SHA, as data only, verified against `REMORA_PIN`. Nothing from that tree is executed or committed to the agentic-datacenter repository.
 - **Run-time check.** Under the `DECISION_ONLY`, `SHADOW` and `GOVERNED` profiles the harness compares the installed REMORA commit and the fetched registers with `REMORA_PIN` and refuses to run on a mismatch. The evidence manifest records the REMORA SHA, tag, `remora-assurance` version and `agentic-datacenter-remora` version.
-- **Bumping.** A pin bump is its own PR that changes only the pin and lock, names the new tag, runs the full scenario matrix, and attaches the metric difference against the previous pin. A regression in invariant violations blocks the bump. Until Stage 8 has produced a first scenario baseline there is nothing to compare against, so earlier pin changes are recorded in `REMORA_PIN` with a reason and need no metric difference.
+- **Bumping.** A pin bump is its own PR that changes only the pin and lock, names the new tag, runs the full scenario matrix, and attaches the metric difference against the previous pin. A regression in invariant violations blocks the bump. The pin changes made so far are recorded in `REMORA_PIN` with a reason and carry no metric difference: no benchmark result has been reported to compare against.
 - **Interface drift.** `agentic-datacenter-remora` binds only to the public surface in 9.2. REMORA snapshot-pins that surface in `artifacts/sdk/public_api_v1.json` (46 symbols at the first pin) and gates it with its own test. The binding's contract test diffs the symbols it uses against the exported copy. If a bump breaks it, the fix goes in the binding or upstream in REMORA, never in `agentic-datacenter-governance`.
 
 ### 5.3 Extension points
@@ -1095,7 +1095,7 @@ The reference specification does not contain single-line diagrams, P&IDs, point 
 - The binding surface in 5.2 and 9.2 differs from REMORA in four places (`remora_binding.md`, section 1).
 - Zones and conduits differ in the points listed in `zone_model.md`, section 6. No data collector and no alarm notification are modelled.
 - The checks of 12.4 are run locally and reported as commit statuses (ADR 0011).
-- Reproduction on a second machine, which the exit criteria of Stage 9 and of milestone M1 ask for, has not been done.
+- Reproduction on a second machine, which the exit criteria of the last stage and of milestone M1 in section 13 ask for, has not been done.
 
 **What became of the open questions**
 
