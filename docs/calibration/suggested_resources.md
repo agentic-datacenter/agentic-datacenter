@@ -1,7 +1,7 @@
-# Candidate measurement datasets for Agentic-Datacenter calibration
+# Suggested resources: measurement datasets for calibration
 
 **Recorded:** 2026-11-14  
-**Status:** Source register and calibration plan only. No dataset was imported, calibrated or validated as part of this note.
+**Status:** Suggestions and a calibration plan only. None of these datasets is used by Agentic-Datacenter: none was imported, calibrated against or validated, and none is in the repository. Check each dataset's licence at its source before using it.
 
 ## Purpose
 

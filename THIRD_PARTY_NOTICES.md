@@ -14,18 +14,7 @@ Required by `ADC-PRV-005`. This file lists what was consulted to design Agentic-
 
 **No measured dataset is included in this repository or in any Agentic-Datacenter distribution.** The measured-input layer (`agentic-datacenter-data`, ADR 0018) reads a series the user supplies at run time from outside the repository. The licence of such a dataset is recorded, as its source states it, in the dataset's own manifest, and derived data is not redistributed until its owner has cleared it in writing.
 
-### Datasets named as candidates, not used
-
-`docs/calibration/data_sources.md` names the datasets below as candidates for calibrating submodels. **None of them is used, included, fetched or redistributed by Agentic-Datacenter.** Each is named with its source only. Before any of them is used, its licence is confirmed from the source, the attribution it requires is added here, and the changes made to it are recorded in its manifest.
-
-| Dataset | Creator | Source | Licence, as the source states it |
-| --- | --- | --- | --- |
-| BodenType Data Center One (BTDC) | RISE and Fraunhofer | [doi:10.24406/fordatis/87](https://doi.org/10.24406/fordatis/87) | To be confirmed |
-| High-resolution server-room measurements | Aalborg University | [doi:10.5281/zenodo.21262042](https://doi.org/10.5281/zenodo.21262042) | To be confirmed |
-| HEATWISE server-cooling dataset | RISE | [zenodo.org/records/23237930](https://zenodo.org/records/23237930) | Listed as CC BY 4.0 |
-| Cooling experiments | Aalborg University and PSNC Poznań | [zenodo.org/records/22797095](https://zenodo.org/records/22797095) | To be confirmed |
-| Marconi A2 telemetry (HazardNet) | CINECA | [zenodo.org/records/10050368](https://zenodo.org/records/10050368) | To be confirmed |
-| PowerData2019 | Google | [github.com/google/cluster-data](https://github.com/google/cluster-data/blob/master/PowerData2019.md) | To be confirmed |
+Datasets suggested for later calibration work are listed in `docs/calibration/suggested_resources.md`. None of them is used, included, fetched or redistributed, so none is a third party to this repository.
 
 Whoever runs Agentic-Datacenter on a measured dataset of their own gives the attribution that dataset's licence requires.
 
@@ -100,10 +89,6 @@ As installed from `uv.lock` on 2026-11-13, with the licence each project declare
 ### Development and test tools
 
 `uv`, `ruff`, `mypy`, `pytest`, `pytest-xdist`, `hypothesis`, `import-linter`, `hatchling`, `httpx`, `mkdocs`, `pip-audit`. Each under the licence its project declares; versions are fixed by `uv.lock`. They are not part of what Agentic-Datacenter distributes.
-
-### Named in the design, not used yet
-
-Nothing at present: every library the design names is listed above.
 
 ## Licence of this repository
 
