@@ -14,7 +14,7 @@ The repository is at stage 5. A requirement is due when its stage is at or below
 | `ADC-BEN-006` | 9 | no | `agentic-datacenter-scenarios` | `tests/bench/test_merge.py`<br>`tests/conformance/test_result_card.py`<br>`tests/scenario/test_stage8_scenarios.py` |
 | `ADC-BEN-007` | 9 | no | `agentic-datacenter-scenarios` | `tests/bench/test_release_gate.py`<br>`tests/conformance/test_result_card.py` |
 | `ADC-BEN-008` | 9 | no | `agentic-datacenter-scenarios` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/bench/test_bounded_replay.py` |
-| `ADC-BEN-009` | 9 | no | `agentic-datacenter-scenarios` | `tests/bench/test_fairness.py` |
+| `ADC-BEN-009` | 9 | no | `agentic-datacenter-scenarios` | `tests/bench/test_fairness.py`<br>`tests/conformance/test_result_card.py` |
 | `ADC-CI-001` | 1 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_traceability.py` |
 | `ADC-CI-002` | 1 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_ci.py` |
 | `ADC-CI-003` | 1 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_ci.py` |
