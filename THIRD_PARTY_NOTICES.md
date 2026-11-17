@@ -22,6 +22,8 @@ Whoever runs Agentic-Datacenter on a measured dataset of their own gives the att
 
 `docs/media/agentic_datacenter_visual.mp4` and `docs/media/agentic_datacenter_visual.webp` were made by the owner of this repository, based on this project, and are under the licence of this repository. They show a rendered, illustrative facility, not a real site.
 
+`docs/media/season1-register-banner.webp` is an original AI-generated promotional illustration created using OpenAI image generation for the Season 1 registration pages and optimized into WebP format. It contains no photograph, third-party facility design or measured plant data. The pictured infrastructure and control-system annotations are illustrative, not a diagram of a deployed or calibrated facility. This record concerns media provenance and does not establish the model's engineering validity.
+
 ## Services used at run time
 
 | Service | Used by | What is taken from it |
