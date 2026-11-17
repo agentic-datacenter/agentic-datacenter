@@ -30,6 +30,8 @@ Added
 
 Fixed
 
+- A block the contract itself requires is no longer a false block; it is counted as `required_blocks` (`docs/bench/FAIRNESS.md`, rule 5). Decision records carry `contract_errors`.
+
 - `bench check` refuses an incomplete card. That means a missing run, baseline, metric or judgement; missing figures are no longer read as zero. It recomputes the comparison with no agent from the card. `--publication` also requires the frozen version.
 - The unsafe execution rate is over the judged executed proposals.
 - The utility interval is a seeded bootstrap over templates. The card has paired differences between gates (`differences`).
