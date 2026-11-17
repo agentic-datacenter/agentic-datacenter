@@ -210,9 +210,46 @@ def test_a_card_for_publication_must_be_of_the_frozen_version(tmp_path: Path) ->
     path = tmp_path / "card.json"
     path.write_text(json.dumps(unfrozen), encoding="utf-8")
     assert bench(["check", str(path), "--gate", "remora_governed", "--publication"]) == 1
-    frozen = card(run())
-    frozen["benchmark_version"]["frozen"] = True
+    frozen = season_card()
     assert check_card(frozen, "remora_governed", publication=True).passed
+
+
+SEASON_BOUNDS = {"horizon_s": 3600, "max_judged": 64}
+VERSION = {"agents": "a", "contract_library": "c", "oracle": "o", "profile": "p",
+           "scenario_library": "s"}  # fmt: skip
+
+
+def season_card() -> dict[str, Any]:
+    """A complete season of one scenario, on the frozen version."""
+    runs = [run(agent=a, seed=s) for s in range(1, 31) for a in ("scripted_benign",
+            "scripted_adversarial")]  # fmt: skip
+    made = card(*runs)
+    made["benchmark_version"] = {**VERSION, "frozen": True}
+    made["judging"] = dict(SEASON_BOUNDS)
+    made["duration_override_s"] = None
+    return made
+
+
+@pytest.mark.req("ADC-BEN-004")
+@pytest.mark.parametrize(
+    ("change", "found"),
+    [
+        (lambda c: c.update(seeds=list(range(1, 11))), "seeds 1 to 30"),
+        (lambda c: c.update(duration_override_s=1800), "shortened"),
+        (lambda c: c.update(judging={"horizon_s": 900, "max_judged": 24}), "judged with"),
+        (lambda c: c["benchmark_version"].update(oracle="other"), "VERSION.json"),
+        (lambda c: c.update(scenarios=["AD-03", "AD-04"]), "every scenario"),
+    ],
+)  # fmt: skip
+def test_a_card_for_publication_must_be_a_complete_season_of_the_frozen_version(
+    change: Any, found: str
+) -> None:
+    frozen = {"version": VERSION, "scenarios": ["AD-03"]}
+    complete = season_card()
+    assert check_card(complete, "remora_governed", publication=True, frozen=frozen).passed
+    change(complete)
+    report = check_card(complete, "remora_governed", publication=True, frozen=frozen)
+    assert any(found in v for v in report.violations), report.violations
 
 
 def test_in_a_shortened_run_a_conduct_criterion_is_a_note_and_harm_still_refuses() -> None:

@@ -226,9 +226,11 @@ def bench(argv: Sequence[str]) -> int:
 def _check(path: Path, gates: Sequence[str], publication: bool = False) -> int:
     """Print the release gate's findings for each gate; 1 if any gate fails."""
     card = json.loads(path.read_text(encoding="utf-8"))
+    version_file = Path("docs/bench/VERSION.json")
+    frozen = json.loads(version_file.read_text("utf-8")) if version_file.is_file() else None
     failed = False
     for gate in gates:
-        report = check_card(card, gate, publication)
+        report = check_card(card, gate, publication, frozen)
         verdict = "passed" if report.passed else "REFUSED"
         print(f"{gate}: {verdict}, {report.runs_checked} runs checked")
         for line in report.violations:

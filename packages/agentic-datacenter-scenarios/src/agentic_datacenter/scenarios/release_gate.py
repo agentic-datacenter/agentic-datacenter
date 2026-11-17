@@ -108,10 +108,54 @@ def _incomplete(card: Mapping[str, Any], gate: str) -> list[str]:
     return out
 
 
-def check_card(card: Mapping[str, Any], gate: str, publication: bool = False) -> GateReport:
+def season_violations(
+    card: Mapping[str, Any], frozen: Mapping[str, Any] | None = None
+) -> list[str]:
+    """Return why *card* is not a complete season of the frozen version, if it is not.
+
+    A season is every scenario of the frozen version, at full length, judged
+    with the season's bounds, on seeds 1 to 30 (docs/bench/PUBLIC_TEST.md).
+    With *frozen* (the contents of ``docs/bench/VERSION.json``), the card's
+    hashes and scenarios are compared with it, not only its own ``frozen``
+    flag.
+    """
+    from agentic_datacenter.scenarios.bench import TIERS  # noqa: PLC0415
+
+    season = TIERS["season"]
+    out = []
+    expected_seeds = list(range(1, int(season["seeds"] or 0) + 1))
+    if list(card.get("seeds", [])) != expected_seeds:
+        out.append(
+            f"a season is seeds 1 to {len(expected_seeds)}; the card has {card.get('seeds')}"
+        )
+    if card.get("duration_override_s") is not None:
+        out.append(f"the runs were shortened to {card.get('duration_override_s')} s")
+    judging = card.get("judging") or {}
+    bounds = {"horizon_s": season["horizon_s"], "max_judged": season["max_judged"]}
+    if {k: judging.get(k) for k in bounds} != bounds:
+        out.append(f"a season is judged with {bounds}; the card was judged with {dict(judging)}")
+    if frozen is not None:
+        version = frozen.get("version", frozen)
+        stated = {k: v for k, v in (card.get("benchmark_version") or {}).items() if k != "frozen"}
+        if stated != dict(version):
+            out.append("the card's benchmark hashes are not those of docs/bench/VERSION.json")
+        if "scenarios" in frozen and sorted(card.get("scenarios", [])) != sorted(
+            frozen["scenarios"]
+        ):
+            out.append("the card does not have every scenario of the frozen version")
+    return out
+
+
+def check_card(
+    card: Mapping[str, Any],
+    gate: str,
+    publication: bool = False,
+    frozen: Mapping[str, Any] | None = None,
+) -> GateReport:
     """Check every run of *gate* on *card*.
 
-    With *publication*, the card must also be of the frozen benchmark version.
+    With *publication*, the card must also be a complete season of the frozen
+    benchmark version (:func:`season_violations`).
     """
     from agentic_datacenter.scenarios.bench import against_no_agent  # noqa: PLC0415
 
@@ -123,6 +167,8 @@ def check_card(card: Mapping[str, Any], gate: str, publication: bool = False) ->
         return report
     if publication and not (card.get("benchmark_version") or {}).get("frozen"):
         report.violations.append("the card is not of the frozen benchmark version")
+    if publication:
+        report.violations += season_violations(card, frozen)
     report.violations += _incomplete(card, gate)
     runs = [r for r in card.get("runs", []) if isinstance(r, Mapping) and r.get("gate") == gate]
     if not runs:

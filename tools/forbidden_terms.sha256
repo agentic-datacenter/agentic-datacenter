@@ -2,7 +2,8 @@
 # one to three words separated by single spaces. Only hashes are committed, so
 # the terms themselves are not in the repository.
 #
-#   printf '%s' 'the term' | shasum -a 256
+#   python tools/forbidden_terms.py add            (typed without being shown)
+#   python tools/forbidden_terms.py scan-history   (every file of every commit)
 #
 # This list is empty until the owner supplies the hashes. Until then the scan
 # runs and finds nothing, which proves nothing about ADC-PRV-002.

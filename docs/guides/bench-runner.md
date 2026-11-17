@@ -1,6 +1,6 @@
 # Run long benchmarks on a machine of your own
 
-A `standard` run of one gate took 59 minutes on a machine with 16 threads, and needed about 14 GB of memory. A `season` or `full` run has not been timed: `season` makes ten times the runs, and `full` replays every proposal to the end of its scenario ([what it costs](../bench/TIERS.md#what-it-costs)). A spare machine registered as a self-hosted GitHub Actions runner can do it. Runs are started from anywhere and the result card comes back as an artifact.
+A `standard` run of one gate took 59 minutes on a machine with 16 threads, and needed about 14 GB of memory. A `season` took 6 h 22 min there, run in three parts of 10 seeds. A `full` run has not been timed: it replays every proposal to the end of its scenario ([what it costs](../bench/TIERS.md#what-it-costs)). A spare machine registered as a self-hosted GitHub Actions runner can do it. Runs are started from anywhere and the result card comes back as an artifact.
 
 ## Start a run
 
