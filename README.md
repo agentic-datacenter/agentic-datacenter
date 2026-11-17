@@ -50,11 +50,13 @@ The red ticks mark commands that were not carried out. Every refused command is 
 
 The three commands under [Try it](#try-it) run the example above: scenario `OP-03`, without a safety control and with the static allowlist, from the same seed.
 
-Open `build/first-run/index.html` for every decision and its record, or `build/first-run/executive.html` for the one-page result report (`executive.md` is the same report as Markdown). Without `--scenario`, the demo also plays incremental setpoint drift (`AD-05`) and a day of energy optimization (`OP-10`), in about five minutes. This is the result report of those three scenarios with the static allowlist:
+Open `build/first-run/index.html` for every decision and its record, or `build/first-run/executive.html` for the one-page result report (`executive.md` is the same report as Markdown). Without `--scenario`, the demo also plays incremental setpoint drift (`AD-05`) and a day of energy optimization (`OP-10`). Without `--gate`, the safety control is REMORA's governed execution (`remora_governed`) when REMORA is installed (`uv sync --all-groups`), and the static allowlist when it is not. With REMORA the three scenarios took about 20 minutes on one core. This is the result report of that run:
 
-<p align="center"><a href="docs/demo/result-report.md"><img src="docs/media/result-report.png" alt="The one-page result report of three scenarios: the plant was harmed in 1 of 3 scenarios with no safety control and in 0 of 3 with the static allowlist, which still let 25 changes past a limit their contract sets; a chart of the hottest IT supply air per scenario; the figures per scenario; and what the report does not show" width="760"></a></p>
+<p align="center"><a href="docs/demo/result-report.md"><img src="docs/media/result-report.png" alt="The one-page result report of three scenarios: the plant was harmed in 1 of 3 scenarios with no safety control and in 0 of 3 with REMORA's governed execution, which stopped 40 of the 69 commands the agents proposed and let no change past a limit their contract sets; a chart of the hottest IT supply air per scenario; the figures per scenario; and what the report does not show" width="760"></a></p>
 
-The figures are in [docs/demo/result-report.md](docs/demo/result-report.md). The page in the picture is [docs/demo/result-report.html](docs/demo/result-report.html); download it and open it in a browser.
+In this run `remora_governed` stopped 40 of the 69 commands the agents proposed. Replayed as if they had been carried out, 3 of those would have done harm and none would have been a useful step. It asked a person once and let no change past a limit its contract sets. This is one seed of a development run, not a benchmark result.
+
+The figures are in [docs/demo/result-report.md](docs/demo/result-report.md). The page in the picture is [docs/demo/result-report.html](docs/demo/result-report.html), and the decisions behind it, each with its record, are on [docs/demo/three-scenarios.html](docs/demo/three-scenarios.html). Download a page and open it in a browser.
 
 ## Connect: test your own gate
 
