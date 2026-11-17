@@ -2,7 +2,7 @@
 
 Test autonomous data center operations before they reach production. A simulation-only model of a data center's operational technology, partitioned into IEC 62443 zones and conduits, in which AI-driven control decisions and the safety controls around them ("gates") can be tried, compared and benchmarked.
 
-- **Operators:** start with the [one-page result report](demo/result-report.html) of three scenarios, and the [demonstration](demo/three-scenarios.html) behind it, with every decision and its record.
+- **Operators:** start with the [one-page result report](demo/result-report.md) of three scenarios (also as a [designed page](demo/result-report.html) with a chart per scenario), and the [demonstration](demo/three-scenarios.html) behind it, with every decision and its record.
 - **Developers:** start with [Test your own gate](guides/bring-your-own-gate.md).
 
 Agentic-Datacenter never connects to real equipment, and makes no claim of IEC 62443 certification.

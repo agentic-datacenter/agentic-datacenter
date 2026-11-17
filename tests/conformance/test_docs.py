@@ -23,6 +23,34 @@ def test_generated_reference_pages_match_the_code() -> None:
 
 
 @pytest.mark.req("ADC-DOC-001")
+def test_the_example_result_report_is_what_the_generator_makes_from_its_recording() -> None:
+    done = subprocess.run(
+        [sys.executable, "tools/demo_example.py", "--check"],
+        cwd=REPO,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert done.returncode == 0, done.stderr
+
+
+@pytest.mark.req("ADC-DOC-001")
+def test_the_result_report_is_linked_where_it_is_shown_as_a_page() -> None:
+    """A code host shows an HTML file as source, so the links go to the Markdown report."""
+    picture = REPO / "docs/media/result-report.png"
+    assert picture.read_bytes().startswith(b"\x89PNG") and picture.stat().st_size < 300_000
+    report = (REPO / "docs/demo/result-report.md").read_text(encoding="utf-8")
+    assert "](../media/result-report.png)](result-report.html)" in report
+    assert "](three-scenarios.html)" in report
+    readme = (REPO / "README.md").read_text(encoding="utf-8")
+    assert "](docs/demo/result-report.md)" in readme
+    assert 'src="docs/media/result-report.png"' in readme
+    assert "](docs/demo/result-report.html)" not in readme.split("## ")[0], "shown as source"
+    index = (REPO / "docs/index.md").read_text(encoding="utf-8")
+    assert "](demo/result-report.md)" in index and "](demo/result-report.html)" in index
+
+
+@pytest.mark.req("ADC-DOC-001")
 def test_site_is_built_in_strict_mode_from_the_docs_directory() -> None:
     config = yaml.safe_load((REPO / "mkdocs.yml").read_text(encoding="utf-8"))
     assert config["strict"] is True
