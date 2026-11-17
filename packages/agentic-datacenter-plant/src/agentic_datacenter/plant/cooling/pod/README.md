@@ -2,7 +2,7 @@
 
 The air side of one POD: server air handlers with chilled water coils, supply temperature and static pressure loops, dampers, the zone sensor arrays and leak detection.
 
-- Fidelity: `F0` (stub only)
+- Fidelity: `F1`
 - Zone: `Z1-POD-{instance}`
 - Instances: one per POD: `01` to `16`
 - Spec: [`docs/design/modules/cooling.pod.md`](../../../../../../../docs/design/modules/cooling.pod.md)

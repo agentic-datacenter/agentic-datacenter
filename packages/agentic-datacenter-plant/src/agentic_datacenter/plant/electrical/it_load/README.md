@@ -2,7 +2,7 @@
 
 The IT equipment of one POD: power drawn from two feeds, the heat it releases, and server fans that respond to inlet temperature.
 
-- Fidelity: `F0` (stub only)
+- Fidelity: `F1`
 - Zone: `Z1-POD-{instance}`
 - Instances: one per POD: `01` to `16`
 - Spec: [`docs/design/modules/electrical.it_load.md`](../../../../../../../docs/design/modules/electrical.it_load.md)

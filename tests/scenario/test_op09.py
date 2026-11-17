@@ -1,4 +1,4 @@
-"""Scenario OP-09 and the Stage 5 exit criterion: an operator runs it through the API by script."""
+"""Scenario OP-09: an operator runs it through the API by script."""
 
 from pathlib import Path
 from typing import Any
