@@ -287,6 +287,20 @@ def test_notices_state_the_basis_and_the_standards_and_state_no_reproduction() -
         assert standard in notices
 
 
+def test_every_distribution_carries_the_text_of_its_licence() -> None:
+    """A wheel is built from the package directory, so the text has to be in it."""
+    root = (REPO / "LICENSE").read_text(encoding="utf-8")
+    for name in PACKAGES:
+        project = tomllib.loads((REPO / "packages" / name / "pyproject.toml").read_text("utf-8"))
+        text = (REPO / "packages" / name / "LICENSE").read_text(encoding="utf-8")
+        if name == "agentic-datacenter-iec61850":
+            assert project["project"]["license"] == "GPL-3.0-or-later"
+            assert "GNU GENERAL PUBLIC LICENSE" in text and "Version 3, 29 June 2007" in text
+        else:
+            assert project["project"]["license"] == "BUSL-1.1", name
+            assert text == root, name
+
+
 def test_the_benchmark_runner_is_started_by_hand_only() -> None:
     """A self-hosted runner must never run what a pull request brings."""
     data = yaml.safe_load((REPO / ".github/workflows/bench-runner.yml").read_text(encoding="utf-8"))
