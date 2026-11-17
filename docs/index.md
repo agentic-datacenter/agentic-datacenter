@@ -16,7 +16,7 @@ About a minute. No API keys and no external service. Then open `build/first-run/
 
 ## Where to start
 
-- **Operators:** the commands above play a chiller trip in a heat wave with and without a safety control. Then read the [one-page result report](demo/result-report.md) of three scenarios (also as a [designed page](demo/result-report.html) with a chart per scenario), and the [demonstration](demo/three-scenarios.html) behind it, with every decision and its record.
+- **Operators:** the commands above play a chiller trip in a heat wave with and without a safety control. Then read the [one-page result report](demo/result-report.md) of three scenarios with REMORA's governed execution as the safety control (also as a [designed page](demo/result-report.html) with a chart per scenario), and the [demonstration](demo/three-scenarios.html) behind it, with every decision and its record.
 - **Developers:** start with [Test your own gate](guides/bring-your-own-gate.md), then the [public test](bench/PUBLIC_TEST.md) in which gates are compared.
 
 Agentic-Datacenter never connects to real equipment, and makes no claim of IEC 62443 certification.
