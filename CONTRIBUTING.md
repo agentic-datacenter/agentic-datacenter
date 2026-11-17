@@ -64,7 +64,7 @@ A gate from another project is not added to this repository. It is loaded throug
 
 ## Licence of contributions
 
-Agentic-Datacenter is under the Business Source License 1.1 (`LICENSE`), and the Licensor also issues separate commercial licences. `packages/agentic-datacenter-iec61850` is GPL-3.0-or-later. So that this stays possible, a contribution from anyone other than the Licensor is merged only after its author has agreed to the following, in words, in the pull request:
+Agentic-Datacenter is under the Business Source License 1.1 (`LICENSE`), and the Licensor also issues separate commercial licences, through the representative named in `COMMERCIAL_LICENSING.md`. `packages/agentic-datacenter-iec61850` is GPL-3.0-or-later. So that this stays possible, a contribution from anyone other than the Licensor is merged only after its author has agreed to the following, in words, in the pull request:
 
 - You wrote the contribution or have the right to submit it, and it contains no third-party material that the pull request does not name.
 - You keep the copyright in your contribution.

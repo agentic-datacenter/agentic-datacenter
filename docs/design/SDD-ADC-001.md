@@ -569,7 +569,7 @@ A refused service returns the standard access error and raises a violation event
 
 **Library and licence.** The practical open implementation is `libiec61850`, a C library covering MMS client and server, GOOSE and Sampled Values, published under GPLv3 with a commercial licence sold by its vendor ([repository](https://github.com/mz-automation/libiec61850)). Its upstream Python bindings are labelled experimental and unsupported; a separately maintained wheel, `pyiec61850-ng`, is likewise GPLv3 and describes itself as experimental ([PyPI](https://pypi.org/project/pyiec61850-ng/)). Consequences for the build:
 
-- The library is used only inside the optional distribution `agentic-datacenter-iec61850`, which runs as its own process and talks to the rest of Agentic-Datacenter over a local socket. No other package imports or links it.
+- The library is used only inside the optional distribution `agentic-datacenter-iec61850`. No other package imports or links it. The design places that distribution in its own process, talking to the rest of Agentic-Datacenter over a local socket. That belongs to `compose` mode and is not built: today the server runs in the process of the plant it serves (ADR 0017, decision 6), and what follows for the licences is in the addendum on publication of ADR 0004.
 - How GPLv3 for this one component sits with the licence of the repository is a decision of the repository owner. It is recorded in ADR 0004.
 - The server sits behind an `Iec61850Server` interface with its own conformance tests. If the Python bindings prove unstable, the fallback is the native `libiec61850` server driven by the generated model, with a thin bridge process.
 

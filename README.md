@@ -150,4 +150,4 @@ The code is ten Python packages under `packages/` with one `uv` lock. The bounda
 - [docs/guides/release-gate.md](docs/guides/release-gate.md): what makes `agentic-datacenter bench check` refuse a card.
 - [CONTRIBUTING.md](CONTRIBUTING.md): rules for changes to Agentic-Datacenter itself.
 - The simulated facility is generic. It is informed by how real modular data centers are built and operated, and it does not identify or quote any particular facility or design document. That is kept by review: the automated scan for identifying names has no terms to check until their hashes are supplied. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-- Licence: Business Source License 1.1, see [LICENSE](LICENSE); `packages/agentic-datacenter-iec61850` is GPLv3.
+- Licence: Business Source License 1.1, see [LICENSE](LICENSE); `packages/agentic-datacenter-iec61850` is GPLv3. Any use the licence does not grant needs a commercial licence: see [COMMERCIAL_LICENSING.md](COMMERCIAL_LICENSING.md).
