@@ -4,7 +4,7 @@ Required by `ADC-PRV-005`. This file lists what was consulted to design Agentic-
 
 ## Real-world practice
 
-The facility model is informed by how real modular data centers are designed, built and operated: the kinds of plant, control behaviour and interfaces a facility of this type has. It does not identify or quote any particular facility or design document.
+The facility model is informed by how real modular data centers are designed, built and operated: the kinds of plant, control behaviour and interfaces a facility of this type has. It does not identify or quote any particular facility or design document. Not everything consulted is public; what is not public is not named here.
 
 - No text from any design document is reproduced in this repository. Behaviour is stated as original requirements and state machines (`ADC-PRV-001`).
 - Nothing that identifies a real facility appears in this repository: not the names of a project, owner, engineer or site, nor the title, issue or section numbers of a design document (`ADC-PRV-002`).
@@ -94,4 +94,4 @@ As installed from `uv.lock` on 2026-11-13, with the licence each project declare
 
 ## Licence of this repository
 
-Business Source License 1.1, in `LICENSE`, for everything except `packages/agentic-datacenter-iec61850`, which is GPL-3.0-or-later. Decided by the owner on 2026-11-12; see `docs/design/adr/0004-licence-position.md`.
+Business Source License 1.1, in `LICENSE`, for everything except `packages/agentic-datacenter-iec61850`, which is GPL-3.0-or-later. Decided by the owner on 2026-11-12; see `docs/design/adr/0004-licence-position.md`. Who the Licensor is, and who handles commercial licences, is in `COMMERCIAL_LICENSING.md`.
