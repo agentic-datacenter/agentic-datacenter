@@ -277,11 +277,12 @@ def test_no_tracked_file_contains_a_forbidden_term() -> None:
 
 @pytest.mark.req("ADC-PRV-001")
 @pytest.mark.req("ADC-PRV-005")
-def test_notices_list_the_reference_and_the_standards_and_state_no_reproduction() -> None:
+def test_notices_state_the_basis_and_the_standards_and_state_no_reproduction() -> None:
     notices = (REPO / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
-    assert "The reference specification" in notices and "unpublished" in notices.lower()
+    assert "informed by how real modular data centers" in notices
+    assert "does not identify or quote any particular facility" in notices
     assert "No text from any standard is reproduced" in notices
-    assert "No text from it is reproduced" in notices
+    assert "No text from any design document is reproduced" in notices
     for standard in ("62443-3-2", "62443-3-3", "EN 15232", "ASHRAE TC 9.9", "ISO 8528-5", "61850"):
         assert standard in notices
 

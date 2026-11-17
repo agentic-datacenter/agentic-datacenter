@@ -68,7 +68,7 @@ In `faults.py`: transfer pump failure, level switch stuck wet or dry, interstiti
 
 ## Known limits
 
-- Volumes, switch levels and pump rates are assumed; the reference specification gives the equipment, not its sizing.
+- Volumes, switch levels and pump rates are assumed.
 - One transfer pump per sub-base tank, no standby pump, no day tank.
 - Fuel quality is not modelled: polishing has a schedule and a power draw and no effect on the generators.
 - A leak is a detector state. No fuel leaves the system through it.

@@ -149,5 +149,5 @@ The code is ten Python packages under `packages/` with one `uv` lock. The bounda
 - [docs/design/zone_model.md](docs/design/zone_model.md), [docs/design/threat_model.md](docs/design/threat_model.md) and the decisions in [docs/design/adr/](docs/design/adr/).
 - [docs/guides/release-gate.md](docs/guides/release-gate.md): what makes `agentic-datacenter bench check` refuse a card.
 - [CONTRIBUTING.md](CONTRIBUTING.md): rules for changes to Agentic-Datacenter itself.
-- The simulated facility is generic. It was informed by an unpublished construction specification. The repository is written so as not to identify or quote it. That is kept by review: the automated scan for its names has no terms to check until their hashes are supplied. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+- The simulated facility is generic. It is informed by how real modular data centers are built and operated, and it does not identify or quote any particular facility or design document. That is kept by review: the automated scan for identifying names has no terms to check until their hashes are supplied. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 - Licence: Business Source License 1.1, see [LICENSE](LICENSE); `packages/agentic-datacenter-iec61850` is GPLv3.
