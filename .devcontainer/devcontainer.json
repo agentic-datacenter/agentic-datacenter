@@ -1,7 +1,10 @@
 {
   "name": "Agentic-Datacenter",
   "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
-  "postCreateCommand": "pip install --user uv && uv sync",
+  "remoteEnv": {
+    "PATH": "${containerEnv:PATH}:/home/vscode/.local/bin"
+  },
+  "postCreateCommand": "python -m pip install --user uv==0.13.8 && python -m uv sync --frozen",
   "postAttachCommand": "echo 'Try: uv run agentic-datacenter demo --scenario OP-03 --gate static_allowlist --out build/first-run'",
   "customizations": {
     "vscode": {
