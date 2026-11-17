@@ -86,6 +86,8 @@ As installed from `uv.lock` on 2026-11-13, with the licence each project declare
 
 `asyncua` is under the GNU Lesser General Public License, version 3 or later. Agentic-Datacenter uses it as an unmodified package installed separately from PyPI; it is not copied into this repository and not changed (ADR 0015). If Agentic-Datacenter is ever distributed, the distribution must say that it uses `asyncua` under the LGPL, include the texts of the GPL-3.0 and the LGPL-3.0, and leave the recipient able to replace the library with a modified version, which rules out freezing it into a single executable.
 
+`libiec61850` is under the GPLv3. It is not in this repository: whoever installs the `iec61850` group fetches it from PyPI. When it is loaded, it runs in one process with `agentic-datacenter-iec61850` (GPL-3.0-or-later) and with the packages that distribution loads, which are under the Business Source License 1.1. Running that is open to anyone under both licences. Conveying it as one work, for example a container image or an executable that holds the library together with those packages, is not, because the terms of the Business Source License 1.1 are not compatible with the GPLv3. No such image or executable is published from this repository (ADR 0004, addendum of 2026-11-17 on publication).
+
 ### Development and test tools
 
 `uv`, `ruff`, `mypy`, `pytest`, `pytest-xdist`, `hypothesis`, `import-linter`, `hatchling`, `httpx`, `mkdocs`, `pip-audit`. Each under the licence its project declares; versions are fixed by `uv.lock`. They are not part of what Agentic-Datacenter distributes.
