@@ -368,6 +368,18 @@ def against_no_agent(row: Mapping[str, Any], baseline: Mapping[str, Any]) -> dic
     }
 
 
+def _cost(function: Callable[..., dict[str, Any]], arguments: tuple[Any, ...]) -> float:
+    """Return a rough cost of one call, to start the longest first: simulated seconds.
+
+    A run with an agent is judged by replay as well, which costs about as much
+    again; a run without an agent is not.
+    """
+    scenario = arguments[0]
+    override = arguments[5] if function is _no_agent_run else arguments[8]
+    length = min(int(override or scenario.duration_s), int(scenario.duration_s))
+    return float(length if function is _no_agent_run else 2 * length)
+
+
 def _run_all(
     calls: Sequence[tuple[str, Callable[..., dict[str, Any]], tuple[Any, ...]]],
     jobs: int,
@@ -395,10 +407,10 @@ def _run_all(
             ) from exc
         context = multiprocessing.get_context("spawn")
         with ProcessPoolExecutor(jobs, mp_context=context, max_tasks_per_child=1) as pool:
-            pending = {
-                pool.submit(function, *arguments): index
-                for index, (_, function, arguments) in enumerate(calls)
-            }
+            # The longest runs start first, so they run beside the short ones
+            # instead of after them. The card keeps the order of *calls*.
+            order = sorted(range(len(calls)), key=lambda i: -_cost(calls[i][1], calls[i][2]))
+            pending = {pool.submit(calls[i][1], *calls[i][2]): i for i in order}
             for done, future in enumerate(as_completed(pending), start=1):
                 rows[pending[future]] = future.result()
                 if progress is not None:
