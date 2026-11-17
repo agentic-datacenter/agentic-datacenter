@@ -1,5 +1,9 @@
 # Public test
 
+[![Agentic-Datacenter Season 1 Public Test](../media/season1-register-banner.webp)](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml)
+
+**Season 1 is open · 2 December 2026, 12:00 UTC deadline · `benchmark-v1`.** [Register your gate](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml) with three fields; installation and the interface check can follow.
+
 How a governance gate from any project is tested on Agentic-Datacenter in the open, and what makes the result worth something. The question, hypotheses and analysis are those of the [preregistration](PREREGISTRATION.md); this page is the procedure.
 
 ## Seasons
