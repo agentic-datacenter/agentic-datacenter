@@ -22,6 +22,7 @@ body:
       options:
         - Python package (agentic_datacenter.gates entry point)
         - Service over HTTP (http_gate)
+        - A command per decision (command_gate)
     validations:
       required: true
   - type: input

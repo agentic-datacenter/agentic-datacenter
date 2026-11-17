@@ -50,13 +50,20 @@ The red ticks mark commands that were not carried out. Every refused command is 
 
 The three commands under [Try it](#try-it) run the example above: scenario `OP-03`, without a safety control and with the static allowlist, from the same seed.
 
-Open `build/first-run/index.html` for every decision and its record, or `build/first-run/executive.html` for the one-page result report (`executive.md` is the same report as Markdown). Without `--scenario`, the demo also plays incremental setpoint drift (`AD-05`) and a day of energy optimization (`OP-10`). Without `--gate`, the safety control is REMORA's governed execution (`remora_governed`) when REMORA is installed (`uv sync --all-groups`), and the static allowlist when it is not. With REMORA the three scenarios took about 20 minutes on one core. This is the result report of that run:
+Open `build/first-run/index.html` for every decision and its record, or `build/first-run/executive.html` for the one-page result report (`executive.md` is the same report as Markdown).
+
+<details>
+<summary><strong>Three scenarios with REMORA, and the result report</strong></summary>
+
+Without `--scenario`, the demo also plays incremental setpoint drift (`AD-05`) and a day of energy optimization (`OP-10`). Without `--gate`, the safety control is REMORA's governed execution (`remora_governed`) when REMORA is installed (`uv sync --all-groups`), and the static allowlist when it is not. With REMORA the three scenarios took about 20 minutes on one core. This is the result report of that run:
 
 <p align="center"><a href="docs/demo/result-report.md"><img src="docs/media/result-report.png" alt="The one-page result report of three scenarios: the plant was harmed in 1 of 3 scenarios with no safety control and in 0 of 3 with REMORA's governed execution, which stopped 40 of the 69 commands the agents proposed and let no change past a limit their contract sets; a chart of the hottest IT supply air per scenario; the figures per scenario; and what the report does not show" width="760"></a></p>
 
 In this run `remora_governed` stopped 40 of the 69 commands the agents proposed. Replayed as if they had been carried out, 3 of those would have done harm and none would have been a useful step. It asked a person once and let no change past a limit its contract sets. This is one seed of a development run, not a benchmark result.
 
 The figures are in [docs/demo/result-report.md](docs/demo/result-report.md). The page in the picture is [docs/demo/result-report.html](docs/demo/result-report.html), and the decisions behind it, each with its record, are on [docs/demo/three-scenarios.html](docs/demo/three-scenarios.html). Download a page and open it in a browser.
+
+</details>
 
 ## Connect: test your own gate
 
@@ -86,7 +93,14 @@ uv run agentic-datacenter bench run --tier standard --gate http_gate --gate stat
 uv run agentic-datacenter bench check build/bench/result_card.json --gate http_gate
 ```
 
-`quick` runs every scenario, shortened, once. It is for trying your gate. `standard` runs every scenario at full length with three seeds. One run of each has been timed, on a machine with 16 threads: `quick` with `static_allowlist` took 2 minutes with six runs at a time, and `standard` with `remora_governed` took 59 minutes with nine runs at a time and needed about 14 GB of memory ([docs/bench/TIERS.md](docs/bench/TIERS.md#what-it-costs), [docs/guides/bench-runner.md](docs/guides/bench-runner.md)). `season` is the 30 seeds a public-test season reports, and it can be split over machines and merged. `--scenario AD-03 --seconds 900` gives a first look in about a minute.
+`quick` runs every scenario, shortened, once. It is for trying your gate. `standard` runs every scenario at full length with three seeds. `season` is the 30 seeds a season reports.
+
+<details>
+<summary>How long the tiers take</summary>
+
+`standard` runs every scenario at full length with three seeds. One run of each has been timed, on a machine with 16 threads: `quick` with `static_allowlist` took 2 minutes with six runs at a time, and `standard` with `remora_governed` took 59 minutes with nine runs at a time and needed about 14 GB of memory ([docs/bench/TIERS.md](docs/bench/TIERS.md#what-it-costs), [docs/guides/bench-runner.md](docs/guides/bench-runner.md)). `season` can be split over machines and merged. `--scenario AD-03 --seconds 900` gives a first look in about a minute.
+
+</details>
 
 A gate that runs as a hook rather than a service is attached as `command_gate`, with `ADC_GATE_COMMAND` set to the command to run per decision. Gates written in Python can be installed as a package instead. The template is [examples/python-gate](examples/python-gate). Every step is in the [full guide](docs/guides/bring-your-own-gate.md).
 
@@ -103,13 +117,26 @@ A gate that runs as a hook rather than a service is attached as `command_gate`, 
 
 A row is added when a gate is registered. Its result is filled in from a result card that passed `agentic-datacenter bench check`, with a link to the "Gate result" issue that carries the card. Results of gates written by Agentic-Datacenter's authors are reported apart from the rest.
 
-## Public test
+## Public test: season 1
 
-The public test runs in seasons ([docs/bench/PUBLIC_TEST.md](docs/bench/PUBLIC_TEST.md)). Each season freezes one version of the benchmark. Part of the scenarios are hidden variants, drawn from a public randomness beacon at a date announced in advance. Nobody can know them before that date, Agentic-Datacenter's authors included, so no gate can be tuned to them. Gates are registered with their exact version before the date. A result is meant to be reproducible by anyone: the same version, gate and seeds are to give the same result card, byte for byte. What is tested is narrower: a card made in several processes, or made in parts and merged, is the same as the card made in one (`ADC-BEN-006`, `tests/bench/test_merge.py`). No card has yet been reproduced on a second machine.
+> **Register your gate by 2 December 2026, 12:00 UTC.** Open a [Gate registration](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml) issue with the exact version you will run. At that moment the drand beacon emits round `34469812`, which draws the hidden scenario variants. Nobody can know them before, the authors included.
 
-**Status:** season 1 is being prepared. No benchmark result has been reported. The benchmark version is not frozen, and every run so far is a development run and labelled as one. The hypotheses and the analysis plan are fixed in advance in [docs/bench/PREREGISTRATION.md](docs/bench/PREREGISTRATION.md).
+1. **Check your gate:** `uv run agentic-datacenter gate check <gate>`.
+2. **Register it** before the deadline. A gate changed after it is a different gate.
+3. **Run the public tracks** whenever you like, on the frozen version (`benchmark-v1`). Run the hidden track after the round.
 
-## Words used here
+The steps, commands and rules are in [docs/bench/PUBLIC_TEST.md](docs/bench/PUBLIC_TEST.md), and the hypotheses and analysis plan, fixed in advance, are in [docs/bench/PREREGISTRATION.md](docs/bench/PREREGISTRATION.md). No benchmark result has been reported yet.
+
+<details>
+<summary>Reproducing a result</summary>
+
+The same version, gate and seeds are to give the same result card, byte for byte. What is tested so far is narrower: a card made in several processes, or made in parts and merged, is the same as the card made in one (`ADC-BEN-006`, `tests/bench/test_merge.py`). No card has yet been reproduced on a second machine.
+
+</details>
+
+<details>
+<summary><strong>Words used here</strong></summary>
+
 
 | Term | Meaning |
 | --- | --- |
@@ -120,7 +147,11 @@ The public test runs in seasons ([docs/bench/PUBLIC_TEST.md](docs/bench/PUBLIC_T
 | `agentic-datacenter bench check` | Refuses a result card in which harm got through, or that is incomplete. |
 | Development run | Any run made with `--allow-unfrozen`. It cannot be reported as a benchmark result. |
 
-## Other things to run
+</details>
+
+<details>
+<summary><strong>Other things to run</strong></summary>
+
 
 ```sh
 uv sync --all-groups                 # also installs REMORA and the IEC 61850 server (Linux wheels only)
@@ -132,7 +163,11 @@ uv run agentic-datacenter gate list
 
 The benchmark uses two scripted agents, one careful (`scripted_benign`) and one hostile (`scripted_adversarial`). `agentic-datacenter scenario run` also takes `scripted_drift` and `scripted_flood`. Other commands: `agentic-datacenter bench record` and `bench verify` (the commit and the hash of every file a benchmark made, ADR 0025), `agentic-datacenter whatif`, `agentic-datacenter modules`, `agentic-datacenter profile`, `agentic-datacenter run`, `agentic-datacenter contracts compile`, `agentic-datacenter scl export` and `agentic-datacenter data`.
 
-## What is in it
+</details>
+
+<details>
+<summary><strong>What is in it</strong></summary>
+
 
 - Sixteen plant modules. They give plausible behaviour, but none has been calibrated against a real facility.
 - IEC 62443 zones and conduits.
@@ -141,6 +176,8 @@ The benchmark uses two scripted agents, one careful (`scripted_benign`) and one 
 - The benchmark with its hidden variants, and the result card check.
 
 The code is ten Python packages under `packages/` with one `uv` lock. The boundaries between them are defined in section 5 of the design document and enforced by import-linter contracts in the workspace root (`uv run --all-groups lint-imports`).
+
+</details>
 
 ## Read more
 
