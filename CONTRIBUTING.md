@@ -39,9 +39,9 @@ For a small change, run the tests that touch what changed first. `uv run python 
 
 ## Things that are never done here
 
-- Copying text from the reference specification or from any standard into the repository.
-- Writing anything that identifies the reference specification: the names of its project, owner, engineer or site, its title, issue, date or section numbers, anywhere, including test names and commit messages.
-- Committing `profiles/restricted_ref.yaml`, or any value taken from the reference specification.
+- Copying text from a design document of a real facility or from any standard into the repository.
+- Writing anything that identifies a real facility: the names of a project, owner, engineer or site, or the title, issue, date or section numbers of a design document, anywhere, including test names and commit messages.
+- Committing `profiles/restricted_ref.yaml`, or any value taken from a real facility.
 - Changing REMORA from an Agentic-Datacenter pull request. Changes REMORA needs go as separate PRs against its `dev` branch.
 - Importing REMORA outside `agentic-datacenter-remora`, or the IEC 61850 protocol library outside `agentic-datacenter-iec61850`.
 - Connecting to real equipment, or binding a protocol server to a reachable interface.

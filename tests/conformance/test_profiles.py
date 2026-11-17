@@ -38,7 +38,7 @@ def test_restricted_profile_is_ignored_and_not_tracked() -> None:
 @pytest.mark.req("ADC-PRV-003")
 def test_public_default_cites_no_restricted_source() -> None:
     text = GENERIC.read_text(encoding="utf-8").lower()
-    assert "restricted_ref" not in text and "reference specification" not in text
+    assert "restricted_ref" not in text and "source: restricted" not in text
 
 
 def test_committed_json_schema_matches_the_code() -> None:

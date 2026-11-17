@@ -2,13 +2,13 @@
 
 Required by `ADC-PRV-005`. This file lists what was consulted to design Agentic-Datacenter and what third-party software it uses. It is updated in the same PR that adds a source or a dependency.
 
-## Unpublished reference
+## Real-world practice
 
-**The reference specification** (a construction specification for a modular data center, unpublished). Consulted for the kinds of plant, control behaviour and interfaces a facility of this type has. It is referred to only by that description.
+The facility model is informed by how real modular data centers are designed, built and operated: the kinds of plant, control behaviour and interfaces a facility of this type has. It does not identify or quote any particular facility or design document.
 
-- No text from it is reproduced in this repository. Behaviour is restated as original requirements and state machines (`ADC-PRV-001`).
-- Nothing that identifies it appears in this repository: not the names of its project, owner, engineer or site, nor its title, issue or section numbers (`ADC-PRV-002`).
-- No value taken from it is in this repository. Such values may live only in `profiles/restricted_ref.yaml`, which is excluded from version control; the public profile `profiles/generic_dc.yaml` uses independently chosen values (`ADC-PRV-003`).
+- No text from any design document is reproduced in this repository. Behaviour is stated as original requirements and state machines (`ADC-PRV-001`).
+- Nothing that identifies a real facility appears in this repository: not the names of a project, owner, engineer or site, nor the title, issue or section numbers of a design document (`ADC-PRV-002`).
+- No value taken from a real facility is in this repository. Such values may live only in `profiles/restricted_ref.yaml`, which is excluded from version control; the public profile `profiles/generic_dc.yaml` uses independently chosen values (`ADC-PRV-003`).
 
 ## Measured datasets
 
