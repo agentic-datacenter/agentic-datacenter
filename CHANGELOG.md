@@ -71,6 +71,9 @@ Changed
 - With `--jobs`, the longest runs of a benchmark start first.
 - `THIRD_PARTY_NOTICES.md` lists only what is used. Datasets suggested for later calibration are in `docs/calibration/suggested_resources.md`.
 - Test files are named by what they test, not by when they were written.
+- A run judged by counterfactual replay keeps a copy of the plant's state only where a branch will start from it. For a gate restored from its own snapshots (`remora_governed`) that is the instants to be judged, at most 16 in `OP-10`, where it was all 671 decision points, twice. Each copy is released when its last branch has started. One `standard` run of `OP-10` with the hostile agent peaked at 0.32 GB on 2026-11-17; it held 3.3 to 3.8 GB before.
+- No result changes. Cards made before and after, for `OP-10`, `AD-08` and `OP-08` under five gates and with one and three jobs, are the same byte for byte except the hash of the oracle's source in `benchmark_version`, which changes because `harness.py` and `counterfactual.py` are part of it; no version was frozen.
+- `docs/guides/bench-runner.md` gives the new figures: allow 0.4 GB for each job with `remora_governed`.
 
 Fixed
 

@@ -38,9 +38,13 @@ Any of Linux, macOS or Windows can be used. On Windows, use WSL2 with Ubuntu, so
 
 ## Memory
 
-The long runs need memory as well as cores. In a `standard` run of `remora_governed`, one run of `OP-10` with the hostile agent held 3.3 to 3.8 GB, one with the careful agent about 1 GB, and the other scenarios 0.1 to 0.2 GB each. The longest runs start first, so with `jobs` at 9 or more all nine runs of `OP-10` are in memory together: about 14 GB at the peak, 35 minutes in.
+Memory no longer decides how many runs fit; cores do. Measured on 2026-11-17, at the `standard` tier with `remora_governed`, each run in a process of its own: one run of `OP-10` (a simulated week, 671 proposals, 16 judged) with the hostile agent peaked at 0.32 GB, and one with the careful agent at 0.14 GB. The other runs measured, `OP-10` shortened to a day and the whole of `AD-08` and `OP-08`, peaked at 0.12 to 0.16 GB. Allow 0.4 GB for each job: `jobs` at 15 needs about 6 GB.
 
-That was measured on a machine with 16 threads and 11 GB given to WSL2, with 8 GB of swap. The run finished in 59 minutes, but it used 5 GB of the swap. With less than 16 GB free, set `jobs` lower: 6 keeps at most six runs of `OP-10` in memory. On Windows, WSL2 gets half of the machine's memory unless `%UserProfile%\.wslconfig` says otherwise:
+Before that date one run of `OP-10` with the hostile agent held 3.3 to 3.8 GB and one with the careful agent about 1 GB, so nine at a time needed about 14 GB. The run kept a copy of the plant's state, with every record so far, at each of its 671 decision points, and for a gate that keeps state of its own it did so twice. It now keeps one only at the instants that are judged, and lets each go when its last branch has started. The cards are the same.
+
+A gate that keeps no state of its own is judged from one run, which cannot know in advance which instants will be judged, and still keeps a copy at every decision point until the run ends: 0.8 GB for `OP-10` with the hostile agent under `static_allowlist` (1.1 GB before). With such a gate, allow 1 GB for each run of `OP-10` that is in memory at a time. The longest runs start first, so that is as many as there are jobs.
+
+The figures are from a machine with 16 threads and 11 GB given to WSL2. On Windows, WSL2 gets half of the machine's memory unless `%UserProfile%\.wslconfig` says otherwise:
 
 ```ini
 [wsl2]
