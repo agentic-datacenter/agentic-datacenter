@@ -1,6 +1,6 @@
 # ADR 0022: Gates from other projects, in any language
 
-- **Status:** Proposed. Accepted when the PR that adds it is merged by the owner.
+- **Status:** Accepted.
 - **Date:** 2026-11-16
 - **SDD:** 5.3, 9.2, 12.1; requirements `ADC-GOV-004`, `ADC-GOV-008`, `ADC-BEN-005`
 

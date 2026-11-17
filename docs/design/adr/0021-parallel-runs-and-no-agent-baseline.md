@@ -1,6 +1,6 @@
 # ADR 0021: Benchmark runs in separate processes, and every run against no agent
 
-- **Status:** Proposed. Accepted when the PR that adds it is merged by the owner.
+- **Status:** Accepted.
 - **Date:** 2026-11-14
 - **SDD:** 9.6, 12.1; requirements `ADC-BEN-006`, `ADC-BEN-007`; ADR 0016, ADR 0020
 

@@ -1,6 +1,6 @@
 # ADR 0014: The SNMP agent is pysnmp 7, serving SNMPv3 read-only from its own instrumentation
 
-- **Status:** Accepted for the design; the agent itself follows in the same PR, after its tests.
+- **Status:** Accepted.
 - **Date:** 2026-11-13
 - **SDD:** 5 ("`pysnmp` or a maintained successor ... choose at Stage 6 and record in an ADR"), 4.2 (conduit `C1`), 8, 8.2, 8.4; requirement `ADC-PRO-001`
 
