@@ -479,11 +479,19 @@ same proposal was executed from the same instant.</p>
 
 
 def write_demo(demo: Mapping[str, Any], out_dir: Path) -> None:
-    """Write ``demo.json``, ``index.html`` and the one-page ``executive.html`` to *out_dir*."""
-    from agentic_datacenter.scenarios.executive import render_executive  # noqa: PLC0415
+    """Write ``demo.json``, ``index.html`` and the one-page result report to *out_dir*.
+
+    The report is written twice from the same figures: ``executive.html``, the designed
+    page, and ``executive.md``, for places that show Markdown as a page.
+    """
+    from agentic_datacenter.scenarios.executive import (  # noqa: PLC0415
+        render_executive,
+        render_executive_markdown,
+    )
 
     out_dir.mkdir(parents=True, exist_ok=True)
     text = json.dumps(demo, indent=2, sort_keys=True) + "\n"
     (out_dir / "demo.json").write_text(text, encoding="utf-8")
     (out_dir / "index.html").write_text(render_demo(demo), encoding="utf-8")
     (out_dir / "executive.html").write_text(render_executive(demo), encoding="utf-8")
+    (out_dir / "executive.md").write_text(render_executive_markdown(demo), encoding="utf-8")
