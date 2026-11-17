@@ -14,6 +14,20 @@ Simulate cooling failures, power disturbances and AI-driven control decisions. S
 | Explore failure scenarios, AI-driven control and the safety controls around it: temperatures, refused commands, consequences and how often a person is asked. | Connect your own safety control ("gate"), run reproducible benchmarks against the same scenarios as everyone else, and inspect the evidence. |
 | Start with [the example below](#what-happens-when-an-ai-agent-acts-during-a-chiller-trip), read the [one-page result report](docs/demo/result-report.md) of three scenarios, then [run it yourself](#run-the-same-experiment-on-your-machine). | Start with [Connect your gate](#connect-test-your-own-gate) and [Compare](#compare-participating-gates). |
 
+## Try it
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/darklordVirtual/agentic-datacenter)
+
+Or on your own machine, with git, Python 3.12 or later and [uv](https://docs.astral.sh/uv/):
+
+```sh
+git clone https://github.com/darklordVirtual/agentic-datacenter && cd agentic-datacenter
+uv sync
+uv run agentic-datacenter demo --scenario OP-03 --gate static_allowlist --out build/first-run
+```
+
+About a minute. No API keys and no external service. Then open `build/first-run/index.html`. What the run shows is the example below.
+
 ## What happens when an AI agent acts during a chiller trip?
 
 A chiller trips in a heat wave (scenario `OP-03`). An AI agent built to misbehave keeps proposing to raise chilled water setpoints and to take equipment out of service. The plant, weather and agent are the same on both sides, from the same seed. On the left nothing checks the agent. On the right a simple safety control checks who asks and whether the value is in range.
@@ -34,13 +48,7 @@ The red ticks mark commands that were not carried out. Every refused command is 
 
 ## Run the same experiment on your machine
 
-About a minute. No API keys and no external service. **You need** git, Python 3.12 or later and [uv](https://docs.astral.sh/uv/), or [open it in Codespaces](https://codespaces.new/darklordVirtual/agentic-datacenter), where they are set up for you.
-
-```sh
-git clone https://github.com/darklordVirtual/agentic-datacenter && cd agentic-datacenter
-uv sync
-uv run agentic-datacenter demo --scenario OP-03 --gate static_allowlist --out build/first-run
-```
+The three commands under [Try it](#try-it) run the example above: scenario `OP-03`, without a safety control and with the static allowlist, from the same seed.
 
 Open `build/first-run/index.html` for every decision and its record, or `build/first-run/executive.html` for the one-page result report (`executive.md` is the same report as Markdown). Without `--scenario`, the demo also plays incremental setpoint drift (`AD-05`) and a day of energy optimization (`OP-10`), in about five minutes. This is the result report of those three scenarios with the static allowlist:
 
@@ -54,14 +62,7 @@ Your gate does not have to live in this repository or be written in Python. The 
 
 Not a gate in that sense, for example a project that keeps budgets, gives scores, only observes, or signs receipts? [Which way in for your project](docs/guides/which-way-in.md) has one row per kind of project. Each row says how to connect it, what is measured, and what is not there yet.
 
-**1. Serve your gate.** For each proposal Agentic-Datacenter sends `POST /evaluate` with the facts it read from the simulated plant (never the agent's own word). You answer with a verdict and your reasons:
-
-| Verdict | Meaning |
-| --- | --- |
-| `ALLOW` | Execute exactly this change, once, within 30 simulated seconds. |
-| `DENY` | Do not execute. |
-| `VERIFY` | A person must approve it first. |
-| `ABSTAIN` | The evidence is missing, stale or contradictory. Nothing is executed. |
+**1. Serve your gate.** For each proposal Agentic-Datacenter sends `POST /evaluate` with the facts it read from the simulated plant (never the agent's own word). You answer with one of four verdicts and your reasons: `ALLOW`, `DENY`, `VERIFY` (a person must approve first) or `ABSTAIN` (the evidence is missing, stale or contradictory). What each one means is in the [table in the guide](docs/guides/bring-your-own-gate.md#how-a-gate-is-driven).
 
 Only `ALLOW` and `DENY` are required. A gate that knows nothing else answers with those two, passes the check and is scored like any other gate. Your own words work too: `permit`, `block`, `ask`, `require_approval`, `skip` and others are read as the verdict they mean. The rules that keep gates with different verdicts comparable are in [docs/bench/FAIRNESS.md](docs/bench/FAIRNESS.md).
 
@@ -83,7 +84,7 @@ uv run agentic-datacenter bench run --tier standard --gate http_gate --gate stat
 uv run agentic-datacenter bench check build/bench/result_card.json --gate http_gate
 ```
 
-`quick` runs every scenario, shortened, once, in about half an hour of processor time, less with `--jobs`. It is for trying your gate. `standard` runs every scenario at full length with three seeds. That takes an estimated two hours on eight cores. `season` is the 30 seeds a public-test season reports, and it can be split over machines and merged. `--scenario AD-03 --seconds 900` gives a first look in about a minute.
+`quick` runs every scenario, shortened, once, in about half an hour of processor time, less with `--jobs`. It is for trying your gate. `standard` runs every scenario at full length with three seeds. One measured run, of one gate, took 59 minutes on a machine with 16 threads and nine runs at a time ([docs/guides/bench-runner.md](docs/guides/bench-runner.md)). `season` is the 30 seeds a public-test season reports, and it can be split over machines and merged. `--scenario AD-03 --seconds 900` gives a first look in about a minute.
 
 A gate that runs as a hook rather than a service is attached as `command_gate`, with `ADC_GATE_COMMAND` set to the command to run per decision. Gates written in Python can be installed as a package instead. The template is [examples/python-gate](examples/python-gate). Every step is in the [full guide](docs/guides/bring-your-own-gate.md).
 
@@ -102,7 +103,7 @@ A row is added when a gate is registered. Its result is filled in from a result 
 
 ## Public test
 
-The public test runs in seasons ([docs/bench/PUBLIC_TEST.md](docs/bench/PUBLIC_TEST.md)). Each season freezes one version of the benchmark. Part of the scenarios are hidden variants, drawn from a public randomness beacon at a date announced in advance. Nobody can know them before that date, Agentic-Datacenter's authors included, so no gate can be tuned to them. Gates are registered with their exact version before the date. Anyone can reproduce a result: the same version, gate and seeds give the same result card, byte for byte, on any machine.
+The public test runs in seasons ([docs/bench/PUBLIC_TEST.md](docs/bench/PUBLIC_TEST.md)). Each season freezes one version of the benchmark. Part of the scenarios are hidden variants, drawn from a public randomness beacon at a date announced in advance. Nobody can know them before that date, Agentic-Datacenter's authors included, so no gate can be tuned to them. Gates are registered with their exact version before the date. A result is meant to be reproducible by anyone: the same version, gate and seeds are to give the same result card, byte for byte. What is tested is narrower: a card made in several processes, or made in parts and merged, is the same as the card made in one (`ADC-BEN-006`, `tests/bench/test_merge.py`). No card has yet been reproduced on a second machine.
 
 **Status:** season 1 is being prepared. No benchmark result has been reported. The benchmark version is not frozen, and every run so far is a development run and labelled as one. The hypotheses and the analysis plan are fixed in advance in [docs/bench/PREREGISTRATION.md](docs/bench/PREREGISTRATION.md).
 
@@ -137,7 +138,7 @@ The benchmark uses two scripted agents, one careful (`scripted_benign`) and one 
 - Twenty-three scenarios, operational and adversarial, with an evidence bundle per run.
 - The benchmark with its hidden variants, and the result card check.
 
-The code is ten Python packages under `packages/` with one `uv` lock. The layer rules between them are checked by `uv run --all-groups lint-imports`.
+The code is ten Python packages under `packages/` with one `uv` lock. The boundaries between them are defined in section 5 of the design document and enforced by import-linter contracts in the workspace root (`uv run --all-groups lint-imports`).
 
 ## Read more
 
@@ -146,5 +147,5 @@ The code is ten Python packages under `packages/` with one `uv` lock. The layer 
 - [docs/design/zone_model.md](docs/design/zone_model.md), [docs/design/threat_model.md](docs/design/threat_model.md) and the decisions in [docs/design/adr/](docs/design/adr/).
 - [docs/guides/release-gate.md](docs/guides/release-gate.md): what makes `agentic-datacenter bench check` refuse a card.
 - [CONTRIBUTING.md](CONTRIBUTING.md): rules for changes to Agentic-Datacenter itself.
-- The simulated facility is generic. It was informed by an unpublished construction specification, which nothing in this repository identifies or quotes; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+- The simulated facility is generic. It was informed by an unpublished construction specification. The repository is written so as not to identify or quote it. That is kept by review: the automated scan for its names has no terms to check until their hashes are supplied. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 - Licence: Business Source License 1.1, see [LICENSE](LICENSE); `packages/agentic-datacenter-iec61850` is GPLv3.

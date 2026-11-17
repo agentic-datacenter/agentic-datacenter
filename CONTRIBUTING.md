@@ -1,22 +1,37 @@
 # Contributing
 
-Agentic-Datacenter is built from one design document, in fixed stages, by small pull requests that a person merges. These rules apply to human and automated contributors alike. They restate section 13 of `docs/design/SDD-ADC-001.md`; if the two differ, the design document wins.
+These rules apply to human and automated contributors alike. Agentic-Datacenter was built from one design document, `docs/design/SDD-ADC-001.md`; decisions made since are ADRs in `docs/design/adr/`. The opening table of the design document says which sections matter for your change. If the design document is ambiguous or wrong, say so in the pull request instead of guessing.
 
-## Before you write anything
+## Setup and checks
 
-- Read the design document and the ADRs in `docs/design/adr/`. Its opening table says which sections matter for your role.
-- Work on the current stage only. A stage does not start until the exit criterion of the previous one is met.
-- If the design document is ambiguous or wrong, stop. Propose the change to the design document in the same PR instead of guessing.
+Requires [uv](https://docs.astral.sh/uv/). Python 3.12 is selected by `.python-version` and fetched by `uv` if missing.
 
-## Checking a change
+```sh
+uv sync                 # eight of the ten packages and the tools, without REMORA and the IEC 61850 server
+uv sync --all-groups    # adds agentic-datacenter-remora and agentic-datacenter-iec61850 (Linux wheels only)
+```
 
-- A small change: run the tests that touch what changed, with `uv run ruff check`, `uv run ruff format --check` and `uv run python tools/gen_reference.py --check`.
-- A broad change: run the whole suite on all cores, `uv run pytest -n auto --dist loadfile`. It takes about 8 minutes on eight cores, against about 45 in one process.
+Run these before opening a pull request, with all groups installed. They are what the `static` and `docs` jobs of `.github/workflows/pr.yml` run, and then the whole suite:
+
+```sh
+uv lock --check
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy
+uv run python tools/core_contracts.py build/importlinter-core.toml && uv run lint-imports --config build/importlinter-core.toml
+uv run agentic-datacenter modules lock --check
+uv run agentic-datacenter profile schema --check
+uv run python tools/gen_reference.py --check
+uv run mkdocs build --strict
+uv run pytest -n auto --dist loadfile     # about 8 minutes on eight cores, against about 45 in one process
+```
+
+For a small change, run the tests that touch what changed first. `uv run python tools/ci_local.py` runs the `pr` workflow on your machine, job by job: `--list` shows what would run, and `--job static --docker` runs one job in the reference image (ADR 0011). `git config core.hooksPath .githooks` runs the static job before every push.
 
 ## Every pull request
 
 - Names the requirement IDs it closes in its description.
-- Is spec-first and test-first: failing tests are committed before the implementation.
+- Is test-first: failing tests are committed before the implementation.
 - Stays under about 1,500 changed lines, not counting generated maps and fixtures. Split it if it is larger.
 - Is merged by a person. Nobody merges their own PR, and nothing merges automatically.
 - Adds no dependency beyond those in section 5 of the design document without an ADR.
@@ -31,31 +46,6 @@ Agentic-Datacenter is built from one design document, in fixed stages, by small 
 - Importing REMORA outside `agentic-datacenter-remora`, or the IEC 61850 protocol library outside `agentic-datacenter-iec61850`.
 - Connecting to real equipment, or binding a protocol server to a reachable interface.
 
-## Gates from other projects
-
-A gate from another project is not added to this repository. It is loaded through its own `agentic_datacenter.gates` entry point or served over HTTP to the `http_gate` binding; see `docs/guides/bring-your-own-gate.md`. Changes to Agentic-Datacenter that a gate author needs, such as a field the gate interface lacks or a scenario that would test something new, are welcome as issues or pull requests like any other. A result is shared through the "Gate result" issue form, not by pull request.
-
-## Local setup
-
-Requires [uv](https://docs.astral.sh/uv/). Python 3.12 is selected by `.python-version` and fetched by `uv` if missing.
-
-```sh
-uv sync                 # the six core packages, the optional measured-input package and the tools, without REMORA
-uv sync --all-groups    # adds agentic-datacenter-remora and agentic-datacenter-iec61850; needs read access to the REMORA repository
-```
-
-## Checks
-
-Run these before opening a pull request. They become required CI jobs in Stage 1.
-
-```sh
-uv lock --check
-uv run ruff check .
-uv run ruff format --check .
-uv run --all-groups mypy
-uv run --all-groups lint-imports
-```
-
 ## Documents that travel with code
 
 | When you add | You also add, in the same PR |
@@ -66,18 +56,8 @@ uv run --all-groups lint-imports
 | A profile value | Its `source` or `assumed` field |
 | A test for a requirement | The marker `@pytest.mark.req("ADC-XXX-NNN")` |
 
-## Changing the REMORA pin
+A pin bump is its own PR. It changes only `REMORA_PIN` and `uv.lock`, names the new tag, and attaches the scenario-matrix metric difference against the previous pin.
 
-A pin bump is its own PR. It changes only `REMORA_PIN` and `uv.lock`, names the new tag, and from Stage 8 onward attaches the scenario-matrix metric difference against the previous pin.
+## Gates from other projects
 
-## Running the checks
-
-Hosted runners are not available to this repository (ADR 0011). The workflows in `.github/workflows/` are run locally:
-
-```sh
-uv run python tools/ci_local.py --list                 # what would run
-uv run python tools/ci_local.py                        # the whole pr workflow, on the host
-uv run python tools/ci_local.py --job static --docker  # one job in the reference image
-uv run python tools/ci_local.py --publish              # also report commit statuses (clean, pushed commit only)
-git config core.hooksPath .githooks                    # static checks before every push
-```
+A gate from another project is not added to this repository. It is loaded through its own `agentic_datacenter.gates` entry point or served over HTTP to the `http_gate` binding; see `docs/guides/bring-your-own-gate.md`. Changes to Agentic-Datacenter that a gate author needs are welcome as issues or pull requests like any other. A result is shared through the "Gate result" issue form, not by pull request.
