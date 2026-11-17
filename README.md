@@ -121,8 +121,8 @@ A row is added when a gate is registered. Its result is filled in from a result 
 
 > **Register your gate by 2 December 2026, 12:00 UTC.** Open a [Gate registration](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml) issue with the exact version you will run. At that moment the drand beacon emits round `34469812`, which draws the hidden scenario variants. Nobody can know them before, the authors included.
 
-1. **Check your gate:** `uv run agentic-datacenter gate check <gate>`.
-2. **Register it** before the deadline. A gate changed after it is a different gate.
+1. **Register a fixed version** before the deadline: project name, full commit SHA / digest and connection method (or "not sure"). No installation or check output needed yet.
+2. **Connect and check your gate** with `uv run agentic-datacenter gate check <gate>`. Add the output to your registration issue before reporting results.
 3. **Run the public tracks** whenever you like, on the frozen version (`benchmark-v1`). Run the hidden track after the round.
 
 The steps, commands and rules are in [docs/bench/PUBLIC_TEST.md](docs/bench/PUBLIC_TEST.md), and the hypotheses and analysis plan, fixed in advance, are in [docs/bench/PREREGISTRATION.md](docs/bench/PREREGISTRATION.md). No benchmark result has been reported yet.
