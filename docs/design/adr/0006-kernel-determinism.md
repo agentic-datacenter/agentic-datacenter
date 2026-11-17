@@ -1,6 +1,6 @@
 # ADR 0006: How the kernel makes a run reproducible
 
-- **Status:** Proposed. Accepted when the Stage 1 kernel PR is merged by the owner.
+- **Status:** Accepted.
 - **Date:** 2026-11-12
 - **SDD:** 5 ("Time base", run modes); requirements `ADC-KRN-001` to `-004`, `ADC-CI-004`
 

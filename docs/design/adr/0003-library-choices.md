@@ -1,6 +1,6 @@
 # ADR 0003: Language, tooling and library choices
 
-- **Status:** Proposed. Accepted when the Stage 0 PR is merged by the owner.
+- **Status:** Accepted.
 - **Date:** 2026-11-12
 - **SDD:** 5 ("Technology choices"), 8.5, 13 ("Do not add dependencies beyond section 5 without an ADR")
 

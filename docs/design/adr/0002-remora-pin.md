@@ -1,6 +1,6 @@
 # ADR 0002: REMORA is one pinned commit, imported by one package
 
-- **Status:** Proposed. Accepted when the Stage 0 PR is merged by the owner.
+- **Status:** Accepted.
 - **Date:** 2026-11-12
 - **SDD:** 5.2, 9.2; requirements `ADC-PIN-001` to `-006`
 
@@ -17,9 +17,9 @@ Agentic-Datacenter exists to measure governance gates, with REMORA as the first.
 5. **Surface.** `agentic-datacenter-remora` imports from `remora.sdk` only.
 6. **Bumps.** A pin bump is its own PR, changing only the pin and the lock.
 
-## Verification at Stage 0
+## Verification of the first pin
 
-Recorded in full in `docs/design/remora_binding.md`. In short:
+Done on 2026-11-12, against the first pin. In short:
 
 - Both tags and their commits match the SDD table; the pinned commit is on `dev`.
 - The workspace locks and installs REMORA at the pinned SHA, and the installed distribution reports that SHA, which gives the run-time check for `ADC-PIN-003` something to read.
@@ -28,8 +28,14 @@ Recorded in full in `docs/design/remora_binding.md`. In short:
 
 ## Consequences
 
-- `agentic-datacenter-remora` needs REMORA's `security` and `sdk` extras, not `security` alone. This differs from SDD 5.2 and is proposed as an SDD change in `remora_binding.md`, section 3.1.
+- `agentic-datacenter-remora` needs REMORA's `security` and `sdk` extras, not `security` alone. This differs from SDD 5.2; see `remora_binding.md`, section 1.
 - Installing the `remora` group needs read access to the REMORA repository. Jobs and contributors without it can still build and test everything else.
 - Stage 8 cannot start on this pin: it needs a pin that contains `remora build-toolspec`.
 - The contract limiting `agentic_datacenter_remora` to `remora.sdk` (`ADC-PIN-005`) is added in Stage 8 with the binding code. The Stage 0 contract only keeps REMORA out of the other packages.
 - REMORA is licensed under BUSL-1.1. What that means for Agentic-Datacenter's own licence is part of ADR 0004.
+
+## Addendum 2026-11-17: REMORA-research is public
+
+- Installing the `remora` group needs no access rights. `uv` fetches the pinned commit from a public repository.
+- The pin has moved since decision 1. The current one is in `REMORA_PIN`, with the reason and the pin it supersedes.
+- A pin that contains `remora build-toolspec` arrived with REMORA #1232 (ADR 0016).

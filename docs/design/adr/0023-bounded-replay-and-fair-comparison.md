@@ -1,6 +1,6 @@
 # ADR 0023: Bounded replay, tiers, and comparing different kinds of gates
 
-- **Status:** Proposed. Accepted when the PR that adds it is merged by the owner.
+- **Status:** Accepted.
 - **Date:** 2026-11-16
 - **SDD:** 12.1; requirements `ADC-BEN-008`, `ADC-BEN-009`, `ADC-GOV-008`
 
