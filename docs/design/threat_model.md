@@ -91,6 +91,6 @@ The adversarial scenarios use injected inputs and simulated misbehaviour. They c
 ## Assumptions and open items
 
 - The target security levels are assumed, not derived from a risk assessment (SDD 14).
-- A9 on the governed path: REMORA's service takes its time from the simulated clock (ADR 0016, decision 3). Scenario `AD-09` is tested with the static allowlist gate (`tests/scenario/test_stage8_scenarios.py`). No test runs it under `GOVERNED`.
+- A9 on the governed path: REMORA's service takes its time from the simulated clock (ADR 0016, decision 3). Scenario `AD-09` is tested with the static allowlist gate (`tests/scenario/test_op13_ad09_governed.py`). No test runs it under `GOVERNED`.
 - The data collector has no path in the zone model and is not modelled (`zone_model.md`, section 6, point 1), so its threats are not assessed here.
 - This model was written with the design, before the network and governance layers were built. A second review was planned for when they existed. None is recorded.

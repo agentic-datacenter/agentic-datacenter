@@ -1,4 +1,4 @@
-"""ADC-KRN-001 and -002 on the generic profile (Stage 1 exit: 100 seeds)."""
+"""ADC-KRN-001 and -002 on the generic profile, over 100 seeds."""
 
 from pathlib import Path
 

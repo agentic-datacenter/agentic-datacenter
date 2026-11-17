@@ -1,9 +1,9 @@
 """A toy simulation built only from kernel primitives.
 
-Stage 1 has no plant yet. This model exercises every kernel service the plant
-will use (two task rates, two random streams, events between parts, float
-state) so the determinism and snapshot properties are tested on the kernel
-itself. The same properties are re-run on the generic profile once it exists.
+This model needs no plant. It exercises every kernel service the plant uses
+(two task rates, two random streams, events between parts, float state) so
+the determinism and snapshot properties are tested on the kernel itself. The
+same properties are run on the generic profile in ``test_generic_profile.py``.
 """
 
 from collections.abc import Callable

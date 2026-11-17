@@ -86,10 +86,10 @@ jobs:
         run: uv run python -c "import remora, agentic_datacenter_remora"
       - name: Every test that needs REMORA (the pr workflow skips them)
         run: >-
-          uv run pytest packages/agentic-datacenter-remora/tests tests/scenario/test_m1_scenarios.py
+          uv run pytest packages/agentic-datacenter-remora/tests tests/scenario/test_op03_op10_ad01_ad03.py
           tests/scenario/test_network_loss.py tests/scenario/test_op09.py
           tests/scenario/test_safe_posture_scenarios.py tests/scenario/test_scenario_library.py
-          tests/scenario/test_stage7_scenarios.py tests/scenario/test_stage8_scenarios.py
+          tests/scenario/test_op06_op07.py tests/scenario/test_op13_ad09_governed.py
           tests/scenario/test_whatif_governed.py
       - name: Release gate on a governed run of the sensor-fault scenario (ADR 0020)
         run: >-
