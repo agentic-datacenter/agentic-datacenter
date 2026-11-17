@@ -10,10 +10,10 @@ Found in the check of the first pin. The code follows REMORA. The sentences in t
 | --- | --- |
 | 5.2: the binding depends on REMORA "with the `security` extra" | The governed client needs `httpx`, which only the `sdk` extra provides, and the in-process service needs the `api` extra (ADR 0016). `packages/agentic-datacenter-remora/pyproject.toml` depends on `remora-assurance[security,sdk,api]` |
 | 9.2: "Consume and execute: `execute()`" | Two calls. `execute_accepted(execution_token, tool_call)` redeems the token of a proposal that was accepted outright. `execute(review_item_id, tool_call)` runs one that a person approved, and may return a pending execution when the service dispatches asynchronously. The binding treats a pending execution as outcome unknown, never as applied (ADR 0016) |
-| `ADC-PIN-006`: the maturity word is ESTABLISHED, PARTIAL or NOT\_ESTABLISHED | At the first pin the `status` field of the capability register had five values: `IMPLEMENTED_LIBRARY`, `WIRED_REFERENCE_PATH`, `WIRED_API_PATH`, `PERSISTED_ATOMIC` and `NOT_ESTABLISHED`. The rule itself, to reproduce the register's word unchanged, does not depend on the list |
+| `ADC-PIN-006`: the maturity word is ESTABLISHED, PARTIAL or NOT\_ESTABLISHED | At the first pin the `status` field of the capability register had five values: `IMPLEMENTED_LIBRARY`, `WIRED_REFERENCE_PATH`, `WIRED_API_PATH`, `PERSISTED_ATOMIC` and `NOT_ESTABLISHED`. The rule itself, to reproduce the register's word unchanged, does not depend on the list. `agentic_datacenter_remora.register` reads the word at the current pin from the capability catalogue in the installed package, and `tools/gen_62443_matrix.py` prints it unchanged |
 | 9.2: "REMORA's own register lists [rollback] as PARTIAL" | Not found at the first pin: no capability entry in the four register files is named for rollback. The split is Agentic-Datacenter's own description: REMORA reports `rollback_available` and verifies effects; trigger and restore belong to Agentic-Datacenter |
 
-The first two rows hold at the current pin, because the code depends on them. The last two were read from the registers at the first pin and have not been read again since.
+The first two rows hold at the current pin, because the code depends on them. The third is read again at every pin, by a test that compares the generated matrix with the installed package. The last was read from the registers at the first pin and has not been read again since.
 
 ## 2. The `DECISION_ONLY` binding: what Agentic-Datacenter tells REMORA
 

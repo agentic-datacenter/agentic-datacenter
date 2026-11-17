@@ -67,6 +67,7 @@ def test_every_evidence_id_is_a_requirement_of_the_design_document() -> None:
     assert len(tool().ROWS) == 7
 
 
+@pytest.mark.req("ADC-EVD-002")
 def test_no_matrix_is_kept_in_the_repository() -> None:
     """A committed matrix would be a matrix written by hand the moment the tests change."""
     assert not list((REPO / "docs").rglob("*62443_matrix*"))

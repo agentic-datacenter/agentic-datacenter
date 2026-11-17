@@ -61,14 +61,15 @@ agentic-datacenter-whatif = { workspace = true }
 # The stage of the build plan in SDD section 13 up to which every requirement
 # must have a passing test and an owner (tools/traceability.py, ADR 0007), and
 # the requirements owned by the repository as a whole (ADC-CI-001).
-# The next stage is not counted as reached while ADC-PIN-004 and ADC-PIN-006 have no test.
+# 9 is the last stage. What the build plan asked for and is not built is in SDD section 14.
 [tool.agentic-datacenter]
-stage = 7
+stage = 9
 requirements = [
     "ADC-PRV-001", "ADC-PRV-002", "ADC-PRV-005",
     "ADC-CI-001", "ADC-CI-002", "ADC-CI-003", "ADC-CI-004", "ADC-CI-005",
     "ADC-DOC-001", "ADC-DOC-002", "ADC-DOC-003",
     "ADC-FID-001", "ADC-FID-002",
+    "ADC-PIN-004", "ADC-EVD-002",
 ]
 
 [tool.ruff]

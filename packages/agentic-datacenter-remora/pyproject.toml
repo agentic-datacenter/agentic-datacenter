@@ -36,6 +36,6 @@ test = ["pytest", "hypothesis"]
 
 [tool.agentic-datacenter]
 requirements = [
-    "ADC-PIN-001", "ADC-PIN-002", "ADC-PIN-003", "ADC-PIN-005",
+    "ADC-PIN-001", "ADC-PIN-002", "ADC-PIN-003", "ADC-PIN-005", "ADC-PIN-006",
     "ADC-GOV-006", "ADC-GOV-007",
 ]
