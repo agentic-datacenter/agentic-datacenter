@@ -18,13 +18,13 @@ A public test runs in seasons. A season fixes three things before any participan
 | --- | --- | --- | --- | --- |
 | 1 | `benchmark-v1` ([VERSION.json](VERSION.json)) | `34469812` | 2026-12-02 12:00 | Open: register before the round |
 
-> **Season 1: register by 2 December 2026, 12:00 UTC**, with the [Gate registration](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml) issue form. Check the round's time yourself with `python tools/heldout_beacon.py round-at 2026-12-02T12:00:00Z`.
+Check the round's time yourself with `python tools/heldout_beacon.py round-at 2026-12-02T12:00:00Z`.
 
-The built-in gates are registered by what the frozen version pins: `REMORA_PIN` and the code at the tag `benchmark-v1`.
+**What counts as registered.** The issue must be opened before the deadline, and the version that counts is the one the issue names at the deadline. GitHub keeps every edit of an issue, so that version is read from the issue's history, not from the issue as it is later: right after the deadline the maintainers run `python tools/season_registrations.py --deadline 2026-12-02T12:00:00Z --out docs/bench/season-1-registrations.json` and commit the list. Anyone can run it again and get the same list. The built-in gates are registered by what the frozen version pins: `REMORA_PIN` and the code at the tag `benchmark-v1`.
 
 ## Taking part
 
-1. **Register a fixed version first.** Use the [Season 1 gate registration form](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml). Only three fields are required: project name, exact immutable version (full commit SHA, package hash or image digest), and intended connection method (choose "not sure" if needed). You do **not** need to install anything or paste test output to register. The version in the original issue before the deadline is the Track D registration; edits or a new version after the deadline are not eligible for Track D.
+1. **Register a fixed version first.** Use the [Season 1 gate registration form](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml). Only three fields are required: project name, exact immutable version (full commit SHA, package hash or image digest), and intended connection method (choose "not sure" if needed). You do **not** need to install anything or paste test output to register. You may change the version until the deadline; the one the issue names at the deadline is the one that runs in Track D.
 2. **Connect and check your gate later.** Run `agentic-datacenter gate check <gate>` (see [Test your own gate](../guides/bring-your-own-gate.md)), and add the output and operating profile to your issue before submitting a result. A registration alone is not a passing check or a benchmark result. If integration changes the version you registered, update it **before** the deadline to remain eligible for Track D.
 3. **Run the public tracks at any time** on the frozen version:
 

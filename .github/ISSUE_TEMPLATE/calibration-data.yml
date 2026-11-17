@@ -1,0 +1,78 @@
+name: Offer calibration data
+description: Offer measurements or performance data that can calibrate a plant module. Describe it here; never attach the data.
+title: "Calibration data: "
+labels: ["calibration-data"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. **Do not attach data, drawings or anything that identifies a site, customer or person: issues are public.**
+        Describe the data below. A maintainer replies and agrees a private transfer with you, under a non-disclosure agreement if you want one.
+        What is useful, how to anonymize it and what happens to it: [Contribute calibration data](https://github.com/darklordVirtual/agentic-datacenter/blob/main/docs/calibration/contribute-data.md).
+
+  - type: dropdown
+    id: equipment
+    attributes:
+      label: Equipment
+      multiple: true
+      options:
+        - Chillers
+        - Pumps, fans or air handlers
+        - Thermal storage
+        - UPS
+        - Generators or fuel
+        - Switchgear, transfer or protection
+        - IT load
+        - Sensors
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What the data measures
+      description: Quantities, units, sampling interval and period. Performance curves or data sheets are welcome too.
+      placeholder: "e.g. chiller electrical power and cooling capacity against condenser water temperature, 1 min, 6 months"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of data
+      options:
+        - Published or type-test performance data (towards F2)
+        - Measured in operation at a real facility (towards F3)
+        - Laboratory measurements
+    validations:
+      required: true
+
+  - type: dropdown
+    id: terms
+    attributes:
+      label: Terms it is shared on
+      options:
+        - May be published with the repository (for example CC BY 4.0 or CC0)
+        - For calibration only; only fitted parameters and error figures may be published
+        - Not sure yet
+    validations:
+      required: true
+
+  - type: dropdown
+    id: credit
+    attributes:
+      label: Credit
+      options:
+        - Credit my organisation by name
+        - Do not name us
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: anonymized
+    attributes:
+      label: Before you submit
+      options:
+        - label: This issue contains no data, site name, location, customer, serial number, address or other identifying detail.
+          required: true
