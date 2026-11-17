@@ -243,3 +243,148 @@ def test_the_result_report_reads_every_figure_from_the_recording(
     assert "<script" not in page and "http" not in page.replace('lang="en"', "")
     write_demo(demo, tmp_path)
     assert (tmp_path / "executive.html").read_text(encoding="utf-8") == page
+
+
+def _expected_cells(side: dict[str, Any]) -> list[str]:
+    """The figures of one side of a scenario, worked out here from the recording."""
+    metrics = side["metrics"]
+    kinds = [d["counterfactual"]["kind"] for d in side["decisions"] if d["counterfactual"]]
+    harmed = metrics["critical_pod_minutes"] > 0 or metrics["it_kwh_lost"] > 0
+    return [
+        "yes" if harmed else "no",
+        "yes" if side["passed"] else "no",
+        f"{max(side['series']['hottest_pod_c']):.1f}",
+        f"{metrics['critical_pod_minutes']:.0f}",
+        f"{metrics['it_kwh_lost']:.1f}",
+        f"{metrics['blocked']} of {metrics['proposals']}",
+        str(kinds.count("harm_avoided")),
+        str(kinds.count("false_block")),
+        str(metrics["approvals_requested"]),
+        str(metrics["executed_over_limit"]),
+        f"{metrics['facility_kwh']:,.0f}",
+    ]
+
+
+def _html_cells(page: str) -> list[list[str]]:
+    """The rows of figures in the page's table, as the text of their cells."""
+    import re
+
+    table = page.split("<table class='figures'>", 1)[1].split("</table>", 1)[0]
+    body = table.split("<tbody>", 1)[1]
+    return [re.findall(r"<td>(.*?)</td>", row) for row in body.split("</tr>") if "<td>" in row]
+
+
+def _markdown_cells(text: str) -> dict[str, list[list[str]]]:
+    """The rows of figures under each scenario heading of the Markdown report."""
+    tables: dict[str, list[list[str]]] = {}
+    scenario = ""
+    for line in text.splitlines():
+        if line.startswith("#"):
+            scenario = line.lstrip("# ").split(":")[0] if line.startswith("### ") else ""
+        elif scenario and line.startswith("| ") and "---" not in line:
+            cells = [cell.strip() for cell in line.strip("|").split("|")]
+            if cells[0]:
+                tables.setdefault(scenario, []).append(cells[1:])
+    return tables
+
+
+def test_the_result_report_has_the_figures_of_the_recording_in_both_renditions(
+    demo: dict[str, Any], tmp_path: Path
+) -> None:
+    from agentic_datacenter.scenarios.executive import (
+        LIMITS,
+        render_executive,
+        render_executive_markdown,
+    )
+
+    # Through a file, as a reader of demo.json gets it.
+    write_demo(demo, tmp_path)
+    recording = json.loads((tmp_path / "demo.json").read_text(encoding="utf-8"))
+    page = (tmp_path / "executive.html").read_text(encoding="utf-8")
+    text = (tmp_path / "executive.md").read_text(encoding="utf-8")
+    assert page == render_executive(recording)
+    assert text == render_executive_markdown(recording)
+
+    expected = [
+        [_expected_cells(side) for side in scenario["sides"][:2]]
+        for scenario in recording["scenarios"]
+    ]
+    rows = _html_cells(page)
+    assert len(rows) == 11
+    for index, row in enumerate(rows):
+        assert row == [side[index] for scenario in expected for side in scenario]
+    tables = _markdown_cells(text)
+    assert list(tables) == [s["scenario"] for s in recording["scenarios"]]
+    for scenario, sides in zip(recording["scenarios"], expected, strict=True):
+        assert tables[scenario["scenario"]] == [list(pair) for pair in zip(*sides, strict=True)]
+        assert scenario["title"] in text and scenario["agent"] in text
+
+    # The summary is the sum of the scenarios, the same in both renditions.
+    governed = [s["sides"][1] for s in recording["scenarios"]]
+    proposals = sum(side["metrics"]["proposals"] for side in governed)
+    stopped = sum(side["metrics"]["blocked"] for side in governed)
+    past = sum(side["metrics"]["executed_over_limit"] for side in governed)
+    harmed = [sum(1 for sc in expected if sc[index][0] == "yes") for index in (0, 1)]
+    n = len(recording["scenarios"])
+    for rendition in (page, text):
+        assert f"harmed in {harmed[0]} of {n} scenarios" in rendition
+        assert f"it was harmed in {harmed[1]} of {n}." in rendition
+        assert f"proposed {proposals} commands" in rendition
+        assert f"stopped {stopped} of them" in rendition
+        assert f"let {past} changes past a limit their contract sets" in rendition
+        assert f"{stopped} of {proposals}" in rendition
+        assert recording["label"] in rendition and recording["governed_gate"] in rendition
+        assert "What this report does not show" in rendition
+        assert all(line in rendition for line in LIMITS)
+        assert "demo.json" in rendition
+
+
+def test_the_result_report_is_one_file_that_loads_nothing(demo: dict[str, Any]) -> None:
+    import re
+
+    from agentic_datacenter.scenarios.executive import render_executive
+
+    page = render_executive(demo)
+    assert "http://" not in page and "https://" not in page and "//" not in page
+    for loader in ("<script", "<link", "<img", "<iframe", "<object", "<embed", "<use",
+                   "@import", "url(", "src=", "href=", "@font-face", "javascript:"):  # fmt: skip
+        assert loader not in page.lower(), loader
+    assert not re.search(r"\son\w+\s*=", page), "no event handlers"
+    assert page.count("<style>") == 1 and "prefers-color-scheme: dark" in page
+    assert "@media print" in page and "width=device-width" in page
+    # One chart per scenario, drawn in the page from the recorded series.
+    assert page.count('<svg class="chart"') == len(demo["scenarios"])
+    for scenario in demo["scenarios"]:
+        peaks = [max(side["series"]["hottest_pod_c"]) for side in scenario["sides"][:2]]
+        assert f"peak {peaks[0]:.1f} °C with no control, {peaks[1]:.1f} °C with" in page
+        assert f"{max(peaks):.1f} °C</text>" in page
+
+
+def test_the_result_report_leaves_out_a_figure_the_recording_does_not_have(
+    demo: dict[str, Any],
+) -> None:
+    from agentic_datacenter.scenarios.executive import render_executive, render_executive_markdown
+
+    bare = json.loads(json.dumps(demo))
+    for scenario in bare["scenarios"]:
+        for side in scenario["sides"]:
+            side["series"] = {}
+    page, text = render_executive(bare), render_executive_markdown(bare)
+    assert '<svg class="chart"' not in page and "<polyline" not in page
+    assert "<ul class='legend'>" not in page, "no legend for charts that are not there"
+    for row in (_html_cells(page)[2], *(t[2] for t in _markdown_cells(text).values())):
+        assert set(row) == {"not recorded"}
+    assert "<td>0.0</td>" in page, "the other figures are still there"
+
+
+def test_the_markdown_report_can_show_a_picture_and_link_the_pages(demo: dict[str, Any]) -> None:
+    from agentic_datacenter.scenarios.executive import render_executive_markdown
+
+    plain = render_executive_markdown(demo)
+    assert "![" not in plain and "](executive.html)" in plain and "](index.html)" in plain
+    assert "<" not in plain, "Markdown only, so it reads the same wherever it is shown"
+    shown = render_executive_markdown(
+        demo, screenshot="../media/p.png", page="report.html", technical="all.html"
+    )
+    assert shown.splitlines()[2].startswith("[![") and "](../media/p.png)](report.html)" in shown
+    assert "](all.html)" in shown and "executive.html" not in shown
