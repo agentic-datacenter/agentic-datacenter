@@ -1025,6 +1025,7 @@ CI is how this SDD is enforced: every structural rule, requirement and reproduci
 | `integration` | Merge queue and on request | Protocol tests on real sockets in `compose` mode; install-and-test without REMORA; install-and-test without `agentic-datacenter-iec61850`; REMORA pin checks; cross-architecture determinism | 30 min |
 | `nightly` | Schedule | Full scenario matrix with both scripted agents under every operating profile, 30 seeds; property tests with random seeds; fidelity comparison suite; performance budget; weekly mutation testing | 3 h |
 | `bench` | Manual and on release | Benchmark on a frozen version: result card, counterfactual replay; language-model agent runs only here, started by a person | Unbounded |
+| `bench-runner` | Manual only | A benchmark tier on a self-hosted machine labelled `bench` (Linux, macOS or Windows), run on the host because a container is not available on all three, then the release check; card and report kept as an artifact (`docs/guides/bench-runner.md`) | Unbounded |
 | `pin-bump` | PR touching `REMORA_PIN` | Only pin and lock changed; register fetch; binding contract test; scenario matrix difference against the previous pin | 3 h |
 | `release` | Signed tag | Wheels and source distributions, software bill of materials, build provenance, documentation site, GitHub Release with evidence bundle and result card | 30 min |
 

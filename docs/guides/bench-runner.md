@@ -5,7 +5,7 @@ A `standard`, `season` or `full` run takes hours. A spare machine registered as 
 ## Start a run
 
 ```sh
-gh workflow run bench.yml -R darklordVirtual/agentic-datacenter -f tier=standard -f gates=remora_governed
+gh workflow run bench-runner.yml -R darklordVirtual/agentic-datacenter -f tier=standard -f gates=remora_governed
 gh run watch -R darklordVirtual/agentic-datacenter                       # follow it
 gh run download -R darklordVirtual/agentic-datacenter <run-id>           # the card, report and check
 ```
@@ -18,7 +18,7 @@ gh run download -R darklordVirtual/agentic-datacenter <run-id>           # the c
 | `first_seed`, `seeds` | a part of a season, to be merged with the others (`agentic-datacenter bench merge`) |
 | `jobs` | runs at a time; empty is every core but one |
 
-The workflow (`.github/workflows/bench.yml`) runs the benchmark and then the release check for each gate. It keeps the card, the report and the check's output for 90 days. It runs only when started by hand, never on a pull request.
+The workflow (`.github/workflows/bench-runner.yml`) runs the benchmark and then the release check for each gate. It keeps the card, the report and the check's output for 90 days. It runs only when started by hand, never on a pull request.
 
 ## Set up the machine
 
