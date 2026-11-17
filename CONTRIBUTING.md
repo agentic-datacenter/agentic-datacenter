@@ -56,7 +56,7 @@ For a small change, run the tests that touch what changed first. `uv run python 
 | A profile value | Its `source` or `assumed` field |
 | A test for a requirement | The marker `@pytest.mark.req("ADC-XXX-NNN")` |
 
-A pin bump is its own PR. It changes only `REMORA_PIN` and `uv.lock`, names the new tag, and attaches the scenario-matrix metric difference against the previous pin.
+A pin bump is its own PR. It changes only `REMORA_PIN` and `uv.lock`, names the new tag, and attaches the scenario-matrix metric difference against the previous pin. The `pin-bump` workflow checks the first and makes the second: `uv run python tools/ci_local.py --workflow pin-bump --base main` runs it on your machine and leaves the difference in `build/pin-diff/pin-diff.md`. The one time it was run, on a replay of the last bump, it took 23 minutes.
 
 ## Gates from other projects
 
