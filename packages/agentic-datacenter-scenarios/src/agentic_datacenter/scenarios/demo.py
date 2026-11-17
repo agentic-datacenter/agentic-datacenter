@@ -120,8 +120,11 @@ def build_demo(
     full: bool = False,
     progress: Callable[[str], None] | None = None,
     on_result: Callable[[Scenario, str, RunResult], None] | None = None,
+    only: Sequence[str] = (),
 ) -> dict[str, Any]:
     """Record the three demonstration scenarios without a gate and with *governed_gate*.
+
+    *only* keeps the demonstration scenarios with those ids, in their own order.
 
     Both sides of a scenario start from the same seed. Each proposal the gate
     blocked is replayed as if it had been executed, so the page can show what
@@ -132,6 +135,8 @@ def build_demo(
     say = progress or (lambda _: None)
     scenarios = []
     for scenario_id, agent_name in DEMO_SCENARIOS:
+        if only and scenario_id not in only:
+            continue
         scenario = load_scenario(scenario_id)
         wanted = seconds or (
             scenario.duration_s if full else DEFAULT_SECONDS.get(scenario_id, scenario.duration_s)
