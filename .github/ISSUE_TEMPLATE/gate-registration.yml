@@ -10,7 +10,7 @@ body:
 
         Register your **exact, fixed version** now. You can connect your gate, run the interface check and share results later in this issue. No code, API keys or test results need to be pasted here.
 
-        This is registration for Season 1 / `benchmark-v1`. Only the version recorded **before the deadline** is eligible for the hidden Track D. [How the public test works](../../docs/bench/PUBLIC_TEST.md).
+        This is registration for Season 1 / `benchmark-v1`. Only the version recorded **before the deadline** is eligible for the hidden Track D. [How the public test works](https://github.com/darklordVirtual/agentic-datacenter/blob/main/docs/bench/PUBLIC_TEST.md).
 
   - type: input
     id: gate
