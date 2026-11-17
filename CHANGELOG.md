@@ -4,6 +4,12 @@ Changes that matter to someone using or reviewing Agentic-Datacenter. Each distr
 
 ## Unreleased
 
+### Long runs: how much memory they need
+
+Changed
+
+- `docs/guides/bench-runner.md` says how much memory a `standard` run needs (about 14 GB at the peak with nine runs of `OP-10` at a time), and how to give WSL2 more.
+
 ### IEC 61850 client: an association that is made can be used
 
 Fixed
