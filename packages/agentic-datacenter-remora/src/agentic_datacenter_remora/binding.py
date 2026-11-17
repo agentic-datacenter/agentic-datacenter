@@ -8,7 +8,7 @@ profile, and its results must never be described as governed execution.
 
 What the binding tells REMORA (the observation) is built only from what the
 control path read itself from the supervisory layer. The mapping is documented
-in ``docs/design/remora_binding.md``, section 7, and is this project's
+in ``docs/design/remora_binding.md``, section 2, and is this project's
 interpretation until the REMORA maintainer confirms it.
 """
 
