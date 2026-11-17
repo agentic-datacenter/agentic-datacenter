@@ -4,6 +4,12 @@ Changes that matter to someone using or reviewing Agentic-Datacenter. Each distr
 
 ## Unreleased
 
+### IEC 61850 client: an association that is made can be used
+
+Fixed
+
+- `MmsClient` no longer answers `connection-lost` on a connection that is open. On a loaded machine libiec61850 1.6.1 could leave a new association marked as still being made, and then refused every request on it; the protocol tests failed now and then with all cores busy. The client now drives its association from a thread of its own, started after the library has noted the attempt (ADR 0017, addendum).
+
 ### Long runs on a machine of our own
 
 Added

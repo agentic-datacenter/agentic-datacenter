@@ -4,12 +4,20 @@ It does what a supervisory client does (browse, read, take reports) and what
 a misused one would try (operate, select, write, change the setting group,
 use the file services), so the tests can show each answer on a real socket.
 It connects to loopback only.
+
+The client drives its association from a thread of its own. The library's
+thread can finish the association before the library has noted that one is
+being made; the note then replaces "connected", and every request on the open
+connection is answered "connection-lost" (libiec61850 1.6.1,
+``MmsConnection_connectAsync``; ADR 0017). Here nothing drives the
+association until that note is made.
 """
 
 from __future__ import annotations
 
 import ctypes
 import queue
+import threading
 from dataclasses import dataclass
 from typing import Any
 
@@ -91,11 +99,18 @@ class MmsClient:
         self.reports: queue.Queue[Report] = queue.Queue()
         self._handlers: list[Any] = []
         self._members: dict[str, tuple[str, ...]] = {}
-        self._connection = self._lib.IedConnection_create()
+        # Without a thread of the library's: see the module docstring.
+        self._connection = self._lib.IedConnection_createEx(None, False)
         self._lib.IedConnection_setRequestTimeout(self._connection, timeout_ms)
         address = "127.0.0.1" if host == "localhost" else host
-        self._lib.IedConnection_connect(self._connection, self._error, address.encode(), port)
+        self._lib.IedConnection_connectAsync(self._connection, self._error, address.encode(), port)
+        self._stop = threading.Event()
+        self._driver = threading.Thread(target=self._drive, name=f"mms-{port}", daemon=True)
+        self._driver.start()
+        if self._error.value == self._k.IED_ERROR_OK and not self._associated():
+            self._error.value = self._k.IED_ERROR_CONNECTION_REJECTED
         if self._error.value != self._k.IED_ERROR_OK:
+            self._stop_driving()
             self._lib.IedConnection_destroy(self._connection)
             self._connection = None
             raise ConnectionError(f"no MMS association with {host}:{port}: {self._result()}")
@@ -108,9 +123,28 @@ class MmsClient:
         """Close the association."""
         self.close()
 
+    def _drive(self) -> None:
+        """Do the connection's work: receive, deliver answers and reports, time requests out."""
+        tick, connection = self._lib.IedConnection_tick, self._connection
+        while not self._stop.is_set():
+            if tick(connection):  # nothing to do right now
+                self._stop.wait(0.01)
+
+    def _associated(self) -> bool:
+        """Wait for the association to be made or given up; the library times it out."""
+        state, k = self._lib.IedConnection_getState, self._k
+        while (now := state(self._connection)) not in (k.IED_STATE_CONNECTED, k.IED_STATE_CLOSED):
+            self._stop.wait(0.001)
+        return bool(now == k.IED_STATE_CONNECTED)
+
+    def _stop_driving(self) -> None:
+        self._stop.set()
+        self._driver.join()
+
     def close(self) -> None:
         """Release the association."""
         if self._connection is not None:
+            self._stop_driving()
             self._lib.IedConnection_close(self._connection)
             self._lib.IedConnection_destroy(self._connection)
             self._connection = None
