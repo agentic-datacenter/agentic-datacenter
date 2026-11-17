@@ -44,7 +44,7 @@ Tooling
 - Ten Python distributions in one `uv` workspace with one lock, and import-linter contracts for the boundaries between them.
 - Requirement traceability: tests carry the requirement they verify, and `tools/traceability.py` fails when a requirement that is due has no passing test or no owner. `docs/reference/requirements.md` lists which requirements are due and which are still open.
 - Reference pages generated from the code, and a strict documentation build.
-- Workflows in one digest-pinned image, with `tools/ci_local.py` to run the same jobs on a machine of your own.
+- Workflows whose jobs run in one digest-pinned image, the benchmark runner excepted, with `tools/ci_local.py` to run the same jobs on a machine of your own.
 - A devcontainer for GitHub Codespaces.
 
 ### What it cannot do yet
