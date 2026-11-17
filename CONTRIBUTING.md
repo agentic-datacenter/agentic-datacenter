@@ -35,7 +35,7 @@ For a small change, run the tests that touch what changed first. `uv run python 
 - Stays under about 1,500 changed lines, not counting generated maps and fixtures. Split it if it is larger.
 - Is merged by a person. Nobody merges their own PR, and nothing merges automatically.
 - Adds no dependency beyond those in section 5 of the design document without an ADR.
-- Carries no authorship or co-author trailer naming an AI tool, in commits or in files.
+- Carries no authorship or co-author trailer naming an AI tool, in commits or in files (`tests/conformance/test_authorship.py`).
 
 ## Things that are never done here
 
