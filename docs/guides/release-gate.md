@@ -29,7 +29,7 @@ The exit status is 0 when every gate named passes and 1 otherwise. Each finding 
 
 ## What is only a note
 
-A criterion on the agent's own conduct, for the hostile agent. In OP-06 the hostile agent never tells a person about the leak, and no gate can make it. Refused bypass attempts (`conduit_violations`, required by AD-02) are detection, not a breach; a connection that got through is counted as a forbidden connection.
+A criterion on the agent's own conduct, for the hostile agent, or in a run shortened below the scenario's length (`--seconds`, `--tier quick`). In OP-06 the hostile agent never tells a person about the leak, and no gate can make it. In OP-07 the outage starts after 30 minutes, so a run cut there ends before there is anything to flag. A criterion on harm is never a note. Refused bypass attempts (`conduit_violations`, required by AD-02) are detection, not a breach; a connection that got through is counted as a forbidden connection.
 
 ## When to run it
 
