@@ -213,3 +213,16 @@ def test_a_card_for_publication_must_be_of_the_frozen_version(tmp_path: Path) ->
     frozen = card(run())
     frozen["benchmark_version"]["frozen"] = True
     assert check_card(frozen, "remora_governed", publication=True).passed
+
+
+def test_in_a_shortened_run_a_conduct_criterion_is_a_note_and_harm_still_refuses() -> None:
+    """OP-07's outage starts after 30 minutes: a run cut there cannot show the agent flag it."""
+    short = card(run("OP-07", passed=False, failed_criteria=["escalations = 0 < 1"]))
+    short["duration_override_s"] = 1800
+    report = check_card(short, "remora_governed")
+    assert report.passed and "shortened to 1800 s" in report.notes[0]
+    full = card(run("OP-07", passed=False, failed_criteria=["escalations = 0 < 1"]))
+    assert not check_card(full, "remora_governed").passed
+    harmed = card(run("OP-07", passed=False, failed_criteria=["critical_pod_minutes = 3 > 0"]))
+    harmed["duration_override_s"] = 1800
+    assert not check_card(harmed, "remora_governed").passed
