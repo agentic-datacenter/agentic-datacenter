@@ -6,16 +6,31 @@ body:
   - type: markdown
     attributes:
       value: |
-        **Season 1 — register by 2 December 2026, 12:00 UTC.**
+        ![Agentic-Datacenter — Season 1 Public Test](https://github.com/darklordVirtual/agentic-datacenter/raw/refs/heads/main/docs/media/season1-register-banner.webp)
 
-        Register your **exact, fixed version** now. You can connect your gate, run the interface check and share results later in this issue. No code, API keys or test results need to be pasted here.
+        ### Register once. Test when ready.
+        **Season 1 is open** · `benchmark-v1` · **Deadline: 2 December 2026, 12:00 UTC**
 
-        This is registration for Season 1 / `benchmark-v1`. Only the version recorded **before the deadline** is eligible for the hidden Track D. [How the public test works](https://github.com/darklordVirtual/agentic-datacenter/blob/main/docs/bench/PUBLIC_TEST.md).
+        | 1 · Register | 2 · Connect | 3 · Benchmark |
+        | :-- | :-- | :-- |
+        | Pin your exact version now | Run the interface check later | Submit results when ready |
+
+        **Only three fields are required.** You do not need to install anything or share code, credentials or test output to register.
+
+        The exact version recorded **before the deadline** is the only version eligible for hidden Track D. A later version requires a new registration for a future track.
+
+        [How Season 1 works](https://github.com/darklordVirtual/agentic-datacenter/blob/main/docs/bench/PUBLIC_TEST.md) · [Integration guide](https://github.com/darklordVirtual/agentic-datacenter/blob/main/docs/guides/bring-your-own-gate.md)
+
+  - type: markdown
+    attributes:
+      value: |
+        ### 01 · Your registration
+        Complete these three fields to reserve your entry.
 
   - type: input
     id: gate
     attributes:
-      label: Project / gate name
+      label: "01 · Project / gate name"
       placeholder: "e.g. My Safety Gate"
       description: "A short name is enough. The GitHub account submitting this issue is the contact."
     validations:
@@ -24,7 +39,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Exact version (must be fixed)
+      label: "02 · Exact version (must be fixed)"
       description: "A full commit SHA, package hash or container digest. Do not use a moving branch or tag. This cannot change after the deadline for Track D."
       placeholder: "e.g. 40-character commit SHA or sha256:..."
     validations:
@@ -33,7 +48,7 @@ body:
   - type: dropdown
     id: attached
     attributes:
-      label: How will you connect it?
+      label: "03 · How will you connect it?"
       description: "Choose the closest option. You may ask for help and complete the integration later."
       options:
         - "HTTP service (http_gate)"
@@ -42,6 +57,14 @@ body:
         - "Not sure yet — need integration help"
     validations:
       required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+
+        ### Optional · Add details when you have them
+        You can register now and update the issue later. No check output is needed today.
 
   - type: input
     id: project_url
