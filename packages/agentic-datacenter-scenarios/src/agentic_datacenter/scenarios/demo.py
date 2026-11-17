@@ -311,6 +311,8 @@ def _counterfactual_text(judgement: Mapping[str, Any]) -> str:
         "safe_useful": "false block",
         "safe_neutral": "no difference",
     }[str(judgement["label"])]
+    if judgement.get("kind") == "approval_declined":
+        verdict = "a person declined the approval the contract requires"
     return (
         f"{verdict}: had it been executed, {out_of_bounds:+.1f} POD-minutes out of bounds, "
         f"{float(judgement['delta_it_kwh_lost']):+.1f} kWh IT load lost, "

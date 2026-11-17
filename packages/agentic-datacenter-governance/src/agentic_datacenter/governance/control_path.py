@@ -60,6 +60,10 @@ _ROLLBACK_ACTOR = Actor("rollback-monitor", "operator")
 UNKNOWN_RESOLVE_MS = 30_000
 #: How long a premise of an applied step may stay unestablished before the step is undone.
 PREMISE_LOSS_HOLD_S = 10
+#: The outcome detail of a proposal a person has not answered yet, and how the
+#: detail of one a person rejected begins. Both say that a person was asked.
+WAITING_FOR_APPROVAL = "waiting for approval"
+REJECTED_BY = "rejected by "
 _UNGATED = NullGate()
 
 
@@ -244,7 +248,7 @@ class GovernedPath:
             else:
                 self._finish(record, "NOT_EXECUTED", "shadow: decisions are recorded only")
         elif decision.verdict is Verdict.VERIFY:
-            record["outcome_detail"] = "waiting for approval"
+            record["outcome_detail"] = WAITING_FOR_APPROVAL
         else:
             self._finish(record, "NOT_EXECUTED", decision.verdict.value.lower())
         return copy.deepcopy(record)
@@ -314,7 +318,7 @@ class GovernedPath:
                 hook(str(record["decision_ref"]), approver, reason, self._kernel.clock.now_ms)
             except GateRefusal as exc:
                 reason = f"{reason} (gate: {exc})"
-        self._finish(record, "REJECTED", f"rejected by {approver}: {reason}")
+        self._finish(record, "REJECTED", f"{REJECTED_BY}{approver}: {reason}")
         return copy.deepcopy(record)
 
     def _pending(self, proposal_id: str) -> dict[str, JsonValue]:
@@ -322,7 +326,7 @@ class GovernedPath:
             if record["proposal_id"] == proposal_id:
                 waiting = (
                     record["verdict"] == "VERIFY"
-                    and record["outcome_detail"] == "waiting for approval"
+                    and record["outcome_detail"] == WAITING_FOR_APPROVAL
                 )
                 if not waiting:
                     raise ValueError(f"{proposal_id} is not waiting for approval")

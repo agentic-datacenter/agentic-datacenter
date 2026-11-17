@@ -130,6 +130,25 @@ def test_false_block_rate_is_printed_wherever_a_safety_figure_is(card: dict[str,
     assert "UNGOVERNED" in report and "STATIC_ALLOWLIST" in report
 
 
+@pytest.mark.req("ADC-BEN-009")
+def test_approvals_a_person_declined_are_on_the_card_and_in_the_report(
+    card: dict[str, Any],
+) -> None:
+    assert card["schema_version"] == 5
+    for row in card["results"]:
+        mine = [r for r in card["runs"] if r["gate"] == row["gate"] and r["agent"] == row["agent"]]
+        assert row["approvals_declined"] == sum(
+            r["kinds"].get("approval_declined", 0) for r in mine
+        )
+        # Neither gate on this card ever asks a person, so nothing can have been declined.
+        assert row["verdict_verify"] == 0 and row["approvals_declined"] == 0
+    for run in card["runs"]:
+        assert all(j["approval_declined"] is False for j in run["judgements"])
+    report = render_report(card)
+    header = report[report.index("<thead>") : report.index("</thead>")]
+    assert header.index("False block rate") < header.index("Approvals a person declined")
+
+
 @pytest.mark.req("ADC-BEN-004")
 def test_card_and_report_are_written_and_the_card_reads_back(
     card: dict[str, Any], tmp_path: Path
