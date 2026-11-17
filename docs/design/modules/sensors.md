@@ -34,7 +34,7 @@ None of its own. Readings appear as points of the module that owns the sensor.
 
 | Parameter | Default | Unit | Source |
 | --- | --- | --- | --- |
-| `temperature_accuracy_c` | 0.5 | °C | `assumed: true` (the restricted reference gives the same class) |
+| `temperature_accuracy_c` | 0.5 | °C | `assumed: true` |
 | `humidity_accuracy_pct` | 5.0 | % RH | `assumed: true` |
 | `resolution_digits` | 2 | decimals | `assumed: true` |
 

@@ -18,3 +18,7 @@ Protocol, optional. One IEC 61850 MMS server per protection relay of the 36 kV s
 ```sh
 uv run --group iec61850 agentic-datacenter scl export --profile profiles/generic_dc.yaml --out build/scl
 ```
+
+## Licence
+
+This distribution is GPL-3.0-or-later. The packages it depends on, `agentic-datacenter-core` and `agentic-datacenter-supervisory`, and the plant it serves are under the Business Source License 1.1, and the server runs in one process with them. You may run that. You may not convey the library, this distribution and those packages together as one work, for example in a container image, because the two licences are not compatible (ADR 0004).

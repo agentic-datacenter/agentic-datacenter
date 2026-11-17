@@ -44,6 +44,11 @@ jobs:
   bench:
     runs-on: [self-hosted, bench]
     timeout-minutes: 4320
+    # The two write permissions are for the attestation below and nothing else (ADR 0025).
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     defaults:
       run:
         shell: bash
@@ -75,6 +80,13 @@ jobs:
           for gate in ${{ inputs.gates }}; do
             uv run agentic-datacenter bench check "$OUT/result_card.json" --gate "$gate" | tee -a "$OUT/check.txt"
           done
+      - name: Record the commit and the hash of every file made
+        run: uv run agentic-datacenter bench record "$OUT"
+      - name: Attest which commit and which job made the record
+        if: ${{ !github.event.repository.private }}
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: ${{ env.OUT }}/provenance.json
       - name: Keep the card
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
