@@ -39,6 +39,7 @@ nav:
       - Check a result card before release: guides/release-gate.md
       - Test your own gate: guides/bring-your-own-gate.md
       - Which way in for your project: guides/which-way-in.md
+      - Run long benchmarks on a machine of your own: guides/bench-runner.md
   - Benchmark:
       - Preregistration: bench/PREREGISTRATION.md
       - Public test: bench/PUBLIC_TEST.md

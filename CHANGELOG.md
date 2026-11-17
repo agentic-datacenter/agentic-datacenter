@@ -4,6 +4,16 @@ Changes that matter to someone using or reviewing Agentic-Datacenter. Each distr
 
 ## Unreleased
 
+### Long runs on a machine of our own
+
+Added
+
+- `.github/workflows/bench.yml`: a benchmark on a self-hosted runner labelled `bench`, started by hand with `gh workflow run`. The card, report and release check come back as an artifact. Guide: `docs/guides/bench-runner.md`.
+
+Changed
+
+- With `--jobs`, the longest runs start first, so they run beside the short ones instead of after them. The card is unchanged.
+
 ### A first look in a minute
 
 Added
