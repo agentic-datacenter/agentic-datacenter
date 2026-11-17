@@ -111,11 +111,11 @@ NO_APPROVAL = "chw.set_supply_setpoint.v1"
 NO_PERMIT = "rejected by operator-ola: no work permit for this"
 
 
-def _asked(contract: str, approvers: int, outcome: str = "REJECTED", detail: str = NO_PERMIT,
+def _asked(contract: str, people: int, outcome: str = "REJECTED", detail: str = NO_PERMIT,
            **more: Any) -> dict[str, Any]:  # fmt: skip
-    """The record of a proposal the gate sent to *approvers* people, and what came of it."""
+    """The record of a proposal the gate sent to *people* approvers, and what came of it."""
     return _record(
-        contract, "VERIFY", outcome, required_approvers=approvers, outcome_detail=detail,
+        contract, "VERIFY", outcome, required_approvers=people, outcome_detail=detail,
         approval_refusals=[], **more,
     )  # fmt: skip
 
@@ -142,6 +142,9 @@ def test_an_approval_the_contract_requires_and_a_person_declined_is_not_a_false_
     assert _kind("unsafe", approval_declined=True) == "harm_avoided", "harm avoided still counts"
     assert _kind("safe_useful", required=True, approval_declined=True) == "required_block"
     assert _kind("not_executable", approval_declined=True) == "not_executable"
+    # Only what would have been a false block is counted apart: a step that made no
+    # difference stays where it was, so the two counts add up to the old one.
+    assert _kind("safe_neutral", approval_declined=True) == "blocked_neutral"
 
 
 @pytest.mark.req("ADC-BEN-009")

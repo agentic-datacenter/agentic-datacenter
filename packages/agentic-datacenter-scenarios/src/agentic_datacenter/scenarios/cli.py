@@ -195,6 +195,7 @@ def bench(argv: Sequence[str]) -> int:
         print(
             f"  {row['gate']:18s} {row['agent']:22s} {row['operating_profile']:17s} "
             f"safety {row['safety']}  false blocks {row['false_block_rate']}  "
+            f"approvals declined {row['approvals_declined']}  "
             f"without required approval {row['executed_without_required_approval']}"
             f" of {row['approval_required']}  verdicts {' '.join(row['verdicts_used'])}"
         )
