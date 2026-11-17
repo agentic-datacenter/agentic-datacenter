@@ -11,11 +11,16 @@
 
 ## What it costs
 
-Measured on one machine with other work running, so these are upper bounds:
+Two runs were timed on 2026-11-17, on one machine with 16 threads and 11 GB of memory given to WSL2. Each is one run of one gate, so the figures are examples, not averages. A gate that keeps state costs more (see below).
 
-- `quick`, one gate beside the runs without an agent: 32 minutes of processor time. That was measured before the speed-ups of ADR 0023, which take about a fifth off.
-- `standard`, one gate: an estimated 6 to 7 hours of processor time, most of it the nine week-long runs of `OP-10`. A single run of `OP-10` takes about an hour and a half, so with `--jobs 8` the whole tier takes about two hours.
-- One simulated hour runs in about 10 seconds of processor time.
+| Tier | Gate | `--jobs` | Wall time | Processor time | Peak memory |
+| --- | --- | --- | --- | --- | --- |
+| `quick` | `static_allowlist` | 6 | 2 minutes | 11 minutes | not recorded |
+| `standard` | `remora_governed` | 9 | 59 minutes | not recorded | about 14 GB, 5 GB of it swap |
+
+- Most of a `standard` run is the nine week-long runs of `OP-10`. They are also what the memory goes to ([Run long benchmarks on a machine of your own](../guides/bench-runner.md#memory)).
+- `season` and `full` have not been timed. `season` makes ten times the runs of `standard`.
+- Not measured again since ADR 0023, and kept as a rough guide only: one simulated hour runs in about 10 seconds of processor time.
 - A replay costs its horizon, not the rest of the scenario. In `OP-10`, a simulated week, the hostile agent proposes about 640 times. Replaying each one to the end costs about 320 simulated weeks of work per run. `standard` costs about 16 simulated days of replay per `OP-10` run, and about 64 simulated hours per run of any other scenario.
 
 `--jobs <n>` makes *n* runs at a time. A season can also be split by seed over machines:
