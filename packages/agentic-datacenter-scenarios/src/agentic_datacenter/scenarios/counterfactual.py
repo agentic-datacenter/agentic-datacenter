@@ -158,6 +158,11 @@ def judge_run(
     branch is played from the start of the run otherwise, or when
     *gate_snapshots* is false. Both give the same judgements; the first is
     much faster (ADC-BEN-003).
+
+    A capture or a gate snapshot is kept only for as long as a branch is still
+    to start from it. For a gate restored from snapshots, the plant is captured
+    in the second run and at the instants to be judged only, so the memory a
+    run needs does not grow with the number of its decision points.
     """
 
     def new_run() -> ScenarioRun:
@@ -175,13 +180,20 @@ def judge_run(
 
     actual_run = new_run()
     actual_run.observer = observer
+    restorable = getattr(actual_run.gate, "restorable", True)
+    snapshots = gate_snapshots and not restorable and hasattr(actual_run.gate, "snapshot_state")
+    if not restorable:
+        # No branch starts from a capture of this run: with gate snapshots they
+        # are taken in a second run, at the instants to be judged only. A capture
+        # holds every record so far, and a long run has hundreds of decision points.
+        actual_run.capture_at = ()
     actual = actual_run.run(keep_captures=True)
     candidates = []
     for record in actual.records:
         if record["verdict"] is None:
             continue
         second = (int(str(record["time_ms"])) // 1000) - scenario.warmup_s
-        if second not in actual_run.captures:
+        if second not in actual_run.decision_points:
             continue
         was_executed = record["outcome"] in ("APPLIED", "ROLLED_BACK")
         if was_executed and only_blocked:
@@ -200,26 +212,32 @@ def judge_run(
         "horizon_s": horizon_s, "max_judged": max_judged,
         "candidates": len(candidates), "judged": len(chosen),
     }  # fmt: skip
-    restorable = getattr(actual_run.gate, "restorable", True)
-    snapshots = gate_snapshots and not restorable and hasattr(actual_run.gate, "snapshot_state")
+    wanted = {second for _, second, _ in chosen}
     source = actual_run
     if snapshots and chosen:
-        # The gate's state is kept apart from the capture: run once more,
-        # keeping it at the instants to be judged. The same seed gives the same run.
+        # The gate's state is kept apart from the capture: run once more, keeping
+        # both at the instants to be judged and nowhere else. The same seed gives
+        # the same run.
         source = new_run()
-        source.snapshot_gate_at = {second for _, second, _ in chosen}
+        source.capture_at = source.snapshot_gate_at = wanted
         source.advance(source.length, keep_captures=True)
+    for second in set(actual_run.captures) - wanted:
+        del actual_run.captures[second]
     actual.judging["branches_from"] = (
         "capture" if restorable else "gate snapshot" if snapshots else "start of run"
     )
     judgements = []
-    for record, second, was_executed in chosen:
+    for index, (record, second, was_executed) in enumerate(chosen):
         proposal_id = str(record["proposal_id"])
         branch = new_run()
         if restorable or snapshots:
             branch.restore(source.captures[second])
         if snapshots:
             branch.gate.restore_state(source.gate_snapshots[second])  # type: ignore[attr-defined]
+        if all(later != second for _, later, _ in chosen[index + 1 :]):
+            # The last branch from this instant: its state is not needed again.
+            source.captures.pop(second, None)
+            source.gate_snapshots.pop(second, None)
         # Otherwise the gate keeps records of its own that cannot be put back, and
         # the branch is played from the start: the same seed gives the same run up
         # to this decision.

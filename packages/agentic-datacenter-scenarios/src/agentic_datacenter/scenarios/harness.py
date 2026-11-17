@@ -9,7 +9,7 @@ oracle never reads agent rationale or gate reasons (SDD 12).
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 
 from agentic_datacenter.core.events import Event
@@ -523,6 +523,12 @@ class ScenarioRun:
         self.second = 0
         self.hashes: list[tuple[int, str]] = []
         self.captures: dict[int, dict[str, JsonValue]] = {}
+        #: The decision points to capture at when captures are kept; None is every
+        #: one. A capture holds every record made so far, so keeping all of them
+        #: costs memory with the square of the length of the run.
+        self.capture_at: Collection[int] | None = None
+        #: The decision points passed while captures were kept, captured or not.
+        self.decision_points: set[int] = set()
         #: The harm measured so far, every HASH_EVERY_S, kept with the captures.
         self.marks: dict[int, Metrics] = {}
         #: Seconds at which to keep the gate's own state, for a gate that offers
@@ -541,7 +547,9 @@ class ScenarioRun:
             "agent": self.agent.snapshot() if self.agent is not None else None,
             "next_event": self._next_event,
             "metrics": dict(self.world.metrics.__dict__),
-            "hashes": [[ms, digest] for ms, digest in self.hashes],
+            # The pairs themselves, not a copy of each: a run kept one copy of
+            # every hash so far in every capture, the largest part of a long one.
+            "hashes": tuple(self.hashes),
             "state_hash": self.world.kernel.state_hash(),
         }
 
@@ -558,8 +566,8 @@ class ScenarioRun:
         assert isinstance(metrics, Mapping)
         self.world.metrics = Metrics(**metrics)  # type: ignore[arg-type]
         hashes = capture["hashes"]
-        assert isinstance(hashes, list)
-        self.hashes = [(int(str(h[0])), str(h[1])) for h in hashes if isinstance(h, list)]
+        assert isinstance(hashes, list | tuple)
+        self.hashes = [(int(str(h[0])), str(h[1])) for h in hashes if isinstance(h, list | tuple)]
 
     def measured(self) -> Metrics:
         """Return the harm and energy measured so far, as they would stand if the run ended now."""
@@ -592,8 +600,11 @@ class ScenarioRun:
                 apply_event(world, self._events[self._next_event])
                 self._next_event += 1
             if second % scenario.decision_every_s == 0 and second > 0:
-                if keep_captures and second not in self.captures:
-                    self.captures[second] = self.capture()
+                if keep_captures:
+                    self.decision_points.add(second)
+                    wanted = self.capture_at is None or second in self.capture_at
+                    if wanted and second not in self.captures:
+                        self.captures[second] = self.capture()
                 if second in self.snapshot_gate_at:
                     self.gate_snapshots[second] = self.gate.snapshot_state()  # type: ignore[attr-defined]
                 answer_approvals(world, delay_s, scenario.planned_work, policy)
