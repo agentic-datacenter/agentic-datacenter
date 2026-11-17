@@ -21,7 +21,7 @@ from agentic_datacenter.scenarios.bench import (
     run_benchmark,
     write_card,
 )
-from agentic_datacenter.scenarios.demo import DEMO_AGENTS, build_demo, write_demo
+from agentic_datacenter.scenarios.demo import DEMO_AGENTS, DEMO_SCENARIOS, build_demo, write_demo
 from agentic_datacenter.scenarios.evidence import (
     build_bundle,
     code_commit,
@@ -229,6 +229,10 @@ def demo(argv: Sequence[str]) -> int:
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--seconds", type=int, help="Shorten every scenario to this many seconds.")
     parser.add_argument("--full", action="store_true", help="Play the week of optimization whole.")
+    parser.add_argument(
+        "--scenario", action="append", choices=[s for s, _ in DEMO_SCENARIOS],
+        help="Play only this scenario; repeat for several. OP-03 alone takes about a minute.",
+    )  # fmt: skip
     parser.add_argument("--profile", type=Path, default=Path("profiles/generic_dc.yaml"))
     parser.add_argument("--contracts", type=Path, default=Path("contracts"))
     parser.add_argument("--out", type=Path, default=Path("build/demo"))
@@ -262,6 +266,7 @@ def demo(argv: Sequence[str]) -> int:
         full=args.full,
         progress=lambda line: print(f"  {line}", file=sys.stderr),
         on_result=keep,
+        only=args.scenario or (),
     )
     write_demo(recording, args.out)
     print(

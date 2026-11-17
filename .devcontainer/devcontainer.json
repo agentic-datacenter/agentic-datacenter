@@ -1,0 +1,14 @@
+{
+  "name": "Agentic-Datacenter",
+  "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
+  "postCreateCommand": "pip install --user uv && uv sync",
+  "postAttachCommand": "echo 'Try: uv run agentic-datacenter demo --scenario OP-03 --gate static_allowlist --out build/first-run'",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "charliermarsh.ruff"
+      ]
+    }
+  }
+}
