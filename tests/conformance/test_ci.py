@@ -12,7 +12,9 @@ import yaml
 REPO = Path(__file__).resolve().parents[2]
 WORKFLOWS = sorted((REPO / ".github/workflows").glob("*.yml"))
 PACKAGES = sorted(p.name for p in (REPO / "packages").iterdir() if p.is_dir())
-EXPECTED_WORKFLOWS = {"pr", "integration", "nightly", "bench", "pin-bump", "release"}
+EXPECTED_WORKFLOWS = {
+    "pr", "integration", "nightly", "bench", "bench-runner", "pin-bump", "release",
+}  # fmt: skip
 
 
 def jobs() -> list[tuple[str, str, dict]]:  # type: ignore[type-arg]
@@ -23,7 +25,7 @@ def jobs() -> list[tuple[str, str, dict]]:  # type: ignore[type-arg]
     return out
 
 
-def test_the_six_workflows_of_the_design_exist() -> None:
+def test_the_workflows_of_the_design_exist() -> None:
     assert {p.stem for p in WORKFLOWS} == EXPECTED_WORKFLOWS
 
 
@@ -40,9 +42,19 @@ def test_every_third_party_action_is_pinned_by_commit_sha() -> None:
     assert unpinned == []
 
 
+#: Jobs on the self-hosted benchmark runner run on the host, because that runner may
+#: be Linux, macOS or Windows, where a container is not available. They check
+#: nothing about a change; they make result cards (docs/guides/bench-runner.md).
+ON_THE_HOST = {("bench-runner", "bench")}
+
+
 @pytest.mark.req("ADC-CI-003")
 def test_every_job_runs_in_the_digest_pinned_reference_image() -> None:
-    images = {(wf, name, str(job.get("container", ""))) for wf, name, job in jobs()}
+    images = {
+        (wf, name, str(job.get("container", "")))
+        for wf, name, job in jobs()
+        if (wf, name) not in ON_THE_HOST
+    }
     assert all(re.search(r"@sha256:[0-9a-f]{64}$", image) for _, _, image in images), images
     assert len({image for _, _, image in images}) == 1, "one reference image for every job"
 
@@ -198,3 +210,13 @@ def test_notices_list_the_reference_and_the_standards_and_state_no_reproduction(
     assert "No text from it is reproduced" in notices
     for standard in ("62443-3-2", "62443-3-3", "EN 15232", "ASHRAE TC 9.9", "ISO 8528-5", "61850"):
         assert standard in notices
+
+
+def test_the_benchmark_runner_is_started_by_hand_only() -> None:
+    """A self-hosted runner must never run what a pull request brings."""
+    data = yaml.safe_load((REPO / ".github/workflows/bench-runner.yml").read_text(encoding="utf-8"))
+    assert list(data[True]) == ["workflow_dispatch"]
+    assert data["jobs"]["bench"]["runs-on"] == ["self-hosted", "bench"]
+    for path in WORKFLOWS:
+        if path.name != "bench-runner.yml":
+            assert "self-hosted" not in path.read_text(encoding="utf-8"), path.name

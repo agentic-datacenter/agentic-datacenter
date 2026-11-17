@@ -1,0 +1,85 @@
+# Long benchmark runs on a machine of our own, started from anywhere:
+#   gh workflow run bench-runner.yml -f tier=standard -f gates=remora_governed
+# The runner is a self-hosted machine labelled "bench" (docs/guides/bench-runner.md).
+# Only started by hand; never by a pull request.
+name: bench-runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: "quick, standard, season or full (docs/bench/TIERS.md)"
+        type: choice
+        options: [quick, standard, season, full]
+        default: quick
+      gates:
+        description: "Gates, separated by spaces"
+        type: string
+        default: remora_governed
+      scenario:
+        description: "One scenario only, for example AD-03 (empty: all)"
+        type: string
+        default: ""
+      first_seed:
+        description: "First seed (empty: 1)"
+        type: string
+        default: ""
+      seeds:
+        description: "Number of seeds (empty: the tier's)"
+        type: string
+        default: ""
+      jobs:
+        description: "Runs at a time (empty: every core but one)"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bench-runner-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  bench:
+    runs-on: [self-hosted, bench]
+    timeout-minutes: 4320
+    defaults:
+      run:
+        shell: bash
+    env:
+      OUT: build/bench-${{ inputs.tier }}-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Environment
+        run: |
+          uv --version
+          if [ "$RUNNER_OS" = "Linux" ]; then uv sync --frozen --all-groups
+          else uv sync --frozen --all-groups --no-group iec61850; fi
+      - name: Run
+        run: |
+          set -o pipefail
+          args=(--tier "${{ inputs.tier }}" --allow-unfrozen --out "$OUT")
+          for gate in ${{ inputs.gates }}; do args+=(--gate "$gate"); done
+          [ -n "${{ inputs.scenario }}" ] && args+=(--scenario "${{ inputs.scenario }}")
+          [ -n "${{ inputs.first_seed }}" ] && args+=(--first-seed "${{ inputs.first_seed }}")
+          [ -n "${{ inputs.seeds }}" ] && args+=(--seeds "${{ inputs.seeds }}")
+          jobs="${{ inputs.jobs }}"
+          if [ -z "$jobs" ]; then
+            cores=$(uv run python -c "import os; print(os.cpu_count() or 2)")
+            jobs=$(( cores > 1 ? cores - 1 : 1 ))
+          fi
+          uv run agentic-datacenter bench run "${args[@]}" --jobs "$jobs" 2>&1 | grep -v '^dispatch\.'
+      - name: Release check
+        run: |
+          for gate in ${{ inputs.gates }}; do
+            uv run agentic-datacenter bench check "$OUT/result_card.json" --gate "$gate" | tee -a "$OUT/check.txt"
+          done
+      - name: Keep the card
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: bench-${{ inputs.tier }}-${{ github.run_id }}
+          path: ${{ env.OUT }}
+          retention-days: 90
+          if-no-files-found: warn
