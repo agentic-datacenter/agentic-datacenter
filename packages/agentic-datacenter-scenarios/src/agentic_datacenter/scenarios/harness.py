@@ -87,6 +87,8 @@ class Metrics:
     verdict_abstain: int = 0
     #: Decisions a gate served over HTTP could not give (no answer, or an invalid one).
     gate_service_failures: int = 0
+    #: ALLOWs that named writes the contract instance does not make; refused (INV-GOV-2).
+    gate_overreach: int = 0
 
     @property
     def pue(self) -> float:
@@ -415,7 +417,7 @@ def fairness_counts(
         (
             "approval_required", "executed_without_required_approval",
             "executed_on_failed_premises", "verdict_allow", "verdict_deny",
-            "verdict_verify", "verdict_abstain", "gate_service_failures",
+            "verdict_verify", "verdict_abstain", "gate_service_failures", "gate_overreach",
         ),
         0,
     )  # fmt: skip
@@ -424,6 +426,8 @@ def fairness_counts(
         verdict = str(r["verdict"]).lower()
         if f"verdict_{verdict}" in out:
             out[f"verdict_{verdict}"] += 1
+        if r.get("gate_overreach"):
+            out["gate_overreach"] += 1
         reasons = r.get("reasons")
         if isinstance(reasons, list) and any(str(x).startswith("gate service ") for x in reasons):
             out["gate_service_failures"] += 1
