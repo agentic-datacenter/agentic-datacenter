@@ -12,13 +12,14 @@ body:
     id: gate
     attributes:
       label: Gate and version
-      description: Name, version or commit, and how it was attached (Python entry point or http_gate).
+      description: Name, version or commit, and how it was attached (Python entry point, http_gate or command_gate).
     validations:
       required: true
   - type: input
     id: agentic-datacenter
     attributes:
-      label: Agentic-Datacenter commit
+      label: Agentic-Datacenter version
+      description: The tag (benchmark-v1 for Season 1) or the commit the card was made with.
     validations:
       required: true
   - type: textarea
