@@ -145,6 +145,7 @@ def _report(demo: Mapping[str, Any]) -> dict[str, Any]:
     agents = "agent" if n == 1 else "agents"
     harmed, passed, stopped = totals["harmed"], totals["passed"], totals["stopped"]
     proposals, approvals, past = totals["proposals"], totals["approvals"], totals["past_limit"]
+    asked = "once" if approvals[1] == 1 else f"{approvals[1]} times"
     return {
         "gate": gate,
         "n": n,
@@ -166,7 +167,7 @@ def _report(demo: Mapping[str, Any]) -> dict[str, Any]:
             f"The scripted {agents} proposed {proposals[1]} commands. {gate} stopped "
             f"{stopped[1]} of them. Replayed as if they had been carried out, {harm_avoided} "
             f"of those would have done harm and {useful} would have been a useful step. The "
-            f"control asked a person {approvals[1]} times, and let {past[1]} changes past a "
+            f"control asked a person {asked}, and let {past[1]} changes past a "
             "limit their contract sets."
         ),
         #: Label, the figure with no control, the figure with the control, a note, a mark.
@@ -365,6 +366,8 @@ def _card(scenario: Mapping[str, Any], scale: tuple[float, float] | None, gate: 
 
 def _tiles(report: Mapping[str, Any]) -> str:
     esc = html.escape
+    # A long gate name wraps after an underscore, not in the middle of a word.
+    gate = esc(report["gate"]).replace("_", "_<wbr>")
     tiles = []
     for label, without, with_, note, mark in report["summary"]:
         icon = _ICONS.get(mark, "")
@@ -372,7 +375,7 @@ def _tiles(report: Mapping[str, Any]) -> str:
         tiles.append(
             f"<div class='tile'><h3>{esc(label)}</h3><dl>"
             f"<div><dt>{NO_CONTROL}</dt><dd>{esc(without)}</dd></div>"
-            f"<div class='with'><dt>{esc(report['gate'])}</dt><dd>{icon}{esc(with_)}</dd></div>"
+            f"<div class='with'><dt>{gate}</dt><dd>{icon}{esc(with_)}</dd></div>"
             f"</dl>{extra}</div>"
         )
     return f"<div class='tiles'>{''.join(tiles)}</div>"
@@ -432,7 +435,7 @@ h1 { font-size: 25px; line-height: 1.2; letter-spacing: -.01em; margin: 12px 0 6
 h2 { font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted);
      font-weight: 650; margin: 24px 0 10px; padding-top: 12px; border-top: 1px solid var(--rule); }
 .headline { font-size: 21px; line-height: 1.3; font-weight: 650; letter-spacing: -.005em;
-            margin: 0 0 6px; max-width: 46ch; }
+            margin: 0 0 6px; max-width: 46ch; text-wrap: balance; }
 .account { margin: 0 0 14px; color: var(--ink2); max-width: 86ch; }
 code, .tag { font-family: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
              font-size: .92em; }
@@ -443,7 +446,8 @@ code, .tag { font-family: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Conso
         padding: 10px 12px; }
 .tile h3 { font-size: 12px; font-weight: 600; margin: 0 0 4px; color: var(--ink2);
            line-height: 1.3; min-height: 2.6em; }
-.tile dl { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; }
+.tile dl { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0;
+           align-items: end; }
 .tile dt { font-size: 10.5px; color: var(--muted); overflow-wrap: anywhere; line-height: 1.25; }
 .tile dd { margin: 0; font-size: 19px; font-weight: 500; line-height: 1.3; color: var(--ink2);
            white-space: nowrap; }

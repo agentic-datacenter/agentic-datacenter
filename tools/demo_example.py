@@ -1,7 +1,10 @@
 r"""Make the committed example in ``docs/demo`` from a demonstration run.
 
-    agentic-datacenter demo --gate static_allowlist --out build/demo
+    agentic-datacenter demo --gate remora_governed --out build/demo
     python tools/demo_example.py build/demo docs/demo
+
+The committed example is a run with ``remora_governed``, which needs REMORA
+installed (``uv sync --all-groups``).
 
 The recording and the two pages are copied as the run wrote them, under the
 names the documentation links to. The Markdown report is written from the
@@ -13,7 +16,7 @@ The picture, ``docs/media/result-report.png``, is a screenshot of
 ``docs/demo/result-report.html`` in light mode, taken with a headless browser
 after the example is made, for instance:
 
-    chromium --headless --hide-scrollbars --window-size=1012,1716 \
+    chromium --headless --hide-scrollbars --window-size=1012,1760 \
         --blink-settings=preferredColorScheme=1 \
         --screenshot=docs/media/result-report.png docs/demo/result-report.html
 """

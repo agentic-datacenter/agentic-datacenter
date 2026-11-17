@@ -44,9 +44,9 @@ DECISION_ONLY_NOTE = (
     "under it."
 )
 NOT_GOVERNED_NOTE = (
-    "The design document's demonstration compares UNGOVERNED against GOVERNED. GOVERNED "
-    "needs a REMORA pin that can compile contracts (the Stage 8 entry condition), which is "
-    "not available. The right-hand side is therefore the profile named on it."
+    "The design document's demonstration compares UNGOVERNED against GOVERNED. This run "
+    "was made with a gate of another operating profile, so the right-hand side is the "
+    "profile named on it."
 )
 
 

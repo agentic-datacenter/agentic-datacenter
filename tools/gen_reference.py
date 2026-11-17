@@ -78,15 +78,35 @@ def requirements_page() -> str:
     current = tomllib.loads((REPO / "pyproject.toml").read_text("utf-8"))["tool"][
         "agentic-datacenter"
     ]["stage"]
+    known = sorted(trace.sdd_requirements(text))
+    gaps = []
+    for req in known:
+        missing = [
+            word
+            for word, have in (("test", marked), ("owner", claimed))
+            if stage_of.get(req, 0) > current and req not in have
+        ]
+        if missing:
+            gaps.append(f"`{req}` (stage {stage_of[req]}: no {' and no '.join(missing)})")
     lines = [
         NOTE + "# Requirement-to-test matrix\n",
-        f"The repository is at stage {current}. A requirement is due when its stage is at or "
-        "below that. This page lists which tests cite each requirement; whether they pass is "
-        "decided by the traceability job on every pull request.\n",
+        "The design document assigns each requirement to a stage of its build plan (section "
+        "13). The traceability check requires a passing test and an owner for every "
+        f"requirement up to stage {current}; those are marked as due. This page lists which "
+        "tests cite each requirement; whether they pass is decided by a run of the whole "
+        "suite, in the `traceability` job of `.github/workflows/pr.yml`.\n",
+        "A requirement of a later stage is not due. That does not mean it is not built: most "
+        "have tests, listed below, that run with the others. A stage is counted only when "
+        "every requirement up to it has a passing test and an owner."
+        + (
+            " Requirements of later stages that lack a test or an owner: " + ", ".join(gaps) + ".\n"
+            if gaps
+            else "\n"
+        ),
         "| Requirement | Stage | Due | Claimed by | Tests citing it |",
         "| --- | --- | --- | --- | --- |",
     ]
-    for req in sorted(trace.sdd_requirements(text)):
+    for req in known:
         stage = stage_of.get(req)
         due = "yes" if stage is not None and stage <= current else "no"
         tests = "<br>".join(f"`{t}`" for t in sorted(marked.get(req, []))) or "none"

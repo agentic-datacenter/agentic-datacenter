@@ -29,3 +29,9 @@ Section 7.1 defines the tiers for writable points and gives `T0` to the hardwire
 - `ADC-NET-004` was reworded in the design document on 2026-11-12 to match decision 3. This is also how real plants are built: a protection relay's trip contact or a fire panel's state is seen by the BMS as a read-only status, while the trip and the interlock themselves have no network path.
 - The open points of `zone_model.md` section 6 are unchanged. The data collector still has no conduit; the matrix test asserts that `Z3-DMZ` cannot reach a controller zone.
 - The protocol servers, the latency model of 8.4 and IEC 61850 are not part of this decision.
+
+## Addendum 2026-11-17: the stage is raised, and `ADC-NET-001` is still tested in one mode
+
+The first consequence above kept `[tool.agentic-datacenter] stage` at 5 because `ADC-NET-001` asks for both run modes. The protocol servers and the IEC 61850 package have been built since, and every requirement of stages 6 and 7 has a passing test and an owner, which is what the traceability check asks for (ADR 0007). The stage is therefore 7.
+
+What has not changed: `compose` mode is not built, so `ADC-NET-001` is tested in `inproc` mode only. Its test says so, and so do `zone_model.md` (section 5) and section 14 of the design document. Counting the stage does not close that half of the requirement.
