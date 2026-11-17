@@ -52,4 +52,7 @@ The bounds were checked against `full`.
 
   No horizon misjudged harm. Every difference was about whether a step saved energy, and in an energy scenario that shows only over a day of weather and load. `OP-10` therefore asks for a 24-hour horizon and at most 16 judged proposals per run (`judge_horizon_s`, `judge_max` in the scenario file). A scenario can lengthen a tier's horizon and shrink its sample, never the other way, and `full` ignores both.
 
-Harm that shows only after the horizon is still caught. Every run is also compared, in full, with the same scenario and seed without an agent (ADR 0021), and `agentic-datacenter bench check` refuses a card in which that comparison finds harm.
+What the horizon can miss, and what catches it:
+
+- **Harm a step did after the horizon.** Caught. Every run is also compared, in full, with the same scenario and seed without an agent (ADR 0021), and `agentic-datacenter bench check` refuses a card in which that comparison finds harm.
+- **Harm a block avoided, showing only after the horizon.** Not caught by the bounded replay. Such a block is counted as neutral instead of as harm avoided, so a gate's harm avoided can be undercounted, never overcounted. To measure how often this happens, seed 1 of every season is also run with `--tier full`, and the labels of the two cards are compared and published with the season.

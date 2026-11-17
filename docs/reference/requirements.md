@@ -8,8 +8,8 @@ The repository is at stage 5. A requirement is due when its stage is at or below
 | --- | --- | --- | --- | --- |
 | `ADC-BEN-001` | 9 | no | `agentic-datacenter-scenarios` | `tests/bench/test_heldout_and_freeze.py`<br>`tests/conformance/test_result_card.py` |
 | `ADC-BEN-002` | 9 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_m1_scenarios.py` |
-| `ADC-BEN-003` | 9 | no | `agentic-datacenter-scenarios` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/property/test_counterfactual_identity.py` |
-| `ADC-BEN-004` | 9 | no | `agentic-datacenter-scenarios` | `tests/conformance/test_result_card.py` |
+| `ADC-BEN-003` | 9 | no | `agentic-datacenter-scenarios` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/bench/test_utility_measures.py`<br>`tests/property/test_counterfactual_identity.py` |
+| `ADC-BEN-004` | 9 | no | `agentic-datacenter-scenarios` | `tests/bench/test_fairness.py`<br>`tests/bench/test_release_gate.py`<br>`tests/conformance/test_result_card.py` |
 | `ADC-BEN-005` | 9 | no | `agentic-datacenter-scenarios` | `tests/conformance/test_gate_cli.py`<br>`tests/conformance/test_result_card.py` |
 | `ADC-BEN-006` | 9 | no | `agentic-datacenter-scenarios` | `tests/bench/test_merge.py`<br>`tests/conformance/test_result_card.py`<br>`tests/scenario/test_stage8_scenarios.py` |
 | `ADC-BEN-007` | 9 | no | `agentic-datacenter-scenarios` | `tests/bench/test_release_gate.py`<br>`tests/conformance/test_result_card.py` |
@@ -36,7 +36,7 @@ The repository is at stage 5. A requirement is due when its stage is at or below
 | `ADC-FID-003` | 4 | yes | `electrical.it_load` | `packages/agentic-datacenter-plant/tests/test_stage4_behaviour.py` |
 | `ADC-FID-004` | 4 | yes | `agentic-datacenter-scenarios` | `tests/bench/test_sensitivity.py` |
 | `ADC-GOV-001` | 8 | no | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-governance/tests/test_safe_posture.py`<br>`packages/agentic-datacenter-remora/tests/test_binding.py`<br>`packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/bench/test_release_gate.py`<br>`tests/scenario/test_safe_posture_scenarios.py`<br>`tests/scenario/test_stage8_scenarios.py` |
-| `ADC-GOV-002` | 8 | no | `agentic-datacenter-supervisory` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`packages/agentic-datacenter-supervisory/tests/test_command_service.py`<br>`tests/scenario/test_scenario_library.py`<br>`tests/scenario/test_stage8_scenarios.py` |
+| `ADC-GOV-002` | 8 | no | `agentic-datacenter-supervisory` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-remora/tests/test_governed.py`<br>`packages/agentic-datacenter-supervisory/tests/test_command_service.py`<br>`tests/scenario/test_scenario_library.py`<br>`tests/scenario/test_stage8_scenarios.py` |
 | `ADC-GOV-003` | 8 | no | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-remora/tests/test_binding.py` |
 | `ADC-GOV-004` | 8 | no | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-governance/tests/test_http_gate.py`<br>`packages/agentic-datacenter-remora/tests/test_binding.py`<br>`packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/conformance/test_gate_cli.py` |
 | `ADC-GOV-005` | 8 | no | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_governance.py` |

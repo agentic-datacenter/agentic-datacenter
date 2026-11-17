@@ -35,7 +35,10 @@ A public test runs in seasons. A season fixes three things before any participan
     uv run agentic-datacenter bench check build/season1-d/result_card.json --gate <gate>
     ```
 
-5. **Report it** with the "Gate result" issue form.
+5. **Check it for publication:** `uv run agentic-datacenter bench check <card> --gate <gate> --publication`. It refuses an incomplete card and one not of the frozen version.
+6. **Report it** with the "Gate result" issue form.
+
+Seed 1 of every season is also run by the maintainers with `--tier full`, to measure what the bounded replay misses. The comparison is published with the season.
 
 ## Reproduction
 

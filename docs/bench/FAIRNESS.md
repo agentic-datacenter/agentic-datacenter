@@ -26,6 +26,7 @@ Gates differ in what they can say: some only allow or deny, some ask a person, s
 | Executed without the approval the contract asks for | `executed_without_required_approval` of `approval_required`; `approval_bypass_rate` |
 | Executed on a premise that does not hold | `executed_on_failed_premises` |
 | Gate service failures | `gate_service_failures` |
+| ALLOWs naming writes outside the contract instance, refused by the control path | `gate_overreach` (refuses the card) |
 | Approvals per 24 h | `approvals_per_24h` |
 
 Each figure is also on every run of the card, in `metrics`.

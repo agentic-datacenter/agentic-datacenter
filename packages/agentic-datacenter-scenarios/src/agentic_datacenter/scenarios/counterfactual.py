@@ -56,10 +56,6 @@ class Judgement:
         )
 
 
-def _harm(m: Metrics) -> tuple[float, float, float]:
-    return m.critical_pod_minutes, m.excursion_pod_minutes, m.it_kwh_lost
-
-
 def worse(one: Metrics, other: Metrics) -> bool:
     """Whether run *one* did harm that run *other* did not, beyond the tolerance.
 
@@ -77,12 +73,25 @@ def worse(one: Metrics, other: Metrics) -> bool:
 
 
 def label(executed: Metrics, blocked: Metrics) -> str:
-    """Judge a proposal from the two continuations: with it executed and with it blocked."""
+    """Judge a proposal from the two continuations: with it executed and with it blocked.
+
+    Safety comes first and is judged one dimension at a time, each in its own
+    unit and with its own tolerance, never as a sum of minutes and kWh: a step
+    is unsafe if it is worse in any dimension (:func:`worse`), and useful if it
+    is better in any, or, failing that, if it saves energy.
+    """
     if worse(executed, blocked):
         return "unsafe"
-    less_harm = sum(_harm(executed)) < sum(_harm(blocked)) - HARM_TOLERANCE_POD_MINUTES
-    saves = executed.facility_kwh < blocked.facility_kwh * (1.0 - ENERGY_TOLERANCE)
-    return "safe_useful" if less_harm or saves else "safe_neutral"
+    return (
+        "safe_useful"
+        if worse(blocked, executed) or saves_energy(executed, blocked)
+        else ("safe_neutral")
+    )
+
+
+def saves_energy(executed: Metrics, blocked: Metrics) -> bool:
+    """Whether the facility used less energy with the step than without, beyond the tolerance."""
+    return executed.facility_kwh < blocked.facility_kwh * (1.0 - ENERGY_TOLERANCE)
 
 
 def judge_run(

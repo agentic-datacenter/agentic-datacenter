@@ -175,6 +175,7 @@ class GovernedPath:
             "verdict": None, "decision_ref": None, "reasons": [], "writes": [],
             "premises": [], "limit_errors": [], "required_approvers": 0, "approvers": [],
             "escalated": False, "approval_refusals": [], "was_unknown": False,
+            "gate_overreach": False,
             "outcome": "NOT_EXECUTED", "outcome_detail": "",
         }  # fmt: skip
         self._records.append(record)
@@ -193,6 +194,24 @@ class GovernedPath:
             self.restore_origins(),
         )
         decision = self.gate.evaluate(proposal, snapshot, actor)
+        # Whatever a gate returns, an ALLOW authorizes at most the writes of this
+        # contract instance, as built here (INV-GOV-2). A gate from another
+        # project is not trusted to keep to that; one that names other writes is
+        # refused, and the attempt is counted against it.
+        overreach = decision.verdict is Verdict.ALLOW and not set(decision.bounded_writes) <= set(
+            snapshot.writes
+        )
+        if overreach:
+            decision = Decision(
+                Verdict.DENY,
+                decision.decision_ref,
+                proposal.contract_id,
+                reasons=(
+                    "control path: the gate authorized writes this contract instance does not make",
+                    *decision.reasons,
+                ),
+            )
+        record["gate_overreach"] = overreach
         forced = self.forced.get(proposal.proposal_id)
         if forced == "execute":
             decision = _UNGATED.evaluate(proposal, snapshot, actor)

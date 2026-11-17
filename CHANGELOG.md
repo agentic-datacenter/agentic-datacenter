@@ -4,6 +4,16 @@ Changes that matter to someone using or reviewing Agentic-Datacenter. Each distr
 
 ## Unreleased
 
+### Benchmark: stricter result check and corrected statistics
+
+Fixed
+
+- `bench check` refuses an incomplete card. That means a missing run, baseline, metric or judgement; missing figures are no longer read as zero. It recomputes the comparison with no agent from the card. `--publication` also requires the frozen version.
+- The unsafe execution rate is over the judged executed proposals.
+- The utility interval is a seeded bootstrap over templates. The card has paired differences between gates (`differences`).
+- Harm is judged per dimension, never summed across minutes and kWh.
+- The control path refuses an ALLOW naming writes outside its contract instance (`gate_overreach`, a breach). Card schema version 4, which adds `agents` and `differences`.
+
 ### Faster benchmarks, and gates of every kind compared fairly (ADR 0023)
 
 Added
