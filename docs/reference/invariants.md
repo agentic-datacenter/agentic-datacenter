@@ -24,5 +24,5 @@ Tests carry the requirement they verify as a marker, and the [requirement-to-tes
 - `INV-GOV-1` to `-8` (`ADC-GOV-001`):
   - the control path: `packages/agentic-datacenter-governance/tests/test_governance.py` and `test_safe_posture.py`;
   - REMORA's governed path: `packages/agentic-datacenter-remora/tests/test_governed.py` and `test_binding.py`;
-  - across scenarios: `tests/scenario/test_op01.py`, `test_safe_posture_scenarios.py` and `test_stage8_scenarios.py`.
+  - across scenarios: `tests/scenario/test_op01.py`, `test_safe_posture_scenarios.py` and `test_op13_ad09_governed.py`.
 - What refuses a card: [Check a result card before it is released](../guides/release-gate.md), tested in `tests/bench/test_release_gate.py`.

@@ -58,10 +58,12 @@ agentic-datacenter-iec61850 = { workspace = true }
 agentic-datacenter-data = { workspace = true }
 agentic-datacenter-whatif = { workspace = true }
 
-# Where the repository is in the staged plan of SDD section 13, and the
-# requirements owned by the repository as a whole (ADC-CI-001).
+# The stage of the build plan in SDD section 13 up to which every requirement
+# must have a passing test and an owner (tools/traceability.py, ADR 0007), and
+# the requirements owned by the repository as a whole (ADC-CI-001).
+# The next stage is not counted as reached while ADC-PIN-004 and ADC-PIN-006 have no test.
 [tool.agentic-datacenter]
-stage = 5
+stage = 7
 requirements = [
     "ADC-PRV-001", "ADC-PRV-002", "ADC-PRV-005",
     "ADC-CI-001", "ADC-CI-002", "ADC-CI-003", "ADC-CI-004", "ADC-CI-005",
@@ -176,8 +178,9 @@ markers = [
 #
 # Run with all groups installed: uv run --all-groups lint-imports
 #
-# Not expressible until the code exists, and added in the stage that creates it:
-#   - agentic_datacenter_remora limited to remora.sdk (ADC-PIN-005), Stage 8
+# Not expressed as a contract here:
+#   - agentic_datacenter_remora limited to remora.sdk (ADC-PIN-005). A test in
+#     packages/agentic-datacenter-remora/tests/test_binding.py checks it.
 # ---------------------------------------------------------------------------
 [tool.importlinter]
 root_packages = [
