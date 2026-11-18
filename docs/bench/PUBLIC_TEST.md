@@ -45,6 +45,8 @@ A season fixes three things before any participant can know its held-out scenari
 
 - An issue opened with the registration form takes part in the season that is open when it is opened, and in every season after it for as long as the issue stays open. Close the issue to leave.
 - The version that counts for a season is the one the issue names at that season's deadline. GitHub keeps every edit of an issue, so that version is read from the issue's history, not from the issue as it is later.
+- Whether an issue was open at a deadline is read from its close and reopen events, not from whether it is closed today. An issue closed at the deadline and opened again later did not take part.
+- Nothing is guessed. If the text or the state of an issue at the deadline cannot be established from its history, the issue is listed with that said and without a version: an entry removed from the edit history, or a history that does not hold the whole text after each edit. The list carries the SHA-256 of each text it read.
 - Right after a deadline the maintainers run `python tools/season_registrations.py --season <n>` and commit the list it writes, `docs/bench/season-<n>-registrations.json`. Anyone can run it again and get the same list.
 - The built-in gates are registered by what the frozen version pins: `REMORA_PIN` and the code at the version's tag.
 
