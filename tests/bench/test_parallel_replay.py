@@ -141,8 +141,11 @@ def test_the_number_of_helpers_follows_the_work() -> None:
     assert helpers_for(work_s=335 * week, length_s=week, judged=671, replay_jobs=15) == 15
     # The season's bounds on it, 16 branches of a day: not worth sharing.
     assert helpers_for(work_s=16 * 86_400, length_s=week, judged=16, replay_jobs=15) == 1
-    # A short scenario, 64 branches of an hour on four hours: four helpers.
-    assert helpers_for(work_s=64 * 3600, length_s=4 * 3600, judged=64, replay_jobs=15) == 4
+    # A short scenario, 64 branches of an hour: asking the oracle what it judges
+    # costs about as much as the branches, so nothing is gained by sharing them.
+    assert helpers_for(work_s=64 * 3600, length_s=4 * 3600, judged=64, replay_jobs=15) == 1
+    # The same number of branches of a day each, on a scenario of two days.
+    assert helpers_for(work_s=64 * 86_400, length_s=2 * 86_400, judged=64, replay_jobs=15) == 8
     assert helpers_for(work_s=10**9, length_s=3600, judged=3, replay_jobs=15) == 3
     assert helpers_for(work_s=10**9, length_s=3600, judged=64, replay_jobs=1) == 1
     assert helpers_for(work_s=0, length_s=3600, judged=0, replay_jobs=8) == 1

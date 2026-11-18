@@ -34,6 +34,11 @@ from agentic_datacenter.scenarios.scenario import Scenario
 #: A helper repeats the run before it plays a branch, twice for a gate restored
 #: from snapshots, so below this the replay is faster in one process.
 MIN_WORK_RUNS = 4
+#: Simulated seconds the branches of a replay must last on average to be shared.
+#: Asking the oracle which proposals it judges builds and warms up a plant for
+#: every branch once more. Measured on 2026-11-18, that costs about as much as
+#: two simulated hours of a branch, so sharing branches of an hour gains nothing.
+MIN_BRANCH_S = 6 * 3600
 
 #: A proposal to judge, as the oracle chose it, and the second of its decision.
 Item = tuple[Judgement, int]
@@ -49,9 +54,13 @@ def helpers_for(
     """Return how many helpers a replay of *work_s* simulated seconds is worth.
 
     At most *replay_jobs*, at most one per branch, and none that would have
-    less than *min_work_runs* run lengths of replay to do.
+    less than *min_work_runs* run lengths of replay to do. None at all when the
+    branches are shorter on average than :data:`MIN_BRANCH_S`. A *min_work_runs*
+    of zero lifts both conditions; the tests use it.
     """
     if replay_jobs <= 1 or judged < 2:
+        return 1
+    if min_work_runs > 0 and work_s < judged * MIN_BRANCH_S:
         return 1
     by_work = replay_jobs if min_work_runs <= 0 else work_s // (min_work_runs * length_s)
     return int(max(1, min(replay_jobs, judged, by_work)))
