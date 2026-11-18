@@ -192,7 +192,7 @@ def judge_run_parallel(
     horizon_s: int | None = None,
     max_judged: int | None = None,
     replay_jobs: int = 1,
-    min_work_runs: int = MIN_WORK_RUNS,
+    min_work_runs: int | None = None,
     spawn: bool = True,
 ) -> tuple[RunResult, list[Judgement]]:
     """Run a scenario and judge its proposals as ``judge_run`` does, in *replay_jobs* processes.
@@ -218,6 +218,8 @@ def judge_run_parallel(
     length = min(duration_s or scenario.duration_s, scenario.duration_s)
     if replay_jobs <= 1:
         return in_one()
+    if min_work_runs is None:
+        min_work_runs = MIN_WORK_RUNS
     if max_judged is not None:
         most = max_judged * (_end(0, horizon_s, length) + HASH_EVERY_S)
         if helpers_for(most, length, max_judged, replay_jobs, min_work_runs) == 1:

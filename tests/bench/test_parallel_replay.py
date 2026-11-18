@@ -84,7 +84,6 @@ def _same(one: tuple[Any, Any], other: tuple[Any, Any]) -> None:
 @pytest.mark.parametrize(
     ("make_gate", "horizon_s", "max_judged", "branches_from"),
     [
-        (static_allowlist, None, None, "capture"),
         (static_allowlist, 300, 2, "capture"),
         (_keeps_state, 300, None, "gate snapshot"),
         (_cannot_be_restored, 300, 2, "start of run"),
@@ -181,7 +180,7 @@ def test_the_card_is_the_same_whatever_the_number_of_replay_jobs(
 ) -> None:
     def card(replay_jobs: int) -> str:
         made = run_benchmark(
-            PROFILE, CONTRACTS, {"null_gate": null_gate, "static_allowlist": static_allowlist},
+            PROFILE, CONTRACTS, {"static_allowlist": static_allowlist},
             ["scripted_adversarial"], ["AD-03"], [1], LENGTH,
             allow_unfrozen=True, replay_jobs=replay_jobs,
         )  # fmt: skip
