@@ -12,8 +12,7 @@ A simulated data center with cooling failures, power disturbances and AI agents 
 <p align="center">
   <a href="#for-data-center-operators"><strong>Operators</strong></a> ·
   <a href="#for-gate-developers"><strong>Gate developers</strong></a> ·
-  <a href="#how-long-a-test-takes"><strong>Test times</strong></a> ·
-  <a href="#public-test-season-1"><strong>Season 1</strong></a> ·
+  <a href="#public-test"><strong>Public test</strong></a> ·
   <a href="#documentation"><strong>Documentation</strong></a>
 </p>
 
@@ -47,64 +46,29 @@ See what an AI agent would do to your plant before it gets near your control sys
 
 ## For gate developers
 
-Bring your own gate, in any language. Only `ALLOW` and `DENY` are required.
-
-| Your project | Connect it as |
-| --- | --- |
-| Decides allow / deny, maybe escalate or abstain | HTTP service (`http_gate`), a command per decision (`command_gate`), or a Python package |
-| Uses its own words (`permit`, `block`, `require_approval` …) | The same; your words are mapped to the four verdicts |
-| Decides on the raw tool call | The same; read `tool_call` instead of `proposal` |
-| Keeps budgets, quotas, rate limits or sessions | The same, with `ADC_GATE_STATEFUL=1` |
-| Gives a score or risk number | A few lines that turn the score into a verdict at a fixed threshold |
-| Observes or advises only | `ADC_GATE_PROFILE=SHADOW` |
-| Signs receipts or evidence | Return your receipt id as `decision_id` |
+Bring your own gate, in any language: an HTTP service, a command per decision, or a Python package. Only `ALLOW` and `DENY` are required.
 
 ```sh
 export ADC_GATE_URL=http://127.0.0.1:8787  ADC_GATE_NAME=my_gate         # your service
 uv run agentic-datacenter gate check http_gate                            # 1. check the connection
-uv run agentic-datacenter bench run --tier quick --gate http_gate --gate static_allowlist --out build/try   # 2. a first result
+uv run agentic-datacenter bench run --tier quick --gate http_gate --gate static_allowlist --out build/try   # 2. a first result, in minutes
 ```
 
-**Start here:** [Bring your own gate](docs/guides/bring-your-own-gate.md) (step by step, with an [80-line example service](examples/http-gate/server.py)) and [Which way in for your project](docs/guides/which-way-in.md) (what is measured for each kind of project, and what is not there yet).
+**Start here:** [Bring your own gate](docs/guides/bring-your-own-gate.md), step by step with an [80-line example service](examples/http-gate/server.py), and [Which way in for your project](docs/guides/which-way-in.md), for gates that score, keep state, observe only or use words of their own. How long each size of test takes, and what machine it needs, is in [Tiers](docs/bench/TIERS.md).
 
-## How long a test takes
+## Public test
 
-Test one scenario or a whole season. Every size uses the same scenarios, agents and judging.
+[![Agentic-Datacenter public test: register your gate](docs/media/season1-register-banner.webp)](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml)
 
-| Size | What runs | Command | Time, measured |
-| --- | --- | --- | --- |
-| **One scenario** | 1 scenario, shortened, 1 seed | `--tier quick --scenario AD-03 --allow-unfrozen` | under a minute |
-| **Quick** | all 23, shortened, 1 seed | `--tier quick` | 2 minutes |
-| **Standard** | all 23 at full length, 3 seeds | `--tier standard` | about 1 hour |
-| **Season** | all 23 at full length, 30 seeds | `--tier season` | 6 h 22 min |
-| **Full** | all 23, 3 seeds, every refused command replayed to the end | `--tier full` | being timed |
+**Registration is always open.** Seasons follow one another, four weeks each, on a frozen benchmark that any gate can enter.
 
-- **Measured** on one machine with 16 threads, 9 to 15 runs at a time (`--jobs`). Quick with `static_allowlist`; standard and season with `remora_governed`. Standard needed about 14 GB of memory.
-- **Longer** with a gate that keeps state (it is replayed from the start), or one that answers slowly over HTTP. `OP-10`, a simulated week, takes most of every full-length run.
-- **Shorter** with `--jobs`, or by splitting a season over machines and merging the parts. The merged card is the same, byte for byte.
-- **A part of the benchmark**, such as one scenario, is a development run and needs `--allow-unfrozen`; only every scenario of the frozen version can be a result.
+- **Register** with three fields. No setup is needed yet.
+- **Run** the public scenarios on your own machine, whenever you are ready.
+- **Hidden variants** close each season. They are drawn from a public randomness beacon at the deadline, so nobody can know them before, the authors included.
 
-More in [Tiers](docs/bench/TIERS.md) and [Run long benchmarks on a machine of your own](docs/guides/bench-runner.md).
+[Register your gate](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml) · [Calendar, rules and built-in gates](docs/bench/PUBLIC_TEST.md)
 
-## Public test: Season 1
-
-[![Season 1 Public Test — Register your gate](docs/media/season1-register-banner.webp)](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml)
-
-**Registration closes 2 December 2026, 12:00 UTC.** Frozen benchmark `benchmark-v1`, open to any gate.
-
-| 1 · Register | 2 · Connect | 3 · Benchmark |
-| :-- | :-- | :-- |
-| [Register your gate](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml) with its exact version. No setup needed yet. | Run `gate check` and add the output later. | Run the public tracks; submit your result card when ready. |
-
-At the deadline the drand beacon emits round `34469812`, which draws the hidden variants of Track D. Nobody can know them before, the authors included. A gate changed after the deadline is a different gate. Rules: [Public test](docs/bench/PUBLIC_TEST.md).
-
-| Gate | Project | Profile | Result |
-| --- | --- | --- | --- |
-| `null_gate` · `static_allowlist` | baselines: no gate; role and range checks | `UNGOVERNED` · `STATIC_ALLOWLIST` | development runs only |
-| `remora` · `remora_governed` · `remora_shadow` | REMORA, [pinned](REMORA_PIN) | `DECISION_ONLY` · `GOVERNED` · `SHADOW` | development runs only |
-| *your gate* | | | [register](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml) |
-
-The built-in gates are written by Agentic-Datacenter's authors and reported apart. No benchmark result has been reported yet.
+No benchmark result has been reported yet.
 
 ## Documentation
 

@@ -1,30 +1,58 @@
 # Public test
 
-[![Agentic-Datacenter Season 1 Public Test](../media/season1-register-banner.webp)](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml)
+[![Agentic-Datacenter public test: register your gate](../media/season1-register-banner.webp)](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml)
 
-**Season 1 is open · 2 December 2026, 12:00 UTC deadline · `benchmark-v1`.** [Register your gate](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml) with three fields; installation and the interface check can follow.
+**Registration is always open.** Seasons follow one another, four weeks each, on a frozen benchmark. [Register your gate](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml) with three fields; installation and the interface check can follow. The [calendar](#seasons) says when the open season closes.
 
 How a governance gate from any project is tested on Agentic-Datacenter in the open, and what makes the result worth something. The question, hypotheses and analysis are those of the [preregistration](PREREGISTRATION.md); this page is the procedure.
 
 ## Seasons
 
-A public test runs in seasons. A season fixes three things before any participant can know the held-out scenarios:
+A public test runs in seasons, one after another without a gap, so a season is always open.
 
-1. **A frozen benchmark version.** `agentic-datacenter bench freeze` writes `docs/bench/VERSION.json`, the hashes of the profile, contracts, scenarios and oracle, and the version is tagged. A card from any other version is refused for the season.
-2. **A beacon round.** The secret that draws the held-out variants of Track D is the output of the drand "quicknet" public randomness beacon at a round chosen and published here in advance, at least two weeks after the season opens. No one, the authors of Agentic-Datacenter included, can know it before the round is emitted; afterwards anyone can fetch it and check it (`tools/heldout_beacon.py`).
-3. **A registration deadline**, the time the round is emitted. A gate takes part in the season's Track D only if it was registered before then, with the exact version it will run.
+- **Season 1** was opened by hand on 2026-11-17 and closes on 2026-12-02 at 12:00 UTC.
+- **Every later season** opens at the instant the one before it closes, and closes four weeks later at 12:00 UTC.
 
-| Season | Frozen version | Beacon round | Emitted (UTC) | Status |
+A season fixes three things before any participant can know its held-out scenarios:
+
+1. **A frozen benchmark version.** `agentic-datacenter bench freeze` writes the hashes of the profile, contracts, scenarios and oracle to a file, and the version is tagged. A season uses the version that is frozen when it opens. Today that is `benchmark-v1` ([VERSION.json](VERSION.json)). A new version is named in `seasons.json`, with the season it first applies to, before that season opens. A card from any other version is refused for the season.
+2. **A beacon round.** The secret that draws the held-out variants of Track D is the output of the drand "quicknet" public randomness beacon at the round emitted when the season closes. The rounds of the coming year are in the calendar below, so each is published long before it exists. No one, the authors of Agentic-Datacenter included, can know it before the round is emitted; afterwards anyone can fetch it and check it (`tools/heldout_beacon.py`).
+3. **A registration deadline**, the instant the round is emitted. A gate takes part in a season's Track D only if it was registered before then, with the exact version it will run.
+
+<!-- seasons: made by tools/season.py from docs/bench/seasons.json; do not edit -->
+| Season | Opens (UTC) | Registration closes and the round is emitted (UTC) | Beacon round | Benchmark version |
 | --- | --- | --- | --- | --- |
-| 1 | `benchmark-v1` ([VERSION.json](VERSION.json)) | `34469812` | 2026-12-02 12:00 | Open: register before the round |
+| 1 | 2026-11-17 | 2026-12-02 12:00 | `34469812` | `benchmark-v1` |
+| 2 | 2026-12-02 12:00 | 2026-12-30 12:00 | `35276212` | `benchmark-v1` |
+| 3 | 2026-12-30 12:00 | 2027-01-27 12:00 | `36082612` | `benchmark-v1` |
+| 4 | 2027-01-27 12:00 | 2027-02-24 12:00 | `36889012` | `benchmark-v1` |
+| 5 | 2027-02-24 12:00 | 2027-03-24 12:00 | `37695412` | `benchmark-v1` |
+| 6 | 2027-03-24 12:00 | 2027-04-21 12:00 | `38501812` | `benchmark-v1` |
+| 7 | 2027-04-21 12:00 | 2027-05-19 12:00 | `39308212` | `benchmark-v1` |
+| 8 | 2027-05-19 12:00 | 2027-06-16 12:00 | `40114612` | `benchmark-v1` |
+| 9 | 2027-06-16 12:00 | 2027-07-14 12:00 | `40921012` | `benchmark-v1` |
+| 10 | 2027-07-14 12:00 | 2027-08-11 12:00 | `41727412` | `benchmark-v1` |
+| 11 | 2027-08-11 12:00 | 2027-09-08 12:00 | `42533812` | `benchmark-v1` |
+| 12 | 2027-09-08 12:00 | 2027-10-06 12:00 | `43340212` | `benchmark-v1` |
+| 13 | 2027-10-06 12:00 | 2027-11-03 12:00 | `44146612` | `benchmark-v1` |
+<!-- /seasons -->
 
-Check the round's time yourself with `python tools/heldout_beacon.py round-at 2026-12-02T12:00:00Z`.
+- **Which season is open now:** `python tools/season.py current`. The page is not rewritten when a season ends.
+- **Where it comes from:** `docs/bench/seasons.json` holds the first deadline, the length of a season and the benchmark versions. The calendar is made from it, and a test fails if the two differ.
+- **Check a round's time yourself:** `python tools/heldout_beacon.py round-at 2026-12-02T12:00:00Z`.
 
-**What counts as registered.** The issue must be opened before the deadline, and the version that counts is the one the issue names at the deadline. GitHub keeps every edit of an issue, so that version is read from the issue's history, not from the issue as it is later: right after the deadline the maintainers run `python tools/season_registrations.py --deadline 2026-12-02T12:00:00Z --out docs/bench/season-1-registrations.json` and commit the list. Anyone can run it again and get the same list. The built-in gates are registered by what the frozen version pins: `REMORA_PIN` and the code at the tag `benchmark-v1`.
+**What counts as registered.**
+
+- An issue opened with the registration form takes part in the season that is open when it is opened, and in every season after it for as long as the issue stays open. Close the issue to leave.
+- The version that counts for a season is the one the issue names at that season's deadline. GitHub keeps every edit of an issue, so that version is read from the issue's history, not from the issue as it is later.
+- Right after a deadline the maintainers run `python tools/season_registrations.py --season <n>` and commit the list it writes, `docs/bench/season-<n>-registrations.json`. Anyone can run it again and get the same list.
+- The built-in gates are registered by what the frozen version pins: `REMORA_PIN` and the code at the version's tag.
+
+**What a season does not do by itself.** The calendar needs no one. The work of a season does: listing the registrations after the deadline, the maintainers' own runs, and publishing the results. A season nobody reported a result for has an empty result list, and that is said.
 
 ## Taking part
 
-1. **Register a fixed version first.** Use the [Season 1 gate registration form](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml). Only three fields are required: project name, exact immutable version (full commit SHA, package hash or image digest), and intended connection method (choose "not sure" if needed). You do **not** need to install anything or paste test output to register. You may change the version until the deadline; the one the issue names at the deadline is the one that runs in Track D.
+1. **Register a fixed version first.** Use the [gate registration form](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml). Only three fields are required: project name, exact immutable version (full commit SHA, package hash or image digest), and intended connection method (choose "not sure" if needed). You do **not** need to install anything or paste test output to register. You may change the version until the deadline; the one the issue names at the deadline is the one that runs in Track D.
 2. **Connect and check your gate later.** Run `agentic-datacenter gate check <gate>` (see [Test your own gate](../guides/bring-your-own-gate.md)), and add the output and operating profile to your issue before submitting a result. A registration alone is not a passing check or a benchmark result. If integration changes the version you registered, update it **before** the deadline to remain eligible for Track D.
 3. **Run the public tracks at any time** on the frozen version:
 
@@ -39,8 +67,8 @@ Check the round's time yourself with `python tools/heldout_beacon.py round-at 20
     ```sh
     python tools/heldout_beacon.py secret --round <round> --out build/heldout.secret
     uv run agentic-datacenter bench run --tier season --gate <gate> --jobs 8 \
-        --heldout-secret-file build/heldout.secret --out build/season1-d
-    uv run agentic-datacenter bench check build/season1-d/result_card.json --gate <gate>
+        --heldout-secret-file build/heldout.secret --out build/season-d
+    uv run agentic-datacenter bench check build/season-d/result_card.json --gate <gate>
     ```
 
 5. **Check it for publication:** `uv run agentic-datacenter bench check <card> --gate <gate> --publication`. It refuses an incomplete card and one not of the frozen version.
@@ -53,6 +81,15 @@ Check the round's time yourself with `python tools/heldout_beacon.py round-at 20
 - A participant is not asked to run `full`, and it is no condition for a result.
 - The maintainers do not run a participant's gate. Nothing of a participant's runs on the maintainers' machine: every card is made by whoever reports it, and checked by its SHA-256 (see Reproduction).
 - A participant who wants the same check for their own gate can run `--tier full --seeds 1 --replay-jobs <n>` and attach the card. It is published beside their result and changes nothing in it.
+
+## Built-in gates
+
+| Gate | Project | Profile |
+| --- | --- | --- |
+| `null_gate` · `static_allowlist` | baselines: no gate; role and range checks | `UNGOVERNED` · `STATIC_ALLOWLIST` |
+| `remora` · `remora_governed` · `remora_shadow` | REMORA, pinned in `REMORA_PIN` | `DECISION_ONLY` · `GOVERNED` · `SHADOW` |
+
+The built-in gates are written by Agentic-Datacenter's authors and are reported apart from the others. So far they have development runs only.
 
 ## Reproduction
 
