@@ -8,12 +8,6 @@ from typing import Any
 
 import pytest
 import yaml
-from agentic_datacenter.scenarios.parallel_replay import (
-    ReplayMismatch,
-    helpers_for,
-    judge_run_parallel,
-    shares,
-)
 
 from agentic_datacenter.core.profile import load_profile
 from agentic_datacenter.governance.bindings.null_gate import create as null_gate
@@ -25,12 +19,20 @@ from agentic_datacenter.scenarios.agents import ScriptedAdversarial
 from agentic_datacenter.scenarios.bench import benchmark_version, run_benchmark
 from agentic_datacenter.scenarios.cli import bench
 from agentic_datacenter.scenarios.counterfactual import judge_run
+from agentic_datacenter.scenarios.parallel_replay import (
+    ReplayMismatch,
+    helpers_for,
+    judge_run_parallel,
+    shares,
+)
 from agentic_datacenter.scenarios.scenario import library_ids, load_scenario
 
 REPO = Path(__file__).resolve().parents[2]
 PROFILE = load_profile(REPO / "profiles/generic_dc.yaml")
 CONTRACTS = ContractLibrary.load(REPO / "contracts")
-LENGTH = 1800
+#: Three decision points. Every run and every branch builds a plant and warms it up,
+#: which is most of what these tests cost.
+LENGTH = 1200
 
 
 def _keeps_state(contracts: ContractLibrary) -> Any:
@@ -56,6 +58,19 @@ def _arguments(make_gate: Any) -> tuple[Any, ...]:
     )  # fmt: skip
 
 
+_EXPECTED: dict[tuple[Any, ...], tuple[Any, Any]] = {}
+
+
+def _in_one(make_gate: Any, horizon_s: int | None, max_judged: int | None = None) -> Any:
+    """Return what the oracle makes of the run in one process; made once per case."""
+    key = (make_gate, horizon_s, max_judged)
+    if key not in _EXPECTED:
+        _EXPECTED[key] = judge_run(
+            *_arguments(make_gate), horizon_s=horizon_s, max_judged=max_judged
+        )
+    return _EXPECTED[key]
+
+
 def _same(one: tuple[Any, Any], other: tuple[Any, Any]) -> None:
     (result, judged), (expected, expected_judged) = one, other
     assert judged == expected_judged
@@ -70,18 +85,18 @@ def _same(one: tuple[Any, Any], other: tuple[Any, Any]) -> None:
     ("make_gate", "horizon_s", "max_judged", "branches_from"),
     [
         (static_allowlist, None, None, "capture"),
-        (static_allowlist, 300, None, "capture"),
-        (static_allowlist, 300, 3, "capture"),
+        (static_allowlist, 300, 2, "capture"),
         (_keeps_state, 300, None, "gate snapshot"),
-        (_keeps_state, None, 3, "gate snapshot"),
-        (_cannot_be_restored, 300, 3, "start of run"),
+        (_cannot_be_restored, 300, 2, "start of run"),
     ],
 )
 def test_shares_judged_apart_give_the_judgements_of_the_replay_in_one(
     make_gate: Any, horizon_s: int | None, max_judged: int | None, branches_from: str
 ) -> None:
-    expected = judge_run(*_arguments(make_gate), horizon_s=horizon_s, max_judged=max_judged)
+    expected = _in_one(make_gate, horizon_s, max_judged)
     assert expected[1] and expected[0].judging["branches_from"] == branches_from
+    if max_judged is not None:
+        assert expected[0].judging["candidates"] > max_judged == len(expected[1])
     made = judge_run_parallel(
         *_arguments(make_gate), horizon_s=horizon_s, max_judged=max_judged,
         replay_jobs=2, min_work_runs=0, spawn=False,
@@ -90,7 +105,7 @@ def test_shares_judged_apart_give_the_judgements_of_the_replay_in_one(
 
 
 def test_processes_of_their_own_give_the_same_judgements() -> None:
-    expected = judge_run(*_arguments(static_allowlist), horizon_s=None)
+    expected = _in_one(static_allowlist, None)
     made = judge_run_parallel(
         *_arguments(static_allowlist), horizon_s=None, replay_jobs=2, min_work_runs=0
     )
@@ -109,7 +124,7 @@ def test_one_replay_job_is_the_replay_in_one_and_nothing_else(
     monkeypatch.setattr(parallel_replay, "judge_run", counted)
     made = judge_run_parallel(*_arguments(static_allowlist), horizon_s=300, replay_jobs=1)
     assert calls == [{"horizon_s": 300, "max_judged": None}]
-    _same(made, judge_run(*_arguments(static_allowlist), horizon_s=300))
+    _same(made, _in_one(static_allowlist, 300))
 
 
 def test_a_replay_too_small_to_share_is_made_in_one(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -118,7 +133,7 @@ def test_a_replay_too_small_to_share_is_made_in_one(monkeypatch: pytest.MonkeyPa
     monkeypatch.setattr(parallel_replay, "_judge_shares", lambda *a, **k: shared.append(1) or [])
     made = judge_run_parallel(*_arguments(static_allowlist), horizon_s=300, replay_jobs=4)
     assert shared == []
-    _same(made, judge_run(*_arguments(static_allowlist), horizon_s=300))
+    _same(made, _in_one(static_allowlist, 300))
 
 
 def test_the_number_of_helpers_follows_the_work() -> None:
@@ -213,8 +228,10 @@ def test_the_command_takes_the_number_of_replay_jobs(
 def test_the_runner_workflow_passes_the_number_of_replay_jobs() -> None:
     data = yaml.safe_load((REPO / ".github/workflows/bench-runner.yml").read_text("utf-8"))
     assert "replay_jobs" in data[True]["workflow_dispatch"]["inputs"]
-    run = "\n".join(step.get("run", "") for step in data["jobs"]["bench"]["steps"])
-    assert "--replay-jobs" in run and "inputs.replay_jobs" in run
+    (step,) = [s for s in data["jobs"]["bench"]["steps"] if s.get("name") == "Run"]
+    assert step["env"]["REPLAY_JOBS"] == "${{ inputs.replay_jobs }}"
+    assert '--replay-jobs "$REPLAY_JOBS"' in step["run"]
+    assert "inputs." not in step["run"], "inputs reach the shell as environment variables"
 
 
 def test_the_frozen_benchmark_version_is_the_version_of_this_code() -> None:

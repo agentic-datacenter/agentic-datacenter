@@ -46,7 +46,13 @@ Check the round's time yourself with `python tools/heldout_beacon.py round-at 20
 5. **Check it for publication:** `uv run agentic-datacenter bench check <card> --gate <gate> --publication`. It refuses an incomplete card and one not of the frozen version.
 6. **Report it** with the "Gate result" issue form.
 
-Seed 1 of every season is also run by the maintainers with `--tier full`, to measure what the bounded replay misses. The comparison is published with the season.
+**The full-replay check is the maintainers' work, not a participant's.**
+
+- The maintainers run seed 1 of every season with `--tier full`, on a machine of their own, for the built-in gates `static_allowlist` and `remora_governed` at least: one gate that keeps no state and one that does.
+- What is published with the season is the comparison: for each proposal, whether the bounded replay and the replay to the end gave it the same label. It checks the season's bounds. It is not a result of a gate and is ranked nowhere.
+- A participant is not asked to run `full`, and it is no condition for a result.
+- The maintainers do not run a participant's gate. Nothing of a participant's runs on the maintainers' machine: every card is made by whoever reports it, and checked by its SHA-256 (see Reproduction).
+- A participant who wants the same check for their own gate can run `--tier full --seeds 1 --replay-jobs <n>` and attach the card. It is published beside their result and changes nothing in it.
 
 ## Reproduction
 

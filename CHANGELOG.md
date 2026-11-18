@@ -59,6 +59,8 @@ Tooling
 
 Added
 
+- `agentic-datacenter bench run --replay-jobs <n>` spreads the replay of one run over processes, for `--tier full`, where one week-long run in one process takes days (ADR 0026). The card is the same, byte for byte. The oracle's source and the frozen benchmark version are unchanged. `docs/bench/TIERS.md` says what machine each tier needs.
+- The public test says whose the `full` run of a season is: the maintainers', for built-in gates, never a participant's gate on the maintainers' machine (`docs/bench/PUBLIC_TEST.md`).
 - `tools/forbidden_terms.py`: the owner adds forbidden names as hashes, typed without being shown, and scans every file of every commit for them, not only the current ones.
 - `docs/calibration/contribute-data.md` and the "Offer calibration data" issue form: how equipment makers and operators can share anonymized data to calibrate a plant module, without data ever reaching a public issue.
 - `tools/season_registrations.py` lists a season's registered gates with the version each issue named at the deadline, read from the issue's edit history. The README is shorter: an operator guide (`docs/guides/operators.md`) and a glossary (`docs/reference/glossary.md`) hold what it no longer does.

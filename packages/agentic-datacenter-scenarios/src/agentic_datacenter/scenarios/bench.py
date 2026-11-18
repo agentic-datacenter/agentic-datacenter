@@ -36,9 +36,10 @@ from agentic_datacenter.scenarios import agents as agents_module
 from agentic_datacenter.scenarios import counterfactual as oracle_module
 from agentic_datacenter.scenarios import harness as harness_module
 from agentic_datacenter.scenarios.agents import AGENTS, Agent
-from agentic_datacenter.scenarios.counterfactual import Judgement, judge_run, worse
+from agentic_datacenter.scenarios.counterfactual import Judgement, worse
 from agentic_datacenter.scenarios.harness import Metrics, RunResult, ScenarioRun
 from agentic_datacenter.scenarios.heldout import commitment, variants
+from agentic_datacenter.scenarios.parallel_replay import judge_run_parallel
 from agentic_datacenter.scenarios.scenario import Scenario, load_scenario
 
 CARD_SCHEMA_VERSION = 5
@@ -298,6 +299,7 @@ def _gated_run(
     counterfactual: bool,
     horizon_s: int | None = None,
     max_judged: int | None = None,
+    replay_jobs: int = 1,
 ) -> dict[str, Any]:
     """Run one scenario under one gate with one agent and return its row of the card."""
     operating = str(getattr(make_gate(contracts), "profile", "UNSPECIFIED"))
@@ -305,9 +307,9 @@ def _gated_run(
     judged: Sequence[Judgement]
     if counterfactual:
         horizon_s, max_judged = scenario.judging(horizon_s, max_judged)
-        result, judged = judge_run(
+        result, judged = judge_run_parallel(
             scenario, profile, make_gate, operating, make_agent, seed, contracts, duration_s,
-            horizon_s=horizon_s, max_judged=max_judged,
+            horizon_s=horizon_s, max_judged=max_judged, replay_jobs=replay_jobs,
         )  # fmt: skip
     else:
         result = ScenarioRun(
@@ -438,6 +440,7 @@ def run_benchmark(
     progress: Progress | None = None,
     horizon_s: int | None = None,
     max_judged: int | None = None,
+    replay_jobs: int = 1,
 ) -> dict[str, Any]:
     """Run every gate against every agent, scenario and seed, and return the result card.
 
@@ -454,15 +457,21 @@ def run_benchmark(
     *horizon_s* and *max_judged* bound the counterfactual replay of each run
     (see :func:`agentic_datacenter.scenarios.counterfactual.judge_run`); both are on the card.
 
+    With *replay_jobs* above one, the replay of each run that is large enough
+    is spread over that many helper processes, beside the *jobs* runs made at
+    a time (ADR 0026). The card is the same whatever the number.
+
     Raises:
         BenchVersionError: If the benchmark differs from *frozen_version*, or
             there is no frozen version, and *allow_unfrozen* is not set
             (ADC-BEN-001).
-        ValueError: If *jobs* is below one, or above one with a gate factory
-            that another process cannot import.
+        ValueError: If *jobs* or *replay_jobs* is below one, or above one with a
+            gate factory that another process cannot import.
     """
     if jobs < 1:
         raise ValueError("jobs must be at least 1")
+    if replay_jobs < 1:
+        raise ValueError("replay_jobs must be at least 1")
     version = benchmark_version(profile, contracts, scenario_ids)
     frozen = frozen_version is not None and dict(frozen_version) == version
     if not frozen and not allow_unfrozen:
@@ -490,7 +499,7 @@ def run_benchmark(
                 for agent_name in agent_names:
                     arguments = (
                         *where, gate_name, make_gate, agent_name, seed, duration_s, counterfactual,
-                        horizon_s, max_judged,
+                        horizon_s, max_judged, replay_jobs,
                     )  # fmt: skip
                     label = f"{name}.{gate_name}.{agent_name}.{seed}"
                     calls.append((label, _gated_run, arguments))
