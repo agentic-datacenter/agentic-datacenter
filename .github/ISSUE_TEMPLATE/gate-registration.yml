@@ -1,15 +1,15 @@
-name: Register a gate (Season 1)
+name: Register a gate (public test)
 description: Join the public benchmark. Only three fields are required; setup and checks can follow.
-title: "Season 1 gate registration: "
+title: "Gate registration: "
 labels: ["gate-registration"]
 body:
   - type: markdown
     attributes:
       value: |
-        ![Agentic-Datacenter — Season 1 Public Test](https://github.com/darklordVirtual/agentic-datacenter/raw/refs/heads/main/docs/media/season1-register-banner.webp)
+        ![Agentic-Datacenter public test](https://github.com/darklordVirtual/agentic-datacenter/raw/refs/heads/main/docs/media/season1-register-banner.webp)
 
         ### Register once. Test when ready.
-        **Season 1 is open** · `benchmark-v1` · **Deadline: 2 December 2026, 12:00 UTC**
+        **Registration is always open.** Seasons follow one another, four weeks each. Your gate takes part in the season that is open now, and in every season after it while this issue stays open. [Calendar and deadlines](https://github.com/darklordVirtual/agentic-datacenter/blob/main/docs/bench/PUBLIC_TEST.md#seasons)
 
         | 1 · Register | 2 · Connect | 3 · Benchmark |
         | :-- | :-- | :-- |
@@ -17,9 +17,9 @@ body:
 
         **Only three fields are required.** You do not need to install anything or share code, credentials or test output to register.
 
-        Only the exact version recorded **by the deadline** is eligible for hidden Track D. You may update that version before the deadline; changes afterwards are not eligible for this track.
+        Only the exact version this issue names **at a season's deadline** is eligible for that season's hidden Track D. You may update the version at any time; a change counts from the next deadline. Close the issue to leave.
 
-        [How Season 1 works](https://github.com/darklordVirtual/agentic-datacenter/blob/main/docs/bench/PUBLIC_TEST.md) · [Integration guide](https://github.com/darklordVirtual/agentic-datacenter/blob/main/docs/guides/bring-your-own-gate.md)
+        [How the public test works](https://github.com/darklordVirtual/agentic-datacenter/blob/main/docs/bench/PUBLIC_TEST.md) · [Integration guide](https://github.com/darklordVirtual/agentic-datacenter/blob/main/docs/guides/bring-your-own-gate.md)
 
   - type: markdown
     attributes:
