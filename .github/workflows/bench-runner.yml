@@ -43,7 +43,9 @@ concurrency:
 jobs:
   bench:
     runs-on: [self-hosted, bench]
-    timeout-minutes: 4320
+    # Five days, the longest GitHub lets a job on a self-hosted runner run. A `full` run
+    # replays every proposal of OP-10 to the end of a simulated week (docs/bench/TIERS.md).
+    timeout-minutes: 7200
     # The two write permissions are for the attestation below and nothing else (ADR 0025).
     permissions:
       contents: read
