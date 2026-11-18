@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -133,7 +133,7 @@ def test_a_registration_stays_for_every_season_until_its_issue_is_closed(
 ) -> None:
     registrations = _load("season_registrations").registrations
     second = tool.season(2)
-    opened, deadline = _at(second["opens"]), _at(second["deadline"])
+    deadline = _at(second["deadline"])
     issues = [
         _issue(1, "2026-11-20T10:00:00Z", None, "still open from season 1"),
         _issue(2, "2026-11-21T10:00:00Z", "2026-12-01T10:00:00Z", "closed in season 1"),
@@ -141,7 +141,7 @@ def test_a_registration_stays_for_every_season_until_its_issue_is_closed(
         _issue(4, "2026-12-20T10:00:00Z", None, "opened in season 2"),
         _issue(5, "2026-12-31T10:00:00Z", None, "opened in season 3"),
     ]
-    listed = registrations(issues, deadline, opened)
+    listed = registrations(issues, deadline, standing=True)
     assert [entry["issue"] for entry in listed] == [1, 4]
     assert listed[0]["closed_at"] is None
     # Without the opening of the season, as before: every issue opened by the deadline.
@@ -153,4 +153,3 @@ def test_the_plan_is_a_small_file_anyone_can_read() -> None:
     assert plan["length_days"] == 28
     assert plan["first_deadline"] == "2026-12-02T12:00:00Z"
     assert plan["versions"][0] == {"from_season": 1, "tag": "benchmark-v1"}
-    assert datetime.now(UTC) < datetime(2100, 1, 1, tzinfo=UTC)

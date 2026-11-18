@@ -59,6 +59,7 @@ Tooling
 
 Added
 
+- Seasons of the public test follow one another by a rule, four weeks each, so registration is always open (ADR 0027). `tools/season.py current` says which season is open; the calendar of thirteen seasons, with each beacon round, is in `docs/bench/PUBLIC_TEST.md`. A registration stands until its issue is closed. The README no longer names a season or a date.
 - `agentic-datacenter bench run --replay-jobs <n>` spreads the replay of one run over processes, for `--tier full`, where one week-long run in one process takes days (ADR 0026). The card is the same, byte for byte. The oracle's source and the frozen benchmark version are unchanged. `docs/bench/TIERS.md` says what machine each tier needs.
 - The public test says whose the `full` run of a season is: the maintainers', for built-in gates, never a participant's gate on the maintainers' machine (`docs/bench/PUBLIC_TEST.md`).
 - `tools/forbidden_terms.py`: the owner adds forbidden names as hashes, typed without being shown, and scans every file of every commit for them, not only the current ones.
