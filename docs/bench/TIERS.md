@@ -26,6 +26,33 @@ Five runs were timed on 2026-11-17, on one machine with 16 threads and 11 GB of 
 - Not measured again since ADR 0023, and kept as a rough guide only: one simulated hour runs in about 10 seconds of processor time.
 - A replay costs its horizon, not the rest of the scenario. In `OP-10`, a simulated week, the hostile agent proposes about 640 times. Replaying each one to the end costs about 320 simulated weeks of work per run. `standard` costs about 16 simulated days of replay per `OP-10` run, and about 64 simulated hours per run of any other scenario.
 
+## What machine you need
+
+No special hardware. A run uses processor and memory only: no GPU, and no network unless your gate is a service somewhere else.
+
+- **System:** Linux, macOS or Windows. On Windows, WSL2 with Ubuntu behaves as Linux does. The IEC 61850 package installs on Linux only; elsewhere the benchmark runs without it.
+- **Installed by hand:** `git` and [uv](https://docs.astral.sh/uv/). uv fetches Python 3.12 itself.
+- **Cores decide the time.** Each run is one process, and `--jobs` makes that many at a time. Every figure in the table above is from a machine with 16 threads. On fewer cores expect the time to grow about in proportion; that is an estimate, not a measurement.
+- **Memory decides how many jobs fit.** Allow 0.4 GB for each job with a gate that is restored from its own snapshots, such as `remora_governed`, and 1 GB for each run of `OP-10` in memory with a gate that keeps no state. Both were measured at the `standard` tier ([Memory](../guides/bench-runner.md#memory)).
+
+| To do | Tier | What it took on 16 threads | Who needs it |
+| --- | --- | --- | --- |
+| Try a gate | `quick` | 2 minutes with 6 jobs | everyone, first |
+| Your own result | `standard` | 59 minutes with 9 jobs | a participant who wants to check seeds 1 to 3 |
+| A season | `season` | 6 h 22 min with 15 jobs; or split over machines and merged | a participant who reports a result |
+| The full-replay check | `full` | not timed as a whole | the maintainers only ([Public test](PUBLIC_TEST.md#taking-part)) |
+
+**`full` is the only tier where one run is the limit.** Its longest run, `OP-10` with the hostile agent, is about 330 simulated weeks of replay in one process, so `--jobs` does not shorten it. `--replay-jobs <n>` spreads the replay of one run over *n* helper processes (ADR 0026):
+
+```sh
+uv run agentic-datacenter bench run --tier full --seeds 1 --gate remora_governed --jobs 3 --replay-jobs 5 --out build/full
+```
+
+- `--jobs` times `--replay-jobs` should not exceed the cores. Above, three runs at a time, each with up to five helpers.
+- A helper repeats the run before it plays a branch, so a small replay is not shared: the option changes nothing in `quick`, and little in `standard` and `season`.
+- The card is the same, byte for byte, whatever the number.
+- Memory with `full` has not been measured. While the oracle chooses what is judged, one process holds a capture for every proposal of the run. The code that kept a capture at every decision point held 3.3 to 3.8 GB for one run of `OP-10` with the hostile agent; expect that for each such run in memory at a time.
+
 `--jobs <n>` makes *n* runs at a time. A season can also be split by seed over machines:
 
 ```sh
