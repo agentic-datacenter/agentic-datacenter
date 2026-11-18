@@ -13,7 +13,7 @@ Stage 9 is the last stage of the build plan, so every requirement is due. A due 
 | `ADC-BEN-003` | 9 | yes | `agentic-datacenter-scenarios` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/bench/test_utility_measures.py`<br>`tests/property/test_counterfactual_identity.py` |
 | `ADC-BEN-004` | 9 | yes | `agentic-datacenter-scenarios` | `tests/bench/test_fairness.py`<br>`tests/bench/test_release_gate.py`<br>`tests/conformance/test_result_card.py` |
 | `ADC-BEN-005` | 9 | yes | `agentic-datacenter-scenarios` | `tests/conformance/test_gate_cli.py`<br>`tests/conformance/test_result_card.py` |
-| `ADC-BEN-006` | 9 | yes | `agentic-datacenter-scenarios` | `tests/bench/test_merge.py`<br>`tests/conformance/test_result_card.py`<br>`tests/scenario/test_op13_ad09_governed.py` |
+| `ADC-BEN-006` | 9 | yes | `agentic-datacenter-scenarios` | `tests/bench/test_merge.py`<br>`tests/bench/test_parallel_replay.py`<br>`tests/conformance/test_result_card.py`<br>`tests/scenario/test_op13_ad09_governed.py` |
 | `ADC-BEN-007` | 9 | yes | `agentic-datacenter-scenarios` | `tests/bench/test_release_gate.py`<br>`tests/conformance/test_result_card.py` |
 | `ADC-BEN-008` | 9 | yes | `agentic-datacenter-scenarios` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/bench/test_bounded_replay.py` |
 | `ADC-BEN-009` | 9 | yes | `agentic-datacenter-scenarios` | `tests/bench/test_fairness.py`<br>`tests/conformance/test_result_card.py` |

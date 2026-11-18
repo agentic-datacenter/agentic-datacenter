@@ -35,6 +35,7 @@ nav:
       - 0023 Bounded replay and fair comparison: design/adr/0023-bounded-replay-and-fair-comparison.md
       - 0024 An approval a person declined: design/adr/0024-approval-a-person-declined.md
       - 0025 Signed provenance: design/adr/0025-signed-provenance.md
+      - 0026 Parallel replay: design/adr/0026-parallel-replay.md
   - Guides:
       - For data center operators: guides/operators.md
       - Run a scenario on measured weather: guides/measured-weather.md

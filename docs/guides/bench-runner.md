@@ -16,7 +16,8 @@ gh run download -R darklordVirtual/agentic-datacenter <run-id>           # the c
 | `gates` | the gates to run, separated by spaces |
 | `scenario` | one scenario only, or empty for all 23 |
 | `first_seed`, `seeds` | a part of a season, to be merged with the others (`agentic-datacenter bench merge`) |
-| `jobs` | runs at a time; empty is every core but one |
+| `jobs` | runs at a time; empty is every core but one, divided by `replay_jobs` |
+| `replay_jobs` | processes that share the replay of one run, for `full`; empty is 1 ([what `full` needs](../bench/TIERS.md#what-machine-you-need)) |
 
 The workflow (`.github/workflows/bench-runner.yml`) runs the benchmark and then the release check for each gate. It keeps the card, the report and the check's output for 90 days. It runs only when started by hand, never on a pull request.
 

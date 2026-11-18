@@ -83,6 +83,12 @@ def bench(argv: Sequence[str]) -> int:
         help="Runs made at a time, each in a process of its own. The card is the same "
         "whatever the number.",
     )  # fmt: skip
+    run.add_argument(
+        "--replay-jobs", type=int, default=1,
+        help="Processes that share the replay of one run, for a long replay such as "
+        "--tier full. Beside --jobs: together they should not exceed the cores. "
+        "The card is the same whatever the number.",
+    )  # fmt: skip
     merge = actions.add_parser(
         "merge", help="Merge result cards made in parts (seed ranges, machines) into one."
     )
@@ -182,6 +188,9 @@ def bench(argv: Sequence[str]) -> int:
     if args.jobs < 1:
         print("agentic-datacenter bench: --jobs must be at least 1", file=sys.stderr)
         return 2
+    if args.replay_jobs < 1:
+        print("agentic-datacenter bench: --replay-jobs must be at least 1", file=sys.stderr)
+        return 2
     preset = TIERS.get(args.tier or "", {})
     seeds = args.seeds if args.seeds is not None else int(preset.get("seeds") or 1)
     seconds = args.seconds if args.seconds is not None else preset.get("seconds")
@@ -202,6 +211,7 @@ def bench(argv: Sequence[str]) -> int:
             allow_unfrozen=args.allow_unfrozen,
             heldout_secret=secret, heldout_variants=args.heldout_variants if secret else 0,
             jobs=args.jobs, progress=progress, horizon_s=horizon, max_judged=max_judged,
+            replay_jobs=args.replay_jobs,
         )  # fmt: skip
     except BenchVersionError as exc:
         print(
