@@ -24,6 +24,7 @@ Five runs were timed on 2026-11-17, on one machine with 16 threads and 11 GB of 
 - Most of a `standard` run is the nine week-long runs of `OP-10`. They are also what the memory goes to ([Run long benchmarks on a machine of your own](../guides/bench-runner.md#memory)).
 - A whole `season` on that machine, run as the three parts above one after another, took 6 h 22 min of benchmark time (GitHub Actions runs 44096628916, 44124809728 and 44136578381). `full` has not been timed yet.
 - Not measured again since ADR 0023, and kept as a rough guide only: one simulated hour runs in about 10 seconds of processor time.
+- One later figure, worked out from a single run on 2026-11-18 on a machine with 4 cores (ADR 0026): `OP-10` under `static_allowlist` ran at about 1.4 seconds for a simulated hour, and building and warming up a plant, which every run and every branch does, took about 2.7 seconds.
 - A replay costs its horizon, not the rest of the scenario. In `OP-10`, a simulated week, the hostile agent proposes about 640 times. Replaying each one to the end costs about 320 simulated weeks of work per run. `standard` costs about 16 simulated days of replay per `OP-10` run, and about 64 simulated hours per run of any other scenario.
 
 ## What machine you need
@@ -40,7 +41,7 @@ No special hardware. A run uses processor and memory only: no GPU, and no networ
 | Try a gate | `quick` | 2 minutes with 6 jobs | everyone, first |
 | Your own result | `standard` | 59 minutes with 9 jobs | a participant who wants to check seeds 1 to 3 |
 | A season | `season` | 6 h 22 min with 15 jobs; or split over machines and merged | a participant who reports a result |
-| The full-replay check | `full` | not timed as a whole | the maintainers only ([Public test](PUBLIC_TEST.md#taking-part)) |
+| The full-replay check | `full` | not timed as a whole; see ADR 0026 for one shortened run | the maintainers only ([Public test](PUBLIC_TEST.md#taking-part)) |
 
 **`full` is the only tier where one run is the limit.** Its longest run, `OP-10` with the hostile agent, is about 330 simulated weeks of replay in one process, so `--jobs` does not shorten it. `--replay-jobs <n>` spreads the replay of one run over *n* helper processes (ADR 0026):
 
@@ -49,7 +50,7 @@ uv run agentic-datacenter bench run --tier full --seeds 1 --gate remora_governed
 ```
 
 - `--jobs` times `--replay-jobs` should not exceed the cores. Above, three runs at a time, each with up to five helpers.
-- A helper repeats the run before it plays a branch, so a small replay is not shared: the option changes nothing in `quick`, and little in `standard` and `season`.
+- Sharing costs something, so only a long replay is shared: branches of six simulated hours or more on average. The option changes nothing in `quick`, `standard` and `season`, and nothing for the short scenarios of `full`. It is for `OP-10`.
 - The card is the same, byte for byte, whatever the number.
 - Memory with `full` has not been measured. While the oracle chooses what is judged, one process holds a capture for every proposal of the run. The code that kept a capture at every decision point held 3.3 to 3.8 GB for one run of `OP-10` with the hostile agent; expect that for each such run in memory at a time.
 

@@ -25,7 +25,7 @@ Season 1 is open, and its benchmark version is frozen. The version holds the has
    - Each helper repeats the run from the same seed, once, or twice for a gate restored from its own snapshots, as `judge_run` does. It plays its share with the steps of `judge_run`: the same captures and gate snapshots, the same forced outcome, the same end. It labels each branch with the oracle's own `label`.
    - The judgements are put back in the oracle's order.
 3. **A helper that made another run stops the benchmark.** Each helper returns the final state hash of the run it repeated. If it is not that of the asking process, no judgement is trusted and no card is written.
-4. **Only on request, and only where it pays.** `--replay-jobs <n>` is 1 unless given, and with 1 the oracle does everything, as before. A helper repeats the run before it plays a branch, so a replay is shared only when every helper gets at least four run lengths of replay to do. The bounded tiers on `OP-10`, 16 branches of a day, are not shared. `full` is.
+4. **Only on request, and only where it pays.** `--replay-jobs <n>` is 1 unless given, and with 1 the oracle does everything, as before. Sharing has two costs: a helper repeats the run before it plays a branch, and asking the oracle what it judges builds a plant for every branch once more. So a replay is shared only when every helper gets at least four run lengths of replay to do, and the branches last six simulated hours or more on average. The bounded tiers are not shared, nor is `full` on a scenario of a few hours. `full` on `OP-10` is.
 5. **`--jobs` and `--replay-jobs` multiply.** `--jobs` runs at a time, each with up to `--replay-jobs` helpers. Together they should not exceed the cores. The runner workflow divides the cores between them when `jobs` is left empty.
 6. **The card is the same**, byte for byte, whatever the number of replay jobs (`ADC-BEN-006`). The number is not on the card, as the number of jobs is not.
 
@@ -39,7 +39,16 @@ The steps of one branch (restore, force the other outcome, play, compare) are wr
 
 ## Measured
 
-Nothing yet. One shortened run of `OP-10` is to be timed with one and with several replay jobs, and its two cards compared, before this record is accepted.
+On 2026-11-18, on a machine with 4 cores: `OP-10` shortened to eight simulated hours, `static_allowlist`, the hostile agent, `--tier full`. All 31 proposals were judged, each replayed to the end, four hours on average.
+
+| `--replay-jobs` | Wall time | SHA-256 of the card |
+| --- | --- | --- |
+| 1 | 272 s | `540a3f2f…deab4b93` |
+| 3 | 200 s | `540a3f2f…deab4b93`, the same file |
+
+- **The cards are the same file.**
+- **The gain was small, 1.4 times with three helpers, because the branches were short.** Of the 200 s, about half went to asking the oracle what it judges. Building and warming up a plant takes about 2.7 s, as much as two simulated hours of a branch, and that step does it once for every branch. From this run the rule of six hours under decision 4 was set, and this run would no longer be shared.
+- **What it suggests for a whole week, not measured:** one run of `OP-10` with the hostile agent under `static_allowlist` is about 670 branches of 84 simulated hours. At the rate of this run, about 1.4 s for a simulated hour, that is near a day in one process, and a few hours with five helpers. A gate that keeps state costs more.
 
 ## Not verified
 
