@@ -6,6 +6,14 @@ can be edited, so the version is read from the issue's edit history as it was
 at that instant, not from the issue as it is now. GitHub keeps that history
 and shows it to anyone, so anyone can run this again and get the same list.
 
+    python tools/season_registrations.py --season 2
+
+A registration stands for every season until its issue is closed, so from
+season 2 on an issue closed by a season's deadline is left out of that
+season. ``--season`` reads the deadline from the plan (``tools/season.py``)
+and writes ``docs/bench/season-<n>-registrations.json``. A deadline can also be
+given by itself:
+
     python tools/season_registrations.py --deadline 2026-12-02T12:00:00Z \
         --out docs/bench/season-1-registrations.json
 
@@ -21,6 +29,7 @@ import argparse
 import json
 import re
 import subprocess
+import sys
 from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
@@ -42,7 +51,7 @@ query($owner: String!, $name: String!, $label: String!, $after: String) {
            orderBy: {field: CREATED_AT, direction: ASC}) {
       pageInfo { hasNextPage endCursor }
       nodes {
-        number url createdAt body author { login }
+        number url createdAt closedAt body author { login }
         userContentEdits(first: 100) { nodes { editedAt diff } }
       }
     }
@@ -88,11 +97,20 @@ def fields(body: str) -> dict[str, str]:
     return answers
 
 
-def registrations(issues: Sequence[Mapping[str, Any]], deadline: datetime) -> list[dict[str, Any]]:
-    """Return one entry per issue opened before *deadline*, with its answers at that instant."""
+def registrations(
+    issues: Sequence[Mapping[str, Any]], deadline: datetime, standing: bool = False
+) -> list[dict[str, Any]]:
+    """Return one entry per issue opened before *deadline*, with its answers at that instant.
+
+    With *standing*, an issue closed by the deadline is left out: a
+    registration stands for every season until its issue is closed.
+    """
     listed = []
     for issue in issues:
         if _instant(issue["createdAt"]) > deadline:
+            continue
+        closed = issue.get("closedAt")
+        if standing and closed and _instant(closed) <= deadline:
             continue
         text = body_at(issue, deadline)
         entry: dict[str, Any] = {
@@ -100,6 +118,7 @@ def registrations(issues: Sequence[Mapping[str, Any]], deadline: datetime) -> li
             "url": issue["url"],
             "opened_by": (issue.get("author") or {}).get("login"),
             "opened_at": issue["createdAt"],
+            "closed_at": closed,
         }
         if text is None:
             entry["problem"] = "the text at the deadline is not in the issue's edit history"
@@ -135,12 +154,28 @@ def fetch(query: Query = _gh_query) -> list[Mapping[str, Any]]:
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the command line."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--deadline", required=True, help="ISO 8601, e.g. 2026-12-02T12:00:00Z")
-    parser.add_argument("--out", type=Path, required=True)
+    which = parser.add_mutually_exclusive_group(required=True)
+    which.add_argument("--season", type=int, help="A season of the plan (tools/season.py).")
+    which.add_argument("--deadline", help="ISO 8601, e.g. 2026-12-02T12:00:00Z")
+    parser.add_argument("--out", type=Path, help="Required with --deadline.")
     args = parser.parse_args(argv)
+    record: dict[str, Any] = {"repository": REPOSITORY}
+    standing = False
+    if args.season is not None:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from season import season  # noqa: PLC0415
+
+        planned = season(args.season)
+        args.deadline = planned["deadline"]
+        # Season 1 was published before registrations stood from season to season.
+        standing = args.season > 1
+        args.out = args.out or Path(f"docs/bench/season-{args.season}-registrations.json")
+        record.update(season=args.season, opened=planned["opens"], round=planned["round"])
+    elif args.out is None:
+        parser.error("--out is required with --deadline")
     deadline = _instant(args.deadline)
-    listed = registrations(fetch(), deadline)
-    record = {"deadline": args.deadline, "repository": REPOSITORY, "registrations": listed}
+    listed = registrations(fetch(), deadline, standing)
+    record.update(deadline=args.deadline, registrations=listed)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(f"{len(listed)} registration(s) as of {args.deadline} written to {args.out}")
