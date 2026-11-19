@@ -57,6 +57,8 @@ PROFILES = {
 #: Profiles in which a contract's rollback is watched. Without a gate, and with
 #: an allowlist that only checks ranges, nothing enforces the rest of a contract.
 ROLLBACK_PROFILES = frozenset({"GOVERNED", "DECISION_ONLY", "SHADOW"})
+#: What the record says when an approval came from someone without standing.
+NO_STANDING = "holds no standing to approve this contract"
 _ROLLBACK_ACTOR = Actor("rollback-monitor", "operator")
 #: How long an unanswered write is left before the plant is read to see what became of it.
 UNKNOWN_RESOLVE_MS = 30_000
@@ -162,10 +164,13 @@ class GovernedPath:
         """Set the mandate of *principal*: the contracts it may propose from now on.
 
         None is every contract of the library; an empty sequence ends the
-        mandate. From the first call on, a principal holds a mandate only for
-        what was set for it, and every proposal carries the premise
+        mandate. A principal a mandate was set for holds it only for what was
+        set, and every proposal it makes carries the premise
         ``authority(<principal>, <contract>)`` beside the contract's own. It is
         established here, from this register, never from what the agent says.
+        For a person, the mandate is what that person may approve: an approval
+        from someone without it is not taken. A principal no mandate was ever
+        set for is not restricted.
 
         Raises:
             ValueError: If a contract is not in the library.
@@ -180,10 +185,10 @@ class GovernedPath:
         self._kernel.state.touch("governance.path")
 
     def authorized(self, principal: str, contract_id: str) -> bool | None:
-        """Whether *principal* holds a mandate for *contract_id*; None while none was ever set."""
-        if self._authority is None:
+        """Whether *principal* holds a mandate for *contract_id*; None if none was set for it."""
+        if self._authority is None or principal not in self._authority:
             return None
-        return contract_id in self._authority.get(principal, frozenset())
+        return contract_id in self._authority[principal]
 
     # -- proposing -----------------------------------------------------------------
 
@@ -322,6 +327,13 @@ class GovernedPath:
         now = self._kernel.clock.now_ms
         self._kernel.state.touch("governance.path")
         if approver not in approvers:
+            if self.authorized(approver, str(record["contract_id"])) is False:
+                # Someone who has lost access. It is refused here, before any
+                # gate is asked: who may approve is not a gate's to decide.
+                refused = record["approval_refusals"]
+                assert isinstance(refused, list)
+                refused.append(f"{approver}: {NO_STANDING}")
+                return copy.deepcopy(record)
             hook = getattr(self.gate, "approve", None)
             if hook is not None:
                 try:
@@ -350,6 +362,10 @@ class GovernedPath:
             self.restore_origins(),
         )
         failed = [p.expr for p in snapshot.premises if p.holds is not True]
+        proposer, contract_id = str(record["principal"]), str(record["contract_id"])
+        if self.authorized(proposer, contract_id) is False:
+            # Asked for while the proposer held a mandate, answered after it ended.
+            failed.append(f"authority({proposer}, {contract_id})")
         problems = [*snapshot.schema_errors, *snapshot.bound_errors]
         if not self._gate_limits:
             problems += snapshot.limit_errors

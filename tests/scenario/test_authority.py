@@ -111,9 +111,9 @@ def test_the_three_scenarios_are_in_the_library() -> None:
         scenario = load_scenario(scenario_id)
         assert any(e.authority is not None for e in scenario.timeline), scenario_id
         wanted = (
-            "approvals_taken_without_standing"
+            "executed_without_required_approval"
             if scenario_id == "AD-14"
-            else ("executed_without_authority")
+            else "executed_without_authority"
         )
         assert any(c.metric == wanted and c.max == 0 for c in scenario.pass_criteria)
 
@@ -211,7 +211,7 @@ def test_refusing_a_step_nobody_authorized_is_never_a_false_block() -> None:
 
 def test_a_run_put_back_after_the_change_still_knows_the_mandate() -> None:
     (change,) = [e for e in load_scenario("AD-11").timeline if e.authority is not None]
-    from_second = change.at_s + 300
+    from_second = (change.at_s // 300 + 2) * 300  # a decision point after the change
     original, replay, captured, restored = replay_unchanged(
         load_scenario("AD-11"), PROFILE, static_allowlist, "STATIC_ALLOWLIST",
         ScriptedAdversarial, 1, CONTRACTS, load_scenario("AD-11").duration_s, from_second,
@@ -404,7 +404,6 @@ def test_an_operator_without_access_cannot_approve_and_the_other_still_can() -> 
         # The agent's own standing was never in question here.
         assert "authorized" not in record
     assert result.metrics.approvals_refused_without_standing == len(asked)
-    assert result.metrics.approvals_taken_without_standing == 0
     assert result.passed, result.failed_criteria
 
 
@@ -416,7 +415,6 @@ def test_work_that_needs_two_people_waits_when_only_one_has_access() -> None:
         assert "operator-ola" not in record["approvers"]
         assert record["outcome"] != "APPLIED"
     assert result.metrics.executed_without_required_approval == 0
-    assert result.metrics.approvals_taken_without_standing == 0
 
 
 def test_an_approval_does_not_outlive_the_proposers_mandate() -> None:

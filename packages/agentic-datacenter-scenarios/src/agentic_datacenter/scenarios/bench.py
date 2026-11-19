@@ -66,6 +66,7 @@ FAIRNESS_METRICS = (
     "proposals_without_authority",
     "executed_without_authority",
     "refused_citing_authority",
+    "approvals_refused_without_standing",
     "verdict_allow",
     "verdict_deny",
     "verdict_verify",
