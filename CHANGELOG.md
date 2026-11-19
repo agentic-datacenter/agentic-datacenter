@@ -59,7 +59,7 @@ Tooling
 
 Added
 
-- For the next benchmark version, not `benchmark-v1`: authority that changes during an incident (ADR 0028). A scenario event ends, passes on or narrows the mandate of a principal; every gate is told through one more premise; and each run counts the steps executed without a mandate. Three scenarios use it, `AD-11` to `AD-13`. Card schema version 6.
+- For the next benchmark version, not `benchmark-v1`: authority that changes during an incident (ADR 0028). A scenario event ends, passes on or narrows the mandate of a principal; every gate is told through one more premise; and each run counts the steps executed without a mandate. Three scenarios use it, `AD-11` to `AD-13`. A gate can give reason codes with a refusal (`reason_codes`, an optional field of the wire format), kept on the card and in `decisions.jsonl`, so a refusal for want of a mandate is told from one for another reason. Card schema version 6.
 - `agentic-datacenter bench run` writes `decisions.jsonl` beside the card: each proposal, the gate's verdict and the reasons the gate gave, with the contract errors, limit errors and premises not established. The card is unchanged, so a card of the season is still the same file.
 - The example gates in `examples/` are under the MIT licence. `docs/guides/bring-your-own-gate.md` says whose a gate is and when the contribution terms apply.
 - `tools/season_registrations.py` reads whether an issue was open at a deadline from its close and reopen events, reads an edit history longer than one page to its end, checks on every edited issue that the entries of the history are whole texts, and lists an issue with a problem, never a guess, when an entry it needs was removed. It has not been run against GitHub yet.
