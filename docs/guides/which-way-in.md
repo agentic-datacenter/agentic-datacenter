@@ -12,7 +12,7 @@ Find the row that describes what your project does. Each row says how to connect
 | **Produces a score or risk number** | a service of a few lines that turns your score into a verdict, at a threshold fixed before the run and never tuned on the scenarios | the same, for that threshold. Run more than one threshold to show the trade-off. | |
 | **Observes or advises only** | `ADC_GATE_PROFILE=SHADOW` | What your gate would have allowed and blocked. Nothing it says is executed. | |
 | **Allows with conditions, changes the action, or defers it** | answer `DENY` or `VERIFY` for now | as for a gate | Verdicts that carry caps, a changed action or a later retry. |
-| **Checks who may act**, not only what is within limits | as a gate; read the premise `authority(<principal>, <contract>)` | In the next benchmark version: three scenarios where a mandate ends, passes on or is narrower than the step (ADR 0028), how many steps were executed without a mandate, and how many your gate refused saying so (`reason_codes: ["authority"]`). | Whether the person who approves still has standing. |
+| **Checks who may act**, not only what is within limits | as a gate; read the premise `authority(<principal>, <contract>)` | In the next benchmark version: three scenarios where a mandate ends, passes on or is narrower than the step (ADR 0028), how many steps were executed without a mandate, and how many your gate refused saying so (`reason_codes: ["authority"]`). | A gate is not asked who may approve: an approval from someone who has lost access is refused before any gate sees it. |
 | **Issues identity, delegation or trust** | not as a gate yet | | Scenarios with signed, delegated, expired and revoked credentials. The actor is a principal and a credential string today; a mandate is an entry in a register. |
 | **Signs receipts or evidence** | return your receipt's id as `decision_id`; it is kept on each decision beside Agentic-Datacenter's own reference | Whether every decision on the card has a matching receipt, which you can check from the evidence bundle | Checking a receipt's signature, and binding it to the proposal and its outcome. |
 
@@ -20,7 +20,7 @@ A row marked as not there yet is open work. Say in an issue which row your proje
 
 ## What all of them get
 
-- The same 23 scenarios, agents, seeds and oracle as every other gate, and a result card that anyone can reproduce byte for byte.
+- The same scenarios, agents, seeds and oracle as every other gate, and a result card that anyone can reproduce byte for byte.
 - A first result in minutes (`--tier quick`) and a full one in a few hours on one machine (`--tier standard`). See [tiers](../bench/TIERS.md).
 - Their own figures beside the built-in gates', under [rules that keep different kinds of gates comparable](../bench/FAIRNESS.md).
 

@@ -2,12 +2,14 @@
 
 `agentic-datacenter bench run --tier <name>` sets the length, the seeds and how each proposal is judged. Options given beside a tier take precedence. The tier's bounds are on the card, under `judging`.
 
+`benchmark-v1` has 23 scenarios, and every time on this page was measured on those. The next version adds four (ADR 0028) and has not been timed.
+
 | Tier | Scenarios | Seeds | Replay of each proposal | Proposals judged per run | For |
 | --- | --- | --- | --- | --- | --- |
-| `quick` | all 23, each shortened to 30 minutes | 1 | 15 minutes past its decision | at most 24 | trying a gate; not for reporting |
-| `standard` | all 23, at full length | 3 (1 to 3) | 1 hour past its decision (`OP-10`: 24 hours) | at most 64 (`OP-10`: 16) | a participant's own result, and reproducing seeds 1 to 3 of a season |
-| `season` | all 23, at full length | 30 (1 to 30) | 1 hour past its decision (`OP-10`: 24 hours) | at most 64 (`OP-10`: 16) | what a season reports, as preregistered |
-| `full` | all 23, at full length | 3 | to the end of the scenario | all | the reference the bounds are checked against |
+| `quick` | all, each shortened to 30 minutes | 1 | 15 minutes past its decision | at most 24 | trying a gate; not for reporting |
+| `standard` | all, at full length | 3 (1 to 3) | 1 hour past its decision (`OP-10`: 24 hours) | at most 64 (`OP-10`: 16) | a participant's own result, and reproducing seeds 1 to 3 of a season |
+| `season` | all, at full length | 30 (1 to 30) | 1 hour past its decision (`OP-10`: 24 hours) | at most 64 (`OP-10`: 16) | what a season reports, as preregistered |
+| `full` | all, at full length | 3 | to the end of the scenario | all | the reference the bounds are checked against |
 
 ## What it costs
 

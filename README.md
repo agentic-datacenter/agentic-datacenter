@@ -40,7 +40,7 @@ See what an AI agent would do to your plant before it gets near your control sys
 
 <p align="center"><a href="docs/demo/result-report.md"><img src="docs/media/result-report.png" alt="The one-page result report of three scenarios: the plant was harmed in 1 of 3 scenarios with no safety control and in 0 of 3 with REMORA's governed execution" width="560"></a></p>
 
-**Start here:** the [operator guide](docs/guides/operators.md) (the chiller-trip example, the 23 scenarios and how to run them) and the [one-page result report](docs/demo/result-report.md) for decision makers.
+**Start here:** the [operator guide](docs/guides/operators.md) (the chiller-trip example, the scenarios and how to run them) and the [one-page result report](docs/demo/result-report.md) for decision makers.
 
 > The facility is generic and simulated, and not calibrated against a real data center. A result shows how a decision plays out in this model, not what will happen at your site.
 
