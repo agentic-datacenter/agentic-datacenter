@@ -14,8 +14,8 @@ What happens after the decision depends on the operating profile (SDD 9.6).
 from __future__ import annotations
 
 import copy
-from collections.abc import Mapping
-from dataclasses import asdict, dataclass, field
+from collections.abc import Mapping, Sequence
+from dataclasses import asdict, dataclass, field, replace
 
 from agentic_datacenter.core.scheduler import Kernel
 from agentic_datacenter.core.state import JsonValue
@@ -29,6 +29,7 @@ from agentic_datacenter.governance.gate import (
     GateRefusal,
     GovernanceGate,
     Outcome,
+    PremiseResult,
     Proposal,
     Verdict,
 )
@@ -129,6 +130,10 @@ class GovernedPath:
         #: Proposal ids whose decision is replaced in a counterfactual replay:
         #: ``execute`` (as if no gate stood in the way) or ``block``.
         self.forced: dict[str, str] = {}
+        #: The contracts each principal holds a mandate for. None until a mandate
+        #: is first set: then nothing is said about authority, and every
+        #: principal may propose every contract, as before authority was modelled.
+        self._authority: dict[str, frozenset[str]] | None = None
         self._records: list[dict[str, JsonValue]] = []
         self._history: list[AppliedWrite] = []
         self._watches: list[_Watch] = []
@@ -149,6 +154,35 @@ class GovernedPath:
         """Add free text that is shown with the alarms: a work order, an operator comment."""
         self.notes.append(text)
         self._kernel.state.touch("governance.path")
+
+    # -- authority -----------------------------------------------------------------
+
+    def set_authority(self, principal: str, contracts: Sequence[str] | None) -> None:
+        """Set the mandate of *principal*: the contracts it may propose from now on.
+
+        None is every contract of the library; an empty sequence ends the
+        mandate. From the first call on, a principal holds a mandate only for
+        what was set for it, and every proposal carries the premise
+        ``authority(<principal>, <contract>)`` beside the contract's own. It is
+        established here, from this register, never from what the agent says.
+
+        Raises:
+            ValueError: If a contract is not in the library.
+        """
+        known = set(self.library.ids())
+        wanted = known if contracts is None else set(contracts)
+        if not wanted <= known:
+            raise ValueError(f"no such contract: {', '.join(sorted(wanted - known))}")
+        if self._authority is None:
+            self._authority = {}
+        self._authority[principal] = frozenset(wanted)
+        self._kernel.state.touch("governance.path")
+
+    def authorized(self, principal: str, contract_id: str) -> bool | None:
+        """Whether *principal* holds a mandate for *contract_id*; None while none was ever set."""
+        if self._authority is None:
+            return None
+        return contract_id in self._authority.get(principal, frozenset())
 
     # -- proposing -----------------------------------------------------------------
 
@@ -197,6 +231,18 @@ class GovernedPath:
             now,
             self.restore_origins(),
         )
+        authorized = self.authorized(actor.principal, contract_id)
+        if authorized is not None:
+            # Told to the gate as a premise, the form in which every gate is
+            # already told what was established about a proposal.
+            held = "holds a mandate" if authorized else "holds no mandate"
+            premise = PremiseResult(
+                f"authority({actor.principal}, {contract_id})",
+                authorized,
+                f"{actor.principal} {held} for this contract",
+            )
+            snapshot = replace(snapshot, premises=(*snapshot.premises, premise))
+            record["authorized"] = authorized
         decision = self.gate.evaluate(proposal, snapshot, actor)
         # Whatever a gate returns, an ALLOW authorizes at most the writes of this
         # contract instance, as built here (INV-GOV-2). A gate from another
@@ -593,7 +639,16 @@ class GovernedPath:
         raise KeyError(proposal_id)
 
     def snapshot(self) -> JsonValue:
-        """Return every record, the applied-write history and the rollback watches."""
+        """Return every record, the applied-write history, the watches and the mandates."""
+        state = self._snapshot()
+        if self._authority is not None:
+            # Only once a mandate was set, so a run that never sets one has the
+            # state, and the state hash, it had before authority was modelled.
+            assert isinstance(state, dict)
+            state["authority"] = {p: sorted(c) for p, c in sorted(self._authority.items())}
+        return state
+
+    def _snapshot(self) -> JsonValue:
         return {
             "records": copy.deepcopy(self._records),
             "notes": list(self.notes),
@@ -655,6 +710,14 @@ class GovernedPath:
                     [str(i) for i in kept],
                 )
             )
+        mandates = state.get("authority")
+        self._authority = None
+        if isinstance(mandates, Mapping):
+            self._authority = {
+                str(p): frozenset(str(c) for c in held)
+                for p, held in mandates.items()
+                if isinstance(held, list | tuple)
+            }
         self._unknown = []
         for u in state.get("unknown", []):  # type: ignore[union-attr]
             assert isinstance(u, list | tuple) and isinstance(u[2], list | tuple)
