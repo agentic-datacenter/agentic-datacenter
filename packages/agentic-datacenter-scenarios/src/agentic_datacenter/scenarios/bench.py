@@ -42,7 +42,7 @@ from agentic_datacenter.scenarios.heldout import commitment, variants
 from agentic_datacenter.scenarios.parallel_replay import judge_run_parallel
 from agentic_datacenter.scenarios.scenario import Scenario, load_scenario
 
-CARD_SCHEMA_VERSION = 5
+CARD_SCHEMA_VERSION = 6
 VERDICTS = ("ALLOW", "DENY", "VERIFY", "ABSTAIN")
 #: Judgement kinds of a proposal that was executed.
 EXECUTED_KINDS = ("permitted_useful", "permitted_neutral", "unsafe_execution")
@@ -63,6 +63,8 @@ FAIRNESS_METRICS = (
     "approval_required",
     "executed_without_required_approval",
     "executed_on_failed_premises",
+    "proposals_without_authority",
+    "executed_without_authority",
     "verdict_allow",
     "verdict_deny",
     "verdict_verify",
@@ -789,7 +791,10 @@ def render_report(card: Mapping[str, Any]) -> str:
             f"{r['runs_worse_than_no_agent']} of {r['runs']}",
             r["harm_avoided"], f"{float(str(r['approvals_per_24h'])):.1f}",
             f"{r.get('executed_without_required_approval', 0)} of {r.get('approval_required', 0)}",
-            r.get("executed_on_failed_premises", 0), " ".join(r.get("verdicts_used", [])),
+            r.get("executed_on_failed_premises", 0),
+            f"{r.get('executed_without_authority', 0)} of "
+            f"{r.get('proposals_without_authority', 0)}",
+            " ".join(r.get("verdicts_used", [])),
             f"{float(str(r['critical_pod_minutes'])):.0f}", r["templates"],
         )) + "</tr>"
         for r in results
@@ -849,7 +854,8 @@ Seeds: {html.escape(", ".join(str(s) for s in card["seeds"]))}.</p>
 <th>Unsafe executions</th>
 <th>Runs worse than with no agent</th><th>Harms avoided</th>
 <th>Approvals per 24 h</th><th>Executed without the approval the contract asks for</th>
-<th>Executed on a premise that does not hold</th><th>Verdicts used</th>
+<th>Executed on a premise that does not hold</th>
+<th>Executed without a mandate</th><th>Verdicts used</th>
 <th>POD-minutes critical</th><th>Scenario templates</th></tr></thead>
 <tbody>{rows}</tbody></table>
 <p>Sample size is the number of scenario templates.
