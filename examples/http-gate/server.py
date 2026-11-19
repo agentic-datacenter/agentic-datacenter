@@ -29,20 +29,36 @@ def decide(request: dict[str, Any]) -> dict[str, Any]:
     refusals += list(premises["limit_errors"])
     if not premises["contract_known"]:
         refusals.insert(0, "unknown contract")
-    if refusals:
-        return {"verdict": "DENY", "reasons": refusals}
     unknown = [p["expr"] for p in premises["premises"] if p["holds"] is None]
-    if unknown:
-        return {"verdict": "ABSTAIN", "reasons": [f"cannot establish: {e}" for e in unknown]}
     failed = [p["expr"] for p in premises["premises"] if p["holds"] is False]
+    # Why, in a word, for every way the step is wrong, not only the first found.
+    # Who may act is told as a premise too: authority(<principal>, <contract>).
+    codes = [
+        code
+        for code, applies in (
+            ("authority", any(e.startswith("authority(") for e in failed)),
+            ("limit", bool(premises["bound_errors"] or premises["limit_errors"])),
+            ("premise", any(not e.startswith("authority(") for e in failed)),
+            ("evidence", bool(unknown)),
+            ("malformed", bool(premises["schema_errors"]) or not premises["contract_known"]),
+        )
+        if applies
+    ]
+    if refusals:
+        return {"verdict": "DENY", "reasons": refusals, "reason_codes": codes}
+    if unknown:
+        return {"verdict": "ABSTAIN", "reasons": [f"cannot establish: {e}" for e in unknown],
+                "reason_codes": codes}  # fmt: skip
     if failed:
-        return {"verdict": "DENY", "reasons": [f"premise does not hold: {e}" for e in failed]}
+        return {"verdict": "DENY", "reasons": [f"premise does not hold: {e}" for e in failed],
+                "reason_codes": codes}  # fmt: skip
     if premises["approval"] in ("one_operator", "two_person"):
         approvers = 2 if premises["approval"] == "two_person" else 1
         return {"verdict": "VERIFY", "reasons": ["contract requires approval"],
-                "required_approvers": approvers}  # fmt: skip
+                "required_approvers": approvers, "reason_codes": ["approval"]}  # fmt: skip
     if premises["approval"] == "not_available":
-        return {"verdict": "DENY", "reasons": ["contract cannot be approved here"]}
+        return {"verdict": "DENY", "reasons": ["contract cannot be approved here"],
+                "reason_codes": ["policy"]}  # fmt: skip
     return {"verdict": "ALLOW", "reasons": ["premises hold; within bounds and limits"]}
 
 

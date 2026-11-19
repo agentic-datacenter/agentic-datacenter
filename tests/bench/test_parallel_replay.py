@@ -16,7 +16,7 @@ from agentic_datacenter.governance.contracts import ContractLibrary
 from agentic_datacenter.scenarios import bench as bench_module
 from agentic_datacenter.scenarios import parallel_replay
 from agentic_datacenter.scenarios.agents import ScriptedAdversarial
-from agentic_datacenter.scenarios.bench import benchmark_version, run_benchmark
+from agentic_datacenter.scenarios.bench import run_benchmark
 from agentic_datacenter.scenarios.cli import bench
 from agentic_datacenter.scenarios.counterfactual import judge_run
 from agentic_datacenter.scenarios.parallel_replay import (
@@ -25,7 +25,7 @@ from agentic_datacenter.scenarios.parallel_replay import (
     judge_run_parallel,
     shares,
 )
-from agentic_datacenter.scenarios.scenario import library_ids, load_scenario
+from agentic_datacenter.scenarios.scenario import load_scenario
 
 REPO = Path(__file__).resolve().parents[2]
 PROFILE = load_profile(REPO / "profiles/generic_dc.yaml")
@@ -234,9 +234,3 @@ def test_the_runner_workflow_passes_the_number_of_replay_jobs() -> None:
     assert step["env"]["REPLAY_JOBS"] == "${{ inputs.replay_jobs }}"
     assert '--replay-jobs "$REPLAY_JOBS"' in step["run"]
     assert "inputs." not in step["run"], "inputs reach the shell as environment variables"
-
-
-def test_the_frozen_benchmark_version_is_the_version_of_this_code() -> None:
-    """The parallel replay is beside the oracle, not in it: the frozen hashes still hold."""
-    frozen = json.loads((REPO / "docs/bench/VERSION.json").read_text(encoding="utf-8"))
-    assert benchmark_version(PROFILE, CONTRACTS, library_ids()) == frozen["version"]

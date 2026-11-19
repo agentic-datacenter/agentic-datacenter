@@ -56,9 +56,10 @@ A season fixes three things before any participant can know its held-out scenari
 
 1. **Register a fixed version first.** Use the [gate registration form](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml). Only three fields are required: project name, exact immutable version (full commit SHA, package hash or image digest), and intended connection method (choose "not sure" if needed). You do **not** need to install anything or paste test output to register. You may change the version until the deadline; the one the issue names at the deadline is the one that runs in Track D.
 2. **Connect and check your gate later.** Run `agentic-datacenter gate check <gate>` (see [Test your own gate](../guides/bring-your-own-gate.md)), and add the output and operating profile to your issue before submitting a result. A registration alone is not a passing check or a benchmark result. If integration changes the version you registered, update it **before** the deadline to remain eligible for Track D.
-3. **Run the public tracks at any time** on the frozen version:
+3. **Run the public tracks at any time** on the frozen version, at its tag. The main branch carries the next version while it is being made, and a season's run made there is refused.
 
     ```sh
+    git checkout benchmark-v1 && uv sync    # the tag of the season's version, from the calendar
     uv run agentic-datacenter bench run --tier season --gate <gate> --gate static_allowlist --jobs 8 --out build/season1
     ```
 

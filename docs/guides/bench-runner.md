@@ -14,7 +14,7 @@ gh run download -R darklordVirtual/agentic-datacenter <run-id>           # the c
 | --- | --- |
 | `tier` | `quick`, `standard`, `season` or `full` ([Tiers](../bench/TIERS.md)) |
 | `gates` | the gates to run, separated by spaces |
-| `scenario` | one scenario only, or empty for all 23 |
+| `scenario` | one scenario only, or empty for all of them |
 | `first_seed`, `seeds` | a part of a season, to be merged with the others (`agentic-datacenter bench merge`) |
 | `jobs` | runs at a time; empty is every core but one, divided by `replay_jobs` |
 | `replay_jobs` | processes that share the replay of one run, for `full`; empty is 1 ([what `full` needs](../bench/TIERS.md#what-machine-you-need)) |

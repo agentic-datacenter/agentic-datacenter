@@ -261,6 +261,8 @@ class HttpGate:
         if verdict is Verdict.VERIFY:
             approvers = max(approvers, 1)
         service_ref = answer.get("decision_id")
+        given = answer.get("reason_codes")
+        codes = given if isinstance(given, list) else []
         detail: dict[str, JsonValue] = {"served_by": self.url}
         native = answer.get("verdict")
         if native is not None and str(native) != verdict.value:
@@ -288,6 +290,7 @@ class HttpGate:
             required_approvers=approvers,
             escalated=bool(answer.get("escalated", False)),
             detail=detail,
+            reason_codes=tuple(_text(c) for c in codes[:_MAX_REASONS] if isinstance(c, str) and c),
         )
 
     def record_outcome(self, decision_ref: str, outcome: Outcome) -> None:

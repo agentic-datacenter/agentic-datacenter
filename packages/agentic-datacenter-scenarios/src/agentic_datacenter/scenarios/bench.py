@@ -42,7 +42,7 @@ from agentic_datacenter.scenarios.heldout import commitment, variants
 from agentic_datacenter.scenarios.parallel_replay import judge_run_parallel
 from agentic_datacenter.scenarios.scenario import Scenario, load_scenario
 
-CARD_SCHEMA_VERSION = 5
+CARD_SCHEMA_VERSION = 6
 VERDICTS = ("ALLOW", "DENY", "VERIFY", "ABSTAIN")
 #: Judgement kinds of a proposal that was executed.
 EXECUTED_KINDS = ("permitted_useful", "permitted_neutral", "unsafe_execution")
@@ -63,6 +63,10 @@ FAIRNESS_METRICS = (
     "approval_required",
     "executed_without_required_approval",
     "executed_on_failed_premises",
+    "proposals_without_authority",
+    "executed_without_authority",
+    "refused_citing_authority",
+    "approvals_refused_without_standing",
     "verdict_allow",
     "verdict_deny",
     "verdict_verify",
@@ -288,6 +292,7 @@ def _decisions(result: RunResult) -> list[dict[str, Any]]:
             "contract_errors": _strings(record.get("contract_errors")),
             "limit_errors": _strings(record.get("limit_errors")),
             "premises_not_established": unmet,
+            "reason_codes": _strings(record.get("reason_codes")),
         })  # fmt: skip
     return out
 
@@ -304,6 +309,8 @@ def write_decisions(decisions: Sequence[Mapping[str, Any]], out_dir: Path) -> Pa
 def _run_row(result: RunResult, judged: Sequence[Judgement]) -> dict[str, Any]:
     kinds: dict[str, Any] = {}
     delayed = blocks_later_executed(result.records)
+    # Why the gate refused, in a word, if it said (ADR 0028).
+    codes = {str(r["proposal_id"]): _strings(r.get("reason_codes")) for r in result.records}
     for j in judged:
         kinds[j.kind] = int(str(kinds.get(j.kind, 0))) + 1
         if j.kind == "false_block" and j.proposal_id in delayed:
@@ -315,7 +322,10 @@ def _run_row(result: RunResult, judged: Sequence[Judgement]) -> dict[str, Any]:
         "passed": result.passed, "failed_criteria": list(result.failed_criteria),
         "metrics": result.metrics.as_dict(), "kinds": kinds,
         "final_state_hash": result.state_hashes[-1][1] if result.state_hashes else "",
-        "judgements": [{**asdict(j), "kind": j.kind} for j in judged],
+        "judgements": [
+            {**asdict(j), "kind": j.kind, "reason_codes": codes.get(j.proposal_id, [])}
+            for j in judged
+        ],
     }  # fmt: skip
 
 
@@ -789,7 +799,10 @@ def render_report(card: Mapping[str, Any]) -> str:
             f"{r['runs_worse_than_no_agent']} of {r['runs']}",
             r["harm_avoided"], f"{float(str(r['approvals_per_24h'])):.1f}",
             f"{r.get('executed_without_required_approval', 0)} of {r.get('approval_required', 0)}",
-            r.get("executed_on_failed_premises", 0), " ".join(r.get("verdicts_used", [])),
+            r.get("executed_on_failed_premises", 0),
+            f"{r.get('executed_without_authority', 0)} of "
+            f"{r.get('proposals_without_authority', 0)}",
+            " ".join(r.get("verdicts_used", [])),
             f"{float(str(r['critical_pod_minutes'])):.0f}", r["templates"],
         )) + "</tr>"
         for r in results
@@ -849,7 +862,8 @@ Seeds: {html.escape(", ".join(str(s) for s in card["seeds"]))}.</p>
 <th>Unsafe executions</th>
 <th>Runs worse than with no agent</th><th>Harms avoided</th>
 <th>Approvals per 24 h</th><th>Executed without the approval the contract asks for</th>
-<th>Executed on a premise that does not hold</th><th>Verdicts used</th>
+<th>Executed on a premise that does not hold</th>
+<th>Executed without a mandate</th><th>Verdicts used</th>
 <th>POD-minutes critical</th><th>Scenario templates</th></tr></thead>
 <tbody>{rows}</tbody></table>
 <p>Sample size is the number of scenario templates.

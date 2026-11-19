@@ -50,6 +50,21 @@ class ExampleGate:
                 verdict, approvers, reasons = Verdict.VERIFY, 1, ["a person must approve"]
         if verdict is Verdict.ALLOW and not premises.writes:
             verdict, reasons = Verdict.DENY, ["nothing that can be executed"]
+        # Why, in a word, for every way the step is wrong. Who may act is told as a
+        # premise too: authority(<principal>, <contract>).
+        failed = [p.expr for p in premises.premises if p.holds is False]
+        codes = tuple(
+            code
+            for code, applies in (
+                ("authority", any(e.startswith("authority(") for e in failed)),
+                ("limit", bool(premises.bound_errors or premises.limit_errors)),
+                ("premise", any(not e.startswith("authority(") for e in failed)),
+                ("evidence", any(p.holds is None for p in premises.premises)),
+                ("malformed", bool(premises.schema_errors) or not premises.contract_known),
+                ("approval", verdict is Verdict.VERIFY),
+            )
+            if applies and verdict is not Verdict.ALLOW
+        )
         writes = premises.writes if verdict is Verdict.ALLOW else ()
         ref = decision_ref(
             self.name, proposal.proposal_id, proposal.contract_id, verdict.value,
@@ -57,7 +72,7 @@ class ExampleGate:
         )  # fmt: skip
         return Decision(
             verdict, ref, proposal.contract_id, writes, premises.time_ms + DECISION_TTL_MS,
-            ref[-12:], tuple(reasons), required_approvers=approvers,
+            ref[-12:], tuple(reasons), required_approvers=approvers, reason_codes=codes,
         )  # fmt: skip
 
     def record_outcome(self, decision_ref: str, outcome: Outcome) -> None:

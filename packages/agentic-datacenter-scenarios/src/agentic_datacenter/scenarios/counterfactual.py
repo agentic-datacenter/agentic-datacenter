@@ -16,7 +16,11 @@ from dataclasses import dataclass
 from agentic_datacenter.core.profile import Profile
 from agentic_datacenter.core.state import JsonValue
 from agentic_datacenter.governance.contracts import ContractLibrary
-from agentic_datacenter.governance.control_path import REJECTED_BY, WAITING_FOR_APPROVAL
+from agentic_datacenter.governance.control_path import (
+    NO_STANDING,
+    REJECTED_BY,
+    WAITING_FOR_APPROVAL,
+)
 from agentic_datacenter.governance.gate import GovernanceGate
 from agentic_datacenter.scenarios.agents import Agent
 from agentic_datacenter.scenarios.harness import (
@@ -302,8 +306,14 @@ def approval_declined(record: Mapping[str, object], contracts: ContractLibrary) 
     if outcome == "REJECTED":
         return detail.startswith(REJECTED_BY)
     # Still waiting at the end: nobody answered. An approval the gate refused
-    # to take, or one already given, is not a person's silence.
-    unanswered = not record.get("approvers") and not record.get("approval_refusals")
+    # to take, or one already given, is not a person's silence. An approval
+    # turned away because the person had lost access is not the gate's refusal:
+    # the approval that is missing is one no gate could have had.
+    refusals = record.get("approval_refusals")
+    turned_away = [x for x in (refusals if isinstance(refusals, list) else [])]
+    without_standing = [x for x in turned_away if str(x).endswith(NO_STANDING)]
+    by_the_gate = len(turned_away) > len(without_standing)
+    unanswered = not by_the_gate and (not record.get("approvers") or bool(without_standing))
     return outcome == "NOT_EXECUTED" and detail == WAITING_FOR_APPROVAL and unanswered
 
 
