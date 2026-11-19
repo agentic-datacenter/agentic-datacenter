@@ -131,6 +131,26 @@ class Decision:
     required_approvers: int = 0
     escalated: bool = False
     detail: Mapping[str, JsonValue] = field(default_factory=dict)
+    #: Why the gate did not allow, each one of :data:`REASON_CODES`; empty if the
+    #: gate does not say. A step can be wrong in several ways at once, so there
+    #: may be several. The reasons in words are kept as well.
+    reason_codes: tuple[str, ...] = ()
+
+
+#: Why a gate did not allow a proposal, in a word. A gate may give one or more
+#: with its decision; a word outside this list is recorded as ``other``.
+#:
+#: - ``authority``: the proposer may not take this step.
+#: - ``limit``: outside the contract's bounds, step, rate or cumulative limit.
+#: - ``premise``: a condition of the plant that the contract requires does not hold.
+#: - ``evidence``: something the decision needs is missing, stale or contradicted.
+#: - ``approval``: a person must approve.
+#: - ``malformed``: an unknown contract, or arguments that do not fit it.
+#: - ``policy``: a rule of the gate's own.
+#: - ``other``: none of these.
+REASON_CODES = (
+    "authority", "limit", "premise", "evidence", "approval", "malformed", "policy", "other",
+)  # fmt: skip
 
 
 @dataclass(frozen=True)

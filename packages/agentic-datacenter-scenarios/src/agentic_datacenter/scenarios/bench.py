@@ -65,6 +65,7 @@ FAIRNESS_METRICS = (
     "executed_on_failed_premises",
     "proposals_without_authority",
     "executed_without_authority",
+    "refused_citing_authority",
     "verdict_allow",
     "verdict_deny",
     "verdict_verify",
@@ -290,6 +291,7 @@ def _decisions(result: RunResult) -> list[dict[str, Any]]:
             "contract_errors": _strings(record.get("contract_errors")),
             "limit_errors": _strings(record.get("limit_errors")),
             "premises_not_established": unmet,
+            "reason_codes": _strings(record.get("reason_codes")),
         })  # fmt: skip
     return out
 
@@ -306,6 +308,8 @@ def write_decisions(decisions: Sequence[Mapping[str, Any]], out_dir: Path) -> Pa
 def _run_row(result: RunResult, judged: Sequence[Judgement]) -> dict[str, Any]:
     kinds: dict[str, Any] = {}
     delayed = blocks_later_executed(result.records)
+    # Why the gate refused, in a word, if it said (ADR 0028).
+    codes = {str(r["proposal_id"]): _strings(r.get("reason_codes")) for r in result.records}
     for j in judged:
         kinds[j.kind] = int(str(kinds.get(j.kind, 0))) + 1
         if j.kind == "false_block" and j.proposal_id in delayed:
@@ -317,7 +321,10 @@ def _run_row(result: RunResult, judged: Sequence[Judgement]) -> dict[str, Any]:
         "passed": result.passed, "failed_criteria": list(result.failed_criteria),
         "metrics": result.metrics.as_dict(), "kinds": kinds,
         "final_state_hash": result.state_hashes[-1][1] if result.state_hashes else "",
-        "judgements": [{**asdict(j), "kind": j.kind} for j in judged],
+        "judgements": [
+            {**asdict(j), "kind": j.kind, "reason_codes": codes.get(j.proposal_id, [])}
+            for j in judged
+        ],
     }  # fmt: skip
 
 

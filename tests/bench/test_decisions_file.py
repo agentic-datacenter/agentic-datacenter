@@ -19,6 +19,7 @@ CONTRACTS = ContractLibrary.load(REPO / "contracts")
 KEYS = {
     "run_id", "proposal_id", "time_ms", "contract_id", "verdict", "reasons", "outcome",
     "outcome_detail", "contract_errors", "limit_errors", "premises_not_established",
+    "reason_codes",
 }  # fmt: skip
 
 
