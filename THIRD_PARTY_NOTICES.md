@@ -96,4 +96,4 @@ As installed from `uv.lock` on 2026-11-13, with the licence each project declare
 
 ## Licence of this repository
 
-Business Source License 1.1, in `LICENSE`, for everything except `packages/agentic-datacenter-iec61850`, which is GPL-3.0-or-later. Decided by the owner on 2026-11-12; see `docs/design/adr/0004-licence-position.md`. Who the Licensor is, and who handles commercial licences, is in `COMMERCIAL_LICENSING.md`.
+Business Source License 1.1, in `LICENSE`, for everything except `packages/agentic-datacenter-iec61850`, which is GPL-3.0-or-later. Decided by the owner on 2026-11-12; see `docs/design/adr/0004-licence-position.md`. Who the Licensor is, and who handles commercial licences, is in `COMMERCIAL_LICENSING.md`. The example gates in `examples/` are under the MIT licence (`examples/LICENSE`), so that a gate started from them can be kept under any licence.

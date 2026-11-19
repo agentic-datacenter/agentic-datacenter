@@ -59,6 +59,8 @@ Tooling
 
 Added
 
+- `agentic-datacenter bench run` writes `decisions.jsonl` beside the card: each proposal, the gate's verdict and the reasons the gate gave, with the contract errors, limit errors and premises not established. The card is unchanged, so a card of the season is still the same file.
+- The example gates in `examples/` are under the MIT licence. `docs/guides/bring-your-own-gate.md` says whose a gate is and when the contribution terms apply.
 - `tools/season_registrations.py` reads whether an issue was open at a deadline from its close and reopen events, reads an edit history longer than one page to its end, checks on every edited issue that the entries of the history are whole texts, and lists an issue with a problem, never a guess, when an entry it needs was removed. It has not been run against GitHub yet.
 - Seasons of the public test follow one another by a rule, four weeks each, so registration is always open (ADR 0027). `tools/season.py current` says which season is open; the calendar of thirteen seasons, with each beacon round, is in `docs/bench/PUBLIC_TEST.md`. A registration stands until its issue is closed. The README no longer names a season or a date.
 - `agentic-datacenter bench run --replay-jobs <n>` spreads the replay of one run over processes, for `--tier full`, where one week-long run in one process takes days (ADR 0026). The card is the same, byte for byte. The oracle's source and the frozen benchmark version are unchanged. `docs/bench/TIERS.md` says what machine each tier needs.
