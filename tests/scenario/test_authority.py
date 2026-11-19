@@ -63,10 +63,17 @@ class _ChecksPremises:
         failing = [p.expr for p in premises.premises if p.holds is not True]
         if decision.verdict is Verdict.ALLOW and failing:
             reasons = tuple(f"premise not established: {expr}" for expr in failing)
-            code = "authority" if any(e.startswith("authority(") for e in failing) else "premise"
+            codes = tuple(
+                code
+                for code, applies in (
+                    ("authority", any(e.startswith("authority(") for e in failing)),
+                    ("premise", any(not e.startswith("authority(") for e in failing)),
+                )
+                if applies
+            )
             return Decision(
                 Verdict.DENY, decision.decision_ref, proposal.contract_id, reasons=reasons,
-                reason_code=code,
+                reason_codes=codes,
             )  # fmt: skip
         return decision
 
@@ -262,17 +269,17 @@ def test_a_gate_can_say_in_a_word_why_it_refused(revoked: dict[str, RunResult]) 
     result = revoked["checks_premises"]
     unauthorized = [r for r in result.records if r.get("authorized") is False]
     assert unauthorized
-    refused_for_it = [r for r in unauthorized if r.get("reason_code") == "authority"]
+    refused_for_it = [r for r in unauthorized if "authority" in r.get("reason_codes", [])]
     assert refused_for_it and all(r["verdict"] == "DENY" for r in refused_for_it)
     assert result.metrics.refused_citing_authority == len(refused_for_it)
     # A proposal refused before the mandate ended was refused for something else.
     earlier = [r for r in result.records if "authorized" not in r and r["verdict"] == "DENY"]
-    assert all(r.get("reason_code") != "authority" for r in earlier)
+    assert all("authority" not in r.get("reason_codes", []) for r in earlier)
 
 
 def test_a_gate_that_gives_no_word_has_none_recorded(revoked: dict[str, RunResult]) -> None:
     result = revoked["limits_only"]
-    assert all("reason_code" not in r for r in result.records)
+    assert all("reason_codes" not in r for r in result.records)
     assert result.metrics.refused_citing_authority == 0
 
 
@@ -289,13 +296,15 @@ def test_the_words_are_a_fixed_few_and_anything_else_is_other() -> None:
             if decision.verdict is Verdict.DENY:
                 return Decision(
                     Verdict.DENY, decision.decision_ref, proposal.contract_id,
-                    reasons=decision.reasons, reason_code="because I said so",
+                    reasons=decision.reasons,
+                    reason_codes=("because I said so", "premise", "another of mine"),
                 )  # fmt: skip
             return decision
 
     result = _run("AD-13", _OwnWord)
-    codes = {r["reason_code"] for r in result.records if "reason_code" in r}
-    assert codes == {"other"}
+    given = [r["reason_codes"] for r in result.records if "reason_codes" in r]
+    # In the order of the list, each once, and what is not on it as "other".
+    assert given and all(codes == ["premise", "other"] for codes in given)
 
 
 def test_the_word_is_on_the_card_and_beside_it() -> None:
@@ -307,10 +316,10 @@ def test_the_word_is_on_the_card_and_beside_it() -> None:
         ["AD-13"], [1], horizon_s=300, max_judged=6, allow_unfrozen=True, decisions=decisions,
     )  # fmt: skip
     (run,) = card["runs"]
-    assert run["judgements"] and all("reason_code" in j for j in run["judgements"])
-    assert "authority" in {j["reason_code"] for j in run["judgements"]}
+    assert run["judgements"] and all("reason_codes" in j for j in run["judgements"])
+    assert any("authority" in j["reason_codes"] for j in run["judgements"])
     (row,) = card["results"]
     assert row["refused_citing_authority"] == run["metrics"]["refused_citing_authority"] > 0
     assert row["executed_without_authority"] == 0 < row["proposals_without_authority"]
-    assert "authority" in {line["reason_code"] for line in decisions}
-    assert all("reason_code" in line for line in decisions)
+    assert any("authority" in line["reason_codes"] for line in decisions)
+    assert all(isinstance(line["reason_codes"], list) for line in decisions)

@@ -23,6 +23,7 @@ from agentic_datacenter.governance.bindings.null_gate import NullGate
 from agentic_datacenter.governance.contracts import ContractLibrary, fill
 from agentic_datacenter.governance.envelope_ref import DECISION_TTL_MS, write_ref
 from agentic_datacenter.governance.gate import (
+    REASON_CODES,
     AuthenticatedActor,
     BoundedWrite,
     Decision,
@@ -272,6 +273,12 @@ class GovernedPath:
                 proposal.contract_id,
                 reasons=("counterfactual: not executed",),
             )
+        if decision.reason_codes:
+            # Only when the gate gave any, so a gate that gives none has the
+            # records, and the state hashes, it had before. In the list's order,
+            # each once.
+            given = [c if c in REASON_CODES else "other" for c in decision.reason_codes]
+            record["reason_codes"] = [c for c in REASON_CODES if c in given]
         record.update({
             "verdict": decision.verdict.value, "decision_ref": decision.decision_ref,
             "reasons": list(decision.reasons), "escalated": decision.escalated,

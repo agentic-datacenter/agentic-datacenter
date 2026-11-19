@@ -279,6 +279,15 @@
         "decision_id": {
           "type": "string",
           "description": "The service's own reference, kept on the decision for cross-checking."
+        },
+        "reason_codes": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "string",
+            "maxLength": 32
+          },
+          "description": "Optional. Why the gate did not allow, each in a word: authority, limit, premise, evidence, approval, malformed, policy or other. Any other word is recorded as other. A step can be wrong in several ways at once; give every one that applies. They are kept on the decision beside the reasons, so that a refusal for want of authority can be told from a refusal for something else."
         }
       }
     },

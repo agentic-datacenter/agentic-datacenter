@@ -84,6 +84,8 @@ class Metrics:
     proposals_without_authority: int = 0
     #: Of those, executed.
     executed_without_authority: int = 0
+    #: Of those, not executed and refused by the gate with ``authority`` among its reason codes.
+    refused_citing_authority: int = 0
     #: How often the gate gave each verdict: what it can say is visible beside what it did.
     verdict_allow: int = 0
     verdict_deny: int = 0
@@ -433,7 +435,8 @@ def fairness_counts(
         (
             "approval_required", "executed_without_required_approval",
             "executed_on_failed_premises", "proposals_without_authority",
-            "executed_without_authority", "verdict_allow", "verdict_deny",
+            "executed_without_authority", "refused_citing_authority", "verdict_allow",
+            "verdict_deny",
             "verdict_verify", "verdict_abstain", "gate_service_failures", "gate_overreach",
         ),
         0,
@@ -451,6 +454,9 @@ def fairness_counts(
         if r.get("authorized") is False:
             out["proposals_without_authority"] += 1
             out["executed_without_authority"] += int(executed)
+            given = r.get("reason_codes")
+            cited = isinstance(given, list) and "authority" in given
+            out["refused_citing_authority"] += int(cited and not executed)
         premises = r.get("premises")
         if (
             executed
