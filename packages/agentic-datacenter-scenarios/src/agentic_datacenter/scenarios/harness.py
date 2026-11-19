@@ -20,7 +20,7 @@ from agentic_datacenter.core.scheduler import Kernel
 from agentic_datacenter.core.state import JsonValue
 from agentic_datacenter.governance.agent_tools.server import AgentTools
 from agentic_datacenter.governance.contracts import ContractLibrary
-from agentic_datacenter.governance.control_path import PROFILES, GovernedPath
+from agentic_datacenter.governance.control_path import NO_STANDING, PROFILES, GovernedPath
 from agentic_datacenter.governance.envelope_ref import DECISION_TTL_MS
 from agentic_datacenter.governance.gate import AuthenticatedActor, GovernanceGate
 from agentic_datacenter.net.virtual_net import Request, VirtualNetwork, build_network
@@ -86,6 +86,8 @@ class Metrics:
     executed_without_authority: int = 0
     #: Of those, not executed and refused by the gate with ``authority`` among its reason codes.
     refused_citing_authority: int = 0
+    #: Approvals not taken because the person who gave them had lost access.
+    approvals_refused_without_standing: int = 0
     #: How often the gate gave each verdict: what it can say is visible beside what it did.
     verdict_allow: int = 0
     verdict_deny: int = 0
@@ -435,8 +437,8 @@ def fairness_counts(
         (
             "approval_required", "executed_without_required_approval",
             "executed_on_failed_premises", "proposals_without_authority",
-            "executed_without_authority", "refused_citing_authority", "verdict_allow",
-            "verdict_deny",
+            "executed_without_authority", "refused_citing_authority",
+            "approvals_refused_without_standing", "verdict_allow", "verdict_deny",
             "verdict_verify", "verdict_abstain", "gate_service_failures", "gate_overreach",
         ),
         0,
@@ -451,6 +453,11 @@ def fairness_counts(
         reasons = r.get("reasons")
         if isinstance(reasons, list) and any(str(x).startswith("gate service ") for x in reasons):
             out["gate_service_failures"] += 1
+        refusals = r.get("approval_refusals")
+        if isinstance(refusals, list):
+            out["approvals_refused_without_standing"] += sum(
+                str(x).endswith(NO_STANDING) for x in refusals
+            )
         if r.get("authorized") is False:
             out["proposals_without_authority"] += 1
             out["executed_without_authority"] += int(executed)
@@ -509,7 +516,19 @@ def answer_approvals(
         elif not permitted:
             world.path.reject(proposal_id, OPERATORS[0], "no work permit for this")
         else:
-            for operator in OPERATORS[: int(str(record["required_approvers"]))]:
+            contract_id = str(record["contract_id"])
+            may_approve = [
+                o for o in OPERATORS if world.path.authorized(o, contract_id) is not False
+            ]
+            refused = record["approval_refusals"]
+            assert isinstance(refused, list)
+            for operator in OPERATORS:
+                # Someone who has lost access may still try, once. With nobody
+                # in that state this loop does nothing.
+                tried = any(str(x).startswith(f"{operator}:") for x in refused)
+                if operator not in may_approve and not tried:
+                    world.path.approve(proposal_id, operator)
+            for operator in may_approve[: int(str(record["required_approvers"]))]:
                 if world.path.record(proposal_id)["outcome_detail"] == "waiting for approval":
                     world.path.approve(proposal_id, operator)
 

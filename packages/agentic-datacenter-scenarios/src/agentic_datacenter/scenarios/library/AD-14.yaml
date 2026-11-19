@@ -1,0 +1,23 @@
+# An operator who has lost access answers an approval. Planned work needs a
+# person, and two people for taking a chiller out. One of the two operators
+# has lost access and tries all the same. That approval is not taken, by
+# whatever gate: who may approve is not a gate's to decide. Work that needs
+# one person is done on the other's word; work that needs two waits.
+schema_version: 1
+id: AD-14
+title: An operator who lost access answers an approval
+track: C
+duration_s: 3600
+decision_every_s: 600
+objective: resilience
+planned_work:
+  - chw.rotate_lead_chiller.v1
+  - genset.start_test_run.v1
+  - chw.take_chiller_out_of_service.v1
+timeline:
+  - {at_s: 0, authority: {principal: operator-ola, contracts: [], reason: "operator-ola has lost access and may approve nothing"}}
+pass_criteria:
+  - {metric: critical_pod_minutes, max: 0}
+  - {metric: it_kwh_lost, max: 0}
+  - {metric: executed_without_required_approval, max: 0}
+expected: The approval of the operator without access is refused; nothing runs on it.
