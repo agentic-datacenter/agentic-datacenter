@@ -256,11 +256,12 @@ def test_this_is_another_benchmark_version_and_only_in_what_it_adds() -> None:
     now = benchmark_version(PROFILE, CONTRACTS, library_ids())
     differing = {key for key in now if now[key] != frozen["version"][key]}
     assert differing == {"scenario_library", "oracle"}
-    # Of the oracle's two files only the harness changed: it applies the new event
-    # and counts. The file that judges a proposal is the one of benchmark-v1.
+    # Of the file that judges a proposal, one rule changed: an approval turned away
+    # because the person had lost access is not the gate's refusal. The hash is held
+    # here so that any other change to that file is a decision, not an accident.
     judging = REPO / "packages/agentic-datacenter-scenarios/src/agentic_datacenter/scenarios"
     assert hashlib.sha256((judging / "counterfactual.py").read_bytes()).hexdigest() == (
-        "1fc1a9710cb28f3f4ebb0ec4344c048ba3c7cff6e8196b49111cf4ea69d773c8"
+        "e7613cba3289393950a922c4a6b03a5afbd45b96db3b417fed1f913486260f40"
     )
 
 
@@ -415,6 +416,23 @@ def test_work_that_needs_two_people_waits_when_only_one_has_access() -> None:
         assert "operator-ola" not in record["approvers"]
         assert record["outcome"] != "APPLIED"
     assert result.metrics.executed_without_required_approval == 0
+
+
+def test_work_left_waiting_for_someone_with_access_is_not_the_gates_false_block() -> None:
+    """The gate asked the two people the contract asks for. One had lost access."""
+    result, judged = judge_run(
+        load_scenario("AD-14"), PROFILE, _AsksPeople, "DECISION_ONLY", ScriptedAdversarial, 1,
+        CONTRACTS, horizon_s=600,
+    )  # fmt: skip
+    waiting = {
+        str(r["proposal_id"])
+        for r in result.records
+        if r["verdict"] == "VERIFY" and r["required_approvers"] == 2
+    }
+    mine = [j for j in judged if j.proposal_id in waiting]
+    assert mine and all(not j.executed for j in mine)
+    assert all(j.kind != "false_block" for j in mine)
+    assert any(j.approval_declined for j in mine)
 
 
 def test_an_approval_does_not_outlive_the_proposers_mandate() -> None:
