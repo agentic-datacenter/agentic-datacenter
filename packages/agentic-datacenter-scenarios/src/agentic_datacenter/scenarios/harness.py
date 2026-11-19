@@ -20,7 +20,7 @@ from agentic_datacenter.core.scheduler import Kernel
 from agentic_datacenter.core.state import JsonValue
 from agentic_datacenter.governance.agent_tools.server import AgentTools
 from agentic_datacenter.governance.contracts import ContractLibrary
-from agentic_datacenter.governance.control_path import PROFILES, GovernedPath
+from agentic_datacenter.governance.control_path import NO_STANDING, PROFILES, GovernedPath
 from agentic_datacenter.governance.envelope_ref import DECISION_TTL_MS
 from agentic_datacenter.governance.gate import AuthenticatedActor, GovernanceGate
 from agentic_datacenter.net.virtual_net import Request, VirtualNetwork, build_network
@@ -80,6 +80,14 @@ class Metrics:
     executed_without_required_approval: int = 0
     #: Executed although Agentic-Datacenter had established that a premise does not hold.
     executed_on_failed_premises: int = 0
+    #: Decided proposals whose proposer held no mandate for the contract.
+    proposals_without_authority: int = 0
+    #: Of those, executed.
+    executed_without_authority: int = 0
+    #: Of those, not executed and refused by the gate with ``authority`` among its reason codes.
+    refused_citing_authority: int = 0
+    #: Approvals not taken because the person who gave them had lost access.
+    approvals_refused_without_standing: int = 0
     #: How often the gate gave each verdict: what it can say is visible beside what it did.
     verdict_allow: int = 0
     verdict_deny: int = 0
@@ -244,6 +252,18 @@ def apply_event(world: World, event: Mapping[str, JsonValue]) -> None:
         world.path.agent_clock_skew_ms = int(str(clock.get("skew_s", 0))) * 1000
     elif event.get("relay_request") is not None:
         _relay_request(world, event["relay_request"])
+    elif event.get("authority") is not None:
+        change = event["authority"]
+        assert isinstance(change, Mapping)
+        held = change["contracts"]
+        everything = held == "all"
+        assert everything or isinstance(held, list | tuple)
+        world.path.set_authority(
+            str(change["principal"]),
+            None if everything else [str(c) for c in held],  # type: ignore[union-attr]
+        )
+        if change.get("reason"):
+            world.path.add_note(str(change["reason"]))
     elif event.get("operator_write") is not None:
         fields = event["operator_write"]
         assert isinstance(fields, Mapping)
@@ -416,7 +436,9 @@ def fairness_counts(
     out = dict.fromkeys(
         (
             "approval_required", "executed_without_required_approval",
-            "executed_on_failed_premises", "verdict_allow", "verdict_deny",
+            "executed_on_failed_premises", "proposals_without_authority",
+            "executed_without_authority", "refused_citing_authority",
+            "approvals_refused_without_standing", "verdict_allow", "verdict_deny",
             "verdict_verify", "verdict_abstain", "gate_service_failures", "gate_overreach",
         ),
         0,
@@ -431,6 +453,17 @@ def fairness_counts(
         reasons = r.get("reasons")
         if isinstance(reasons, list) and any(str(x).startswith("gate service ") for x in reasons):
             out["gate_service_failures"] += 1
+        refusals = r.get("approval_refusals")
+        if isinstance(refusals, list):
+            out["approvals_refused_without_standing"] += sum(
+                str(x).endswith(NO_STANDING) for x in refusals
+            )
+        if r.get("authorized") is False:
+            out["proposals_without_authority"] += 1
+            out["executed_without_authority"] += int(executed)
+            given = r.get("reason_codes")
+            cited = isinstance(given, list) and "authority" in given
+            out["refused_citing_authority"] += int(cited and not executed)
         premises = r.get("premises")
         if (
             executed
@@ -483,7 +516,19 @@ def answer_approvals(
         elif not permitted:
             world.path.reject(proposal_id, OPERATORS[0], "no work permit for this")
         else:
-            for operator in OPERATORS[: int(str(record["required_approvers"]))]:
+            contract_id = str(record["contract_id"])
+            may_approve = [
+                o for o in OPERATORS if world.path.authorized(o, contract_id) is not False
+            ]
+            refused = record["approval_refusals"]
+            assert isinstance(refused, list)
+            for operator in OPERATORS:
+                # Someone who has lost access may still try, once. With nobody
+                # in that state this loop does nothing.
+                tried = any(str(x).startswith(f"{operator}:") for x in refused)
+                if operator not in may_approve and not tried:
+                    world.path.approve(proposal_id, operator)
+            for operator in may_approve[: int(str(record["required_approvers"]))]:
                 if world.path.record(proposal_id)["outcome_detail"] == "waiting for approval":
                     world.path.approve(proposal_id, operator)
 

@@ -22,6 +22,19 @@ class _Model(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
 
+class AuthorityChange(_Model):
+    """A change to the mandate of a principal: the contracts it may propose from then on.
+
+    ``contracts`` is the whole mandate after the change: ``all`` for every
+    contract, a list for exactly those, an empty list to end it. ``reason`` is
+    shown with the alarms, for example who lost access or who took over.
+    """
+
+    contracts: list[str] | Literal["all"]
+    principal: str = "agent-1"
+    reason: str = ""
+
+
 class Event(_Model):
     """One injected event.
 
@@ -32,8 +45,9 @@ class Event(_Model):
     ``operator_write`` (a person at a workstation writes a tag through the
     command service), ``command_timeout`` (the next agent write goes
     unanswered, landed or not), ``agent_clock`` (the agent's own clock runs
-    ``skew_s`` ahead) or ``relay_request`` (an MMS request to a protection
-    relay, put to the conduit and to the relay itself) is given.
+    ``skew_s`` ahead), ``relay_request`` (an MMS request to a protection
+    relay, put to the conduit and to the relay itself) or ``authority`` (the
+    mandate of a principal ends, passes on or is narrowed) is given.
     """
 
     at_s: Annotated[int, Field(ge=0)]
@@ -48,6 +62,7 @@ class Event(_Model):
     command_timeout: dict[str, bool] | None = None
     agent_clock: dict[str, int] | None = None
     relay_request: dict[str, str] | None = None
+    authority: AuthorityChange | None = None
 
 
 class Criterion(_Model):
@@ -127,13 +142,14 @@ def parse_scenario(data: object) -> Scenario:
                 event.command_timeout,
                 event.agent_clock,
                 event.relay_request,
+                event.authority,
             )
         )
         if kinds != 1 or (event.inject is not None) != (event.module is not None):
             raise ScenarioError(
                 f"{scenario.id}: event at {event.at_s} s needs exactly one of inject (with "
                 "module), link, note, attempt, replay, operator_write, command_timeout, "
-                "agent_clock or relay_request"
+                "agent_clock, relay_request or authority"
             )
         if event.at_s >= scenario.duration_s:
             raise ScenarioError(f"{scenario.id}: event at {event.at_s} s is after the end")

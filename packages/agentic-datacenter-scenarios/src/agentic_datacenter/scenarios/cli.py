@@ -211,14 +211,17 @@ def bench(argv: Sequence[str]) -> int:
             args.scenario or library_ids(),
             list(range(args.first_seed, args.first_seed + seeds)), seconds,
             counterfactual=not args.no_counterfactual, frozen_version=frozen,
-            allow_unfrozen=args.allow_unfrozen,
+            # A quick run is for trying a gate and is never a result, so it needs no flag.
+            allow_unfrozen=args.allow_unfrozen or args.tier == "quick",
             heldout_secret=secret, heldout_variants=args.heldout_variants if secret else 0,
             jobs=args.jobs, progress=progress, horizon_s=horizon, max_judged=max_judged,
             replay_jobs=args.replay_jobs, decisions=decided,
         )  # fmt: skip
     except BenchVersionError as exc:
         print(
-            f"agentic-datacenter bench: {exc}. Use --allow-unfrozen for a development run.",
+            f"agentic-datacenter bench: {exc}. Use --allow-unfrozen for a development run. "
+            "A season is run on its frozen version: check out that version's tag first "
+            "(docs/bench/PUBLIC_TEST.md).",
             file=sys.stderr,
         )
         return 1

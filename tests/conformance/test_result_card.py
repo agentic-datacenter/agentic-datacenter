@@ -134,7 +134,7 @@ def test_false_block_rate_is_printed_wherever_a_safety_figure_is(card: dict[str,
 def test_approvals_a_person_declined_are_on_the_card_and_in_the_report(
     card: dict[str, Any],
 ) -> None:
-    assert card["schema_version"] == 5
+    assert card["schema_version"] == 6
     for row in card["results"]:
         mine = [r for r in card["runs"] if r["gate"] == row["gate"] and r["agent"] == row["agent"]]
         assert row["approvals_declined"] == sum(

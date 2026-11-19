@@ -4,7 +4,7 @@ Agentic-Datacenter is built so that any governance system can be put between an 
 
 What you get:
 
-- your gate under the 23 scenarios of section 10 of the design document, operational and adversarial, with a careful and a hostile scripted agent;
+- your gate under the scenarios of the library, operational and adversarial (23 in `benchmark-v1`, from section 10 of the design document), with a careful and a hostile scripted agent;
 - every blocked proposal judged by counterfactual replay, every run compared with the same scenario and seed without an agent;
 - a result card, with the safety, false block and approval figures beside those of the built-in gates, and the release gate (`agentic-datacenter bench check`) that refuses a card in which harm got through;
 - an evidence bundle per run that anyone can verify.
@@ -150,6 +150,8 @@ Open an issue with the "Gate result" form. Attach the result card and, for at le
 - **what it supports**: which figures, and on which runs; a development run says so;
 - **whether the gate could forge or suppress evidence**: Agentic-Datacenter keeps the decision records and computes the figures itself, but a gate that keeps its own log is the only witness to that log;
 - **live or reconstructed**: whether the card came from the run itself or was rebuilt afterwards.
+
+In the next benchmark version a gate can also say why in a word: an optional `reason_codes` in its answer, from `authority`, `limit`, `premise`, `evidence`, `approval`, `malformed`, `policy` and `other` (ADR 0028). `examples/http-gate/server.py` shows it.
 
 Beside the card, `bench run` writes `decisions.jsonl`: one line for each proposal, with your gate's verdict, the reasons your gate gave, the outcome, and what Agentic-Datacenter itself found wrong with the proposal (contract errors, limit errors, premises not established). It shows why a step was refused, which the card does not. The card is the same file with or without it. A card merged from parts (`bench merge`) has the decisions of its parts in their own files.
 
