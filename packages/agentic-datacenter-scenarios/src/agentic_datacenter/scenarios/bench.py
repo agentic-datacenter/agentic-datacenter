@@ -255,6 +255,52 @@ def blocks_later_executed(records: Sequence[Mapping[str, Any]]) -> set[str]:
     return out
 
 
+#: The file beside a result card that holds what each gate decided and why.
+DECISIONS_NAME = "decisions.jsonl"
+
+
+def _strings(value: object) -> list[str]:
+    """Return a record's list of texts as a list of strings; nothing for anything else."""
+    return [str(item) for item in value] if isinstance(value, list | tuple) else []
+
+
+def _decisions(result: RunResult) -> list[dict[str, Any]]:
+    """Return what the gate decided on each proposal of a run, with its own reasons.
+
+    Kept beside the card and never in it, so a card stays the same file
+    whether the decisions were asked for or not.
+    """
+    out = []
+    for record in result.records:
+        if record["verdict"] is None:
+            continue
+        premises = record.get("premises")
+        unmet = [
+            str(p.get("expr"))
+            for p in (premises if isinstance(premises, list) else [])
+            if isinstance(p, Mapping) and p.get("holds") is not True
+        ]
+        out.append({
+            "proposal_id": record["proposal_id"], "time_ms": record["time_ms"],
+            "contract_id": record["contract_id"], "verdict": record["verdict"],
+            "reasons": _strings(record.get("reasons")),
+            "outcome": record["outcome"], "outcome_detail": record.get("outcome_detail", ""),
+            "contract_errors": _strings(record.get("contract_errors")),
+            "limit_errors": _strings(record.get("limit_errors")),
+            "premises_not_established": unmet,
+        })  # fmt: skip
+    return out
+
+
+def write_decisions(decisions: Sequence[Mapping[str, Any]], out_dir: Path) -> Path:
+    """Write the decisions of a benchmark, one a line, beside its card; return the path."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / DECISIONS_NAME
+    lines = [json.dumps(line, sort_keys=True) for line in decisions]
+    path.write_text("".join(line + "\n" for line in lines), encoding="utf-8")
+    return path
+
+
 def _run_row(result: RunResult, judged: Sequence[Judgement]) -> dict[str, Any]:
     kinds: dict[str, Any] = {}
     delayed = blocks_later_executed(result.records)
@@ -323,6 +369,8 @@ def _gated_run(
     name = _name(result.scenario_id, variant_number)
     row["run_id"] = f"{name}.{gate_name}.{result.agent}.{result.seed}"
     row["track"], row["variant"] = scenario.track, variant_number
+    # Taken off the row before the card is made (run_benchmark).
+    row["decisions"] = [{"run_id": row["run_id"], **line} for line in _decisions(result)]
     return row
 
 
@@ -441,6 +489,7 @@ def run_benchmark(
     horizon_s: int | None = None,
     max_judged: int | None = None,
     replay_jobs: int = 1,
+    decisions: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Run every gate against every agent, scenario and seed, and return the result card.
 
@@ -456,6 +505,10 @@ def run_benchmark(
 
     *horizon_s* and *max_judged* bound the counterfactual replay of each run
     (see :func:`agentic_datacenter.scenarios.counterfactual.judge_run`); both are on the card.
+
+    With *decisions*, a list, what each gate decided on each proposal and the
+    reasons it gave are added to it, in the order of the card. They are not on
+    the card, which is the same with and without them.
 
     With *replay_jobs* above one, the replay of each run that is large enough
     is spread over that many helper processes, beside the *jobs* runs made at
@@ -504,6 +557,10 @@ def run_benchmark(
                     label = f"{name}.{gate_name}.{agent_name}.{seed}"
                     calls.append((label, _gated_run, arguments))
     rows = _run_all(calls, jobs, progress)
+    for row in rows:
+        made = row.pop("decisions", [])
+        if decisions is not None:
+            decisions += made
     baselines = [row for row, call in zip(rows, calls, strict=True) if call[1] is _no_agent_run]
     runs = [row for row, call in zip(rows, calls, strict=True) if call[1] is _gated_run]
     without_agent = {(b["scenario"], b["variant"], b["seed"]): b for b in baselines}

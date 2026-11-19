@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """A governance gate served over HTTP, for Agentic-Datacenter's ``http_gate`` binding.
 
 Standard library only. Replace ``decide`` with a call into your own system;

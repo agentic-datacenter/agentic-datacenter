@@ -151,8 +151,18 @@ Open an issue with the "Gate result" form. Attach the result card and, for at le
 - **whether the gate could forge or suppress evidence**: Agentic-Datacenter keeps the decision records and computes the figures itself, but a gate that keeps its own log is the only witness to that log;
 - **live or reconstructed**: whether the card came from the run itself or was rebuilt afterwards.
 
+Beside the card, `bench run` writes `decisions.jsonl`: one line for each proposal, with your gate's verdict, the reasons your gate gave, the outcome, and what Agentic-Datacenter itself found wrong with the proposal (contract errors, limit errors, premises not established). It shows why a step was refused, which the card does not. The card is the same file with or without it. A card merged from parts (`bench merge`) has the decisions of its parts in their own files.
+
 A result card is a simulation result. It is not a claim about a facility, and no result from this repository has been reported yet; see the preregistration for what limits the weight of any one.
 
 ## Licence
 
-Agentic-Datacenter is under the Business Source License 1.1; read `LICENSE` for what it permits. Your gate stays in its own package or service; Agentic-Datacenter loads it through an entry point or calls it over HTTP, and nothing of it is added to this repository.
+Whose a gate is, and what you may do with what is here. This is how the licences are meant; it is not legal advice.
+
+- **A gate you wrote yourself is yours.** A service that answers over HTTP, or a command run per decision, contains nothing of Agentic-Datacenter. It is under whatever licence you choose, and the licence of this repository does not reach it. Anyone may implement the wire format.
+- **The examples are under the MIT licence** ([`examples/LICENSE`](https://github.com/darklordVirtual/agentic-datacenter/blob/main/examples/LICENSE)). Copy `examples/http-gate` or `examples/python-gate`, change it, and keep the result under your own licence. Keep the MIT notice with what you copied.
+- **Agentic-Datacenter itself is under the Business Source License 1.1** (`LICENSE`). Running it to develop, test, evaluate or benchmark your gate is not production use, and needs no licence from anyone. Any other use needs a [commercial licence](https://github.com/darklordVirtual/agentic-datacenter/blob/main/COMMERCIAL_LICENSING.md).
+- **A Python gate imports a little of Agentic-Datacenter**, the types its `evaluate` takes and returns. Keep that in a thin adapter and your own logic behind it. Your product then runs without Agentic-Datacenter, and only the adapter is tied to it.
+- **The contribution terms in `CONTRIBUTING.md` apply only to a change you ask to have merged into this repository.** They do not apply to your gate, to a registration, to a result you report, or to an issue like the one that asked for this section.
+
+Your gate stays in its own package or service. Agentic-Datacenter loads it through an entry point or calls it over HTTP, and nothing of it is added to this repository.
