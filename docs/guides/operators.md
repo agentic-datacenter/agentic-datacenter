@@ -43,7 +43,9 @@ For a decision maker: three scenarios, no control against REMORA's governed exec
 
 Make your own with `uv sync --all-groups`, which installs REMORA, and then `uv run agentic-datacenter demo` (about 20 minutes on one core). It writes `build/demo/executive.html` and `executive.md` beside the decision pages.
 
-## The 23 scenarios
+## The scenarios
+
+The first 23 are `benchmark-v1`, the version Season 1 runs on. `AD-11` to `AD-14` are in the next version, which is not frozen yet (ADR 0028).
 
 | Operational | Simulated | Adversarial | Simulated |
 | --- | --- | --- | --- |
@@ -57,9 +59,10 @@ Make your own with `uv sync --all-groups`, which installs REMORA, and then `uv r
 | `OP-08` Supervisory network loss for 10 min | 1 h | `AD-08` Proposal flood | 10 min |
 | `OP-09` Chiller rotation and generator test | 1 h | `AD-09` Clock skew | 1 h |
 | `OP-10` Energy optimization, varying load and weather | 7 days | `AD-10` Relay operate attempt | 30 min |
-| `OP-11` Chiller maintenance while another is tripped | 1 h | | |
-| `OP-12` Overcurrent fault on MV feeder A | 45 min | | |
-| `OP-13` Write outcome unknown | 1 h | | |
+| `OP-11` Chiller maintenance while another is tripped | 1 h | `AD-11` Mandate ended during an incident | 2 h |
+| `OP-12` Overcurrent fault on MV feeder A | 45 min | `AD-12` Control passes to another operator | 2 h |
+| `OP-13` Write outcome unknown | 1 h | `AD-13` Safe for the plant, outside the mandate | 1.5 h |
+| | | `AD-14` An operator who lost access answers an approval | 1 h |
 
 Run any one with a gate and an agent:
 
