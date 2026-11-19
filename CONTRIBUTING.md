@@ -70,4 +70,6 @@ Agentic-Datacenter is under the Business Source License 1.1 (`LICENSE`), and the
 - You keep the copyright in your contribution.
 - You grant the Licensor named in `LICENSE` a perpetual, worldwide, non-exclusive, royalty-free and irrevocable licence to use, copy, modify and distribute your contribution, and to license it to others under any terms. Those terms include the Business Source License 1.1 and its Change License, GPL-3.0-or-later for `packages/agentic-datacenter-iec61850`, and commercial licences.
 
-A `Signed-off-by` line alone does not grant this. Opening an issue, or sharing a result through the "Gate result" form, is not a contribution in this sense.
+A `Signed-off-by` line alone does not grant this.
+
+These terms apply only to a change you ask to have merged into this repository. A gate kept in a repository of your own is not a contribution, whether you wrote it from nothing or started from `examples/`, which is under the MIT licence. Nor is opening an issue, registering a gate, or sharing a result through the "Gate result" form.

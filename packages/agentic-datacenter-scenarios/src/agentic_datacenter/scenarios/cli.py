@@ -20,6 +20,7 @@ from agentic_datacenter.scenarios.bench import (
     merge_cards,
     run_benchmark,
     write_card,
+    write_decisions,
 )
 from agentic_datacenter.scenarios.demo import DEMO_AGENTS, DEMO_SCENARIOS, build_demo, write_demo
 from agentic_datacenter.scenarios.evidence import (
@@ -200,6 +201,8 @@ def bench(argv: Sequence[str]) -> int:
     def progress(done: int, total: int, run_id: str) -> None:
         print(f"[{done}/{total}] {run_id}", file=sys.stderr, flush=True)
 
+    decided: list[dict[str, object]] = []
+
     try:
         card = run_benchmark(
             load_profile(args.profile), ContractLibrary.load(args.contracts),
@@ -211,7 +214,7 @@ def bench(argv: Sequence[str]) -> int:
             allow_unfrozen=args.allow_unfrozen,
             heldout_secret=secret, heldout_variants=args.heldout_variants if secret else 0,
             jobs=args.jobs, progress=progress, horizon_s=horizon, max_judged=max_judged,
-            replay_jobs=args.replay_jobs,
+            replay_jobs=args.replay_jobs, decisions=decided,
         )  # fmt: skip
     except BenchVersionError as exc:
         print(
@@ -220,7 +223,9 @@ def bench(argv: Sequence[str]) -> int:
         )
         return 1
     write_card(card, args.out)
+    write_decisions(decided, args.out)
     print(f"{card['label']}: {args.out / 'result_card.json'} and {args.out / 'report.html'}")
+    print(f"each decision and the gate's reasons: {args.out / 'decisions.jsonl'}")
     for row in card["results"]:
         assert isinstance(row, dict)
         print(

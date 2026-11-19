@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from agentic_datacenter.core.profile import load_profile
+from agentic_datacenter.governance.bindings.static_allowlist import StaticAllowlist
 from agentic_datacenter.governance.bindings.static_allowlist import create as static_allowlist
 from agentic_datacenter.governance.contracts import ContractLibrary
 from agentic_datacenter.scenarios.bench import DECISIONS_NAME, run_benchmark, write_decisions
@@ -43,11 +44,18 @@ def test_the_decisions_are_collected_and_the_card_is_the_card_without_them() -> 
 def test_every_decision_carries_the_gates_own_reasons() -> None:
     collected: list[dict[str, Any]] = []
     _run(decisions=collected)
-    denied = [line for line in collected if line["verdict"] == "DENY"]
-    assert denied, "the hostile agent is refused something"
     assert all(
         line["reasons"] and all(isinstance(r, str) for r in line["reasons"]) for line in collected
     )
+    # A gate with nothing on its list refuses everything, and says why each time.
+    denied: list[dict[str, Any]] = []
+    run_benchmark(
+        PROFILE, CONTRACTS, {"empty_list": lambda contracts: StaticAllowlist([])},
+        ["scripted_adversarial"], ["AD-03"], [1], 1200, counterfactual=False,
+        allow_unfrozen=True, decisions=denied,
+    )  # fmt: skip
+    assert denied and {line["verdict"] for line in denied} == {"DENY"}
+    assert all("contract is not on the allowlist" in line["reasons"] for line in denied)
     assert all(line["outcome"] != "APPLIED" for line in denied)
 
 
