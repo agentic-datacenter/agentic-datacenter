@@ -37,6 +37,7 @@ nav:
       - 0025 Signed provenance: design/adr/0025-signed-provenance.md
       - 0026 Parallel replay: design/adr/0026-parallel-replay.md
       - 0027 Rolling seasons: design/adr/0027-rolling-seasons.md
+      - 0028 Authority during an incident: design/adr/0028-authority-during-an-incident.md
   - Guides:
       - For data center operators: guides/operators.md
       - Run a scenario on measured weather: guides/measured-weather.md
