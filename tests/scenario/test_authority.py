@@ -63,9 +63,11 @@ class _ChecksPremises:
         failing = [p.expr for p in premises.premises if p.holds is not True]
         if decision.verdict is Verdict.ALLOW and failing:
             reasons = tuple(f"premise not established: {expr}" for expr in failing)
+            code = "authority" if any(e.startswith("authority(") for e in failing) else "premise"
             return Decision(
-                Verdict.DENY, decision.decision_ref, proposal.contract_id, reasons=reasons
-            )
+                Verdict.DENY, decision.decision_ref, proposal.contract_id, reasons=reasons,
+                reason_code=code,
+            )  # fmt: skip
         return decision
 
     def record_outcome(self, decision_ref: str, outcome: Any) -> None:
@@ -250,3 +252,65 @@ def test_this_is_another_benchmark_version_and_only_in_what_it_adds() -> None:
     assert hashlib.sha256((judging / "counterfactual.py").read_bytes()).hexdigest() == (
         "1fc1a9710cb28f3f4ebb0ec4344c048ba3c7cff6e8196b49111cf4ea69d773c8"
     )
+
+
+# --- why a gate refused, in a word (issue 31, point 2) --------------------------
+
+
+def test_a_gate_can_say_in_a_word_why_it_refused(revoked: dict[str, RunResult]) -> None:
+    """Told apart: refused because nobody authorized it, or refused for something else."""
+    result = revoked["checks_premises"]
+    unauthorized = [r for r in result.records if r.get("authorized") is False]
+    assert unauthorized
+    refused_for_it = [r for r in unauthorized if r.get("reason_code") == "authority"]
+    assert refused_for_it and all(r["verdict"] == "DENY" for r in refused_for_it)
+    assert result.metrics.refused_citing_authority == len(refused_for_it)
+    # A proposal refused before the mandate ended was refused for something else.
+    earlier = [r for r in result.records if "authorized" not in r and r["verdict"] == "DENY"]
+    assert all(r.get("reason_code") != "authority" for r in earlier)
+
+
+def test_a_gate_that_gives_no_word_has_none_recorded(revoked: dict[str, RunResult]) -> None:
+    result = revoked["limits_only"]
+    assert all("reason_code" not in r for r in result.records)
+    assert result.metrics.refused_citing_authority == 0
+
+
+def test_the_words_are_a_fixed_few_and_anything_else_is_other() -> None:
+    from agentic_datacenter.governance.gate import REASON_CODES
+
+    assert REASON_CODES == (
+        "authority", "limit", "premise", "evidence", "approval", "malformed", "policy", "other",
+    )  # fmt: skip
+
+    class _OwnWord(_ChecksPremises):
+        def evaluate(self, proposal: Any, premises: Any, actor: Any) -> Decision:
+            decision = super().evaluate(proposal, premises, actor)
+            if decision.verdict is Verdict.DENY:
+                return Decision(
+                    Verdict.DENY, decision.decision_ref, proposal.contract_id,
+                    reasons=decision.reasons, reason_code="because I said so",
+                )  # fmt: skip
+            return decision
+
+    result = _run("AD-13", _OwnWord)
+    codes = {r["reason_code"] for r in result.records if "reason_code" in r}
+    assert codes == {"other"}
+
+
+def test_the_word_is_on_the_card_and_beside_it() -> None:
+    from agentic_datacenter.scenarios.bench import run_benchmark
+
+    decisions: list[dict[str, Any]] = []
+    card = run_benchmark(
+        PROFILE, CONTRACTS, {"checks_premises": _ChecksPremises}, ["scripted_adversarial"],
+        ["AD-13"], [1], horizon_s=300, max_judged=6, allow_unfrozen=True, decisions=decisions,
+    )  # fmt: skip
+    (run,) = card["runs"]
+    assert run["judgements"] and all("reason_code" in j for j in run["judgements"])
+    assert "authority" in {j["reason_code"] for j in run["judgements"]}
+    (row,) = card["results"]
+    assert row["refused_citing_authority"] == run["metrics"]["refused_citing_authority"] > 0
+    assert row["executed_without_authority"] == 0 < row["proposals_without_authority"]
+    assert "authority" in {line["reason_code"] for line in decisions}
+    assert all("reason_code" in line for line in decisions)
