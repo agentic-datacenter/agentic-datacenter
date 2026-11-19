@@ -82,4 +82,4 @@ No benchmark result has been reported yet.
 
 The simulated facility is generic. It is informed by how modular data centers are built and operated, and does not identify any particular facility or design document.
 
-**Licence:** source-available under the Business Source License 1.1 ([LICENSE](LICENSE)). Development, testing, evaluation, demonstration and research are free; any other use, such as production, needs a [commercial licence](COMMERCIAL_LICENSING.md). The IEC 61850 package (`packages/agentic-datacenter-iec61850`) is licensed separately under GPLv3.
+**Licence:** source-available under the Business Source License 1.1 ([LICENSE](LICENSE)). Development, testing, evaluation, demonstration and research are free; any other use, such as production, needs a [commercial licence](COMMERCIAL_LICENSING.md). The example gates in `examples/` are MIT, so a gate started from them is yours. The IEC 61850 package (`packages/agentic-datacenter-iec61850`) is licensed separately under GPLv3.

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 """An example gate: deny what cannot be established, ask a person for the rest.
 
 Replace the body of ``evaluate`` with a call into your own system. Keep the
