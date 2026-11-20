@@ -26,7 +26,7 @@ Governance gates and the REMORA binding
 
 Scenarios and benchmark
 
-- Twenty-three scenarios, thirteen operational and ten adversarial, played by scripted agents: careful, hostile, drifting and flooding.
+- Twenty-seven scenarios, thirteen operational and fourteen adversarial, played by scripted agents: careful, hostile, drifting and flooding. The frozen version `benchmark-v1` has 23 of them; `AD-11` to `AD-14` are new on the main branch and are not in a frozen version yet.
 - Counterfactual replay: a blocked proposal is replayed as if it had been carried out, to show whether the block avoided harm or cost a useful step. Every run is also compared with the same scenario and seed with no agent.
 - `agentic-datacenter bench run` in four tiers (`docs/bench/TIERS.md`), in several processes or split over machines and merged. The result card is the same, byte for byte, however it was made.
 - `agentic-datacenter demo`: three scenarios with no gate and with one, from the same seed, as a page with every decision and its record and as a one-page result report in HTML and Markdown.
@@ -59,6 +59,11 @@ Tooling
 
 Added
 
+- `agentic-datacenter --help` lists every command, with one line each, including those added by other packages: `bench`, `data`, `demo`, `gate`, `scenario`, `whatif`, and `contracts` and `scl` when REMORA and the IEC 61850 package are installed. The line is the first line of the command's docstring.
+- A ruleset for frozen benchmark tags (`.github/rulesets/benchmark-tags.json`): a `benchmark-*` tag cannot be moved or deleted. `docs/guides/bench-runner.md` says how to apply the rulesets when the repository is made public.
+- `CODE_OF_CONDUCT.md` (the Contributor Covenant 2.1, with private reporting), a pull request template, a "Problem or question" issue form, and `.github/ISSUE_TEMPLATE/config.yml`, which turns blank issues off and links to private security reporting and to the documentation.
+- `.github/dependabot.yml`: weekly, grouped update pull requests for the Python lock and for the actions. REMORA is left out; it moves only by a pin bump.
+- `docs/bench/PUBLIC_TEST.md` says how a verified result (run by the maintainers on the benchmark runner, from the frozen tag) differs from a self-reported one (run by a participant). The "Gate result" form says that what it shares is self-reported.
 - The main branch now carries the next benchmark version while it is being made. Season 1 runs on `benchmark-v1` at its tag (`git checkout benchmark-v1`). `bench run --tier quick` is a development run without `--allow-unfrozen`, and a run refused for its version says where the frozen one is.
 - For the next benchmark version, not `benchmark-v1`: authority that changes during an incident (ADR 0028). A scenario event ends, passes on or narrows the mandate of a principal; every gate is told through one more premise; and each run counts the steps executed without a mandate. An approval from a person who has lost access is refused by the control path, whatever the gate, and counted. Four scenarios use it, `AD-11` to `AD-14`. A gate can give reason codes with a refusal (`reason_codes`, an optional field of the wire format), kept on the card and in `decisions.jsonl`, so a refusal for want of a mandate is told from one for another reason. Whatever the gate, each judgement also carries what was established as wrong with the step (`grounds`), and each run counts all its refusals by code and by ground (`refusals`). Card schema version 6.
 - `agentic-datacenter bench run` writes `decisions.jsonl` beside the card: each proposal, the gate's verdict and the reasons the gate gave, with the contract errors, limit errors and premises not established. The card is unchanged, so a card of the season is still the same file.
@@ -68,7 +73,7 @@ Added
 - `agentic-datacenter bench run --replay-jobs <n>` spreads the replay of one run over processes, for `--tier full`, where one week-long run in one process takes days (ADR 0026). The card is the same, byte for byte. The oracle's source and the frozen benchmark version are unchanged. `docs/bench/TIERS.md` says what machine each tier needs.
 - The public test says whose the `full` run of a season is: the maintainers', for built-in gates, never a participant's gate on the maintainers' machine (`docs/bench/PUBLIC_TEST.md`).
 - `tools/forbidden_terms.py`: the owner adds forbidden names as hashes, typed without being shown, and scans every file of every commit for them, not only the current ones.
-- `docs/calibration/contribute-data.md` and the "Offer calibration data" issue form: how equipment makers and operators can share anonymized data to calibrate a plant module, without data ever reaching a public issue.
+- `docs/calibration/contribute-data.md`: how equipment makers and operators can share anonymized data to calibrate a plant module, without data ever reaching a public issue.
 - `tools/season_registrations.py` lists a season's registered gates with the version each issue named at the deadline, read from the issue's edit history. The README is shorter: an operator guide (`docs/guides/operators.md`) and a glossary (`docs/reference/glossary.md`) hold what it no longer does.
 - Season 1 of the public test opens: the benchmark version is frozen (`docs/bench/VERSION.json`, tag `benchmark-v1`), and Track D is drawn from drand quicknet round `34469812` at 2026-12-02 12:00 UTC, the registration deadline (`docs/bench/PUBLIC_TEST.md`). The registration form also offers `command_gate`.
 - A one-page result report, written by `agentic-datacenter demo` as `executive.html` and `executive.md`. It opens with the result, has a chart per scenario, and states what a simulated result does not show. The committed example is `docs/demo/result-report.md`, made from `docs/demo/demo.json` by `tools/demo_example.py`.
@@ -80,6 +85,11 @@ Added
 
 Changed
 
+- The branch rules work for one maintainer. `main.json` requires a pull request and the seven checks from everyone, with no exceptions, and still forbids force pushes and deletion. The code owner's review moved to `main-review.json`, which the admin role may skip on its own pull requests. `CONTRIBUTING.md` says so: a pull request from anyone else is reviewed by the maintainer, and the maintainer's own are merged once the checks pass.
+- Calibration data is first offered by e-mail, to the contact in `COMMERCIAL_LICENSING.md`, so a public issue no longer shows who holds data. The "Offer calibration data" issue form is removed.
+- The result report says who stopped commands when there was no control: the control path and the plant's command service, which apply whatever the gate. `docs/demo/result-report.md` and its picture are regenerated; no figure changes.
+- The README, `docs/bench/PUBLIC_TEST.md` and this changelog say that `benchmark-v1` froze 23 scenarios and that the library on the main branch has 27.
+- `REMORA_READ_TOKEN` is not needed now that REMORA-research is public (ADR 0007, addendum). `integration.yml` still uses it if it exists.
 - `bench check --publication` also refuses a card that is not a complete season: seeds 1 to 30, every scenario of `docs/bench/VERSION.json` at full length, the season's judging bounds, and the frozen hashes themselves rather than the card's own flag.
 - The benchmark runner passes its inputs to the shell as environment variables and checks each first; no workflow pastes an input into a script (`tests/conformance/test_ci.py`).
 - The committed three-scenario example and its result report compare no control with `remora_governed`. Before, they compared it with `static_allowlist`.

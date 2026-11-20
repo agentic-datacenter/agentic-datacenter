@@ -27,3 +27,8 @@ The CI design also needs three tools that section 5 of the design document does 
 - The reference image is `ghcr.io/astral-sh/uv` for Python 3.12, pinned by digest. It has no `git`, which several tests need, so each job installs it from the distribution's package index. That one step is not pinned.
 - The integration job that installs REMORA needs a repository secret, `REMORA_READ_TOKEN`, with read access to the REMORA repository.
 - Workflows have not run on GitHub yet when this ADR is written; they were checked locally by running the same commands outside the container.
+
+## Addendum 2026-11-20: the REMORA read token is optional, and the rulesets
+
+- REMORA-research is public (ADR 0002, addendum of 2026-11-17), so `uv` fetches the pinned commit without access rights. The secret `REMORA_READ_TOKEN` is not needed and does not have to be created. `integration.yml` uses it if it exists, and skips that step without it.
+- The branch rules are now two rulesets. `main.json` requires a pull request and the checks, with no exceptions. `main-review.json` requires a code owner's review, which the admin role may skip on its own pull requests while there is one maintainer. Frozen benchmark tags have a ruleset of their own, `benchmark-tags.json`. They are still applied by hand (`docs/guides/bench-runner.md`).

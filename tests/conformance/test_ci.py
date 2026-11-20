@@ -193,14 +193,13 @@ def test_no_job_that_calls_a_paid_model_api_starts_by_itself() -> None:
 
 
 @pytest.mark.req("ADC-CI-005")
-def test_ruleset_requires_checks_review_and_no_automatic_merge() -> None:
+def test_ruleset_requires_a_pull_request_and_its_checks() -> None:
     ruleset = json.loads((REPO / ".github/rulesets/main.json").read_text(encoding="utf-8"))
     rules = {rule["type"]: rule.get("parameters", {}) for rule in ruleset["rules"]}
     assert ruleset["enforcement"] == "active"
     assert ruleset["conditions"]["ref_name"]["include"] == ["~DEFAULT_BRANCH"]
-    review = rules["pull_request"]
-    assert review["required_approving_review_count"] >= 1
-    assert review["require_code_owner_review"] is True
+    assert ruleset["bypass_actors"] == []
+    assert "pull_request" in rules
     checks = {c["context"] for c in rules["required_status_checks"]["required_status_checks"]}
     pr_jobs = set(yaml.safe_load((REPO / ".github/workflows/pr.yml").read_text("utf-8"))["jobs"])
     assert checks and checks <= pr_jobs
@@ -209,10 +208,46 @@ def test_ruleset_requires_checks_review_and_no_automatic_merge() -> None:
 
 
 @pytest.mark.req("ADC-CI-005")
+def test_review_is_required_from_everyone_but_the_maintainer() -> None:
+    """While there is one maintainer, only the admin role may merge without a review.
+
+    The bypass is limited to pull requests, and the required checks are in the
+    other ruleset, which nobody bypasses.
+    """
+    path = REPO / ".github/rulesets/main-review.json"
+    ruleset = json.loads(path.read_text(encoding="utf-8"))
+    assert ruleset["enforcement"] == "active"
+    assert ruleset["conditions"]["ref_name"]["include"] == ["~DEFAULT_BRANCH"]
+    assert ruleset["bypass_actors"] == [
+        {"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "pull_request"}
+    ]
+    (rule,) = ruleset["rules"]
+    review = rule["parameters"]
+    assert rule["type"] == "pull_request"
+    assert review["required_approving_review_count"] >= 1
+    assert review["require_code_owner_review"] is True
+
+
+@pytest.mark.req("ADC-CI-005")
 def test_release_tags_must_be_signed() -> None:
     ruleset = json.loads((REPO / ".github/rulesets/tags.json").read_text(encoding="utf-8"))
     assert ruleset["target"] == "tag"
     assert "required_signatures" in {rule["type"] for rule in ruleset["rules"]}
+
+
+@pytest.mark.req("ADC-CI-005")
+def test_benchmark_tags_cannot_be_moved_or_deleted() -> None:
+    path = REPO / ".github/rulesets/benchmark-tags.json"
+    ruleset = json.loads(path.read_text(encoding="utf-8"))
+    assert ruleset["target"] == "tag" and ruleset["enforcement"] == "active"
+    assert ruleset["conditions"]["ref_name"]["include"] == ["refs/tags/benchmark-*"]
+    assert ruleset["bypass_actors"] == []
+    assert {"deletion", "update", "non_fast_forward"} <= {r["type"] for r in ruleset["rules"]}
+
+
+def test_every_ruleset_file_is_checked() -> None:
+    checked = {"main.json", "main-review.json", "tags.json", "benchmark-tags.json"}
+    assert {p.name for p in (REPO / ".github/rulesets").glob("*.json")} == checked
 
 
 @pytest.mark.req("ADC-CI-005")

@@ -67,7 +67,11 @@ def _report(summary: dict[str, Any]) -> None:
 
 
 def main(argv: Sequence[str]) -> int:
-    """Run ``agentic-datacenter whatif ...`` and return the exit status."""
+    """Play one proposed change as three branches, and check what-if evidence.
+
+    Runs ``agentic-datacenter whatif ...`` and returns the exit status.
+    The first line is the help text of ``agentic-datacenter --help``.
+    """
     parser = argparse.ArgumentParser(
         prog="agentic-datacenter whatif", description="Play one proposed change as three branches."
     )

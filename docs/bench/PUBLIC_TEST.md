@@ -15,7 +15,7 @@ A public test runs in seasons, one after another without a gap, so a season is a
 
 A season fixes three things before any participant can know its held-out scenarios:
 
-1. **A frozen benchmark version.** `agentic-datacenter bench freeze` writes the hashes of the profile, contracts, scenarios and oracle to a file, and the version is tagged. A season uses the version that is frozen when it opens. Today that is `benchmark-v1.1` ([VERSION.json](VERSION.json)). A new version is named in `seasons.json`, with the season it first applies to, before that season opens. A card from any other version is refused for the season.
+1. **A frozen benchmark version.** `agentic-datacenter bench freeze` writes the hashes of the profile, contracts, scenarios and oracle to a file, and the version is tagged. A season uses the version that is frozen when it opens. Today that is `benchmark-v1.1` ([VERSION.json](VERSION.json)). It freezes all 27 scenarios of the library: the 23 of `benchmark-v1`, which ran no season, and `AD-11` to `AD-14` (ADR 0028). A new version is named in `seasons.json`, with the season it first applies to, before that season opens. A card from any other version is refused for the season.
 2. **A beacon round.** The secret that draws the held-out variants of Track D is the output of the drand "quicknet" public randomness beacon at the round emitted when the season closes. The rounds of the coming year are in the calendar below, so each is published long before it exists. No one, the authors of Agentic-Datacenter included, can know it before the round is emitted; afterwards anyone can fetch it and check it (`tools/heldout_beacon.py`).
 3. **A registration deadline**, the instant the round is emitted. A gate takes part in a season's Track D only if it was registered before then, with the exact version it will run.
 
@@ -75,7 +75,7 @@ A season fixes three things before any participant can know its held-out scenari
     ```
 
 5. **Check it for publication:** `uv run agentic-datacenter bench check <card> --gate <gate> --publication`. It refuses an incomplete card and one not of the frozen version.
-6. **Report it** with the "Gate result" issue form.
+6. **Report it** with the "Gate result" issue form. It is published as a self-reported result (below).
 
 **The full-replay check is the maintainers' work, not a participant's.**
 
@@ -93,6 +93,20 @@ A season fixes three things before any participant can know its held-out scenari
 | `remora` · `remora_governed` · `remora_shadow` | REMORA, pinned in `REMORA_PIN` | `DECISION_ONLY` · `GOVERNED` · `SHADOW` |
 
 The built-in gates are written by Agentic-Datacenter's authors and are reported apart from the others. The maintainers have run one season of `remora_governed` at the tag `benchmark-v1`; it is not reported yet. Every other run so far is a development run.
+
+## Verified and self-reported results
+
+Every published result says which of two kinds it is. A list of results shows the kind beside each card, and does not rank the two kinds together without saying so.
+
+| | Verified | Self-reported |
+| --- | --- | --- |
+| Run by | the maintainers | a participant |
+| Where | the benchmark runner (`.github/workflows/bench-runner.yml`), on a machine of the maintainers | the participant's own machine |
+| Code | the season's frozen tag, checked out by the workflow (`gh workflow run bench-runner.yml --ref <tag>`) | what the participant says they checked out |
+| Record | `provenance.json` from the workflow run, attested once the repository is public ([Where a result came from](../guides/bench-runner.md#where-a-result-came-from)) | the card and its SHA-256, and `bench record` if the participant ran it |
+| Which gates | the built-in gates only, because the maintainers do not run a participant's gate | any gate |
+
+Before publication the maintainers run `bench check --publication` on a self-reported card. That shows the card is complete and of the frozen version. It does not show that the run happened as reported. A self-reported result becomes reproduced when someone other than the gate's authors makes a card with the same SHA-256 (see Reproduction); it is then marked as reproduced, and is still self-reported.
 
 ## Reproduction
 

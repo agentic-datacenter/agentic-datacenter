@@ -1,0 +1,24 @@
+name: Problem or question
+description: Something does not work as the documentation says, or the documentation is unclear.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Issues are public. A security problem goes through private reporting instead (SECURITY.md).
+        Do not include anything that identifies a real facility.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you ran, what you expected, and what you saw. Paste the command and its output.
+    validations:
+      required: true
+
+  - type: input
+    id: commit
+    attributes:
+      label: Commit or tag
+      description: "`git rev-parse HEAD`, or the tag you checked out."
+    validations:
+      required: false

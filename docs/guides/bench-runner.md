@@ -81,5 +81,14 @@ A self-hosted runner executes whatever a workflow asks of it. On a public reposi
 
   Do not approve a run of a pull request that touches `.github/workflows/`.
 - Keep the label `bench` out of every other workflow, and keep `bench-runner.yml` started by hand only.
+- Apply the four rulesets in `.github/rulesets/`. No job applies them. `main.json` requires a pull request and the checks on the main branch, with no exceptions. `main-review.json` requires a code owner's review, which the admin role may skip on its own pull requests while there is one maintainer. `tags.json` requires release tags `v*` to be signed. `benchmark-tags.json` stops a `benchmark-*` tag from being moved or deleted, so a frozen version stays where it was published. Create each one once, as an admin:
+
+  ```sh
+  for f in main main-review tags benchmark-tags; do
+    gh api -X POST repos/darklordVirtual/agentic-datacenter/rulesets --input .github/rulesets/$f.json
+  done
+  ```
+
+  A ruleset that already exists is changed with `gh api -X PUT repos/darklordVirtual/agentic-datacenter/rulesets/<id> --input <file>`; `gh api repos/darklordVirtual/agentic-datacenter/rulesets` lists the ids.
 
 `tests/conformance/test_ci.py` (`test_the_benchmark_runner_is_started_by_hand_only`) enforces the second point in part. It fails when `bench-runner.yml` has a trigger other than `workflow_dispatch`, or when any other workflow file names a self-hosted runner. It reads the workflow files only. It cannot see the repository's settings, so the first point is not checked by anything in this repository.
