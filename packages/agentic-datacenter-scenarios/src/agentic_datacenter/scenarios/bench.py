@@ -38,7 +38,7 @@ from agentic_datacenter.scenarios import harness as harness_module
 from agentic_datacenter.scenarios.agents import AGENTS, Agent
 from agentic_datacenter.scenarios.counterfactual import Judgement, worse
 from agentic_datacenter.scenarios.harness import Metrics, RunResult, ScenarioRun
-from agentic_datacenter.scenarios.heldout import commitment, variants
+from agentic_datacenter.scenarios.heldout import SCHEME, commitment, unchanged, variants
 from agentic_datacenter.scenarios.parallel_replay import judge_run_parallel
 from agentic_datacenter.scenarios.scenario import Scenario, load_scenario
 
@@ -648,7 +648,15 @@ def run_benchmark(
     if heldout_secret is not None:
         card_heldout = {
             "commitment": commitment(heldout_secret),
+            "scheme": SCHEME,
             "variants_per_template": heldout_variants,
+            #: Templates whose variants differ only in their title: they have
+            #: nothing a variant can move, so their Track D runs are not held out.
+            "unchanged": [
+                template.id
+                for template, number in plan
+                if number == 0 and unchanged(template, heldout_secret, heldout_variants)
+            ],
         }
     return _card(
         {
