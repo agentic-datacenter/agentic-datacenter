@@ -100,6 +100,21 @@ VERDICT_ALIASES: dict[str, Verdict] = {
     )},
 }  # fmt: skip
 _SESSIONS = itertools.count(1)
+#: The most of an answer that is read. A longer one is a failure of the service.
+MAX_ANSWER_BYTES = 1 << 20
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Refuse every redirect: simulation state goes to the configured URL or nowhere."""
+
+    def redirect_request(self, *args: Any, **kwargs: Any) -> None:
+        return None
+
+
+#: No proxy from the environment and no redirects. A proxy set in ``http_proxy``
+#: would otherwise receive what is meant for a service on loopback, and a
+#: redirect could send it to a host that was never checked.
+_OPENER = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect())
 
 
 def read_verdict(word: object) -> Verdict | None:
@@ -213,6 +228,8 @@ class HttpGate:
         #: One per gate, and Agentic-Datacenter builds a gate per run and per replay.
         self.session = f"{name}-{os.getpid()}-{next(_SESSIONS)}"
         self.outcomes: dict[str, Outcome] = {}
+        #: Why the service failed to give a usable answer, once per failed decision.
+        self.failures: list[str] = []
 
     def _post(self, path: str, body: Mapping[str, JsonValue]) -> Any:
         request = urllib.request.Request(
@@ -221,13 +238,24 @@ class HttpGate:
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(request, timeout=self.timeout_s) as response:  # noqa: S310 - scheme checked
-            return json.loads(response.read().decode("utf-8"))
+        with _OPENER.open(request, timeout=self.timeout_s) as response:
+            text = response.read(MAX_ANSWER_BYTES + 1)
+        if len(text) > MAX_ANSWER_BYTES:
+            raise ValueError(f"the answer is longer than {MAX_ANSWER_BYTES} bytes")
+        return json.loads(text.decode("utf-8"))
 
     def _answer(
         self, body: Mapping[str, JsonValue]
     ) -> tuple[Verdict, tuple[str, ...], dict[str, Any]]:
         """Ask the service; on any failure, abstain and say why."""
+        verdict, reasons, answer = self._ask(body)
+        if not answer:
+            self.failures.append(reasons[0])
+        return verdict, reasons, answer
+
+    def _ask(
+        self, body: Mapping[str, JsonValue]
+    ) -> tuple[Verdict, tuple[str, ...], dict[str, Any]]:
         try:
             answer = self._post("/evaluate", body)
         except (urllib.error.URLError, TimeoutError, OSError, ValueError) as error:

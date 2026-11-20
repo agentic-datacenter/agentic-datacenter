@@ -7,6 +7,7 @@ import json
 import sys
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 from agentic_datacenter.core.profile import load_profile
 from agentic_datacenter.governance.contracts import ContractLibrary
@@ -417,7 +418,21 @@ def gate(argv: Sequence[str]) -> int:
         if operating not in PROFILES or operating == "BASELINE_RULES":
             known = ", ".join(p for p in PROFILES if p != "BASELINE_RULES")
             raise GateConformanceError(f"declares profile {operating!r}; expected one of {known}")
-        check_gate(lambda: factory(contracts))
+        made_here: list[object] = [made]
+
+        def build() -> Any:
+            gate = factory(contracts)
+            made_here.append(gate)
+            return gate
+
+        check_gate(build)
+        # A gate that cannot reach its service abstains, and abstaining passes
+        # the suite; so a gate that reports failed calls fails the check here.
+        failed = [f for gate in made_here for f in getattr(gate, "failures", [])]
+        if failed:
+            raise GateConformanceError(
+                f"its service gave no usable answer {len(failed)} time(s); first: {failed[0]}"
+            )
     except Exception as error:  # noqa: BLE001 - every failure of a foreign gate is reported
         print(f"{args.gate}: FAILED: {type(error).__name__}: {error}")
         return 1
