@@ -92,7 +92,7 @@ A season fixes three things before any participant can know its held-out scenari
 | `null_gate` · `static_allowlist` | baselines: no gate; role and range checks | `UNGOVERNED` · `STATIC_ALLOWLIST` |
 | `remora` · `remora_governed` · `remora_shadow` | REMORA, pinned in `REMORA_PIN` | `DECISION_ONLY` · `GOVERNED` · `SHADOW` |
 
-The built-in gates are written by Agentic-Datacenter's authors and are reported apart from the others. So far they have development runs only.
+The built-in gates are written by Agentic-Datacenter's authors and are reported apart from the others. The maintainers have run one season of `remora_governed` at the tag `benchmark-v1`; it is not reported yet. Every other run so far is a development run.
 
 ## Reproduction
 

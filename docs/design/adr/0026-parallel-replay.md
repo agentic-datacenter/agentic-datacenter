@@ -61,3 +61,7 @@ On 2026-11-18, on a machine with 4 cores: `OP-10` shortened to eight simulated h
 - A `full` run with replay jobs is made with this code, not with the code at the tag of the season. Its card names the frozen benchmark version, because the hashes are the same, and its record (`bench record`, ADR 0025) names the commit.
 - The next benchmark version should move the sharing into the oracle, so that its hash covers the code that plays the branches.
 - A served gate is asked by several helpers at a time, as it already is with `--jobs`.
+
+## Addendum 2026-11-19: the run named under Context finished
+
+The `full` run that had not finished after ten hours took 22 h 41 min: `remora_governed`, three seeds, 207 runs, on a machine with 16 threads, each run in one process (GitHub Actions run 44176241942). It was started before replay jobs existed. No `full` run has been made with them yet, so what they save on a whole run is still not measured.
