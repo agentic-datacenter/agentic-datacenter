@@ -21,6 +21,7 @@ _PRIORITY = {
     "leak_alarm": HIGH,
     "on_battery_alarm": HIGH,
     "dropped": URGENT,
+    "thermal_trip": URGENT,
     "zone_mean_invalid": HIGH,
 }
 _SYSTEM = {

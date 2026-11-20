@@ -11,7 +11,7 @@
 | [`cooling.tes`](../design/modules/cooling.tes.md) | 0.2.0 | `F1` | `Z1-CHW` | ADC-PRC-002 |
 | [`cooling.weather`](../design/modules/cooling.weather.md) | 0.3.0 | `F1` | `Z1-BLDG` | ADC-PRC-010 |
 | [`electrical.genset`](../design/modules/electrical.genset.md) | 0.2.0 | `F1` | `Z1-PWR-{instance}` | ADC-PRC-001, ADC-CTL-005 |
-| [`electrical.it_load`](../design/modules/electrical.it_load.md) | 0.2.0 | `F1` | `Z1-POD-{instance}` | ADC-FID-003, ADC-PRC-001 |
+| [`electrical.it_load`](../design/modules/electrical.it_load.md) | 0.3.0 | `F1` | `Z1-POD-{instance}` | ADC-FID-003, ADC-PRC-001 |
 | [`electrical.mv_switchgear`](../design/modules/electrical.mv_switchgear.md) | 0.2.0 | `F1` | `Z1-MV` | ADC-PRC-001, ADC-IEC-004 |
 | [`electrical.power_train`](../design/modules/electrical.power_train.md) | 0.2.0 | `F1` | `Z1-PWR-{instance}` | ADC-CTL-001, ADC-CTL-002, ADC-PRC-001, ADC-CTL-005 |
 | [`electrical.ups`](../design/modules/electrical.ups.md) | 0.2.0 | `F1` | `Z1-PWR-{instance}` | ADC-PRC-003, ADC-PRC-001 |

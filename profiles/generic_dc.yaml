@@ -67,6 +67,12 @@ modules:
     params:
       design_kw: {value: 150.0, unit: kW, assumed: true}
       airflow_kg_s: {value: 12.0, unit: kg/s, assumed: true}
+      # Servers shut down on inlet air well above the ASHRAE A1 allowable
+      # limit of 32 degC, and start again once the inlet is back inside it.
+      shutdown_inlet_c: {value: 40.0, unit: degC, assumed: true}
+      shutdown_hold_s: {value: 60.0, unit: s, assumed: true}
+      restart_inlet_c: {value: 32.0, unit: degC, assumed: true}
+      restart_hold_s: {value: 300.0, unit: s, assumed: true}
   - id: cooling.weather
     instances: [SITE]
     params:
