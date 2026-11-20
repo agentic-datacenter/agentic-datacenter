@@ -24,7 +24,7 @@ Report privately through GitHub private vulnerability reporting: on the reposito
 
 - A way to make the simulator bind to, or connect to, something outside its own networks.
 - A way for a write to reach a controller model without a valid decision reference, or for any network path to reach a tier `T0` point.
-- Restricted material in the repository or its history: text from a design document of a real facility or from a standard, or the names covered by `ADC-PRV-002`.
+- Restricted material in the repository or its history: text from the reference specification or from a standard, or the names covered by `ADC-PRV-002`.
 - A secret or a real key committed by mistake.
 
 Say what you observed, the commit, and how to reproduce it.

@@ -1,4 +1,4 @@
-# Values taken from a real facility are never committed (ADC-PRV-003)
+# Values derived from the reference specification are never committed (ADC-PRV-003)
 profiles/restricted_ref.yaml
 
 # REMORA register cache (agentic-datacenter remora fetch-src)
