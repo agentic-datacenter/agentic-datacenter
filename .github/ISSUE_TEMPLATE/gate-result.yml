@@ -8,6 +8,7 @@ body:
       value: |
         Thank you for running your gate on Agentic-Datacenter. See docs/guides/bring-your-own-gate.md.
         A result card is a simulation result, not a claim about any facility.
+        A result shared here is published as **self-reported**: you ran it, not the maintainers. See "Verified and self-reported results" in docs/bench/PUBLIC_TEST.md.
   - type: input
     id: gate
     attributes:

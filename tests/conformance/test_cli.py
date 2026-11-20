@@ -1,5 +1,6 @@
 """The `agentic-datacenter modules` commands."""
 
+from importlib.metadata import entry_points
 from pathlib import Path
 
 import pytest
@@ -83,3 +84,15 @@ def test_run_prints_the_same_final_hash_for_the_same_seed(
         line for line in second.splitlines() if line.startswith("state hash")
     ]
     assert "simulated time  5.0 s" in first
+
+
+def test_help_lists_every_command_with_a_description(capsys: pytest.CaptureFixture[str]) -> None:
+    with pytest.raises(SystemExit) as stopped:
+        main(["--help"])
+    assert stopped.value.code == 0
+    out = capsys.readouterr().out
+    added = sorted(point.name for point in entry_points(group="agentic_datacenter.commands"))
+    assert {"bench", "gate", "demo", "scenario", "whatif"} <= set(added)
+    for name in ["modules", "profile", "run", *added]:
+        line = next((line for line in out.splitlines() if line.split()[:1] == [name]), "")
+        assert len(line.split()) > 1, f"{name} has no description in --help"

@@ -23,7 +23,11 @@ def _units(pairs: Sequence[str]) -> dict[str, str]:
 
 
 def main(argv: Sequence[str]) -> int:
-    """Run ``agentic-datacenter data manifest|check`` and return the exit status."""
+    """Write and check the manifest of a measured input series.
+
+    Runs ``agentic-datacenter data manifest|check`` and returns the exit status.
+    The first line is the help text of ``agentic-datacenter --help``.
+    """
     parser = argparse.ArgumentParser(
         prog="agentic-datacenter data", description="Measured input series."
     )

@@ -1,6 +1,6 @@
 # Contributing
 
-These rules apply to human and automated contributors alike. Agentic-Datacenter was built from one design document, `docs/design/SDD-ADC-001.md`; decisions made since are ADRs in `docs/design/adr/`. The opening table of the design document says which sections matter for your change. If the design document is ambiguous or wrong, say so in the pull request instead of guessing.
+These rules apply to human and automated contributors alike, and so does the [code of conduct](CODE_OF_CONDUCT.md). Agentic-Datacenter was built from one design document, `docs/design/SDD-ADC-001.md`; decisions made since are ADRs in `docs/design/adr/`. The opening table of the design document says which sections matter for your change. If the design document is ambiguous or wrong, say so in the pull request instead of guessing.
 
 ## Setup and checks
 
@@ -33,7 +33,7 @@ For a small change, run the tests that touch what changed first. `uv run python 
 - Names the requirement IDs it closes in its description.
 - Is test-first: failing tests are committed before the implementation.
 - Stays under about 1,500 changed lines, not counting generated maps and fixtures. Split it if it is larger.
-- Is merged by a person. Nobody merges their own PR, and nothing merges automatically.
+- Is merged by a person, after the required checks have passed. Nothing merges automatically. A pull request from anyone else is reviewed and approved by the maintainer before it is merged. There is one maintainer today, so the maintainer's own pull requests are merged without a second review, once the required checks pass (`.github/rulesets/`).
 - Adds no dependency beyond those in section 5 of the design document without an ADR.
 - Carries no authorship or co-author trailer naming an AI tool, in commits or in files (`tests/conformance/test_authorship.py`).
 

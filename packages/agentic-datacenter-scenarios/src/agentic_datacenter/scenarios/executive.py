@@ -169,6 +169,14 @@ def _report(demo: Mapping[str, Any]) -> dict[str, Any]:
             f"of those would have done harm and {useful} would have been a useful step. The "
             f"control asked a person {asked}, and let {past[1]} changes past a "
             "limit their contract sets."
+            + (
+                f" With no control, {stopped[0]} were still stopped, by the parts of the "
+                "simulator that apply whatever the gate. The control path refuses a command "
+                "that names nothing it can carry out, for example, and the plant's command "
+                "service refuses a write outside the point's range."
+                if stopped[0]
+                else ""
+            )
         ),
         #: Label, the figure with no control, the figure with the control, a note, a mark.
         "summary": (
