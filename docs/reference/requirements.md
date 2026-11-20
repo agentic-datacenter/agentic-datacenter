@@ -4,7 +4,7 @@
 
 The design document assigns each requirement to a stage of its build plan (section 13). The traceability check requires a passing test and an owner for every requirement up to stage 9; those are marked as due. This page lists which tests cite each requirement; whether they pass is decided by a run of the whole suite, in the `traceability` job of `.github/workflows/pr.yml`.
 
-Stage 9 is the last stage of the build plan, so every requirement is due. A due requirement has a passing test and an owner. That is all it means: what the design document asks for and the code does not do is in its section 14, and not every exit criterion of the build plan has been met.
+A requirement of a later stage is not due. That does not mean it is not built: most have tests, listed below, that run with the others. A stage is counted only when every requirement up to it has a passing test and an owner. Requirements of later stages that lack a test or an owner: `ADC-PLT-001` (stage 10: no owner), `ADC-PLT-002` (stage 10: no test and no owner), `ADC-PLT-003` (stage 10: no test and no owner), `ADC-PLT-004` (stage 10: no test and no owner), `ADC-PLT-005` (stage 10: no test and no owner), `ADC-PLT-006` (stage 10: no test and no owner).
 
 | Requirement | Stage | Due | Claimed by | Tests citing it |
 | --- | --- | --- | --- | --- |
@@ -69,6 +69,12 @@ Stage 9 is the last stage of the build plan, so every requirement is due. A due 
 | `ADC-PIN-004` | 8 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_ci.py`<br>`tests/conformance/test_pin_diff.py` |
 | `ADC-PIN-005` | 8 | yes | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_binding.py` |
 | `ADC-PIN-006` | 8 | yes | `agentic-datacenter-remora` | `tests/conformance/test_matrix_remora_maturity.py` |
+| `ADC-PLT-001` | 10 | no | none | `tests/bench/test_plant_interface_cards.py`<br>`tests/scenario/test_plant_interface.py` |
+| `ADC-PLT-002` | 10 | no | none | none |
+| `ADC-PLT-003` | 10 | no | none | none |
+| `ADC-PLT-004` | 10 | no | none | none |
+| `ADC-PLT-005` | 10 | no | none | none |
+| `ADC-PLT-006` | 10 | no | none | none |
 | `ADC-PRC-001` | 2 | yes | `electrical.genset`, `electrical.it_load`, `electrical.mv_switchgear`, `electrical.power_train`, `electrical.ups`, `electrical.utility` | `packages/agentic-datacenter-plant/tests/electrical/test_mv_protection_curves.py`<br>`packages/agentic-datacenter-plant/tests/electrical/test_power_train.py`<br>`packages/agentic-datacenter-plant/tests/electrical/test_sources_and_loads.py`<br>`tests/property/test_generic_profile.py` |
 | `ADC-PRC-002` | 3 | yes | `cooling.chw_plant`, `cooling.eroom`, `cooling.pump_station`, `cooling.tes` | `tests/property/test_energy_balance.py` |
 | `ADC-PRC-003` | 2 | yes | `electrical.ups` | `packages/agentic-datacenter-plant/tests/electrical/test_sources_and_loads.py` |
