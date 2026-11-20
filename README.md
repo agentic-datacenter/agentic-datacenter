@@ -54,7 +54,7 @@ uv run agentic-datacenter gate check http_gate                            # 1. c
 uv run agentic-datacenter bench run --tier quick --gate http_gate --gate static_allowlist --out build/try   # 2. a first result, in minutes
 ```
 
-**Start here:** [Bring your own gate](docs/guides/bring-your-own-gate.md), step by step with an [80-line example service](examples/http-gate/server.py), and [Which way in for your project](docs/guides/which-way-in.md), for gates that score, keep state, observe only or use words of their own. How long each size of test takes, and what machine it needs, is in [Tiers](docs/bench/TIERS.md).
+**Start here:** [Bring your own gate](docs/guides/bring-your-own-gate.md), step by step with a [short example service](examples/http-gate/server.py), and [Which way in for your project](docs/guides/which-way-in.md), for gates that score, keep state, observe only or use words of their own. How long each size of test takes, and what machine it needs, is in [Tiers](docs/bench/TIERS.md).
 
 ## Public test
 
@@ -63,7 +63,7 @@ uv run agentic-datacenter bench run --tier quick --gate http_gate --gate static_
 **Registration is always open.** Seasons follow one another, four weeks each, on a frozen benchmark that any gate can enter.
 
 - **Register** with three fields. No setup is needed yet.
-- **Run** the public scenarios on your own machine, whenever you are ready.
+- **Run** the public scenarios on your own machine, whenever you are ready, at the tag of the season's benchmark version.
 - **Hidden variants** close each season. They are drawn from a public randomness beacon at the deadline, so nobody can know them before, the authors included.
 
 [Register your gate](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml) · [Calendar, rules and built-in gates](docs/bench/PUBLIC_TEST.md)

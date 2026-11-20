@@ -18,7 +18,7 @@ import json
 import math
 import multiprocessing
 import pickle
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Collection, Mapping, Sequence
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import asdict, fields
 from importlib.metadata import entry_points
@@ -268,7 +268,63 @@ def _strings(value: object) -> list[str]:
     return [str(item) for item in value] if isinstance(value, list | tuple) else []
 
 
-def _decisions(result: RunResult) -> list[dict[str, Any]]:
+#: What Agentic-Datacenter itself established as wrong with a proposal, in a word.
+#: The same words as a gate's reason codes, so the two can be read side by side.
+GROUNDS = ("authority", "limit", "premise", "evidence", "malformed")
+
+
+def grounds(record: Mapping[str, Any], known: Collection[str] | None = None) -> list[str]:
+    """Return every way the proposal of *record* was wrong, as established here.
+
+    This is not the gate's reason. It is what the control path found before
+    the gate was asked: no mandate, a bound or limit exceeded, a premise that
+    does not hold, one that could not be established, or a proposal that does
+    not fit a contract (*known* are the contract ids of the library). A gate
+    that gives no reason codes still has these for each of its refusals.
+    """
+    listed = record.get("premises")
+    premises = [p for p in (listed if isinstance(listed, list) else []) if isinstance(p, Mapping)]
+    mandate = [p for p in premises if str(p.get("expr", "")).startswith("authority(")]
+    plant = [p for p in premises if p not in mandate]
+    errors = _strings(record.get("contract_errors"))
+    bounds = [e for e in errors if e.startswith(("range:", "step:"))]
+    unknown = known is not None and str(record.get("contract_id")) not in known
+    found = {
+        "authority": record.get("authorized") is False
+        or any(p.get("holds") is False for p in mandate),
+        "limit": bool(bounds or _strings(record.get("limit_errors"))),
+        "premise": any(p.get("holds") is False for p in plant),
+        "evidence": any(p.get("holds") is None for p in premises),
+        "malformed": unknown or len(errors) > len(bounds),
+    }
+    return [ground for ground in GROUNDS if found[ground]]
+
+
+def _refusals(
+    records: Sequence[Mapping[str, Any]], known: Collection[str] | None
+) -> dict[str, Any]:
+    """Count every proposal a gate did not allow, by its reason codes and by the grounds.
+
+    A refusal with several codes is counted under each, so the counts can add
+    up to more than the total. ``none`` is a refusal with no code, or with no
+    ground: a step nothing was established to be wrong with.
+    """
+    refused = [r for r in records if r["verdict"] not in (None, "ALLOW")]
+    by_code: dict[str, int] = {}
+    by_ground: dict[str, int] = {}
+    for record in refused:
+        for code in _strings(record.get("reason_codes")) or ["none"]:
+            by_code[code] = by_code.get(code, 0) + 1
+        for ground in grounds(record, known) or ["none"]:
+            by_ground[ground] = by_ground.get(ground, 0) + 1
+    return {
+        "total": len(refused),
+        "by_reason_code": dict(sorted(by_code.items())),
+        "by_ground": dict(sorted(by_ground.items())),
+    }
+
+
+def _decisions(result: RunResult, known: Collection[str] | None = None) -> list[dict[str, Any]]:
     """Return what the gate decided on each proposal of a run, with its own reasons.
 
     Kept beside the card and never in it, so a card stays the same file
@@ -293,6 +349,7 @@ def _decisions(result: RunResult) -> list[dict[str, Any]]:
             "limit_errors": _strings(record.get("limit_errors")),
             "premises_not_established": unmet,
             "reason_codes": _strings(record.get("reason_codes")),
+            "grounds": grounds(record, known),
         })  # fmt: skip
     return out
 
@@ -306,11 +363,14 @@ def write_decisions(decisions: Sequence[Mapping[str, Any]], out_dir: Path) -> Pa
     return path
 
 
-def _run_row(result: RunResult, judged: Sequence[Judgement]) -> dict[str, Any]:
+def _run_row(
+    result: RunResult, judged: Sequence[Judgement], known: Collection[str] | None = None
+) -> dict[str, Any]:
     kinds: dict[str, Any] = {}
     delayed = blocks_later_executed(result.records)
     # Why the gate refused, in a word, if it said (ADR 0028).
     codes = {str(r["proposal_id"]): _strings(r.get("reason_codes")) for r in result.records}
+    wrong = {str(r["proposal_id"]): grounds(r, known) for r in result.records}
     for j in judged:
         kinds[j.kind] = int(str(kinds.get(j.kind, 0))) + 1
         if j.kind == "false_block" and j.proposal_id in delayed:
@@ -322,8 +382,14 @@ def _run_row(result: RunResult, judged: Sequence[Judgement]) -> dict[str, Any]:
         "passed": result.passed, "failed_criteria": list(result.failed_criteria),
         "metrics": result.metrics.as_dict(), "kinds": kinds,
         "final_state_hash": result.state_hashes[-1][1] if result.state_hashes else "",
+        # Every refusal of the run, judged or not (ADR 0028).
+        "refusals": _refusals(result.records, known),
         "judgements": [
-            {**asdict(j), "kind": j.kind, "reason_codes": codes.get(j.proposal_id, [])}
+            {
+                **asdict(j), "kind": j.kind,
+                "reason_codes": codes.get(j.proposal_id, []),
+                "grounds": wrong.get(j.proposal_id, []),
+            }  # fmt: skip
             for j in judged
         ],
     }  # fmt: skip
@@ -372,7 +438,8 @@ def _gated_run(
             scenario, profile, make_gate, operating, make_agent, seed, contracts, duration_s
         ).run()
         judged = []
-    row = _run_row(result, judged)
+    known = set(contracts.ids())
+    row = _run_row(result, judged, known)
     row["judging"] = dict(result.judging)
     # The card is keyed by the entry point; the gate's own name is kept.
     row.update(gate=gate_name, gate_reported_name=result.gate)
@@ -380,7 +447,7 @@ def _gated_run(
     row["run_id"] = f"{name}.{gate_name}.{result.agent}.{result.seed}"
     row["track"], row["variant"] = scenario.track, variant_number
     # Taken off the row before the card is made (run_benchmark).
-    row["decisions"] = [{"run_id": row["run_id"], **line} for line in _decisions(result)]
+    row["decisions"] = [{"run_id": row["run_id"], **line} for line in _decisions(result, known)]
     return row
 
 
