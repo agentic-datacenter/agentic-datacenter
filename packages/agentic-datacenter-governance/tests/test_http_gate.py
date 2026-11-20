@@ -278,3 +278,63 @@ def test_a_command_that_exits_2_denies_and_one_that_fails_abstains(tmp_path: Pat
     assert CommandGate(failing).evaluate(PROPOSAL, CLEAN, ACTOR).verdict is Verdict.ABSTAIN
     with pytest.raises(HttpGateConfigError):
         command_from_environment({})
+
+
+def _status(code: int, headers: dict[str, str], body: bytes) -> type[BaseHTTPRequestHandler]:
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self) -> None:  # noqa: N802
+            self.rfile.read(int(self.headers["Content-Length"]))
+            self.send_response(code)
+            for name, value in {**headers, "Content-Length": str(len(body))}.items():
+                self.send_header(name, value)
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, format: str, *args: Any) -> None:  # noqa: A002
+            pass
+
+    return Handler
+
+
+@pytest.mark.req("ADC-GOV-008")
+def test_a_proxy_in_the_environment_never_sees_what_is_meant_for_loopback(
+    example_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    proxied: list[str] = []
+    for proxy in _serve(_answering(lambda body: proxied.append("seen") or {})):
+        for name in ("http_proxy", "HTTP_PROXY", "https_proxy", "HTTPS_PROXY"):
+            monkeypatch.setenv(name, proxy)
+        monkeypatch.delenv("no_proxy", raising=False)
+        monkeypatch.delenv("NO_PROXY", raising=False)
+        decision = HttpGate(example_url).evaluate(PROPOSAL, CLEAN, ACTOR)
+    assert proxied == []
+    assert decision.verdict is not Verdict.ABSTAIN
+
+
+@pytest.mark.req("ADC-GOV-008")
+def test_a_redirect_is_not_followed() -> None:
+    elsewhere: list[str] = []
+    for target in _serve(_answering(lambda body: elsewhere.append("seen") or {})):
+        moved = _status(307, {"Location": target + "/evaluate"}, b"")
+        for url in _serve(moved):
+            gate = HttpGate(url)
+            decision = gate.evaluate(PROPOSAL, CLEAN, ACTOR)
+    assert elsewhere == []
+    assert decision.verdict is Verdict.ABSTAIN and gate.failures
+
+
+@pytest.mark.req("ADC-GOV-008")
+def test_an_answer_too_long_to_read_abstains() -> None:
+    huge = b'{"pad": "' + b"x" * (1 << 20) + b'"}'
+    for url in _serve(_status(200, {"Content-Type": "application/json"}, huge)):
+        gate = HttpGate(url)
+        decision = gate.evaluate(PROPOSAL, CLEAN, ACTOR)
+    assert decision.verdict is Verdict.ABSTAIN
+    assert "longer than" in decision.reasons[0] and len(gate.failures) == 1
+
+
+@pytest.mark.req("ADC-GOV-008")
+def test_a_failed_call_is_kept_on_the_gate_and_a_good_one_is_not(example_url: str) -> None:
+    gate = HttpGate(example_url)
+    gate.evaluate(PROPOSAL, CLEAN, ACTOR)
+    assert gate.failures == []
