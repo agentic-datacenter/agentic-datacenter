@@ -10,36 +10,36 @@ How a governance gate from any project is tested on Agentic-Datacenter in the op
 
 A public test runs in seasons, one after another without a gap, so a season is always open.
 
-- **Season 1** was opened by hand on 2026-11-17 and closes on 2026-12-02 at 12:00 UTC.
+- **Season 1** opened on 2026-11-20 and closes on 2027-01-13 at 12:00 UTC. It was first set to close on 2026-12-02, and was moved before that round so that the repository is public for weeks before registration closes ([preregistration](PREREGISTRATION.md), 2026-11-20).
 - **Every later season** opens at the instant the one before it closes, and closes four weeks later at 12:00 UTC.
 
 A season fixes three things before any participant can know its held-out scenarios:
 
-1. **A frozen benchmark version.** `agentic-datacenter bench freeze` writes the hashes of the profile, contracts, scenarios and oracle to a file, and the version is tagged. A season uses the version that is frozen when it opens. Today that is `benchmark-v1` ([VERSION.json](VERSION.json)). A new version is named in `seasons.json`, with the season it first applies to, before that season opens. A card from any other version is refused for the season.
+1. **A frozen benchmark version.** `agentic-datacenter bench freeze` writes the hashes of the profile, contracts, scenarios and oracle to a file, and the version is tagged. A season uses the version that is frozen when it opens. Today that is `benchmark-v1.1` ([VERSION.json](VERSION.json)). A new version is named in `seasons.json`, with the season it first applies to, before that season opens. A card from any other version is refused for the season.
 2. **A beacon round.** The secret that draws the held-out variants of Track D is the output of the drand "quicknet" public randomness beacon at the round emitted when the season closes. The rounds of the coming year are in the calendar below, so each is published long before it exists. No one, the authors of Agentic-Datacenter included, can know it before the round is emitted; afterwards anyone can fetch it and check it (`tools/heldout_beacon.py`).
 3. **A registration deadline**, the instant the round is emitted. A gate takes part in a season's Track D only if it was registered before then, with the exact version it will run.
 
 <!-- seasons: made by tools/season.py from docs/bench/seasons.json; do not edit -->
 | Season | Opens (UTC) | Registration closes and the round is emitted (UTC) | Beacon round | Benchmark version |
 | --- | --- | --- | --- | --- |
-| 1 | 2026-11-17 | 2026-12-02 12:00 | `34469812` | `benchmark-v1` |
-| 2 | 2026-12-02 12:00 | 2026-12-30 12:00 | `35276212` | `benchmark-v1` |
-| 3 | 2026-12-30 12:00 | 2027-01-27 12:00 | `36082612` | `benchmark-v1` |
-| 4 | 2027-01-27 12:00 | 2027-02-24 12:00 | `36889012` | `benchmark-v1` |
-| 5 | 2027-02-24 12:00 | 2027-03-24 12:00 | `37695412` | `benchmark-v1` |
-| 6 | 2027-03-24 12:00 | 2027-04-21 12:00 | `38501812` | `benchmark-v1` |
-| 7 | 2027-04-21 12:00 | 2027-05-19 12:00 | `39308212` | `benchmark-v1` |
-| 8 | 2027-05-19 12:00 | 2027-06-16 12:00 | `40114612` | `benchmark-v1` |
-| 9 | 2027-06-16 12:00 | 2027-07-14 12:00 | `40921012` | `benchmark-v1` |
-| 10 | 2027-07-14 12:00 | 2027-08-11 12:00 | `41727412` | `benchmark-v1` |
-| 11 | 2027-08-11 12:00 | 2027-09-08 12:00 | `42533812` | `benchmark-v1` |
-| 12 | 2027-09-08 12:00 | 2027-10-06 12:00 | `43340212` | `benchmark-v1` |
-| 13 | 2027-10-06 12:00 | 2027-11-03 12:00 | `44146612` | `benchmark-v1` |
+| 1 | 2026-11-20 | 2027-01-13 12:00 | `35679412` | `benchmark-v1.1` |
+| 2 | 2027-01-13 12:00 | 2027-02-10 12:00 | `36485812` | `benchmark-v1.1` |
+| 3 | 2027-02-10 12:00 | 2027-03-10 12:00 | `37292212` | `benchmark-v1.1` |
+| 4 | 2027-03-10 12:00 | 2027-04-07 12:00 | `38098612` | `benchmark-v1.1` |
+| 5 | 2027-04-07 12:00 | 2027-05-05 12:00 | `38905012` | `benchmark-v1.1` |
+| 6 | 2027-05-05 12:00 | 2027-06-02 12:00 | `39711412` | `benchmark-v1.1` |
+| 7 | 2027-06-02 12:00 | 2027-06-30 12:00 | `40517812` | `benchmark-v1.1` |
+| 8 | 2027-06-30 12:00 | 2027-07-28 12:00 | `41324212` | `benchmark-v1.1` |
+| 9 | 2027-07-28 12:00 | 2027-08-25 12:00 | `42130612` | `benchmark-v1.1` |
+| 10 | 2027-08-25 12:00 | 2027-09-22 12:00 | `42937012` | `benchmark-v1.1` |
+| 11 | 2027-09-22 12:00 | 2027-10-20 12:00 | `43743412` | `benchmark-v1.1` |
+| 12 | 2027-10-20 12:00 | 2027-11-17 12:00 | `44549812` | `benchmark-v1.1` |
+| 13 | 2027-11-17 12:00 | 2027-12-15 12:00 | `45356212` | `benchmark-v1.1` |
 <!-- /seasons -->
 
 - **Which season is open now:** `python tools/season.py current`. The page is not rewritten when a season ends.
 - **Where it comes from:** `docs/bench/seasons.json` holds the first deadline, the length of a season and the benchmark versions. The calendar is made from it, and a test fails if the two differ.
-- **Check a round's time yourself:** `python tools/heldout_beacon.py round-at 2026-12-02T12:00:00Z`.
+- **Check a round's time yourself:** `python tools/heldout_beacon.py round-at 2027-01-13T12:00:00Z`.
 
 **What counts as registered.**
 
