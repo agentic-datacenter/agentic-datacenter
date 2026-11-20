@@ -1,10 +1,12 @@
 """CI as code: pinning, per-package jobs, the ruleset and provenance (SDD 12.4)."""
 
-import hashlib
+import importlib.util
 import json
+import os
 import re
 import tomllib
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
@@ -236,43 +238,42 @@ def test_docstrings_are_required_on_every_public_object() -> None:
 
 # --- provenance --------------------------------------------------------------
 
-TERMS = REPO / "tools/forbidden_terms.sha256"
-TEXT_SUFFIXES = {".py", ".md", ".yaml", ".yml", ".toml", ".json", ".txt", ""}
+
+def _terms_tool() -> Any:
+    spec = importlib.util.spec_from_file_location(
+        "forbidden_terms", REPO / "tools/forbidden_terms.py"
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
-def hashed_words(text: str) -> set[str]:
-    words = re.findall(r"[A-Za-zÀ-ÿ0-9]+", text.lower())
-    grams = set(words) | {" ".join(p) for p in zip(words, words[1:], strict=False)}
-    grams |= {" ".join(p) for p in zip(words, words[1:], words[2:], strict=False)}
-    return {hashlib.sha256(g.encode("utf-8")).hexdigest() for g in grams}
-
-
-def test_term_scan_finds_a_hashed_term_of_one_to_three_words() -> None:
-    forbidden = hashlib.sha256(b"acme tower project").hexdigest()
-    assert forbidden in hashed_words("Built for the ACME Tower Project, phase 2.")
-    assert forbidden not in hashed_words("Built for the Acme project tower.")
+def test_term_scan_finds_a_keyed_term_of_one_to_three_words() -> None:
+    tool = _terms_tool()
+    forbidden = tool.digest(b"k", "acme tower project")
+    assert forbidden in tool.hashed_words(b"k", "Built for the ACME Tower Project, phase 2.")
+    assert forbidden not in tool.hashed_words(b"k", "Built for the Acme project tower.")
+    assert forbidden not in tool.hashed_words(b"other", "Built for the ACME Tower Project.")
 
 
 @pytest.mark.req("ADC-PRV-002")
 def test_no_tracked_file_contains_a_forbidden_term() -> None:
-    """The terms are committed as hashes only, so the names are not in the repository."""
-    import subprocess
+    """The terms are committed as keyed hashes only, so the names are not in the repository.
 
-    forbidden = {
-        line.split()[0]
-        for line in TERMS.read_text(encoding="utf-8").splitlines()
-        if line.strip() and not line.startswith("#")
-    }
-    tracked = subprocess.run(
-        ["git", "ls-files"], cwd=REPO, capture_output=True, text=True, check=True
-    ).stdout.split("\n")
-    hits = []
-    for name in filter(None, tracked):
-        path = REPO / name
-        if path.suffix in TEXT_SUFFIXES and path.is_file():
-            if forbidden & hashed_words(path.read_text(encoding="utf-8", errors="ignore")):
-                hits.append(name)
-    assert hits == []
+    The key is not in the repository either, and no pull request gets it, so
+    this scan runs where the owner has the key. The nightly workflow scans every
+    commit with it (``tools/forbidden_terms.py scan-history``).
+    """
+    tool = _terms_tool()
+    forbidden = tool.known()
+    key = tool.read_key()
+    if key is None:
+        if os.environ.get("ADC_TERMS_REQUIRED") == "1":
+            pytest.fail("ADC_TERMS_REQUIRED=1 and no ADC_TERMS_KEY: the scan cannot run")
+        pytest.skip("no ADC_TERMS_KEY here, so the keyed scan for ADC-PRV-002 cannot run")
+    tool.check_key(key)
+    assert tool.scan_files(forbidden, key) == []
 
 
 @pytest.mark.req("ADC-PRV-001")
