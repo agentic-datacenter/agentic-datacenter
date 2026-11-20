@@ -1,6 +1,6 @@
 # ADR 0029: Plants from other projects
 
-- **Status:** Proposed. No code is written until it is accepted.
+- **Status:** Accepted on 2026-11-20, with option (d) of open question 1.
 - **Date:** 2026-11-20
 - **SDD:** 5, 9, 12.1; requirements `ADC-BEN-003`, `ADC-GOV-008`, `ADC-SAF-001`, `ADC-SAF-002`, and the new `ADC-PLT-001` to `ADC-PLT-006` below
 
@@ -117,7 +117,7 @@ The scripted agents name built-in tags. They run through the plant map and propo
 
 ### 6. The built-in plant behind the interface
 
-The refactor (PR 2) must leave every card byte-identical, which is checked on OP-03, AD-03 and AD-08. But the frozen `oracle` hash is the source of `harness.py`, so any refactor of the harness changes it, even one that changes no card (fact 3). That is a conflict with the instruction that the hashes in `docs/bench/VERSION.json` must not change. It is listed as the first open question and is not resolved here.
+The refactor (PR 2) must leave every card byte-identical, which is checked on OP-03, AD-03 and AD-08. But the frozen `oracle` hash is the source of `harness.py`, so any refactor of the harness changes it, even one that changes no card (fact 3). It is settled by option (d) of the first open question: `docs/bench/VERSION.json` is not changed, and the next frozen version takes the refactor in.
 
 ### 7. `http_plant`
 
@@ -165,7 +165,7 @@ These could not be settled from the code. Each needs a decision before the PR na
 
    - (d) Let PR 2 change the code's `oracle` hash on main and leave `docs/bench/VERSION.json` as it is. Main already differs from the frozen version: ADR 0028 changed the scenarios. A season runs at its version's tag, so it is not affected, and the next frozen version takes the refactor in. The cost is that a benchmark run on main needs `--allow-unfrozen` until then, as it does today.
 
-   (a) keeps both the rule and the freeze, but `benchmark-v1.1` would have to wait for PR 2. (d) is how main already works, and it does not hold up the launch. **Needs a decision before PR 2.**
+   (a) keeps both the rule and the freeze, but `benchmark-v1.1` would have to wait for PR 2. (d) is how main already works, and it does not hold up the launch. **Decided: (d).** PR 2 changes the `oracle` hash of the code on main, leaves `docs/bench/VERSION.json` as it is, and proves that the cards are unchanged in everything but that hash.
 2. **Who owns time.** Here the kernel owns the clock and steps the plant. A plant that runs its own solver may not be able to step by a fixed `step_ms`, or may need variable steps. Is a fixed step a requirement of the interface? **Before PR 2.**
 3. **Events.** `protection.trip` is the only plant event the harness listens to today. Is a list of events in the step answer enough, or does a plant need to publish named events with a schema of their own? **Before PR 3.**
 4. **Measurement.** The built-in plant adds sensor error inside itself (`_bind_measurement`). A foreign plant either gives measured values itself or leaves them to Agentic-Datacenter's sensor model. Which is the default, and which does the card say? **Before PR 3.**
