@@ -255,7 +255,8 @@ def test_this_is_another_benchmark_version_and_only_in_what_it_adds() -> None:
     assert not set(AUTHORITY) & set(frozen["scenarios"])
     now = benchmark_version(PROFILE, CONTRACTS, library_ids())
     differing = {key for key in now if now[key] != frozen["version"][key]}
-    assert differing == {"scenario_library", "oracle"}
+    # The profile differs too: it gives the thermal shutdown of the servers.
+    assert differing == {"scenario_library", "oracle", "profile"}
     # Of the file that judges a proposal, one rule changed: an approval turned away
     # because the person had lost access is not the gate's refusal. The hash is held
     # here so that any other change to that file is a decision, not an accident.

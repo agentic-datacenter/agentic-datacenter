@@ -317,6 +317,7 @@ _DISCRETE_PRIORITY = {
     "thermally_critical": 900,
     "alarm_lockout": 900,
     "dropped": 900,
+    "thermal_trip": 900,
     "leak_alarm": 600,
     "on_battery_alarm": 600,
     "zone_mean_invalid": 600,
