@@ -34,6 +34,8 @@ That was true. Every scenario gave the agent the same standing from start to end
    - A step can be wrong in several ways at once, so a decision takes several codes. With one code only, a step with no mandate that also broke a limit was recorded as refused for the limit, and looked like a refusal for something unrelated.
    - The codes are on the record, on each judgement of the card and in `decisions.jsonl`. A run counts `refused_citing_authority`: the steps without a mandate that were not executed and whose codes include `authority`.
    - So a gate that refused because nobody authorized the step is told from one that refused it for another reason.
+   - **A gate that gives no codes still has a reason for each refusal on the card.** Beside the gate's codes, each judgement carries `grounds`: what the control path itself established as wrong with the step, in the same words (`authority`, `limit`, `premise`, `evidence`, `malformed`). It is not the gate's reason; it is what was true of the step. An empty list is a step nothing was found wrong with.
+   - **Every refusal is counted, judged or not.** A bounded tier judges a sample, so most refusals of a long run have no judgement. Each run carries `refusals`: their total, and counts by reason code and by ground. Each single refusal, with its reasons in words, is in `decisions.jsonl`. A card that listed every refusal of a season would be several times its size.
 8. **A run that never sets a mandate, under a gate that gives no codes, is the run it was.** Its records carry no such premise, no `authorized` field and no `reason_codes`, and its state hashes are the same. A test checks it on `AD-03`.
 
 ## What it shows, measured here

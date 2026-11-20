@@ -151,7 +151,7 @@ Open an issue with the "Gate result" form. Attach the result card and, for at le
 - **whether the gate could forge or suppress evidence**: Agentic-Datacenter keeps the decision records and computes the figures itself, but a gate that keeps its own log is the only witness to that log;
 - **live or reconstructed**: whether the card came from the run itself or was rebuilt afterwards.
 
-In the next benchmark version a gate can also say why in a word: an optional `reason_codes` in its answer, from `authority`, `limit`, `premise`, `evidence`, `approval`, `malformed`, `policy` and `other` (ADR 0028). `examples/http-gate/server.py` shows it.
+In the next benchmark version a gate can also say why in a word: an optional `reason_codes` in its answer, from `authority`, `limit`, `premise`, `evidence`, `approval`, `malformed`, `policy` and `other` (ADR 0028). `examples/http-gate/server.py` shows it. If your gate gives none, the card still carries, for each refusal it judged, what Agentic-Datacenter itself found wrong with the step (`grounds`), and every run counts all its refusals both ways (`refusals`).
 
 Beside the card, `bench run` writes `decisions.jsonl`: one line for each proposal, with your gate's verdict, the reasons your gate gave, the outcome, and what Agentic-Datacenter itself found wrong with the proposal (contract errors, limit errors, premises not established). It shows why a step was refused, which the card does not. The card is the same file with or without it. A card merged from parts (`bench merge`) has the decisions of its parts in their own files.
 
