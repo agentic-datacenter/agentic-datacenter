@@ -133,7 +133,8 @@ def test_the_grounds_name_each_way_a_step_was_wrong() -> None:
     }
     assert grounds(record) == ["authority", "limit", "premise", "evidence", "malformed"]
     assert grounds({"premises": [{"expr": "x", "holds": True}]}) == []
-    assert grounds({"was_unknown": True, "contract_errors": []}) == ["malformed"]
+    assert grounds({"contract_id": "no.such.v1"}, known={"a.v1"}) == ["malformed"]
+    assert grounds({"contract_id": "a.v1"}, known={"a.v1"}) == []
 
 
 def test_every_refusal_of_a_run_is_counted_on_the_card_judged_or_not() -> None:
