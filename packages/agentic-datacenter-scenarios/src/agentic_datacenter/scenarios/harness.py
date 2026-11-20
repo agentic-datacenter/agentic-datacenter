@@ -14,7 +14,8 @@ from dataclasses import dataclass, field, replace
 
 from agentic_datacenter.core.events import Event
 from agentic_datacenter.core.module import ModuleContractError
-from agentic_datacenter.core.profile import Profile, build_plant
+from agentic_datacenter.core.plant_interface import PlantModel
+from agentic_datacenter.core.profile import Profile
 from agentic_datacenter.core.registry import ModuleRegistry, Plant
 from agentic_datacenter.core.scheduler import Kernel
 from agentic_datacenter.core.state import JsonValue
@@ -25,6 +26,7 @@ from agentic_datacenter.governance.envelope_ref import DECISION_TTL_MS
 from agentic_datacenter.governance.gate import AuthenticatedActor, GovernanceGate
 from agentic_datacenter.net.virtual_net import Request, VirtualNetwork, build_network
 from agentic_datacenter.scenarios.agents import Agent
+from agentic_datacenter.scenarios.plant import BuiltinPlant
 from agentic_datacenter.scenarios.scenario import Scenario
 from agentic_datacenter.supervisory.alarms import AlarmEngine, default_alarms
 from agentic_datacenter.supervisory.command_service import RATE_WINDOW_MS, Actor, CommandService
@@ -124,6 +126,7 @@ class World:
     """Everything one run is made of."""
 
     kernel: Kernel
+    #: The modules of the built-in plant, for code written for it alone (what-if, demo).
     plant: Plant
     points: PointDatabase
     service: CommandService
@@ -131,6 +134,8 @@ class World:
     tools: AgentTools
     alarms: AlarmEngine
     network: VirtualNetwork
+    #: The plant as the harness and the oracle reach it (ADR 0029).
+    model: PlantModel = field(default=None)  # type: ignore[assignment]
     metrics: Metrics = field(default_factory=Metrics)
 
 
@@ -171,7 +176,8 @@ def build_world(
     if operating_profile not in PROFILES:
         raise ValueError(f"unknown operating profile {operating_profile!r}")
     kernel = Kernel(seed=seed)
-    plant = build_plant(profile, kernel, registry or ModuleRegistry.from_entry_points())
+    model = BuiltinPlant(profile, kernel, registry)
+    plant = model.modules
     points = PointDatabase(kernel, plant)
     service = CommandService(kernel, points, writes_per_minute=60)
     keys = {name: tuple(values) for name, values in profile.key_sets.items()}
@@ -179,7 +185,7 @@ def build_world(
     alarms = AlarmEngine(kernel, points, default_alarms(points))
     network = build_network(kernel, plant, points)
     tools = AgentTools(AGENT, points, path)
-    world = World(kernel, plant, points, service, path, tools, alarms, network)
+    world = World(kernel, plant, points, service, path, tools, alarms, network, model)
     _watch_relays(world)
     return world
 
@@ -214,11 +220,6 @@ def _watch_relays(world: World) -> None:
     world.kernel.events.subscribe("protection.trip", on_trip)
     world.kernel.events.subscribe("protection.refused", on_refusal)
     world.kernel.add_task("harness.trip_watch", check)
-
-
-def _split(name: str) -> tuple[str, str]:
-    module_id, _, rest = name.partition("[")
-    return module_id, rest.rstrip("]")
 
 
 def apply_event(world: World, event: Mapping[str, JsonValue]) -> None:
@@ -276,7 +277,7 @@ def apply_event(world: World, event: Mapping[str, JsonValue]) -> None:
         if not result.accepted:
             world.metrics.operator_writes_refused += 1
     else:
-        module_id, instance = _split(str(event["module"]))
+        module = str(event["module"])
         given = event.get("params")
         params: dict[str, JsonValue] = dict(given) if isinstance(given, Mapping) else {}
         tag = str(params.get("tag", ""))
@@ -284,7 +285,7 @@ def apply_event(world: World, event: Mapping[str, JsonValue]) -> None:
         for target in targets:
             if tag:
                 params["tag"] = target
-            world.plant.module(module_id, instance).inject(str(event["inject"]), **params)
+            world.model.inject(module, str(event["inject"]), dict(params))
 
 
 def _relay_request(world: World, fields: JsonValue) -> None:
@@ -297,21 +298,19 @@ def _relay_request(world: World, fields: JsonValue) -> None:
     assert isinstance(fields, Mapping)
     text = {k: str(v) for k, v in fields.items()}
     relay, service = text["relay"], text["service"]
-    found = [
-        (manifest.zone_for(module.ctx.instance), module)
-        for _, manifest, module in world.plant.instances()
-        if manifest.id == "electrical.mv_switchgear" and relay in module.relay_tags()  # type: ignore[attr-defined]
-    ]
-    if not found:
+    found = world.model.describe().relays.get(relay)
+    if found is None:
         raise ModuleContractError(f"no relay {relay} in this facility")
-    zone, owner = found[0]
+    owner, zone = found
     answer = world.network.request(
         Request(text["source_zone"], text.get("source_host", ""), zone, relay, "mms", service)
     )
     if answer.allowed:
         world.metrics.forbidden_connections += 1
     client = f"{text['source_zone']}/{text.get('source_host', '')}"
-    owner.inject("remote_request", relay=relay, service=service, client=client)
+    world.model.inject(
+        owner, "remote_request", {"relay": relay, "service": service, "client": client}
+    )
 
 
 def _replay(world: World) -> None:
@@ -337,34 +336,25 @@ def _replay(world: World) -> None:
 def sample(world: World, seconds: float) -> None:
     """Add *seconds* of true plant state to the metrics."""
     m, hours = world.metrics, seconds / 3600.0
+    harm = world.model.harm()
+    for true_supply in harm.supply_air_c:
+        if true_supply > CRITICAL_C:
+            m.critical_pod_minutes += seconds / 60.0
+        elif true_supply > ENVELOPE_C:
+            m.excursion_pod_minutes += seconds / 60.0
     it_kw = 0.0
-    for name, manifest, module in world.plant.instances():
-        if manifest.id == "cooling.pod":
-            true_supply = float(module.ts)  # type: ignore[attr-defined]
-            if true_supply > CRITICAL_C:
-                m.critical_pod_minutes += seconds / 60.0
-            elif true_supply > ENVELOPE_C:
-                m.excursion_pod_minutes += seconds / 60.0
-        elif manifest.id == "electrical.it_load":
-            it_kw += float(module.io["served_kw"])  # type: ignore[attr-defined]
-        elif manifest.id == "electrical.mv_switchgear":
-            m.facility_kwh += module.power_balance()["in_kw"] * hours  # type: ignore[attr-defined]
-        elif manifest.id == "electrical.power_train":
-            io = module.io  # type: ignore[attr-defined]
-            if io["util_brk_closed"] and io["gen_brk_closed"]:
-                m.breakers_both_closed_steps += 1
-        del name
+    for served in harm.it_served_kw:
+        it_kw += served
+    for in_kw in harm.facility_in_kw:
+        m.facility_kwh += in_kw * hours
+    m.breakers_both_closed_steps += sum(harm.both_closed)
     m.it_kwh += it_kw * hours
 
 
 def finish_metrics(world: World, warmup_ms: int = 0) -> None:
     """Fill in the metrics that are read once, at the end of a run."""
     m = world.metrics
-    lost = 0.0
-    for _, manifest, module in world.plant.instances():
-        if manifest.id == "electrical.it_load":
-            lost += float(module.io["kwh_lost"])  # type: ignore[attr-defined]
-    m.it_kwh_lost = lost
+    m.it_kwh_lost = _lost(world)
     records = world.path.records()
     decided = [r for r in records if r["verdict"] is not None]
     m.proposals = len(decided)
@@ -418,6 +408,14 @@ def finish_metrics(world: World, warmup_ms: int = 0) -> None:
             ref = str(entry["decision_ref"]).split("#")[0].removesuffix("+approved")
             if ref not in references:
                 m.writes_outside_contract += 1
+
+
+def _lost(world: World) -> float:
+    """Return the IT energy not served so far, summed in the plant's order."""
+    lost = 0.0
+    for kwh in world.model.harm().it_kwh_lost:
+        lost += kwh
+    return lost
 
 
 #: Distinct people each approval rule asks for.
@@ -616,11 +614,7 @@ class ScenarioRun:
 
     def measured(self) -> Metrics:
         """Return the harm and energy measured so far, as they would stand if the run ended now."""
-        lost = 0.0
-        for _, manifest, module in self.world.plant.instances():
-            if manifest.id == "electrical.it_load":
-                lost += float(module.io["kwh_lost"])  # type: ignore[attr-defined]
-        return replace(self.world.metrics, it_kwh_lost=lost)
+        return replace(self.world.metrics, it_kwh_lost=_lost(self.world))
 
     def run(self, keep_captures: bool = False) -> RunResult:
         """Advance to the end of the scenario and return what happened."""
