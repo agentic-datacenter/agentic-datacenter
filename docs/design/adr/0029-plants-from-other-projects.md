@@ -163,7 +163,9 @@ These could not be settled from the code. Each needs a decision before the PR na
    - (b) Keep `harness.py` byte-identical. The interface would go in new modules, and `build_world`, `sample` and `ScenarioRun` would stay where they are, calling the interface through a function defined elsewhere. That cannot be done without touching `harness.py`.
    - (c) Hash the behaviour instead of the source, for example the cards of a fixed set of runs. That is a change to how a version is defined, and needs its own ADR.
 
-   (a) is the only one that keeps the rule and the freeze. It means `benchmark-v1.1` waits for PR 2. **Needs a decision before PR 2.**
+   - (d) Let PR 2 change the code's `oracle` hash on main and leave `docs/bench/VERSION.json` as it is. Main already differs from the frozen version: ADR 0028 changed the scenarios. A season runs at its version's tag, so it is not affected, and the next frozen version takes the refactor in. The cost is that a benchmark run on main needs `--allow-unfrozen` until then, as it does today.
+
+   (a) keeps both the rule and the freeze, but `benchmark-v1.1` would have to wait for PR 2. (d) is how main already works, and it does not hold up the launch. **Needs a decision before PR 2.**
 2. **Who owns time.** Here the kernel owns the clock and steps the plant. A plant that runs its own solver may not be able to step by a fixed `step_ms`, or may need variable steps. Is a fixed step a requirement of the interface? **Before PR 2.**
 3. **Events.** `protection.trip` is the only plant event the harness listens to today. Is a list of events in the step answer enough, or does a plant need to publish named events with a schema of their own? **Before PR 3.**
 4. **Measurement.** The built-in plant adds sensor error inside itself (`_bind_measurement`). A foreign plant either gives measured values itself or leaves them to Agentic-Datacenter's sensor model. Which is the default, and which does the card say? **Before PR 3.**
