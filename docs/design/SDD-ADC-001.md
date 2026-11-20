@@ -35,17 +35,17 @@ Agentic-Datacenter is a simulation-only model of a complete data center's operat
 
 ## 2. Source basis and provenance
 
-The facility model is informed by how real modular data centers are designed, built and operated. It does not identify or quote any particular facility or design document. Behaviour is stated as original requirements and state machines, plant sizing is an engineering assumption (section 14), and no value in the public profile is taken from a real facility. Every parameter in Agentic-Datacenter carries one of two tags: `source: <reference>` or `assumed: true`.
+The facility model is informed by an unpublished construction specification for a modular data center, referred to here only as "the reference specification". It fixes control behaviour, interfaces and performance, but leaves most plant sizing to drawings that were not provided. Agentic-Datacenter restates the behaviour it describes as original requirements and state machines; nothing in this repository identifies the project, its owner, its engineer or its site, and no value in the public profile is taken from it. Every parameter in Agentic-Datacenter carries one of two tags: `source: <reference>` or `assumed: true`.
 
-Real-world practice informed the kinds of plant and behaviour a facility of this type has: power distribution with open-transition automatic transfer, a combined building management and power monitoring platform, stand-alone controllers that keep running on network loss, commissioning failure tests for PODs, fuel oil, chilled water and thermal storage, life safety and physical security.
+The reference specification was consulted for the kinds of plant and behaviour a facility of this type has: power distribution with open-transition automatic transfer, a combined building management and power monitoring platform, stand-alone controllers that keep running on network loss, commissioning failure tests for PODs, fuel oil, chilled water and thermal storage, life safety and physical security.
 
 **Provenance rules (binding on the build)**
 
-- ADC-PRV-001: No text from a design document of a real facility is copied into the repository. Behaviour is stated as original requirements and state machines.
-- ADC-PRV-002: Nothing that identifies a real facility MUST appear in code, docs, test names or commit messages: not the names of a project, owner, engineer or site, nor the title, issue or section numbers of a design document.
-- ADC-PRV-003: Values taken from a real facility live only in `profiles/restricted_ref.yaml`, which is listed in `.gitignore` and is never committed. The public default is `profiles/generic_dc.yaml`, with independently chosen round values and the same schema.
+- ADC-PRV-001: No text from the reference specification is copied into the repository. Behaviour is restated as original requirements and state machines.
+- ADC-PRV-002: The project, owner, engineer and site of the reference specification, its title, issue and section numbers MUST NOT appear in code, docs, test names or commit messages. The source is referred to only as "the reference specification".
+- ADC-PRV-003: Values derived from the reference specification live only in `profiles/restricted_ref.yaml`, which is listed in `.gitignore` and is never committed. The public default is `profiles/generic_dc.yaml`, with independently chosen round values and the same schema.
 - ADC-PRV-004: Every profile value has a `source` or `assumed` field. CI fails if either is missing.
-- ADC-PRV-005: `THIRD_PARTY_NOTICES.md` states that the facility model is informed by real-world practice and reproduces no design document, and lists every standard cited (IEC 62443 parts, EN 15232, ASHRAE TC 9.9) with the statement that no standard text is reproduced.
+- ADC-PRV-005: `THIRD_PARTY_NOTICES.md` lists the reference specification as an unpublished source consulted for behaviour, plus every standard cited (IEC 62443 parts, EN 15232, ASHRAE TC 9.9) with the statement that no standard text is reproduced.
 
 ## 3. Reference facility
 
@@ -1078,7 +1078,7 @@ The rules for changes are in `CONTRIBUTING.md`.
 
 ## 14. Assumptions, known differences and open questions
 
-This design was written without single-line diagrams, P&IDs, point lists or an owner's detailed sequences, so plant sizing and several control sequences in this SDD are engineering assumptions. They have not yet been reviewed by a practising data center or controls engineer.
+The reference specification does not contain single-line diagrams, P&IDs, point lists or the owner's detailed sequences (it refers to them as separate drawings), so plant sizing and several control sequences in this SDD are engineering assumptions. They have not yet been reviewed by a practising data center or controls engineer.
 
 **Assumptions that most affect results**
 
@@ -1103,7 +1103,8 @@ This design was written without single-line diagrams, P&IDs, point lists or an o
 **What became of the open questions**
 
 - Repository placement and the REMORA pin: decided (5.2, ADR 0002). `remora build-toolspec`, the last tool the governed path waited for, arrived in a later pin (ADR 0016). The current pin is in `REMORA_PIN`.
-- Values taken from a real facility are not in the repository; they may live only in the git-ignored `profiles/restricted_ref.yaml` (ADC-PRV-003).
+- Values derived from the reference specification are not in the repository; they may live only in the git-ignored `profiles/restricted_ref.yaml` (ADC-PRV-003).
+- Whether values derived from the reference specification may appear in a public repository was the one question left open before publication. The answer, recorded on 2026-11-20, is that none does: `profiles/restricted_ref.yaml` has never been committed, and the values of `profiles/generic_dc.yaml` are round values chosen without it. The repository says what the specification was used for (section 2) and nothing more.
 - IEC 61850 MMS for the MV protection relays, and the licence position for the GPLv3 protocol library: decided (8.5, ADR 0004, ADR 0017).
 - Which agent runtime drives the demonstration: the scripted agents. A language-model agent, and a second harness, are still open.
 - An operator-facing HMI: none is built. The demonstration writes static HTML pages.
@@ -1143,5 +1144,5 @@ External sources consulted for this SDD, all opened on 2026-11-12. Standards the
 - [Cummins, Transient performance of generating sets](https://mart.cummins.com/imagelibrary/data/assetfiles/0058629.pdf) and [UFGS 16237N performance class table](https://ufgscriteriadocreport.tpub.com/16237N/16237N0018.htm): ISO 8528-5 class limits (6.6)
 - [ITI (CBEMA) curve application note, reproduced by PQBlog](https://powerquality.blog/2022/02/04/iti-cbema-curve-application-note/): IT equipment voltage tolerance (6.6)
 - [libiec61850 repository](https://github.com/mz-automation/libiec61850) and [pyiec61850-ng on PyPI](https://pypi.org/project/pyiec61850-ng/): library capabilities and licence (8.5)
-- Real-world practice for modular data centers: kinds of plant and control behaviour (section 2)
+- The reference specification, unpublished: kinds of plant and control behaviour (section 2)
 - REMORA binding surface and pins: supplied by the REMORA maintainer and checked against the first pinned commit (5.2, 9.2, `remora_binding.md`)

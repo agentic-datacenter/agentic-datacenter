@@ -3,7 +3,7 @@
 # A single-building modular data center: 2,400 kW of IT load in 16 PODs, three
 # N+1 power trains and three N+1 air-cooled chillers. Every value here was
 # chosen independently as a round number so the plant balances; none is taken
-# from a real facility. Each value carries `source` or `assumed: true`
+# from a restricted source. Each value carries `source` or `assumed: true`
 # (ADC-PRV-004).
 #
 # Modules still at fidelity F0 are stubs; their sizing parameters are added
