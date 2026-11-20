@@ -37,7 +37,11 @@ from agentic_datacenter.scenarios.scenario import Scenario, library_ids, load_sc
 
 
 def bench(argv: Sequence[str]) -> int:
-    """Run ``agentic-datacenter bench run ...`` and return the exit status."""
+    """Benchmark gates over the scenario library, and merge, freeze and check results.
+
+    Runs ``agentic-datacenter bench run ...`` and returns the exit status.
+    The first line is the help text of ``agentic-datacenter --help``.
+    """
     parser = argparse.ArgumentParser(
         prog="agentic-datacenter bench", description="Agentic-Datacenter Bench."
     )
@@ -260,7 +264,11 @@ def _check(path: Path, gates: Sequence[str], publication: bool = False) -> int:
 
 
 def demo(argv: Sequence[str]) -> int:
-    """Run ``agentic-datacenter demo`` and return the exit status."""
+    """Record three scenarios without a gate and with one, and write the dashboard.
+
+    Runs ``agentic-datacenter demo`` and returns the exit status.
+    The first line is the help text of ``agentic-datacenter --help``.
+    """
     parser = argparse.ArgumentParser(
         prog="agentic-datacenter demo",
         description="Record three scenarios without a gate and with one, and write the dashboard.",
@@ -324,7 +332,11 @@ def demo(argv: Sequence[str]) -> int:
 
 
 def scenario(argv: Sequence[str]) -> int:
-    """Run ``agentic-datacenter scenario run|verify`` and return the exit status."""
+    """Run one scenario and write its evidence bundle, or verify a bundle.
+
+    Runs ``agentic-datacenter scenario run|verify`` and returns the exit status.
+    The first line is the help text of ``agentic-datacenter --help``.
+    """
     parser = argparse.ArgumentParser(
         prog="agentic-datacenter scenario", description="Run one scenario."
     )
@@ -373,7 +385,10 @@ def scenario(argv: Sequence[str]) -> int:
 
 
 def gate(argv: Sequence[str]) -> int:
-    """Run ``agentic-datacenter gate list|check`` and return the exit status.
+    """List the installed gates, or run the gate interface suite on one.
+
+    Runs ``agentic-datacenter gate list|check`` and returns the exit status.
+    The first line is the help text of ``agentic-datacenter --help``.
 
     ``check`` is what a gate from outside this repository passes before it is
     benchmarked: the gate interface suite (ADC-GOV-004) and a known operating

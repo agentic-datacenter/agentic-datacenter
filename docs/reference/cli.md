@@ -2,18 +2,34 @@
 
 # Command-line reference
 
+Each command added by a package has its own `--help`. The list below is what the default install shows; with all groups installed it also has `contracts` (from `agentic-datacenter-remora`) and `scl` (from `agentic-datacenter-iec61850`).
+
 ## `agentic-datacenter --help`
 
 ```text
-usage: agentic-datacenter [-h] {modules,profile,run} ...
+usage: agentic-datacenter [-h]
+                          {modules,profile,run,bench,data,demo,gate,scenario,whatif}
+                          ...
 
 Data center OT simulator.
 
 positional arguments:
-  {modules,profile,run}
+  {modules,profile,run,bench,data,demo,gate,scenario,whatif}
     modules             Inspect the installed plant modules.
     profile             Check facility profiles.
     run                 Run a profile for a number of simulated seconds.
+    bench               Benchmark gates over the scenario library, and merge,
+                        freeze and check results.
+    data                Write and check the manifest of a measured input
+                        series.
+    demo                Record three scenarios without a gate and with one,
+                        and write the dashboard.
+    gate                List the installed gates, or run the gate interface
+                        suite on one.
+    scenario            Run one scenario and write its evidence bundle, or
+                        verify a bundle.
+    whatif              Play one proposed change as three branches, and check
+                        what-if evidence.
 
 options:
   -h, --help            show this help message and exit

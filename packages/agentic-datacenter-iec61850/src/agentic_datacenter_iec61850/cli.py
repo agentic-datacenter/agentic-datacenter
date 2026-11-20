@@ -15,7 +15,11 @@ from agentic_datacenter_iec61850.model import relays
 
 
 def main(argv: Sequence[str]) -> int:
-    """Run ``agentic-datacenter scl`` with *argv* and return its exit status."""
+    """Write the IEC 61850 engineering files (SCD and ICD) of a profile.
+
+    Runs ``agentic-datacenter scl`` with *argv* and returns its exit status.
+    The first line is the help text of ``agentic-datacenter --help``.
+    """
     parser = argparse.ArgumentParser(
         prog="agentic-datacenter scl", description="IEC 61850 engineering files."
     )

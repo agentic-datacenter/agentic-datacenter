@@ -12,7 +12,11 @@ from agentic_datacenter_remora.compile import CompileError, compile_contracts
 
 
 def contracts(argv: Sequence[str]) -> int:
-    """Run ``agentic-datacenter contracts compile`` and return the exit status."""
+    """Compile the intent contracts to the signed artifacts REMORA loads.
+
+    Runs ``agentic-datacenter contracts compile`` and returns the exit status.
+    The first line is the help text of ``agentic-datacenter --help``.
+    """
     parser = argparse.ArgumentParser(
         prog="agentic-datacenter contracts", description="Intent contracts."
     )

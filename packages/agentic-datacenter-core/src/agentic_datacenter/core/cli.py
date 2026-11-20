@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import inspect
 import json
 import sys
 from collections.abc import Sequence
-from importlib.metadata import entry_points
+from importlib.metadata import EntryPoint, entry_points
 from pathlib import Path
 
 import yaml
@@ -112,6 +113,12 @@ def _modules_lock(registry: ModuleRegistry, path: Path, check: bool) -> int:
     return 0
 
 
+def _summary(point: EntryPoint) -> str:
+    """Return the first line of the docstring of the command behind *point*."""
+    lines = (inspect.getdoc(point.load()) or "").splitlines()
+    return lines[0] if lines else ""
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the ``agentic-datacenter`` command and return its exit status."""
     arguments = list(sys.argv[1:] if argv is None else argv)
@@ -149,6 +156,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         action="store_true",
         help="Also print the hash with floats rounded to nine digits (ADC-CI-004).",
     )
+    # Listed for --help only; the dispatch above handles them before parsing.
+    for name in sorted(extra):
+        commands.add_parser(name, help=_summary(extra[name]), add_help=False)
     args = parser.parse_args(arguments)
 
     try:
