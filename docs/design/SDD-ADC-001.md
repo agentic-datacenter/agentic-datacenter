@@ -845,6 +845,17 @@ Each requirement below maps to at least one named test; a requirement without a 
 | ADC-BEN-008 | The counterfactual replay can be bounded: each replay runs a stated horizon past its decision and is compared with the actual run at the same instant, and at most a stated number of proposals per run is judged, chosen by a hash of scenario, seed and proposal. A horizon that reaches the end of the run judges exactly as an unbounded replay does. The bounds and how many proposals were judged are on the card. | bench/test\_bounded\_replay |
 | ADC-BEN-009 | Every result card shows, per gate and agent, the verdicts the gate used, how many proposals whose contract asks for approval were executed with fewer approvers than it asks for, how many were executed on a premise Agentic-Datacenter established as not holding, how many decisions a served gate failed to give, and how many steps were stopped by a person declining an approval the contract requires, which are not false blocks (docs/bench/FAIRNESS.md). | bench/test\_fairness |
 
+**Plants from other projects (ADR 0029)**
+
+| ID | Requirement | Verified by |
+| --- | --- | --- |
+| ADC-PLT-001 | The harness, the point database, the command service and the oracle reach a plant only through the plant interface, and the card states the plant's step. Cards made on the built-in plant are unchanged by it, but for the `oracle` hash of the code. | scenario/test\_plant\_interface, bench/test\_plant\_interface\_cards |
+| ADC-PLT-002 | Counterfactual replay branches from a plant capture when the plant offers one and from the start of the run otherwise, and the card says which, for plant and gate separately. | not built yet (ADR 0029) |
+| ADC-PLT-003 | A plant's determinism for a seed is checked before a benchmark and during it, and a card from a plant found not deterministic is labelled so and refused for publication. | not built yet (ADR 0029) |
+| ADC-PLT-004 | A foreign plant runs only with a plant map. A contract, scenario or harm dimension the map does not cover is listed on the card as not run, and is never skipped silently. | not built yet (ADR 0029) |
+| ADC-PLT-005 | A card from a foreign plant is never a benchmark result, names the plant, its version and its owner's fidelity statement, and is not ranked with cards of a frozen version. | not built yet (ADR 0029) |
+| ADC-PLT-006 | A served plant that fails to answer ends the run with an error. There is no fail-closed default for a plant. | not built yet (ADR 0029) |
+
 **What-if (10.4)**
 
 | ID | Requirement | Verified by |
@@ -1071,6 +1082,7 @@ This section is build history. The simulator was built in the stages below, in t
 | 7 | Fuel, life safety, security signals | Covered by scenario tests | `OP-06`, `OP-07` pass |
 | 8 | Gate interface, three bindings, tool server, contract library, contract compiler to signed REMORA artifacts, register fetch at the pin. Entry condition: a pin that contains remora sign-limits, export-contract-files and build-toolspec | GOV-001 to 008, PIN-001 to 006 | Interface suite green for all bindings; `AD-02`, `AD-04`, `AD-06` pass |
 | 9 | Scenario suite, oracle, metrics, evidence bundles, 62443 matrix, demo dashboard, what-if (10.4), tagged release | SCN-001, EVD-001, EVD-002, BEN-001 to 009, WIF-001 to 005 | Nightly matrix green; evidence bundle reproduced on a second machine |
+| 10 | Plants from other projects (ADR 0029): the plant interface, `http_plant`, `plant check`, an example plant | PLT-001 to 006 | A card on the example plant from one scenario end to end |
 
 **Milestone M1.** After Stage 4, thin versions of the supervisory command path, the gate interface, the two scripted agents, counterfactual replay and the result card were built first, on four scenarios: `OP-03`, `OP-10`, `AD-01` and `AD-03`. They ran under the operating profile `DECISION_ONLY`: REMORA decides through `evaluate_policy`, and allowed proposals are applied by the command service with the hash of the decision as reference. There is no execution token, no cumulative-limit enforcement on the REMORA side and no audit chain in this profile. Its results MUST be labelled as such and MUST NOT be described as governed execution. `AD-04` and `AD-05` cannot be claimed as passed under it, since replay and cumulative limits are enforced only on the governed path.
 
