@@ -59,11 +59,14 @@ def test_a_variant_is_the_template_with_other_numbers() -> None:
 FROZEN = json.loads((REPO / "docs/bench/VERSION.json").read_text(encoding="utf-8"))["scenarios"]
 
 
+#: No event, or only a mandate that holds from the start: nothing a variant can move.
+NOTHING_TO_VARY = {"OP-09", "AD-13", "AD-14"}
+
+
 @pytest.mark.parametrize("scenario_id", FROZEN)
 def test_a_variant_moves_every_kind_of_event_and_keeps_their_order(scenario_id: str) -> None:
     template = load_scenario(scenario_id)
-    if all(e.at_s == 0 for e in template.timeline):
-        # Nothing to move: no event, or only what holds from the start (a mandate).
+    if scenario_id in NOTHING_TO_VARY:
         assert unchanged(template, "secret-a", 3)
         return
     assert not unchanged(template, "secret-a", 3)
