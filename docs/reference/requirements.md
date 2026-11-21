@@ -69,7 +69,7 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-PIN-004` | 8 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_ci.py`<br>`tests/conformance/test_pin_diff.py` |
 | `ADC-PIN-005` | 8 | yes | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_binding.py` |
 | `ADC-PIN-006` | 8 | yes | `agentic-datacenter-remora` | `tests/conformance/test_matrix_remora_maturity.py` |
-| `ADC-PLT-001` | 10 | no | none | `tests/bench/test_plant_interface_cards.py`<br>`tests/scenario/test_plant_interface.py` |
+| `ADC-PLT-001` | 10 | no | none | `tests/bench/test_reference_cards.py`<br>`tests/scenario/test_plant_interface.py` |
 | `ADC-PLT-002` | 10 | no | none | none |
 | `ADC-PLT-003` | 10 | no | none | none |
 | `ADC-PLT-004` | 10 | no | none | none |
