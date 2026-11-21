@@ -263,3 +263,12 @@ def test_in_a_shortened_run_a_conduct_criterion_is_a_note_and_harm_still_refuses
     harmed = card(run("OP-07", passed=False, failed_criteria=["critical_pod_minutes = 3 > 0"]))
     harmed["duration_override_s"] = 1800
     assert not check_card(harmed, "remora_governed").passed
+
+
+def test_the_note_names_the_length_of_the_run_itself_when_the_run_carries_one() -> None:
+    """A quick run of a scenario with a late event is longer than 30 minutes (ADR 0030)."""
+    longer = run("OP-07", passed=False, failed_criteria=["escalations = 0 < 1"], duration_s=3600)
+    short = card(longer)
+    short["duration_override_s"], short["duration_reach_s"] = 1800, 7200
+    report = check_card(short, "remora_governed")
+    assert report.passed and "shortened to 3600 s" in report.notes[0]
