@@ -313,9 +313,10 @@ def test_the_mandate_record_is_in_a_request_only_when_one_was_set() -> None:
     assert body["mandate"] == {
         "principal": "agent",
         "changes": [
-            {"time_ms": 1000, "contracts": [SETPOINT, "a.v1"], "by": "operator-1",
-             "reason": "change 1"},
-            {"time_ms": 2000, "contracts": [], "by": "access-register", "reason": "change 2"},
+            {"time_ms": 1000, "until_ms": 2000, "contracts": [SETPOINT, "a.v1"],
+             "by": "operator-1", "reason": "change 1"},
+            {"time_ms": 2000, "until_ms": None, "contracts": [], "by": "access-register",
+             "reason": "change 2"},
         ],
     }  # fmt: skip
     schema = json.loads((REPO / "docs/reference/gate-http-v1.schema.json").read_text())
@@ -395,6 +396,69 @@ def test_the_example_package_reads_the_kind_from_the_record() -> None:
     holding = gate.evaluate(PROPOSAL, _without(_mandate(("a.v1",), (SETPOINT,))), ACTOR)
     assert holding.verdict is Verdict.ALLOW and holding.authority_detail == ""
     assert gate.evaluate(PROPOSAL, CLEAN, ACTOR).authority_detail == ""
+
+
+def test_a_service_may_state_its_own_finding_of_who_may_act() -> None:
+    for given, kept in ((True, True), (False, False), ("yes", None), (None, None)):
+
+        def answer(body: dict[str, Any], given: Any = given) -> dict[str, Any]:
+            out = {"schema": SCHEMA, "verdict": "DENY", "reasons": ["decided"]}
+            return {**out, "authority_holds": given}
+
+        for url in _serve(_answering(answer)):
+            decision = HttpGate(url).evaluate(PROPOSAL, _without(_mandate((SETPOINT,))), ACTOR)
+        assert decision.authority_holds is kept
+    schema = json.loads((REPO / "docs/reference/gate-http-v1.schema.json").read_text())
+    answer_spec = schema["$defs"]["evaluate_answer"]
+    assert answer_spec["properties"]["authority_holds"]["type"] == "boolean"
+    assert "authority_holds" not in answer_spec["required"]
+    assert "ignore" in schema["description"]
+
+
+def test_a_service_can_ask_not_to_be_told_the_answer() -> None:
+    from agentic_datacenter.governance.bindings.http_gate import (
+        command_from_environment,
+        from_environment,
+    )
+
+    env = {"ADC_GATE_URL": "http://127.0.0.1:1"}
+    assert not getattr(from_environment(env), "derives_authority", False)
+    assert from_environment({**env, "ADC_GATE_DERIVES_AUTHORITY": "1"}).derives_authority is True
+    command = {"ADC_GATE_COMMAND": "true", "ADC_GATE_DERIVES_AUTHORITY": "1"}
+    assert command_from_environment(command).derives_authority is True
+
+
+@pytest.mark.parametrize(
+    ("held", "verdict", "finding", "details"),
+    [
+        (((SETPOINT,), ()), "DENY", False, {"authority": "ended"}),
+        ((("a.v1",),), "DENY", False, {"authority": "never_held"}),
+        ((("a.v1",), (SETPOINT,)), "ALLOW", True, None),
+    ],
+)
+def test_the_example_service_decides_from_the_record_when_it_is_not_told(
+    held: tuple[tuple[str, ...], ...], verdict: str, finding: bool, details: dict[str, str] | None
+) -> None:
+    """The request of a gate that derives authority: the record, and no premise for it."""
+    from dataclasses import replace
+
+    from agentic_datacenter.governance.bindings.http_gate import request_body
+
+    server = _load(REPO / "examples/http-gate/server.py", "example_http_gate_server")
+    untold = replace(CLEAN, mandate=_mandate(*held))
+    assert not any(p.expr.startswith("authority(") for p in untold.premises)
+    answer = server.decide(request_body(PROPOSAL, untold, ACTOR))
+    assert answer["verdict"] == verdict and answer["authority_holds"] is finding
+    assert answer.get("reason_details") == details
+    if details is not None:
+        assert answer["reason_codes"] == ["authority"]
+    # Told as well, it answers the same.
+    told = server.decide(request_body(PROPOSAL, _without(_mandate(*held)), ACTOR))
+    assert (told["verdict"], told["authority_holds"]) == (verdict, finding)
+    assert "authority_holds" not in server.decide(request_body(PROPOSAL, CLEAN, ACTOR))
+
+
+def test_the_example_package_decides_from_the_record_when_it_is_not_told() -> None:
 def test_the_example_package_asks_for_as_many_people_as_the_contract_does() -> None:
     """It asked for one person whatever the contract said, so work that needs two was
     executed on one approval (AD-14 at full length)."""
@@ -402,6 +466,12 @@ def test_the_example_package_asks_for_as_many_people_as_the_contract_does() -> N
 
     template = _load(REPO / "examples/python-gate/src/example_gate/__init__.py", "example_gate")
     gate = template.create(None)
+    ended = gate.evaluate(PROPOSAL, replace(CLEAN, mandate=_mandate((SETPOINT,), ())), ACTOR)
+    assert ended.verdict is Verdict.DENY and "authority" in ended.reason_codes
+    assert ended.authority_detail == "ended" and ended.authority_holds is False
+    holding = gate.evaluate(PROPOSAL, replace(CLEAN, mandate=_mandate((SETPOINT,))), ACTOR)
+    assert holding.verdict is Verdict.ALLOW and holding.authority_holds is True
+    assert gate.evaluate(PROPOSAL, CLEAN, ACTOR).authority_holds is None
     for approval, people in (("one_operator", 1), ("two_person", 2)):
         asked = gate.evaluate(PROPOSAL, replace(CLEAN, risk_tier="R2", approval=approval), ACTOR)
         assert asked.verdict is Verdict.VERIFY and asked.required_approvers == people
