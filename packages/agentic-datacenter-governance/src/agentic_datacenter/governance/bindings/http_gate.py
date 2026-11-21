@@ -150,8 +150,10 @@ def request_body(
 
     ``tool_call`` is the same proposal seen as a tool call, for a gate that
     decides on the action itself rather than on an intent contract.
+    ``mandate`` is there only when a mandate was set for the proposer: the
+    register's record of it, every change oldest first (ADR 0031).
     """
-    return {
+    body: dict[str, JsonValue] = {
         "schema": SCHEMA,
         "session": session,
         "tool_call": {
@@ -186,6 +188,20 @@ def request_body(
         },
         "actor": {"principal": actor.principal, "credential": actor.credential},
     }
+    if premises.mandate is not None:
+        body["mandate"] = {
+            "principal": premises.mandate.principal,
+            "changes": [
+                {
+                    "time_ms": change.time_ms,
+                    "contracts": list(change.contracts),
+                    "by": change.by,
+                    "reason": change.reason,
+                }
+                for change in premises.mandate.changes
+            ],
+        }
+    return body
 
 
 def _text(value: Any) -> str:
@@ -291,6 +307,8 @@ class HttpGate:
         service_ref = answer.get("decision_id")
         given = answer.get("reason_codes")
         codes = given if isinstance(given, list) else []
+        details = answer.get("reason_details")
+        said = details.get("authority") if isinstance(details, dict) else None
         detail: dict[str, JsonValue] = {"served_by": self.url}
         native = answer.get("verdict")
         if native is not None and str(native) != verdict.value:
@@ -319,6 +337,7 @@ class HttpGate:
             escalated=bool(answer.get("escalated", False)),
             detail=detail,
             reason_codes=tuple(_text(c) for c in codes[:_MAX_REASONS] if isinstance(c, str) and c),
+            authority_detail=_text(said) if isinstance(said, str) else "",
         )
 
     def record_outcome(self, decision_ref: str, outcome: Outcome) -> None:
