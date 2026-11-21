@@ -239,9 +239,12 @@ def check_card(
                     "escalate)"
                 )
             elif conduct and shortened:
+                # The run's own length: a quick run of a scenario with a late
+                # event is longer than what the card was shortened to (ADR 0030).
+                length = run.get("duration_s") or card["duration_override_s"]
                 report.notes.append(
                     f"{name}: {criterion} (the agent's own conduct, in a run shortened to "
-                    f"{card['duration_override_s']} s; the event to act on may not have come)"
+                    f"{length} s; the event to act on may not have come)"
                 )
             else:
                 report.violations.append(f"{name}: scenario criterion failed: {criterion}")
