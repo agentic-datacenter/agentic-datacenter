@@ -280,6 +280,121 @@ def test_a_command_that_exits_2_denies_and_one_that_fails_abstains(tmp_path: Pat
         command_from_environment({})
 
 
+# --- the mandate record, and which kind of no mandate (issue 31, ADR 0031) -------
+
+SETPOINT = "chw.set_supply_setpoint.v1"
+
+
+def _mandate(*held: tuple[str, ...]) -> Any:
+    from agentic_datacenter.governance.gate import Mandate, MandateChange
+
+    people = ("operator-1", "access-register", "operator-2")
+    changes = tuple(
+        MandateChange(1000 * (index + 1), contracts, people[index], f"change {index + 1}")
+        for index, contracts in enumerate(held)
+    )
+    return Mandate(ACTOR.principal, changes)
+
+
+def _without(mandate: Any) -> PremiseSnapshot:
+    """CLEAN, for a proposer the register holds *mandate* for, with the premise it gives."""
+    from dataclasses import replace
+
+    holds = SETPOINT in mandate.changes[-1].contracts
+    premise = PremiseResult(f"authority({ACTOR.principal}, {SETPOINT})", holds, "from the register")
+    return replace(CLEAN, premises=(*CLEAN.premises, premise), mandate=mandate)
+
+
+def test_the_mandate_record_is_in_a_request_only_when_one_was_set() -> None:
+    from agentic_datacenter.governance.bindings.http_gate import request_body
+
+    assert "mandate" not in request_body(PROPOSAL, CLEAN, ACTOR)
+    body = request_body(PROPOSAL, _without(_mandate((SETPOINT, "a.v1"), ())), ACTOR)
+    assert body["mandate"] == {
+        "principal": "agent",
+        "changes": [
+            {"time_ms": 1000, "contracts": [SETPOINT, "a.v1"], "by": "operator-1",
+             "reason": "change 1"},
+            {"time_ms": 2000, "contracts": [], "by": "access-register", "reason": "change 2"},
+        ],
+    }  # fmt: skip
+    schema = json.loads((REPO / "docs/reference/gate-http-v1.schema.json").read_text())
+    request = schema["$defs"]["evaluate_request"]
+    assert "mandate" in request["properties"] and "mandate" not in request["required"]
+    spec = request["properties"]["mandate"]
+    assert set(body["mandate"]) == set(spec["required"]) == set(spec["properties"])  # type: ignore[arg-type]
+    change = spec["properties"]["changes"]["items"]
+    assert set(body["mandate"]["changes"][0]) == set(change["required"])  # type: ignore[index,call-overload]
+    assert set(change["required"]) == set(change["properties"])
+    answer = schema["$defs"]["evaluate_answer"]
+    assert "reason_details" in answer["properties"] and "reason_details" not in answer["required"]
+
+
+@pytest.mark.parametrize(
+    ("details", "kept"),
+    [
+        ({"authority": "ended"}, "ended"),
+        ({"authority": "never_held"}, "never_held"),
+        (
+            {"authority": "a word of its own"},
+            "a word of its own",
+        ),  # the control path keeps it as other
+        ({"authority": 7}, ""),
+        ({"limit": "rate"}, ""),
+        ("ended", ""),
+        (None, ""),
+    ],
+)
+def test_a_service_may_say_which_kind_of_no_mandate_it_refused_for(details: Any, kept: str) -> None:
+    def answer(body: dict[str, Any]) -> dict[str, Any]:
+        out = {"schema": SCHEMA, "verdict": "DENY", "reasons": ["no mandate"]}
+        return {**out, "reason_codes": ["authority"], "reason_details": details}
+
+    handler = _answering(answer)
+    for url in _serve(handler):
+        decision = HttpGate(url).evaluate(PROPOSAL, _without(_mandate((SETPOINT,), ())), ACTOR)
+    assert decision.verdict is Verdict.DENY and decision.reason_codes == ("authority",)
+    assert decision.authority_detail == kept
+    (request,) = handler.requests  # type: ignore[attr-defined]
+    assert [c["contracts"] for c in request["mandate"]["changes"]] == [[SETPOINT], []]
+
+
+@pytest.mark.parametrize(
+    ("held", "verdict", "details"),
+    [
+        (((SETPOINT,), ()), "DENY", {"authority": "ended"}),
+        (((SETPOINT, "a.v1"), ("a.v1",)), "DENY", {"authority": "ended"}),
+        ((("a.v1",),), "DENY", {"authority": "never_held"}),
+        (((), ("a.v1",)), "DENY", {"authority": "never_held"}),
+        ((("a.v1",), (SETPOINT,)), "ALLOW", None),
+    ],
+)
+def test_the_example_service_reads_the_kind_from_the_record(
+    held: tuple[tuple[str, ...], ...], verdict: str, details: dict[str, str] | None
+) -> None:
+    from agentic_datacenter.governance.bindings.http_gate import request_body
+
+    server = _load(REPO / "examples/http-gate/server.py", "example_http_gate_server")
+    answer = server.decide(request_body(PROPOSAL, _without(_mandate(*held)), ACTOR))
+    assert answer["verdict"] == verdict
+    assert answer.get("reason_details") == details
+    if details is not None:
+        assert answer["reason_codes"] == ["authority"]
+    # With no record in the request it says nothing more, as before.
+    assert "reason_details" not in server.decide(request_body(PROPOSAL, CLEAN, ACTOR))
+
+
+def test_the_example_package_reads_the_kind_from_the_record() -> None:
+    template = _load(REPO / "examples/python-gate/src/example_gate/__init__.py", "example_gate")
+    gate = template.create(None)
+    ended = gate.evaluate(PROPOSAL, _without(_mandate((SETPOINT,), ())), ACTOR)
+    assert ended.verdict is Verdict.DENY and "authority" in ended.reason_codes
+    assert ended.authority_detail == "ended"
+    never = gate.evaluate(PROPOSAL, _without(_mandate(("a.v1",))), ACTOR)
+    assert never.verdict is Verdict.DENY and never.authority_detail == "never_held"
+    holding = gate.evaluate(PROPOSAL, _without(_mandate(("a.v1",), (SETPOINT,))), ACTOR)
+    assert holding.verdict is Verdict.ALLOW and holding.authority_detail == ""
+    assert gate.evaluate(PROPOSAL, CLEAN, ACTOR).authority_detail == ""
 def test_the_example_package_asks_for_as_many_people_as_the_contract_does() -> None:
     """It asked for one person whatever the contract said, so work that needs two was
     executed on one approval (AD-14 at full length)."""
