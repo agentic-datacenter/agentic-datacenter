@@ -59,6 +59,7 @@ nav:
       - Wiring of the generic profile: reference/wiring.md
       - Requirement-to-test matrix: reference/requirements.md
       - Invariants: reference/invariants.md
+      - Evidence model: reference/evidence-model.md
       - Words used here: reference/glossary.md
       - Command line: reference/cli.md
       - Profile schema: reference/profile_schema.md

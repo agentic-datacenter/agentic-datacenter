@@ -1,6 +1,6 @@
 # ADR 0028: Authority that changes during an incident
 
-- **Status:** Proposed, as part of the next benchmark version. The main branch carries that version while it is made; a season on `benchmark-v1` runs at its tag.
+- **Status:** Accepted, frozen in `benchmark-v1.1` on 2026-11-21. Before that: proposed, as part of the next benchmark version. The main branch carries that version while it is made; a season on `benchmark-v1` runs at its tag.
 - **Date:** 2026-11-19
 - **SDD:** 9, 10.2, 12.1; ADR 0022, 0023; issue 31
 

@@ -46,7 +46,7 @@ Make your own with `uv sync --all-groups`, which installs REMORA, and then `uv r
 
 ## The scenarios
 
-The first 23 are `benchmark-v1`, the version Season 1 runs on. `AD-11` to `AD-14` are in the next version, which is not frozen yet (ADR 0028).
+All 27 are in `benchmark-v1.1`, the version Season 1 runs on.
 
 | Operational | Simulated | Adversarial | Simulated |
 | --- | --- | --- | --- |
