@@ -15,6 +15,7 @@ where the gate's word and the record differ.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -34,6 +35,7 @@ from agentic_datacenter.governance.gate import (
 )
 from agentic_datacenter.scenarios.agents import ScriptedAdversarial
 from agentic_datacenter.scenarios.bench import run_benchmark
+from agentic_datacenter.scenarios.counterfactual import judge_run
 from agentic_datacenter.scenarios.harness import AGENT, RunResult, ScenarioRun
 from agentic_datacenter.scenarios.scenario import load_scenario
 
@@ -63,6 +65,9 @@ class _ReadsTheRecord:
     profile = "STATIC_ALLOWLIST"
     say: str | None = None
     refuse_all = False
+    #: Replaces the finding it states of whether the proposer holds a mandate.
+    finds: bool | None = None
+    states_finding = True
 
     def __init__(self, contracts: ContractLibrary) -> None:
         self.inner = static_allowlist(contracts)
@@ -75,14 +80,18 @@ class _ReadsTheRecord:
         decision = self.inner.evaluate(proposal, premises, actor)
         mandate = premises.mandate
         found = held(mandate, proposal.contract_id) if mandate is not None else ""
+        finding = None
+        if self.states_finding and (mandate is not None or self.finds is not None):
+            finding = self.finds if self.finds is not None else not found
         if mandate is not None and (found or self.refuse_all):
             return Decision(
                 Verdict.DENY, decision.decision_ref, proposal.contract_id,
                 reasons=(f"no mandate: {found or 'refused all the same'}",),
                 reason_codes=("authority",),
                 authority_detail=self.say if self.say is not None else found,
+                authority_holds=finding,
             )  # fmt: skip
-        return decision
+        return replace(decision, authority_holds=finding)
 
     def record_outcome(self, decision_ref: str, outcome: Any) -> None:
         self.inner.record_outcome(decision_ref, outcome)
@@ -307,7 +316,9 @@ def test_the_card_counts_the_kinds_and_a_gate_that_has_them_right() -> None:
     assert counted["details_given"] == without and counted["details_wrong"] == 0
     assert counted["cited_authority_with_mandate"] == 0
     (row,) = card["results"]
-    assert row["authority"] == counted
+    # The row sums its runs; whether a gate was told becomes in how many runs it was not.
+    summed = {k: v for k, v in row["authority"].items() if k != "runs_premise_withheld"}
+    assert summed == {k: v for k, v in counted.items() if k != "premise_told"}
 
 
 def test_a_gate_that_names_the_wrong_kind_is_counted() -> None:
@@ -353,3 +364,162 @@ def test_the_decisions_file_carries_the_record_s_finding_and_the_gates() -> None
     assert all(line["reason_details"] == {"authority": _kind(line)} for line in without)
     holding = [line for line in decisions if line.get("authorized") is True]
     assert holding and all("authority_detail" not in line for line in holding)
+
+
+# --- the gate's own finding of who may act, beside the premise -----------------------
+
+
+def test_a_gate_can_state_its_own_finding_and_it_is_kept_beside_the_premise(
+    ended: tuple[RunResult, Any],
+) -> None:
+    """What the tester asked to have counted: where the gate's decision on authority
+    differs from the premise. The gate says what it found; nothing is read into its verdict."""
+    result, _ = ended
+    told = [r for r in result.records if "authorized" in r]
+    assert told and all(r["gate_authority_holds"] is r["authorized"] for r in told)
+    assert {r["gate_authority_holds"] for r in told} == {True, False}
+
+
+def test_a_finding_is_kept_only_where_there_is_a_premise_to_compare_it_with() -> None:
+    result, _ = _run("AD-03", _gate(finds=True))
+    assert result.records and all("gate_authority_holds" not in r for r in result.records)
+
+
+def test_a_gate_that_states_nothing_has_no_finding_recorded() -> None:
+    result, _ = _run("AD-13", _gate(states_finding=False))
+    assert all("gate_authority_holds" not in r for r in result.records)
+    (run,) = _card("AD-13", _gate(states_finding=False))["runs"]
+    assert run["authority"]["findings_given"] == 0 == run["authority"]["findings_wrong"]
+
+
+def test_the_card_counts_a_finding_that_is_not_the_premise() -> None:
+    (run,) = _card("AD-11", _ReadsTheRecord)["runs"]
+    counted = run["authority"]
+    decided = run["metrics"]["proposals"]
+    assert counted["findings_given"] == decided > 0 and counted["findings_wrong"] == 0
+    # A gate that finds a mandate for everyone: wrong for each step without one, and
+    # counted so although it refuses those steps all the same.
+    (run,) = _card("AD-11", _gate(finds=True))["runs"]
+    counted = run["authority"]
+    assert counted["findings_wrong"] == run["metrics"]["proposals_without_authority"] > 0
+    assert run["metrics"]["executed_without_authority"] == 0
+    # And one that finds none for anyone: wrong for each step whose proposer held one.
+    (run,) = _card("AD-13", _gate(finds=False))["runs"]
+    holding = run["metrics"]["proposals"] - run["metrics"]["proposals_without_authority"]
+    assert run["authority"]["findings_wrong"] == holding > 0
+
+
+def test_an_allow_for_a_step_without_a_mandate_is_counted_by_the_verdict() -> None:
+    """Not only by what was executed: the verdict is the gate's, the execution is not."""
+    card = run_benchmark(
+        PROFILE, CONTRACTS, {"static_allowlist": static_allowlist}, ["scripted_adversarial"],
+        ["AD-11"], [1], counterfactual=False, allow_unfrozen=True,
+    )  # fmt: skip
+    (run,) = card["runs"]
+    assert run["authority"]["allowed_without_mandate"] > 0
+    assert (
+        run["authority"]["allowed_without_mandate"] >= run["metrics"]["executed_without_authority"]
+    )
+    (run,) = _card("AD-11", _ReadsTheRecord)["runs"]
+    assert run["authority"]["allowed_without_mandate"] == 0
+
+
+# --- a gate that works it out for itself is not told the answer -----------------------
+
+
+@pytest.fixture(scope="module")
+def derived() -> tuple[RunResult, Any]:
+    return _run("AD-11", _gate(derives_authority=True))
+
+
+def test_a_gate_that_derives_authority_is_given_the_record_and_not_the_premise(
+    derived: tuple[RunResult, Any],
+) -> None:
+    result, gate = derived
+    assert gate.seen
+    for _, snapshot in gate.seen:
+        assert snapshot.mandate is not None
+        assert not any(p.expr.startswith("authority(") for p in snapshot.premises)
+
+
+def test_the_record_of_the_proposal_still_carries_the_premise_a_run_is_judged_by(
+    derived: tuple[RunResult, Any],
+) -> None:
+    result, _ = derived
+    decided = [r for r in result.records if r["verdict"] is not None]
+    assert decided
+    for record in decided:
+        (premise,) = [p for p in record["premises"] if str(p["expr"]).startswith("authority(")]
+        assert premise["holds"] is record["authorized"]
+        assert record["authority_premise_told"] is False
+    without = [r for r in decided if r["authorized"] is False]
+    assert without and all(r["outcome"] == "NOT_EXECUTED" for r in without)
+    assert result.metrics.executed_without_authority == 0
+    assert result.passed, result.failed_criteria
+
+
+def test_a_gate_that_is_told_has_nothing_about_it_on_its_records(
+    ended: tuple[RunResult, Any],
+) -> None:
+    assert all("authority_premise_told" not in r for r in ended[0].records)
+
+
+def test_refusing_from_the_record_alone_is_judged_as_refusing_on_the_premise_is() -> None:
+    result, judged = judge_run(
+        load_scenario("AD-11"), PROFILE, _gate(derives_authority=True), "STATIC_ALLOWLIST",
+        ScriptedAdversarial, 1, CONTRACTS, horizon_s=600, max_judged=8,
+    )  # fmt: skip
+    unauthorized = {str(r["proposal_id"]) for r in result.records if r.get("authorized") is False}
+    mine = [j for j in judged if j.proposal_id in unauthorized]
+    assert mine and all(j.required and not j.executed for j in mine)
+    assert all(j.kind in ("required_block", "harm_avoided", "not_executable") for j in mine)
+
+
+def test_a_gate_that_says_it_derives_authority_and_reads_only_premises_lets_it_through() -> None:
+    """Asking not to be told is not free: a gate that cannot work it out shows that it cannot."""
+    reads_premise_only = type("_Untold", (_ReadsThePremise,), {"derives_authority": True})
+    (run,) = _card("AD-11", reads_premise_only)["runs"]
+    assert run["metrics"]["executed_without_authority"] > 0
+    assert run["authority"]["allowed_without_mandate"] > 0
+    assert run["authority"]["premise_told"] is False and run["passed"] is False
+
+
+def test_the_card_says_whether_the_gate_was_told() -> None:
+    card = _card("AD-11", _gate(derives_authority=True))
+    (run,) = card["runs"]
+    assert run["authority"]["premise_told"] is False
+    assert card["results"][0]["authority"]["runs_premise_withheld"] == 1
+    card = _card("AD-11", _ReadsTheRecord)
+    assert card["runs"][0]["authority"]["premise_told"] is True
+    assert card["results"][0]["authority"]["runs_premise_withheld"] == 0
+
+
+# --- on each judgement of the card, beside the reason codes ----------------------------
+
+
+def test_each_judgement_carries_the_kind_the_register_holds_and_what_the_gate_said() -> None:
+    card = run_benchmark(
+        PROFILE, CONTRACTS, {"mine": _ReadsTheRecord}, ["scripted_adversarial"], ["AD-13"], [1],
+        horizon_s=300, max_judged=6, allow_unfrozen=True,
+    )  # fmt: skip
+    (run,) = card["runs"]
+    without = [j for j in run["judgements"] if j.get("authorized") is False]
+    assert without
+    for judgement in without:
+        assert judgement["authority_detail"] == "never_held"
+        assert judgement["reason_details"] == {"authority": "never_held"}
+        assert (
+            judgement["gate_authority_holds"] is False and "authority" in judgement["reason_codes"]
+        )
+    holding = [j for j in run["judgements"] if j.get("authorized") is True]
+    assert all("authority_detail" not in j and "reason_details" not in j for j in holding)
+
+
+def test_a_judgement_of_a_run_that_sets_no_mandate_has_none_of_it() -> None:
+    card = run_benchmark(
+        PROFILE, CONTRACTS, {"mine": _ReadsTheRecord}, ["scripted_adversarial"], ["AD-03"], [1],
+        1200, horizon_s=300, max_judged=4, allow_unfrozen=True,
+    )  # fmt: skip
+    (run,) = card["runs"]
+    keys = {"authorized", "authority_detail", "reason_details", "gate_authority_holds"}
+    assert run["judgements"] and all(not keys & set(j) for j in run["judgements"])
