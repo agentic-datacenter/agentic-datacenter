@@ -6,6 +6,12 @@ authority scenarios AD-11 and AD-12 the mandate ends after 30 minutes: a quick
 run counted no step proposed without a mandate, and a gate that checks only
 operating limits passed both. Eight scenarios of the library had an event cut
 off in this way.
+
+An agent acts at the decision points of a scenario. Five scenarios pace them
+ten minutes or more apart, and 30 minutes then held few of them, or none: in
+AD-05 no agent proposed anything in a quick run, and in AD-14 and OP-09 the
+work that needs a person, which is what they are about, was proposed after
+the run had ended.
 """
 
 from __future__ import annotations
@@ -19,7 +25,13 @@ import pytest
 from agentic_datacenter.core.profile import load_profile
 from agentic_datacenter.governance.bindings.static_allowlist import create as static_allowlist
 from agentic_datacenter.governance.contracts import ContractLibrary
-from agentic_datacenter.scenarios.bench import MERGE_KEYS, TIERS, run_benchmark, shortened
+from agentic_datacenter.scenarios.bench import (
+    DECISION_POINTS_IN_A_SHORTENED_RUN,
+    MERGE_KEYS,
+    TIERS,
+    run_benchmark,
+    shortened,
+)
 from agentic_datacenter.scenarios.scenario import library_ids, load_scenario
 
 REPO = Path(__file__).resolve().parents[2]
@@ -42,9 +54,12 @@ def test_only_the_quick_tier_shortens_and_it_says_how_far_it_reaches() -> None:
         ("AD-11", 3800),  # the mandate ends at 2000 s; 30 minutes from there
         ("AD-12", 5400),  # the narrower mandate is given at 3600 s
         ("OP-03", 3600),  # the chiller trips at 1800 s, the instant a quick run ended
-        ("OP-07", 3600),  # the events of the second day are beyond the reach, and not in it
+        ("OP-07", 7200),  # decision points 30 minutes apart: as far as the reach goes
         ("AD-13", 1800),  # nothing after 30 minutes: as before
-        ("OP-10", 1800),  # a week with one event at its start: as before
+        ("AD-14", 3600),  # decision points 10 minutes apart: six of them
+        ("OP-09", 3600),  # the same
+        ("OP-10", 5400),  # 15 minutes apart
+        ("AD-05", 7200),  # 36 minutes apart: none of them was in 30 minutes
     ],
 )
 def test_a_scenario_with_an_event_after_30_minutes_gets_them_from_that_event(
@@ -63,13 +78,64 @@ def test_no_event_within_reach_is_cut_off_and_the_reach_is_the_limit() -> None:
         cut = [e.at_s for e in scenario.timeline if played <= e.at_s < REACH_S]
         assert not cut, f"{scenario_id}: events at {cut} s are not in a run of {played} s"
         late = [e.at_s for e in scenario.timeline if QUICK_S <= e.at_s < REACH_S]
-        if late:
-            assert length == min(REACH_S, max(late) + QUICK_S)
-        else:
-            assert length == QUICK_S
+        paced = DECISION_POINTS_IN_A_SHORTENED_RUN * scenario.decision_every_s
+        wanted = max(QUICK_S, paced, max(late) + QUICK_S if late else 0)
+        assert length == min(REACH_S, wanted)
         if length != QUICK_S:
             longer.append(scenario_id)
-    assert longer == ["AD-01", "AD-09", "AD-11", "AD-12", "OP-01", "OP-03", "OP-07", "OP-12"]
+    assert longer == [
+        "AD-01", "AD-05", "AD-09", "AD-11", "AD-12", "AD-14",
+        "OP-01", "OP-03", "OP-07", "OP-09", "OP-10", "OP-12",
+    ]  # fmt: skip
+
+
+def test_a_shortened_run_holds_six_decision_points_or_goes_as_far_as_the_reach() -> None:
+    assert DECISION_POINTS_IN_A_SHORTENED_RUN == 6
+    for scenario_id in library_ids():
+        scenario = load_scenario(scenario_id)
+        length = shortened(scenario, QUICK_S, REACH_S)
+        assert length is not None
+        played = min(length, scenario.duration_s)
+        points = played // scenario.decision_every_s
+        whole = played == scenario.duration_s
+        assert points >= 6 or played == REACH_S or whole, (scenario_id, played, points)
+
+
+def _example_gate() -> Any:
+    """The example gate of ``examples/python-gate``: it asks a person where a contract does."""
+    import importlib.util
+
+    path = REPO / "examples/python-gate/src/example_gate/__init__.py"
+    spec = importlib.util.spec_from_file_location("example_gate_for_quick", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.create
+
+
+@pytest.mark.parametrize("scenario_id", ["AD-14", "OP-09"])
+def test_a_quick_run_reaches_the_work_that_needs_a_person(scenario_id: str) -> None:
+    """What these two are about is proposed at the fourth decision point, at 40 minutes."""
+    card = run_benchmark(
+        PROFILE, CONTRACTS, {"example": _example_gate()}, ["scripted_adversarial"],
+        [scenario_id], [1], QUICK_S, counterfactual=False, allow_unfrozen=True, reach_s=REACH_S,
+    )  # fmt: skip
+    (run,) = card["runs"]
+    assert run["duration_s"] == 3600
+    assert run["metrics"]["approval_required"] > 0 and run["metrics"]["approvals_requested"] > 0
+    if scenario_id == "AD-14":
+        # The operator who has lost access answers, and is turned away.
+        assert run["metrics"]["approvals_refused_without_standing"] > 0
+
+
+def test_every_agent_gets_to_propose_in_a_quick_run_of_the_slowest_scenario() -> None:
+    card = run_benchmark(
+        PROFILE, CONTRACTS, {"static_allowlist": static_allowlist},
+        ["scripted_adversarial", "scripted_benign"], ["AD-05"], [1], QUICK_S,
+        counterfactual=False, allow_unfrozen=True, reach_s=REACH_S,
+    )  # fmt: skip
+    assert [run["duration_s"] for run in card["runs"]] == [7200, 7200]
+    assert all(run["metrics"]["proposals"] > 0 for run in card["runs"])
 
 
 def test_an_event_near_the_reach_does_not_take_the_run_beyond_it() -> None:

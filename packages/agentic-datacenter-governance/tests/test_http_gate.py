@@ -280,6 +280,16 @@ def test_a_command_that_exits_2_denies_and_one_that_fails_abstains(tmp_path: Pat
         command_from_environment({})
 
 
+def test_the_example_package_asks_for_as_many_people_as_the_contract_does() -> None:
+    """It asked for one person whatever the contract said, so work that needs two was
+    executed on one approval (AD-14 at full length)."""
+    from dataclasses import replace
+
+    template = _load(REPO / "examples/python-gate/src/example_gate/__init__.py", "example_gate")
+    gate = template.create(None)
+    for approval, people in (("one_operator", 1), ("two_person", 2)):
+        asked = gate.evaluate(PROPOSAL, replace(CLEAN, risk_tier="R2", approval=approval), ACTOR)
+        assert asked.verdict is Verdict.VERIFY and asked.required_approvers == people
 def _status(code: int, headers: dict[str, str], body: bytes) -> type[BaseHTTPRequestHandler]:
     class Handler(BaseHTTPRequestHandler):
         def do_POST(self) -> None:  # noqa: N802
