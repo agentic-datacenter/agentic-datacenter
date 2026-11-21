@@ -22,8 +22,34 @@ from typing import Any
 SCHEMA = "agentic_datacenter.gate.http/1"
 
 
+def no_mandate(request: dict[str, Any]) -> str:
+    """Say which kind of no mandate the proposer has, from the mandate record alone.
+
+    ``mandate`` is in the request once a mandate was set for the proposer: every
+    change, oldest first, and the last one is in force. ``ended`` when an earlier
+    change held this contract, ``never_held`` when none did, and nothing when
+    the mandate holds or there is no record.
+    """
+    record = request.get("mandate")
+    if not record:
+        return ""
+    contract, changes = request["proposal"]["contract_id"], record["changes"]
+    if contract in changes[-1]["contracts"]:
+        return ""
+    return "ended" if any(contract in c["contracts"] for c in changes[:-1]) else "never_held"
+
+
 def decide(request: dict[str, Any]) -> dict[str, Any]:
     """Return the answer to one ``evaluate`` request. Must be deterministic."""
+    answer = _decide(request)
+    kind = no_mandate(request)
+    if kind and "authority" in answer.get("reason_codes", []):
+        # Optional: which of the two kinds of no mandate the refusal was for.
+        answer["reason_details"] = {"authority": kind}
+    return answer
+
+
+def _decide(request: dict[str, Any]) -> dict[str, Any]:
     premises = request["premises"]
     refusals = list(premises["schema_errors"]) + list(premises["bound_errors"])
     refusals += list(premises["limit_errors"])

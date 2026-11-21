@@ -67,6 +67,13 @@ class ExampleGate:
             )
             if applies and verdict is not Verdict.ALLOW
         )
+        # Optional: which kind of no mandate it was, from the mandate record. Every
+        # change is in it, oldest first, and the last one is in force.
+        kind = ""
+        if "authority" in codes and premises.mandate is not None:
+            earlier = premises.mandate.changes[:-1]
+            held_before = any(proposal.contract_id in c.contracts for c in earlier)
+            kind = "ended" if held_before else "never_held"
         writes = premises.writes if verdict is Verdict.ALLOW else ()
         ref = decision_ref(
             self.name, proposal.proposal_id, proposal.contract_id, verdict.value,
@@ -75,6 +82,7 @@ class ExampleGate:
         return Decision(
             verdict, ref, proposal.contract_id, writes, premises.time_ms + DECISION_TTL_MS,
             ref[-12:], tuple(reasons), required_approvers=approvers, reason_codes=codes,
+            authority_detail=kind,
         )  # fmt: skip
 
     def record_outcome(self, decision_ref: str, outcome: Outcome) -> None:

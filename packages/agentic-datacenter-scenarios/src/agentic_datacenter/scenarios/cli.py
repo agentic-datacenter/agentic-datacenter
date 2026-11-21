@@ -255,6 +255,12 @@ def bench(argv: Sequence[str]) -> int:
                 f"{row['proposals_without_authority']} proposed, "
                 f"{row['refused_citing_authority']} refused citing authority"
             )
+        counted = row.get("authority")
+        if isinstance(counted, dict) and counted["details_given"]:
+            print(
+                f"  {'':18s} never held or ended: said for {counted['details_given']}, "
+                f"{counted['details_wrong']} of them not what the register holds"
+            )
     return 0
 
 

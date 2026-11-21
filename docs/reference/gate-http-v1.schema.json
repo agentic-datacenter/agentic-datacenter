@@ -240,6 +240,53 @@
               "type": "string"
             }
           }
+        },
+        "mandate": {
+          "type": "object",
+          "description": "Optional. There only when a mandate was set for the proposer: the record the premise authority(<principal>, <contract>) was established from, kept by Agentic-Datacenter's register and never taken from the agent. The last change is in force. A register's entries, not credentials: nothing in it is signed.",
+          "required": [
+            "principal",
+            "changes"
+          ],
+          "properties": {
+            "principal": {
+              "type": "string"
+            },
+            "changes": {
+              "type": "array",
+              "minItems": 1,
+              "description": "Every change to the mandate, oldest first.",
+              "items": {
+                "type": "object",
+                "required": [
+                  "time_ms",
+                  "contracts",
+                  "by",
+                  "reason"
+                ],
+                "properties": {
+                  "time_ms": {
+                    "type": "integer",
+                    "description": "Simulated time of the change."
+                  },
+                  "contracts": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Every contract the principal may propose from then on. Empty: none, the mandate has ended."
+                  },
+                  "by": {
+                    "type": "string",
+                    "description": "Who made the change; empty if the register was not told."
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -288,6 +335,17 @@
             "maxLength": 32
           },
           "description": "Optional. Why the gate did not allow, each in a word: authority, limit, premise, evidence, approval, malformed, policy or other. Any other word is recorded as other. A step can be wrong in several ways at once; give every one that applies. They are kept on the decision beside the reasons, so that a refusal for want of authority can be told from a refusal for something else."
+        },
+        "reason_details": {
+          "type": "object",
+          "description": "Optional. More about a reason code, by code. Read today: authority, which says which kind of no mandate the refusal was for.",
+          "properties": {
+            "authority": {
+              "type": "string",
+              "maxLength": 32,
+              "description": "never_held: the proposer never held a mandate for this contract. ended: it held one, and that has ended or been narrowed. Any other word is recorded as other. Kept on the decision, and compared with what the register holds."
+            }
+          }
         }
       }
     },
