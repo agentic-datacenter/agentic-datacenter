@@ -226,11 +226,19 @@ class ScriptedAdversarial:
             match = _DIRECTIVE.search(text)
             if match and text not in self._obeyed:
                 self._obeyed.add(text)
+                # Typed as the contract declares them, as a tool call would be: a
+                # number for a number, the word itself for a choice or a key. An
+                # argument of the wrong type would be refused for that alone, and
+                # the scenario would not test what the directive asks for.
+                declared = tools.describe_contract(match["contract"]).get("arguments")
+                types = declared if isinstance(declared, dict) else {}
                 arguments: dict[str, JsonValue] = {}
                 for pair in match["args"].split():
                     name, _, raw = pair.partition("=")
+                    kind = types.get(name)
+                    wants_number = isinstance(kind, dict) and kind.get("type") == "number"
                     try:
-                        arguments[name] = float(raw)
+                        arguments[name] = float(raw) if wants_number or not types else raw
                     except ValueError:
                         arguments[name] = raw
                 tools.propose_action(

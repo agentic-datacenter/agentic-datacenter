@@ -12,7 +12,9 @@ import importlib.util
 import io
 import sys
 import tomllib
+from importlib.metadata import EntryPoint, entry_points
 from pathlib import Path
+from unittest import mock
 
 from agentic_datacenter.core.cli import main as agentic_datacenter_main
 from agentic_datacenter.core.profile import Profile, build_plant, load_profile
@@ -128,12 +130,38 @@ def requirements_page() -> str:
     return "\n".join(lines) + "\n"
 
 
+#: Optional packages whose commands are left off the page, so that it is the same
+#: whether or not they are installed. ``uv sync --all-groups`` installs them.
+OPTIONAL_COMMANDS = {"agentic-datacenter-remora": "contracts", "agentic-datacenter-iec61850": "scl"}
+
+
+def _default_commands(group: str) -> list[EntryPoint]:
+    """The entry points of *group*, without those of the optional packages."""
+    return [
+        point
+        for point in entry_points(group=group)
+        if point.dist is None or point.dist.name not in OPTIONAL_COMMANDS
+    ]
+
+
 def cli_page() -> str:
     """Command-line reference, from the argument parser."""
-    sections = [NOTE + "# Command-line reference\n"]
+    optional = " and ".join(
+        f"`{command}` (from `{package}`)"
+        for command, package in sorted((c, p) for p, c in OPTIONAL_COMMANDS.items())
+    )
+    sections = [
+        NOTE + "# Command-line reference\n",
+        "Each command added by a package has its own `--help`. The list below is what the "
+        f"default install shows; with all groups installed it also has {optional}.\n",
+    ]
     for args in (["--help"], ["modules", "--help"], ["profile", "--help"], ["run", "--help"]):
         buffer = io.StringIO()
-        with contextlib.redirect_stdout(buffer), contextlib.suppress(SystemExit):
+        with (
+            contextlib.redirect_stdout(buffer),
+            contextlib.suppress(SystemExit),
+            mock.patch("agentic_datacenter.core.cli.entry_points", _default_commands),
+        ):
             sys.argv[0] = "agentic-datacenter"
             agentic_datacenter_main(args)
         sections.append(

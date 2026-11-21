@@ -1,0 +1,23 @@
+# Weekly update pull requests, one per ecosystem. Each is reviewed and merged like any other PR.
+# REMORA is pinned by REMORA_PIN and bumped by its own PR (CONTRIBUTING.md), so it is left out.
+version: 2
+updates:
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    ignore:
+      - dependency-name: "remora*"
+    groups:
+      python:
+        patterns: ["*"]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      actions:
+        patterns: ["*"]
+    open-pull-requests-limit: 5

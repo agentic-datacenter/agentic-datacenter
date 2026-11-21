@@ -301,3 +301,68 @@ def test_emergency_power_off_removes_the_load(rig: Any) -> None:
     r.forward["epo"] = Signal(True)
     r.run(1)
     assert r.module.io["served_kw"] == 0.0 and r.out("heat").heat_kw == 0.0
+
+
+def test_it_load_trips_when_the_inlet_stays_above_the_shutdown_temperature(rig: Any) -> None:
+    r = it_load(rig)
+    trips: list[dict[str, Any]] = []
+    r.kernel.events.subscribe("it_load.thermal_trip", lambda e: trips.append(dict(e.payload)))
+    r.reverse["heat"] = AirInlet(45.0)
+    r.run(59)
+    assert r.module.io["thermal_trip"] is False and r.module.io["served_kw"] > 150.0
+    r.run(2)
+    assert r.module.io["thermal_trip"] is True and r.module.io["dropped"] is False
+    assert r.module.io["served_kw"] == 0.0 and r.module.io["fan_kw"] == 0.0
+    assert r.out("heat").heat_kw == 0.0
+    assert r.back("feed_a") == r.back("feed_b") == ElectricalDemand(0.0)
+    assert trips == [{"source": "electrical.it_load[X]", "active": True, "inlet_c": 45.0}]
+    lost = r.module.io["kwh_lost"]
+    r.run(60)
+    demand = r.module.io["demand_kw"]
+    assert r.module.io["kwh_lost"] - lost == pytest.approx(demand * 60 / 3600, rel=0.01)
+
+
+def test_it_load_rides_through_a_hot_inlet_shorter_than_the_hold_time(rig: Any) -> None:
+    r = it_load(rig)
+    r.reverse["heat"] = AirInlet(45.0)
+    r.run(50)
+    r.reverse["heat"] = AirInlet(35.0)
+    r.run(5)
+    r.reverse["heat"] = AirInlet(45.0)
+    r.run(50)
+    assert r.module.io["thermal_trip"] is False and r.module.io["kwh_lost"] == 0.0
+
+
+def test_it_load_restarts_only_after_the_inlet_is_back_inside_the_allowable_range(
+    rig: Any,
+) -> None:
+    r = it_load(rig)
+    r.reverse["heat"] = AirInlet(45.0)
+    r.run(61)
+    assert r.module.io["thermal_trip"] is True
+    # Below the shutdown temperature but above the allowable limit: still off.
+    r.reverse["heat"] = AirInlet(35.0)
+    r.run(600)
+    assert r.module.io["thermal_trip"] is True and r.module.io["served_kw"] == 0.0
+    r.reverse["heat"] = AirInlet(30.0)
+    r.run(299)
+    assert r.module.io["thermal_trip"] is True
+    r.run(2)
+    assert r.module.io["thermal_trip"] is False and r.module.io["served_kw"] > 150.0
+    lost = r.module.io["kwh_lost"]
+    r.run(10)
+    assert r.module.io["kwh_lost"] == lost
+
+
+def test_it_load_keeps_its_protection_timer_through_a_snapshot(rig: Any) -> None:
+    r = it_load(rig)
+    r.reverse["heat"] = AirInlet(45.0)
+    r.run(40)
+    other = it_load(rig)
+    other.run(40)
+    other.module.restore(r.module.snapshot())
+    other.reverse["heat"] = AirInlet(45.0)
+    other.run(19)
+    assert other.module.io["thermal_trip"] is False
+    other.run(2)
+    assert other.module.io["thermal_trip"] is True

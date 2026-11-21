@@ -3,7 +3,7 @@
 # A single-building modular data center: 2,400 kW of IT load in 16 PODs, three
 # N+1 power trains and three N+1 air-cooled chillers. Every value here was
 # chosen independently as a round number so the plant balances; none is taken
-# from a real facility. Each value carries `source` or `assumed: true`
+# from a restricted source. Each value carries `source` or `assumed: true`
 # (ADC-PRV-004).
 #
 # Modules still at fidelity F0 are stubs; their sizing parameters are added
@@ -67,6 +67,12 @@ modules:
     params:
       design_kw: {value: 150.0, unit: kW, assumed: true}
       airflow_kg_s: {value: 12.0, unit: kg/s, assumed: true}
+      # Servers shut down on inlet air well above the ASHRAE A1 allowable
+      # limit of 32 degC, and start again once the inlet is back inside it.
+      shutdown_inlet_c: {value: 40.0, unit: degC, assumed: true}
+      shutdown_hold_s: {value: 60.0, unit: s, assumed: true}
+      restart_inlet_c: {value: 32.0, unit: degC, assumed: true}
+      restart_hold_s: {value: 300.0, unit: s, assumed: true}
   - id: cooling.weather
     instances: [SITE]
     params:

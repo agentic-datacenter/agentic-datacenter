@@ -2,7 +2,7 @@
 
 `agentic-datacenter bench run --tier <name>` sets the length, the seeds and how each proposal is judged. Options given beside a tier take precedence. The tier's bounds are on the card, under `judging`.
 
-`benchmark-v1` has 23 scenarios, and every time on this page was measured on those. The next version adds four (ADR 0028) and has not been timed.
+Every time on this page was measured on `benchmark-v1`, which had 23 scenarios. `benchmark-v1.1` has 27, and its IT load trips on hot inlet air; it has not been timed yet. Expect a season to take about 27/23 of the times below.
 
 | Tier | Scenarios | Seeds | Replay of each proposal | Proposals judged per run | For |
 | --- | --- | --- | --- | --- | --- |

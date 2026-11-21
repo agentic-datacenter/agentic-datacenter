@@ -36,9 +36,9 @@ Model and type names of your own equipment may stay if you want them to; say so.
 
 ## How to share
 
-1. **Describe the data** with the [Calibration data issue form](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=calibration-data.yml): what it measures, its period and sampling, and the terms it is shared on. **Do not attach the data to the issue.** Issues are public.
-2. **Send the data** when a maintainer replies, by a private transfer agreed in the issue. Agentic-Datacenter's maintainers can sign a non-disclosure agreement first.
-3. **Check what is published.** Before anything is merged, you see the calibration report and every file that will be public.
+1. **Describe the data by e-mail**, to the contact address in [`COMMERCIAL_LICENSING.md`](https://github.com/darklordVirtual/agentic-datacenter/blob/main/COMMERCIAL_LICENSING.md), with "Calibration data" in the subject. Say what it measures (equipment, quantities, units), its period and sampling, whether it is published data, measured in operation or measured in a laboratory, the terms it is shared on, and whether you want to be credited by name. Do not attach the data yet. Do not open a public issue: an issue shows everyone who holds data, even when it contains none.
+2. **Send the data** when a maintainer replies, by a private transfer agreed by e-mail. Agentic-Datacenter's maintainers can sign a non-disclosure agreement first.
+3. **Check what is published.** Before anything is merged, you see the calibration report and every file that will be public. Your name, or your organisation's, becomes public only if you asked to be credited.
 
 Preferred format: CSV or Parquet, timestamps in UTC, SI units, and one short sheet saying the sampling interval, what each meter measures and its accuracy.
 

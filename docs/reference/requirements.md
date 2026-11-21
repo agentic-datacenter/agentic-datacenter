@@ -44,7 +44,7 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-GOV-005` | 8 | yes | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_governance.py` |
 | `ADC-GOV-006` | 8 | yes | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_contract_compile.py` |
 | `ADC-GOV-007` | 8 | yes | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/scenario/test_op13_ad09_governed.py` |
-| `ADC-GOV-008` | 8 | yes | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_http_gate.py`<br>`tests/conformance/test_gate_cli.py` |
+| `ADC-GOV-008` | 8 | yes | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_http_gate.py`<br>`tests/conformance/test_gate_check_service.py`<br>`tests/conformance/test_gate_cli.py` |
 | `ADC-IEC-001` | 6 | yes | `agentic-datacenter-iec61850` | `packages/agentic-datacenter-iec61850/tests/test_scl.py`<br>`tests/protocol/test_iec61850_model.py` |
 | `ADC-IEC-002` | 6 | yes | `agentic-datacenter-iec61850` | `packages/agentic-datacenter-iec61850/tests/test_library.py`<br>`tests/protocol/test_iec61850_read_report.py` |
 | `ADC-IEC-003` | 6 | yes | `agentic-datacenter-iec61850` | `tests/conformance/test_iec61850_denied_services.py`<br>`tests/scenario/test_iec61850_scenarios.py` |
@@ -69,7 +69,7 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-PIN-004` | 8 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_ci.py`<br>`tests/conformance/test_pin_diff.py` |
 | `ADC-PIN-005` | 8 | yes | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_binding.py` |
 | `ADC-PIN-006` | 8 | yes | `agentic-datacenter-remora` | `tests/conformance/test_matrix_remora_maturity.py` |
-| `ADC-PLT-001` | 10 | no | none | `tests/bench/test_plant_interface_cards.py`<br>`tests/scenario/test_plant_interface.py` |
+| `ADC-PLT-001` | 10 | no | none | `tests/bench/test_reference_cards.py`<br>`tests/scenario/test_plant_interface.py` |
 | `ADC-PLT-002` | 10 | no | none | none |
 | `ADC-PLT-003` | 10 | no | none | none |
 | `ADC-PLT-004` | 10 | no | none | none |
@@ -89,7 +89,7 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-PRV-005` | 0 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_ci.py` |
 | `ADC-SAF-001` | 1 | yes | `agentic-datacenter-net` | `packages/agentic-datacenter-iec61850/tests/test_library.py`<br>`packages/agentic-datacenter-net/tests/test_bind_guard.py`<br>`tests/conformance/test_iec61850_denied_services.py`<br>`tests/protocol/test_bacnet_conformance.py`<br>`tests/protocol/test_modbus_conformance.py`<br>`tests/protocol/test_opcua_conformance.py`<br>`tests/protocol/test_snmp_conformance.py` |
 | `ADC-SAF-002` | 1 | yes | `agentic-datacenter-net` | `packages/agentic-datacenter-net/tests/test_no_external_clients.py` |
-| `ADC-SCN-001` | 9 | yes | `fuel`, `security` | `tests/scenario/test_ad08.py`<br>`tests/scenario/test_iec61850_scenarios.py`<br>`tests/scenario/test_op13_ad09_governed.py`<br>`tests/scenario/test_scenario_library.py` |
+| `ADC-SCN-001` | 9 | yes | `fuel`, `security` | `tests/scenario/test_ad06.py`<br>`tests/scenario/test_ad08.py`<br>`tests/scenario/test_iec61850_scenarios.py`<br>`tests/scenario/test_op13_ad09_governed.py`<br>`tests/scenario/test_scenario_library.py` |
 | `ADC-SUP-001` | 5 | yes | `agentic-datacenter-supervisory` | `packages/agentic-datacenter-supervisory/tests/test_alarms.py` |
 | `ADC-SUP-002` | 5 | yes | `agentic-datacenter-supervisory` | `packages/agentic-datacenter-supervisory/tests/test_alarms.py`<br>`packages/agentic-datacenter-supervisory/tests/test_command_service.py`<br>`packages/agentic-datacenter-supervisory/tests/test_log_integrity.py`<br>`packages/agentic-datacenter-supervisory/tests/test_read_api.py` |
 | `ADC-SUP-003` | 5 | yes | `agentic-datacenter-supervisory` | `packages/agentic-datacenter-supervisory/tests/test_command_service.py`<br>`packages/agentic-datacenter-supervisory/tests/test_read_api.py` |

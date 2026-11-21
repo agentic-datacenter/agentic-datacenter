@@ -1,10 +1,12 @@
 """CI as code: pinning, per-package jobs, the ruleset and provenance (SDD 12.4)."""
 
-import hashlib
+import importlib.util
 import json
+import os
 import re
 import tomllib
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
@@ -191,14 +193,13 @@ def test_no_job_that_calls_a_paid_model_api_starts_by_itself() -> None:
 
 
 @pytest.mark.req("ADC-CI-005")
-def test_ruleset_requires_checks_review_and_no_automatic_merge() -> None:
+def test_ruleset_requires_a_pull_request_and_its_checks() -> None:
     ruleset = json.loads((REPO / ".github/rulesets/main.json").read_text(encoding="utf-8"))
     rules = {rule["type"]: rule.get("parameters", {}) for rule in ruleset["rules"]}
     assert ruleset["enforcement"] == "active"
     assert ruleset["conditions"]["ref_name"]["include"] == ["~DEFAULT_BRANCH"]
-    review = rules["pull_request"]
-    assert review["required_approving_review_count"] >= 1
-    assert review["require_code_owner_review"] is True
+    assert ruleset["bypass_actors"] == []
+    assert "pull_request" in rules
     checks = {c["context"] for c in rules["required_status_checks"]["required_status_checks"]}
     pr_jobs = set(yaml.safe_load((REPO / ".github/workflows/pr.yml").read_text("utf-8"))["jobs"])
     assert checks and checks <= pr_jobs
@@ -207,10 +208,46 @@ def test_ruleset_requires_checks_review_and_no_automatic_merge() -> None:
 
 
 @pytest.mark.req("ADC-CI-005")
+def test_review_is_required_from_everyone_but_the_maintainer() -> None:
+    """While there is one maintainer, only the admin role may merge without a review.
+
+    The bypass is limited to pull requests, and the required checks are in the
+    other ruleset, which nobody bypasses.
+    """
+    path = REPO / ".github/rulesets/main-review.json"
+    ruleset = json.loads(path.read_text(encoding="utf-8"))
+    assert ruleset["enforcement"] == "active"
+    assert ruleset["conditions"]["ref_name"]["include"] == ["~DEFAULT_BRANCH"]
+    assert ruleset["bypass_actors"] == [
+        {"actor_id": 5, "actor_type": "RepositoryRole", "bypass_mode": "pull_request"}
+    ]
+    (rule,) = ruleset["rules"]
+    review = rule["parameters"]
+    assert rule["type"] == "pull_request"
+    assert review["required_approving_review_count"] >= 1
+    assert review["require_code_owner_review"] is True
+
+
+@pytest.mark.req("ADC-CI-005")
 def test_release_tags_must_be_signed() -> None:
     ruleset = json.loads((REPO / ".github/rulesets/tags.json").read_text(encoding="utf-8"))
     assert ruleset["target"] == "tag"
     assert "required_signatures" in {rule["type"] for rule in ruleset["rules"]}
+
+
+@pytest.mark.req("ADC-CI-005")
+def test_benchmark_tags_cannot_be_moved_or_deleted() -> None:
+    path = REPO / ".github/rulesets/benchmark-tags.json"
+    ruleset = json.loads(path.read_text(encoding="utf-8"))
+    assert ruleset["target"] == "tag" and ruleset["enforcement"] == "active"
+    assert ruleset["conditions"]["ref_name"]["include"] == ["refs/tags/benchmark-*"]
+    assert ruleset["bypass_actors"] == []
+    assert {"deletion", "update", "non_fast_forward"} <= {r["type"] for r in ruleset["rules"]}
+
+
+def test_every_ruleset_file_is_checked() -> None:
+    checked = {"main.json", "main-review.json", "tags.json", "benchmark-tags.json"}
+    assert {p.name for p in (REPO / ".github/rulesets").glob("*.json")} == checked
 
 
 @pytest.mark.req("ADC-CI-005")
@@ -236,53 +273,51 @@ def test_docstrings_are_required_on_every_public_object() -> None:
 
 # --- provenance --------------------------------------------------------------
 
-TERMS = REPO / "tools/forbidden_terms.sha256"
-TEXT_SUFFIXES = {".py", ".md", ".yaml", ".yml", ".toml", ".json", ".txt", ""}
+
+def _terms_tool() -> Any:
+    spec = importlib.util.spec_from_file_location(
+        "forbidden_terms", REPO / "tools/forbidden_terms.py"
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
-def hashed_words(text: str) -> set[str]:
-    words = re.findall(r"[A-Za-zÀ-ÿ0-9]+", text.lower())
-    grams = set(words) | {" ".join(p) for p in zip(words, words[1:], strict=False)}
-    grams |= {" ".join(p) for p in zip(words, words[1:], words[2:], strict=False)}
-    return {hashlib.sha256(g.encode("utf-8")).hexdigest() for g in grams}
-
-
-def test_term_scan_finds_a_hashed_term_of_one_to_three_words() -> None:
-    forbidden = hashlib.sha256(b"acme tower project").hexdigest()
-    assert forbidden in hashed_words("Built for the ACME Tower Project, phase 2.")
-    assert forbidden not in hashed_words("Built for the Acme project tower.")
+def test_term_scan_finds_a_keyed_term_of_one_to_three_words() -> None:
+    tool = _terms_tool()
+    forbidden = tool.digest(b"k", "acme tower project")
+    assert forbidden in tool.hashed_words(b"k", "Built for the ACME Tower Project, phase 2.")
+    assert forbidden not in tool.hashed_words(b"k", "Built for the Acme project tower.")
+    assert forbidden not in tool.hashed_words(b"other", "Built for the ACME Tower Project.")
 
 
 @pytest.mark.req("ADC-PRV-002")
 def test_no_tracked_file_contains_a_forbidden_term() -> None:
-    """The terms are committed as hashes only, so the names are not in the repository."""
-    import subprocess
+    """The terms are committed as keyed hashes only, so the names are not in the repository.
 
-    forbidden = {
-        line.split()[0]
-        for line in TERMS.read_text(encoding="utf-8").splitlines()
-        if line.strip() and not line.startswith("#")
-    }
-    tracked = subprocess.run(
-        ["git", "ls-files"], cwd=REPO, capture_output=True, text=True, check=True
-    ).stdout.split("\n")
-    hits = []
-    for name in filter(None, tracked):
-        path = REPO / name
-        if path.suffix in TEXT_SUFFIXES and path.is_file():
-            if forbidden & hashed_words(path.read_text(encoding="utf-8", errors="ignore")):
-                hits.append(name)
-    assert hits == []
+    The key is not in the repository either, and no pull request gets it, so
+    this scan runs where the owner has the key. The nightly workflow scans every
+    commit with it (``tools/forbidden_terms.py scan-history``).
+    """
+    tool = _terms_tool()
+    forbidden = tool.known()
+    key = tool.read_key()
+    if key is None:
+        if os.environ.get("ADC_TERMS_REQUIRED") == "1":
+            pytest.fail("ADC_TERMS_REQUIRED=1 and no ADC_TERMS_KEY: the scan cannot run")
+        pytest.skip("no ADC_TERMS_KEY here, so the keyed scan for ADC-PRV-002 cannot run")
+    tool.check_key(key)
+    assert tool.scan_files(forbidden, key) == []
 
 
 @pytest.mark.req("ADC-PRV-001")
 @pytest.mark.req("ADC-PRV-005")
-def test_notices_state_the_basis_and_the_standards_and_state_no_reproduction() -> None:
+def test_notices_list_the_reference_and_the_standards_and_state_no_reproduction() -> None:
     notices = (REPO / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
-    assert "informed by how real modular data centers" in notices
-    assert "does not identify or quote any particular facility" in notices
+    assert "The reference specification" in notices and "unpublished" in notices.lower()
     assert "No text from any standard is reproduced" in notices
-    assert "No text from any design document is reproduced" in notices
+    assert "No text from it is reproduced" in notices
     for standard in ("62443-3-2", "62443-3-3", "EN 15232", "ASHRAE TC 9.9", "ISO 8528-5", "61850"):
         assert standard in notices
 

@@ -34,18 +34,18 @@ def _at(text: str) -> datetime:
 
 def test_season_1_is_the_season_that_was_published(tool: ModuleType) -> None:
     first = tool.season(1)
-    assert first["deadline"] == "2026-12-02T12:00:00Z"
-    assert first["round"] == 34469812
-    assert first["version"] == "benchmark-v1"
-    assert first["opens"] == "2026-11-17"
+    assert first["deadline"] == "2027-01-13T12:00:00Z"
+    assert first["round"] == 35679412
+    assert first["version"] == "benchmark-v1.1"
+    assert first["opens"] == "2026-11-20"
 
 
 def test_each_season_opens_when_the_one_before_closes_and_lasts_four_weeks(
     tool: ModuleType,
 ) -> None:
     assert tool.season(2)["opens"] == tool.season(1)["deadline"]
-    assert tool.season(2)["deadline"] == "2026-12-30T12:00:00Z"
-    assert tool.season(3)["deadline"] == "2027-01-27T12:00:00Z"
+    assert tool.season(2)["deadline"] == "2027-02-10T12:00:00Z"
+    assert tool.season(3)["deadline"] == "2027-03-10T12:00:00Z"
     for number in range(2, 40):
         this, before = tool.season(number), tool.season(number - 1)
         assert this["opens"] == before["deadline"]
@@ -64,11 +64,12 @@ def test_the_round_of_a_season_is_the_one_emitted_at_its_deadline(tool: ModuleTy
 
 def test_a_season_is_always_open(tool: ModuleType) -> None:
     assert tool.current(_at("2026-11-20T00:00:00Z"))["number"] == 1
-    assert tool.current(_at("2026-12-02T11:59:59Z"))["number"] == 1
+    assert tool.current(_at("2027-01-13T11:59:59Z"))["number"] == 1
     # At the instant of the round the season is closed and the next is open.
-    assert tool.current(_at("2026-12-02T12:00:00Z"))["number"] == 2
-    assert tool.current(_at("2026-12-30T12:00:00Z"))["number"] == 3
-    moment = _at("2026-11-18T00:00:00Z")
+    assert tool.current(_at("2027-01-13T12:00:00Z"))["number"] == 2
+    assert tool.current(_at("2027-02-10T12:00:00Z"))["number"] == 3
+    # Season 1 was set by hand and is longer; after it, none is longer than four weeks.
+    moment = _at(tool.season(1)["deadline"])
     for _ in range(200):
         open_now = tool.current(moment)
         assert _at(open_now["deadline"]) > moment
@@ -78,10 +79,10 @@ def test_a_season_is_always_open(tool: ModuleType) -> None:
 
 def test_a_season_uses_the_benchmark_version_frozen_when_it_opens(tool: ModuleType) -> None:
     plan = dict(tool.load())
-    assert tool.season(9, plan)["version"] == "benchmark-v1"
+    assert tool.season(9, plan)["version"] == "benchmark-v1.1"
     plan["versions"] = [*plan["versions"], {"from_season": 5, "tag": "benchmark-v2"}]
     assert [tool.season(n, plan)["version"] for n in (4, 5, 9)] == [
-        "benchmark-v1", "benchmark-v2", "benchmark-v2",
+        "benchmark-v1.1", "benchmark-v2", "benchmark-v2",
     ]  # fmt: skip
 
 
@@ -97,10 +98,10 @@ def test_the_calendar_on_the_page_is_the_one_the_rule_gives(tool: ModuleType) ->
 def test_the_command_says_which_season_is_open(
     tool: ModuleType, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    assert tool.main(["current", "--at", "2026-12-10T08:00:00Z"]) == 0
+    assert tool.main(["current", "--at", "2027-01-20T08:00:00Z"]) == 0
     said = capsys.readouterr().out
-    assert "Season 2" in said and "2026-12-30T12:00:00Z" in said
-    assert str(tool.season(2)["round"]) in said and "benchmark-v1" in said
+    assert "Season 2" in said and "2027-02-10T12:00:00Z" in said
+    assert str(tool.season(2)["round"]) in said and "benchmark-v1.1" in said
     assert tool.main(["calendar", "--check"]) == 0
 
 
@@ -109,7 +110,7 @@ def test_the_readme_and_the_form_name_no_season_that_will_pass() -> None:
     readme = (REPO / "README.md").read_text(encoding="utf-8")
     form = (REPO / ".github/ISSUE_TEMPLATE/gate-registration.yml").read_text(encoding="utf-8")
     for text in (readme, form):
-        assert "Season 1" not in text and "2 December" not in text and "34469812" not in text
+        assert "Season 1" not in text and "13 January" not in text and "35679412" not in text
         assert "docs/bench/PUBLIC_TEST.md" in text
     assert "always open" in readme and "always open" in form
 
@@ -135,11 +136,11 @@ def test_a_registration_stays_for_every_season_until_its_issue_is_closed(
     second = tool.season(2)
     deadline = _at(second["deadline"])
     issues = [
-        _issue(1, "2026-11-20T10:00:00Z", None, "still open from season 1"),
-        _issue(2, "2026-11-21T10:00:00Z", "2026-12-01T10:00:00Z", "closed in season 1"),
-        _issue(3, "2026-11-22T10:00:00Z", "2026-12-15T10:00:00Z", "closed in season 2"),
-        _issue(4, "2026-12-20T10:00:00Z", None, "opened in season 2"),
-        _issue(5, "2026-12-31T10:00:00Z", None, "opened in season 3"),
+        _issue(1, "2026-11-25T10:00:00Z", None, "still open from season 1"),
+        _issue(2, "2026-11-26T10:00:00Z", "2027-01-05T10:00:00Z", "closed in season 1"),
+        _issue(3, "2026-11-27T10:00:00Z", "2027-01-20T10:00:00Z", "closed in season 2"),
+        _issue(4, "2027-01-25T10:00:00Z", None, "opened in season 2"),
+        _issue(5, "2027-02-11T10:00:00Z", None, "opened in season 3"),
     ]
     listed = registrations(issues, deadline, standing=True)
     assert [entry["issue"] for entry in listed] == [1, 4]
@@ -151,5 +152,5 @@ def test_a_registration_stays_for_every_season_until_its_issue_is_closed(
 def test_the_plan_is_a_small_file_anyone_can_read() -> None:
     plan = json.loads((REPO / "docs/bench/seasons.json").read_text(encoding="utf-8"))
     assert plan["length_days"] == 28
-    assert plan["first_deadline"] == "2026-12-02T12:00:00Z"
-    assert plan["versions"][0] == {"from_season": 1, "tag": "benchmark-v1"}
+    assert plan["first_deadline"] == "2027-01-13T12:00:00Z"
+    assert plan["versions"][0] == {"from_season": 1, "tag": "benchmark-v1.1"}

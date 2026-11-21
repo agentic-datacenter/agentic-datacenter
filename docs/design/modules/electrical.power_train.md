@@ -71,7 +71,7 @@ Any setting point can be overridden by a profile parameter of the same name.
 | `dropout_low_pu`, `pickup_low_pu`, `pickup_high_pu`, `dropout_high_pu` | 0.90, 0.95, 1.05, 1.10 | pu | `assumed: true` |
 | Breaker operating time | 50 | ms | `assumed: true` (SDD 6.1) |
 
-These are round values for the generic profile. A restricted profile sets its own.
+These are round values for the generic profile. The restricted reference profile sets its own.
 
 ## Faults
 

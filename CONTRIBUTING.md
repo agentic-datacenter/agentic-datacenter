@@ -1,6 +1,6 @@
 # Contributing
 
-These rules apply to human and automated contributors alike. Agentic-Datacenter was built from one design document, `docs/design/SDD-ADC-001.md`; decisions made since are ADRs in `docs/design/adr/`. The opening table of the design document says which sections matter for your change. If the design document is ambiguous or wrong, say so in the pull request instead of guessing.
+These rules apply to human and automated contributors alike, and so does the [code of conduct](CODE_OF_CONDUCT.md). Agentic-Datacenter was built from one design document, `docs/design/SDD-ADC-001.md`; decisions made since are ADRs in `docs/design/adr/`. The opening table of the design document says which sections matter for your change. If the design document is ambiguous or wrong, say so in the pull request instead of guessing.
 
 ## Setup and checks
 
@@ -33,15 +33,15 @@ For a small change, run the tests that touch what changed first. `uv run python 
 - Names the requirement IDs it closes in its description.
 - Is test-first: failing tests are committed before the implementation.
 - Stays under about 1,500 changed lines, not counting generated maps and fixtures. Split it if it is larger.
-- Is merged by a person. Nobody merges their own PR, and nothing merges automatically.
+- Is merged by a person, after the required checks have passed. Nothing merges automatically. A pull request from anyone else is reviewed and approved by the maintainer before it is merged. There is one maintainer today, so the maintainer's own pull requests are merged without a second review, once the required checks pass (`.github/rulesets/`).
 - Adds no dependency beyond those in section 5 of the design document without an ADR.
 - Carries no authorship or co-author trailer naming an AI tool, in commits or in files (`tests/conformance/test_authorship.py`).
 
 ## Things that are never done here
 
-- Copying text from a design document of a real facility or from any standard into the repository.
-- Writing anything that identifies a real facility: the names of a project, owner, engineer or site, or the title, issue, date or section numbers of a design document, anywhere, including test names and commit messages.
-- Committing `profiles/restricted_ref.yaml`, or any value taken from a real facility.
+- Copying text from the reference specification or from any standard into the repository.
+- Writing anything that identifies the reference specification: the names of its project, owner, engineer or site, its title, issue, date or section numbers, anywhere, including test names and commit messages.
+- Committing `profiles/restricted_ref.yaml`, or any value taken from the reference specification.
 - Changing REMORA from an Agentic-Datacenter pull request. Changes REMORA needs go as separate PRs against its `dev` branch.
 - Importing REMORA outside `agentic-datacenter-remora`, or the IEC 61850 protocol library outside `agentic-datacenter-iec61850`.
 - Connecting to real equipment, or binding a protocol server to a reachable interface.
@@ -73,3 +73,7 @@ Agentic-Datacenter is under the Business Source License 1.1 (`LICENSE`), and the
 A `Signed-off-by` line alone does not grant this.
 
 These terms apply only to a change you ask to have merged into this repository. A gate kept in a repository of your own is not a contribution, whether you wrote it from nothing or started from `examples/`, which is under the MIT licence. Nor is opening an issue, registering a gate, or sharing a result through the "Gate result" form.
+
+## How the code is written
+
+The maintainer writes Agentic-Datacenter with the help of AI coding assistants. Every change is read and merged by the maintainer, is committed under the maintainer's name, and has to pass the same tests and release check as any other. A result counts because the checks pass and anyone can run them again, not because of who or what wrote the code.

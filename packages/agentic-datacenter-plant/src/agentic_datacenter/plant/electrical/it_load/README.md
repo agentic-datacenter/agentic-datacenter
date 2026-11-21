@@ -1,6 +1,6 @@
 # electrical.it_load
 
-The IT equipment of one POD: power drawn from two feeds, the heat it releases, and server fans that respond to inlet temperature.
+The IT equipment of one POD: power drawn from two feeds, the heat it releases, server fans that respond to inlet temperature, and a thermal shutdown when the inlet stays too hot.
 
 - Fidelity: `F1`
 - Zone: `Z1-POD-{instance}`

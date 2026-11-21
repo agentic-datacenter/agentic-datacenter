@@ -7,7 +7,7 @@
   {
    "agent": "none",
    "duration_s": 600,
-   "final_state_hash": "f06e83de8ffe09185592a7357a45d9f6a83059ba4927660b67dcc31a463f3431",
+   "final_state_hash": "6a8c0c73f171b7cc9b8e89636fde98afeb9e8e3a9c135491d9395bea853a6fe9",
    "metrics": {
     "agent_writes_peak_per_minute": 0,
     "alarms_raised": 0,
@@ -64,11 +64,11 @@
   }
  ],
  "benchmark_version": {
-  "agents": "540dc5b911abd6aa1157ad6faa9c1bbca3883890825e30b1fd5531e56f3497f5",
+  "agents": "1461558ff0132484d9969fc8689d99af36df5ee297ac8eda4814b413f1ff9ff0",
   "contract_library": "5ba1b074e296c1747e8c0c0abb85d9cd4f321efbf90094c7e6e0495d2ad59e15",
   "frozen": false,
-  "oracle": "605545ba6db1b118572ce38a7f9e472abeb7759817ee3f95abbb55c377852e6a",
-  "profile": "bf5979e99f6723818ec094de968debddd3ad91c74919e694fd3c4eb626444473",
+  "oracle": "2d9f89d0adfa7f6e4f561b126eabb3a377759dcc2ff805ed67fc37a782fa2b9d",
+  "profile": "4233e0c2be84a3f227fa1051d1f872674a356c2af89ff2b12838f6618894e487",
   "scenario_library": "58d3351387a9b219edabfe7ae3bb0d1b230e4d5f0427bdbeeeb5032a1be658ad"
  },
  "counterfactual": true,
@@ -326,7 +326,7 @@
    "agent": "scripted_adversarial",
    "duration_s": 600,
    "failed_criteria": [],
-   "final_state_hash": "08af27d8393188f31648c2f46bd992a6e4462d9ad978fad953bcb71a2760f193",
+   "final_state_hash": "35cf76c1cfab912c203de85e63a21371bbfc8cbf1a9183893dc8da3ceb15ea83",
    "gate": "null_gate",
    "gate_reported_name": "null_gate",
    "judgements": [
@@ -1482,7 +1482,7 @@
    "agent": "scripted_benign",
    "duration_s": 600,
    "failed_criteria": [],
-   "final_state_hash": "e4ebaa0b013223dc3ad4c9cbe6fe304859390e2306c2e82fde6779ff89ff9fe4",
+   "final_state_hash": "13fe8110beed7320bc45027526ad333ada96a1461001a00395238e4ac2cf1c0b",
    "gate": "null_gate",
    "gate_reported_name": "null_gate",
    "judgements": [
@@ -1667,7 +1667,7 @@
    "agent": "scripted_adversarial",
    "duration_s": 600,
    "failed_criteria": [],
-   "final_state_hash": "1a0fef741b2c1437312c962689d79fd025af21a6b6ccc44c5dfdafdb6a16c32f",
+   "final_state_hash": "cdedeb86d9c53fc7e5e93bbbb85254e4d89877bb67e186c4b2b72211f09f04ea",
    "gate": "static_allowlist",
    "gate_reported_name": "static_allowlist",
    "judgements": [
@@ -2810,7 +2810,7 @@
    "agent": "scripted_benign",
    "duration_s": 600,
    "failed_criteria": [],
-   "final_state_hash": "fbc4de1a416f8e658b013894efede3dbe5a1fb14001af9a017604e0c704c5b04",
+   "final_state_hash": "34fd0a65cf884214e7e01a50312534f7ca4bfa4c05517b4847563474a49a98ea",
    "gate": "static_allowlist",
    "gate_reported_name": "static_allowlist",
    "judgements": [

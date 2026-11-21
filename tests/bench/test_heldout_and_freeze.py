@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 import json
 from pathlib import Path
 
@@ -14,7 +15,7 @@ from agentic_datacenter.governance.bindings.null_gate import NullGate
 from agentic_datacenter.governance.contracts import ContractLibrary
 from agentic_datacenter.scenarios.bench import benchmark_version, run_benchmark
 from agentic_datacenter.scenarios.evidence import verify_bundle
-from agentic_datacenter.scenarios.heldout import commitment, variants
+from agentic_datacenter.scenarios.heldout import SCHEME, commitment, unchanged, variants
 from agentic_datacenter.scenarios.scenario import library_ids, load_scenario
 
 REPO = Path(__file__).resolve().parents[2]
@@ -55,6 +56,47 @@ def test_a_variant_is_the_template_with_other_numbers() -> None:
         assert peak != 36.0
 
 
+FROZEN = json.loads((REPO / "docs/bench/VERSION.json").read_text(encoding="utf-8"))["scenarios"]
+
+
+#: No event, or only a mandate that holds from the start: nothing a variant can move.
+NOTHING_TO_VARY = {"OP-09", "AD-13", "AD-14"}
+
+
+@pytest.mark.parametrize("scenario_id", FROZEN)
+def test_a_variant_moves_every_kind_of_event_and_keeps_their_order(scenario_id: str) -> None:
+    template = load_scenario(scenario_id)
+    if scenario_id in NOTHING_TO_VARY:
+        assert unchanged(template, "secret-a", 3)
+        return
+    assert not unchanged(template, "secret-a", 3)
+    for variant in variants(template, "secret-a", 5):
+        was = [e.at_s for e in template.timeline]
+        now = [e.at_s for e in variant.timeline]
+        for i, j in itertools.combinations(range(len(was)), 2):
+            assert (was[i] < was[j]) == (now[i] < now[j]) and (was[i] == was[j]) == (
+                now[i] == now[j]
+            )
+        for a, b in zip(template.timeline, variant.timeline, strict=True):
+            kinds = {k for k, v in a.model_dump().items() if v is not None} - {"at_s"}
+            assert kinds == {k for k, v in b.model_dump().items() if v is not None} - {"at_s"}
+            if a.note is not None:
+                assert b.note is not None and a.note in b.note
+
+
+def test_an_injected_note_still_carries_its_instruction_to_the_scripted_agent() -> None:
+    from agentic_datacenter.scenarios.agents import _DIRECTIVE
+
+    template = load_scenario("AD-06")
+    plain = _DIRECTIVE.search(str(template.timeline[0].note))
+    assert plain is not None
+    framed = {str(v.timeline[0].note) for v in variants(template, "secret-a", 12)}
+    assert len(framed) > 1
+    for note in framed:
+        found = _DIRECTIVE.search(note)
+        assert found is not None and found.groupdict() == plain.groupdict()
+
+
 def test_the_commitment_binds_the_secret_without_showing_it() -> None:
     assert commitment("secret-a") == commitment("secret-a") != commitment("secret-b")
     assert len(commitment("secret-a")) == 64 and "secret-a" not in commitment("secret-a")
@@ -65,7 +107,12 @@ def test_a_card_with_held_out_variants_says_so_and_keeps_them_apart() -> None:
         PROFILE, CONTRACTS, GATES, ["scripted_adversarial"], ["OP-03"], [1], 900,
         counterfactual=False, allow_unfrozen=True, heldout_secret="secret-a", heldout_variants=2,
     )  # fmt: skip
-    assert card["heldout"] == {"commitment": commitment("secret-a"), "variants_per_template": 2}
+    assert card["heldout"] == {
+        "commitment": commitment("secret-a"),
+        "scheme": SCHEME,
+        "variants_per_template": 2,
+        "unchanged": [],
+    }
     tracks = {run["run_id"]: run["track"] for run in card["runs"]}
     assert sorted(tracks.values()).count("D") == 4 and len(tracks) == 6
     assert all(".D" in run_id for run_id, track in tracks.items() if track == "D")
