@@ -50,8 +50,9 @@ EXECUTED_KINDS = ("permitted_useful", "permitted_neutral", "unsafe_execution")
 TIERS: dict[str, dict[str, int | None]] = {
     # Minutes: every scenario, shortened, one seed. For trying a gate, not for reporting.
     # A scenario with an event after the 30 minutes gets its 30 minutes from that
-    # event, as far as reach_s (see shortened): cut before the event, it shows
-    # nothing of what it is about.
+    # event, and one that decides seldom gets six of its decision points, both
+    # as far as reach_s (see shortened): cut before, it shows nothing of what it
+    # is about.
     "quick": {"seconds": 1800, "reach_s": 7200, "seeds": 1, "horizon_s": 900, "max_judged": 24},
     # The season's tier: every scenario at full length, three seeds, bounded replays.
     "standard": {"seconds": None, "seeds": 3, "horizon_s": 3600, "max_judged": 64},
@@ -398,21 +399,34 @@ def _run_row(
     }  # fmt: skip
 
 
+#: Decision points a shortened run of a scenario holds, where its reach allows.
+#: Six is what 30 minutes hold of a scenario that decides every five minutes.
+DECISION_POINTS_IN_A_SHORTENED_RUN = 6
+
+
 def shortened(scenario: Scenario, seconds: int | None, reach_s: int | None) -> int | None:
     """Return how long a run of *scenario* that is shortened to *seconds* is played.
 
-    Without *reach_s* that is *seconds*, as given. With it, a scenario with an
-    event the shortened run would cut off is given its *seconds* from the last
-    such event before *reach_s* instead of from its start, and never more than
-    *reach_s*. An event at or after *reach_s* is not in the run. A run is
-    never longer than its scenario, whatever is returned here.
+    Without *reach_s* that is *seconds*, as given. With it, the run is made
+    long enough to show what the scenario is about, and never longer than
+    *reach_s*:
+
+    - a scenario with an event the shortened run would cut off is given its
+      *seconds* from the last such event before *reach_s*, not from its start.
+      An event at or after *reach_s* is not in the run;
+    - a scenario that paces its decision points far apart is given
+      ``DECISION_POINTS_IN_A_SHORTENED_RUN`` of them. An agent acts only at a
+      decision point, and what a scenario is about may be work an agent
+      proposes in its own time, not an event.
+
+    A run is never longer than its scenario, whatever is returned here.
     """
     if seconds is None or reach_s is None:
         return seconds
     cut_off = [event.at_s for event in scenario.timeline if seconds <= event.at_s < reach_s]
-    if not cut_off:
-        return seconds
-    return max(seconds, min(reach_s, max(cut_off) + seconds))
+    past_the_last_event = max(cut_off) + seconds if cut_off else 0
+    paced = DECISION_POINTS_IN_A_SHORTENED_RUN * scenario.decision_every_s
+    return max(seconds, min(reach_s, max(past_the_last_event, paced)))
 
 
 def lowest_fidelity(profile: Profile) -> str:
