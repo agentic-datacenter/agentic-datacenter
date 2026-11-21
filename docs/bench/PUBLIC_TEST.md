@@ -59,7 +59,7 @@ A season fixes three things before any participant can know its held-out scenari
 3. **Run the public tracks at any time** on the frozen version, at its tag. The main branch carries the next version while it is being made, and a season's run made there is refused.
 
     ```sh
-    git checkout benchmark-v1 && uv sync    # the tag of the season's version, from the calendar
+    git checkout benchmark-v1.1 && uv sync    # the tag of the season's version, from the calendar
     uv run agentic-datacenter bench run --tier season --gate <gate> --gate static_allowlist --jobs 8 --out build/season1
     ```
 
@@ -92,7 +92,7 @@ A season fixes three things before any participant can know its held-out scenari
 | `null_gate` · `static_allowlist` | baselines: no gate; role and range checks | `UNGOVERNED` · `STATIC_ALLOWLIST` |
 | `remora` · `remora_governed` · `remora_shadow` | REMORA, pinned in `REMORA_PIN` | `DECISION_ONLY` · `GOVERNED` · `SHADOW` |
 
-The built-in gates are written by Agentic-Datacenter's authors and are reported apart from the others. The maintainers have run one season of `remora_governed` at the tag `benchmark-v1`; it is not reported yet. Every other run so far is a development run.
+The built-in gates are written by Agentic-Datacenter's authors and are reported apart from the others. The maintainers ran one season of `remora_governed` at the tag `benchmark-v1`, a version that ran no season and was replaced by `benchmark-v1.1` before the repository was public; it is a development run and is not reported. Every run so far is a development run.
 
 ## Verified and self-reported results
 

@@ -66,7 +66,7 @@ uv run agentic-datacenter bench run --tier quick --gate http_gate --gate static_
 - **Run** the public scenarios on your own machine, whenever you are ready, at the tag of the season's benchmark version.
 - **Hidden variants** close each season. They are drawn from a public randomness beacon at the deadline, so nobody can know them before, the authors included.
 
-The frozen version `benchmark-v1` has 23 scenarios. The main branch has 27: the four new ones, `AD-11` to `AD-14`, are not in a frozen version yet and are meant for the next one.
+The frozen version `benchmark-v1.1` has all 27 scenarios of the library.
 
 A result is published as *verified* when the maintainers ran it on their benchmark runner from the frozen tag, and as *self-reported* when a participant ran it. The maintainers run only the built-in gates.
 

@@ -4,7 +4,7 @@ Agentic-Datacenter is built so that any governance system can be put between an 
 
 What you get:
 
-- your gate under the scenarios of the library, operational and adversarial (23 in `benchmark-v1`, from section 10 of the design document), with a careful and a hostile scripted agent;
+- your gate under the scenarios of the library, operational and adversarial (27 in `benchmark-v1.1`, from section 10 of the design document), with a careful and a hostile scripted agent;
 - every blocked proposal judged by counterfactual replay, every run compared with the same scenario and seed without an agent;
 - a result card, with the safety, false block and approval figures beside those of the built-in gates, and the release gate (`agentic-datacenter bench check`) that refuses a card in which harm got through;
 - an evidence bundle per run that anyone can verify.

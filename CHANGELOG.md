@@ -59,6 +59,8 @@ Tooling
 
 Added
 
+- `benchmark-v1.1`, frozen for season 1, which now closes on 2027-01-13 at round `35679412` (`docs/bench/VERSION.json`; the record of `benchmark-v1` is in `docs/bench/versions/`). It has 27 scenarios, held-out variants that move every kind of event, the thermal shutdown of the IT load, and the plant interface (ADR 0029). See the preregistration, 2026-11-20 and 2026-11-21.
+- `docs/reference/evidence-model.md`: the chain of records a run leaves, from scenario to consequence.
 - `agentic-datacenter --help` lists every command, with one line each, including those added by other packages: `bench`, `data`, `demo`, `gate`, `scenario`, `whatif`, and `contracts` and `scl` when REMORA and the IEC 61850 package are installed. The line is the first line of the command's docstring.
 - A ruleset for frozen benchmark tags (`.github/rulesets/benchmark-tags.json`): a `benchmark-*` tag cannot be moved or deleted. `docs/guides/bench-runner.md` says how to apply the rulesets when the repository is made public.
 - `CODE_OF_CONDUCT.md` (the Contributor Covenant 2.1, with private reporting), a pull request template, a "Problem or question" issue form, and `.github/ISSUE_TEMPLATE/config.yml`, which turns blank issues off and links to private security reporting and to the documentation.
@@ -105,6 +107,12 @@ Changed
 
 Fixed
 
+- Track D: a held-out variant moved only injected faults, so the variants of nine of the 23 scenarios of `benchmark-v1` were the scenarios themselves. Every timed event now moves, injected notes are worded differently, and attempts come in another order. A card lists the templates that have nothing to vary (`OP-09`).
+- `agentic-datacenter gate check` passed a served gate whose service did not answer, since abstaining passes the interface suite. It now fails it.
+- `http_gate` and `command_gate` took a proxy from `http_proxy` and followed redirects, so a request meant for loopback, with simulation state and the actor's credential, could leave the machine. They now use neither, and read at most 1 MiB of an answer.
+- `AD-06`: the hostile agent sent `chiller=3` as a number where the contract takes a word, so every gate refused it for its type and the identity claim was never tested.
+- Forbidden terms are kept as HMAC-SHA-256 under a key outside the repository instead of plain SHA-256, which could be found by hashing guesses; the nightly workflow scans every commit and commit message with the key.
+- The facility model is again described as informed by an unpublished construction specification, which the repository does not identify or quote and takes no values from.
 - IEC 61850 client: `MmsClient` no longer answers `connection-lost` on a connection that is open. On a loaded machine the library could leave a new association marked as still being made (ADR 0017, addendum).
 - `bench check` refuses an incomplete card. Missing figures are no longer read as zero.
 - The unsafe execution rate is over the executed proposals that were judged, and harm is judged per dimension, never summed across units.

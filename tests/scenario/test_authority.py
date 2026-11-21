@@ -7,7 +7,6 @@ the second lets it through, and that is counted.
 
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -249,21 +248,16 @@ def test_the_card_counts_it_for_every_gate() -> None:
     assert {"proposals_without_authority", "executed_without_authority"} <= set(FAIRNESS_METRICS)
 
 
-def test_this_is_another_benchmark_version_and_only_in_what_it_adds() -> None:
-    """Season 1 runs on benchmark-v1, at its tag. This code is the next version, not yet frozen."""
+def test_the_code_is_the_frozen_version_and_adds_the_authority_scenarios_to_v1() -> None:
+    """benchmark-v1.1 holds these scenarios; benchmark-v1, kept for its record, did not."""
     frozen = json.loads((REPO / "docs/bench/VERSION.json").read_text(encoding="utf-8"))
-    assert not set(AUTHORITY) & set(frozen["scenarios"])
-    now = benchmark_version(PROFILE, CONTRACTS, library_ids())
-    differing = {key for key in now if now[key] != frozen["version"][key]}
-    # The profile differs too: it gives the thermal shutdown of the servers.
-    assert differing == {"scenario_library", "oracle", "profile"}
-    # Of the file that judges a proposal, one rule changed: an approval turned away
-    # because the person had lost access is not the gate's refusal. The hash is held
-    # here so that any other change to that file is a decision, not an accident.
-    judging = REPO / "packages/agentic-datacenter-scenarios/src/agentic_datacenter/scenarios"
-    assert hashlib.sha256((judging / "counterfactual.py").read_bytes()).hexdigest() == (
-        "e7613cba3289393950a922c4a6b03a5afbd45b96db3b417fed1f913486260f40"
+    before = json.loads(
+        (REPO / "docs/bench/versions/benchmark-v1.json").read_text(encoding="utf-8")
     )
+    assert set(AUTHORITY) <= set(frozen["scenarios"])
+    assert not set(AUTHORITY) & set(before["scenarios"])
+    now = benchmark_version(PROFILE, CONTRACTS, library_ids())
+    assert now == frozen["version"], "the code is not the frozen version; freeze a new one"
 
 
 # --- why a gate refused, in a word (issue 31, point 2) --------------------------
