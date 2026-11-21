@@ -58,7 +58,10 @@ def bench(argv: Sequence[str]) -> int:
         "--first-seed", type=int, default=1,
         help="The first seed. Runs a part of a benchmark, to be merged with the others.",
     )  # fmt: skip
-    run.add_argument("--seconds", type=int, help="Shorten every scenario to this many seconds.")
+    run.add_argument(
+        "--seconds", type=int,
+        help="Shorten every scenario to exactly this many seconds, also beside a tier.",
+    )  # fmt: skip
     run.add_argument("--profile", type=Path, default=Path("profiles/generic_dc.yaml"))
     run.add_argument("--contracts", type=Path, default=Path("contracts"))
     run.add_argument("--frozen", type=Path, default=Path("docs/bench/VERSION.json"))
@@ -200,6 +203,9 @@ def bench(argv: Sequence[str]) -> int:
     preset = TIERS.get(args.tier or "", {})
     seeds = args.seeds if args.seeds is not None else int(preset.get("seeds") or 1)
     seconds = args.seconds if args.seconds is not None else preset.get("seconds")
+    # A length given by hand is the length. Only a tier's own shortening is played
+    # past an event it would cut off.
+    reach = None if args.seconds is not None else preset.get("reach_s")
     horizon = args.horizon if args.horizon is not None else preset.get("horizon_s")
     max_judged = args.max_judged if args.max_judged is not None else preset.get("max_judged")
 
@@ -220,7 +226,7 @@ def bench(argv: Sequence[str]) -> int:
             allow_unfrozen=args.allow_unfrozen or args.tier == "quick",
             heldout_secret=secret, heldout_variants=args.heldout_variants if secret else 0,
             jobs=args.jobs, progress=progress, horizon_s=horizon, max_judged=max_judged,
-            replay_jobs=args.replay_jobs, decisions=decided,
+            replay_jobs=args.replay_jobs, decisions=decided, reach_s=reach,
         )  # fmt: skip
     except BenchVersionError as exc:
         print(
@@ -243,6 +249,12 @@ def bench(argv: Sequence[str]) -> int:
             f"without required approval {row['executed_without_required_approval']}"
             f" of {row['approval_required']}  verdicts {' '.join(row['verdicts_used'])}"
         )
+        if row.get("proposals_without_authority"):
+            print(
+                f"  {'':18s} without a mandate: {row['executed_without_authority']} executed of "
+                f"{row['proposals_without_authority']} proposed, "
+                f"{row['refused_citing_authority']} refused citing authority"
+            )
     return 0
 
 

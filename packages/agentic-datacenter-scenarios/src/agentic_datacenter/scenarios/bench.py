@@ -49,7 +49,10 @@ EXECUTED_KINDS = ("permitted_useful", "permitted_neutral", "unsafe_execution")
 #: Presets of ``agentic-datacenter bench run --tier`` (docs/bench/TIERS.md). ``None`` is no bound.
 TIERS: dict[str, dict[str, int | None]] = {
     # Minutes: every scenario, shortened, one seed. For trying a gate, not for reporting.
-    "quick": {"seconds": 1800, "seeds": 1, "horizon_s": 900, "max_judged": 24},
+    # A scenario with an event after the 30 minutes gets its 30 minutes from that
+    # event, as far as reach_s (see shortened): cut before the event, it shows
+    # nothing of what it is about.
+    "quick": {"seconds": 1800, "reach_s": 7200, "seeds": 1, "horizon_s": 900, "max_judged": 24},
     # The season's tier: every scenario at full length, three seeds, bounded replays.
     "standard": {"seconds": None, "seeds": 3, "horizon_s": 3600, "max_judged": 64},
     # What a season reports, as preregistered: 30 seeds. Split it with --first-seed
@@ -395,6 +398,23 @@ def _run_row(
     }  # fmt: skip
 
 
+def shortened(scenario: Scenario, seconds: int | None, reach_s: int | None) -> int | None:
+    """Return how long a run of *scenario* that is shortened to *seconds* is played.
+
+    Without *reach_s* that is *seconds*, as given. With it, a scenario with an
+    event the shortened run would cut off is given its *seconds* from the last
+    such event before *reach_s* instead of from its start, and never more than
+    *reach_s*. An event at or after *reach_s* is not in the run. A run is
+    never longer than its scenario, whatever is returned here.
+    """
+    if seconds is None or reach_s is None:
+        return seconds
+    cut_off = [event.at_s for event in scenario.timeline if seconds <= event.at_s < reach_s]
+    if not cut_off:
+        return seconds
+    return max(seconds, min(reach_s, max(cut_off) + seconds))
+
+
 def lowest_fidelity(profile: Profile) -> str:
     """Return the lowest fidelity level among the modules *profile* uses."""
     return min(
@@ -567,6 +587,7 @@ def run_benchmark(
     max_judged: int | None = None,
     replay_jobs: int = 1,
     decisions: list[dict[str, Any]] | None = None,
+    reach_s: int | None = None,
 ) -> dict[str, Any]:
     """Run every gate against every agent, scenario and seed, and return the result card.
 
@@ -586,6 +607,10 @@ def run_benchmark(
     With *decisions*, a list, what each gate decided on each proposal and the
     reasons it gave are added to it, in the order of the card. They are not on
     the card, which is the same with and without them.
+
+    With *reach_s*, a scenario shortened by *duration_s* is played past an
+    event that would be cut off, as far as that many seconds (:func:`shortened`).
+    The card then carries it as ``duration_reach_s``, and each run its own length.
 
     With *replay_jobs* above one, the replay of each run that is large enough
     is spread over that many helper processes, beside the *jobs* runs made at
@@ -622,13 +647,14 @@ def run_benchmark(
     calls: list[tuple[str, Callable[..., dict[str, Any]], tuple[Any, ...]]] = []
     for scenario, variant_number in plan:
         name = _name(scenario.id, variant_number)
+        length = shortened(scenario, duration_s, reach_s)
         for seed in seeds:
             where = (scenario, variant_number, profile, contracts)
-            calls.append((f"{name}.no_agent.{seed}", _no_agent_run, (*where, seed, duration_s)))
+            calls.append((f"{name}.no_agent.{seed}", _no_agent_run, (*where, seed, length)))
             for gate_name, make_gate in gates.items():
                 for agent_name in agent_names:
                     arguments = (
-                        *where, gate_name, make_gate, agent_name, seed, duration_s, counterfactual,
+                        *where, gate_name, make_gate, agent_name, seed, length, counterfactual,
                         horizon_s, max_judged, replay_jobs,
                     )  # fmt: skip
                     label = f"{name}.{gate_name}.{agent_name}.{seed}"
@@ -658,21 +684,25 @@ def run_benchmark(
                 if number == 0 and unchanged(template, heldout_secret, heldout_variants)
             ],
         }
+    head: dict[str, Any] = {
+        "heldout": card_heldout,
+        "schema_version": CARD_SCHEMA_VERSION,
+        "benchmark_version": {**version, "frozen": frozen},
+        "label": "benchmark result" if frozen else "development run, not a benchmark result",
+        "lowest_fidelity": fidelity,
+        "statements": list(STATEMENTS),
+        "counterfactual": counterfactual,
+        "judging": {"horizon_s": horizon_s, "max_judged": max_judged},
+        "seeds": list(seeds),
+        "agents": list(agent_names),
+        "scenarios": list(scenario_ids),
+        "duration_override_s": duration_s,
+    }
+    if duration_s is not None and reach_s is not None:
+        # Only on a card made with a reach, so every other card is the card it was.
+        head["duration_reach_s"] = reach_s
     return _card(
-        {
-            "heldout": card_heldout,
-            "schema_version": CARD_SCHEMA_VERSION,
-            "benchmark_version": {**version, "frozen": frozen},
-            "label": "benchmark result" if frozen else "development run, not a benchmark result",
-            "lowest_fidelity": fidelity,
-            "statements": list(STATEMENTS),
-            "counterfactual": counterfactual,
-            "judging": {"horizon_s": horizon_s, "max_judged": max_judged},
-            "seeds": list(seeds),
-            "agents": list(agent_names),
-            "scenarios": list(scenario_ids),
-            "duration_override_s": duration_s,
-        },
+        head,
         runs,
         baselines,
         list(gates),
@@ -766,7 +796,8 @@ def _differences(
 #: What must be the same on cards that are merged into one.
 MERGE_KEYS = (
     "schema_version", "benchmark_version", "label", "lowest_fidelity", "statements",
-    "counterfactual", "judging", "agents", "scenarios", "duration_override_s", "heldout",
+    "counterfactual", "judging", "agents", "scenarios", "duration_override_s",
+    "duration_reach_s", "heldout",
 )  # fmt: skip
 
 

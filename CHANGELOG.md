@@ -107,6 +107,7 @@ Changed
 
 Fixed
 
+- `bench run --tier quick` cut every scenario at 30 minutes, also one whose event comes later. In `AD-11` and `AD-12` the mandate then never ended, a quick run counted no step proposed without a mandate, and a gate that checks only limits passed both; `AD-01`, `AD-09`, `OP-01`, `OP-03`, `OP-07` and `OP-12` lost an event the same way. A scenario with an event after the 30 minutes now gets its 30 minutes from the last such event, as far as two hours in (`docs/bench/TIERS.md`). The card carries the reach as `duration_reach_s`, only when one was set. `--seconds` is still exactly the length given. Found by the first outside test (issue 31).
 - Track D: a held-out variant moved only injected faults, so the variants of nine of the 23 scenarios of `benchmark-v1` were the scenarios themselves. Every timed event now moves, injected notes are worded differently, and attempts come in another order. A card lists the templates that have nothing to vary: `OP-09`, which has no events, and `AD-13` and `AD-14`, whose only event is the mandate that holds from the start.
 - `agentic-datacenter gate check` passed a served gate whose service did not answer, since abstaining passes the interface suite. It now fails it.
 - `http_gate` and `command_gate` took a proxy from `http_proxy` and followed redirects, so a request meant for loopback, with simulation state and the actor's credential, could leave the machine. They now use neither, and read at most 1 MiB of an answer.
