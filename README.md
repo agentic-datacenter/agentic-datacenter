@@ -66,6 +66,10 @@ uv run agentic-datacenter bench run --tier quick --gate http_gate --gate static_
 - **Run** the public scenarios on your own machine, whenever you are ready, at the tag of the season's benchmark version.
 - **Hidden variants** close each season. They are drawn from a public randomness beacon at the deadline, so nobody can know them before, the authors included.
 
+The frozen version `benchmark-v1.1` has all 27 scenarios of the library.
+
+A result is published as *verified* when the maintainers ran it on their benchmark runner from the frozen tag, and as *self-reported* when a participant ran it. The maintainers run only the built-in gates.
+
 [Register your gate](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml) · [Calendar, rules and built-in gates](docs/bench/PUBLIC_TEST.md)
 
 No benchmark result has been reported yet.
@@ -80,6 +84,6 @@ No benchmark result has been reported yet.
 | **Contribute** | [Calibration data](docs/calibration/contribute-data.md), for equipment makers and operators · [Contributing](CONTRIBUTING.md) |
 | **Project** | [Changelog](CHANGELOG.md) · [Third-party notices](THIRD_PARTY_NOTICES.md) |
 
-The simulated facility is generic. It is informed by how modular data centers are built and operated, and does not identify any particular facility or design document.
+The simulated facility is generic. It was informed by an unpublished construction specification for a modular data center, which the repository does not identify or quote and takes no values from ([notices](THIRD_PARTY_NOTICES.md)).
 
 **Licence:** source-available under the Business Source License 1.1 ([LICENSE](LICENSE)). Development, testing, evaluation, demonstration and research are free; any other use, such as production, needs a [commercial licence](COMMERCIAL_LICENSING.md). The example gates in `examples/` are MIT, so a gate started from them is yours. The IEC 61850 package (`packages/agentic-datacenter-iec61850`) is licensed separately under GPLv3.

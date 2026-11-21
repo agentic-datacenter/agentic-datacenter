@@ -22,8 +22,13 @@ The CI design also needs three tools that section 5 of the design document does 
 ## Consequences
 
 - The build can be green at every stage and still fail the moment a due requirement loses its test.
-- `ADC-PRV-002` is enforced by a scan against hashed terms. The committed list is empty until the owner supplies the hashes, so until then the scan proves nothing; `tools/forbidden_terms.sha256` says so.
+- `ADC-PRV-002` is enforced by a scan against terms kept as HMAC-SHA-256 under a key outside the repository, so a list of guesses cannot be hashed and compared. The nightly workflow scans every file and message of every commit. The committed list is empty until the owner supplies the terms, and until then the scan proves nothing; `tools/forbidden_terms.hmac` says so.
 - `ADC-CI-005`: the rulesets under `.github/rulesets/` are the committed definition, and a test checks their content. Applying them to the repository, and comparing the live settings with the files, needs an administrator token and is not done by any job yet.
 - The reference image is `ghcr.io/astral-sh/uv` for Python 3.12, pinned by digest. It has no `git`, which several tests need, so each job installs it from the distribution's package index. That one step is not pinned.
 - The integration job that installs REMORA needs a repository secret, `REMORA_READ_TOKEN`, with read access to the REMORA repository.
 - Workflows have not run on GitHub yet when this ADR is written; they were checked locally by running the same commands outside the container.
+
+## Addendum 2026-11-20: the REMORA read token is optional, and the rulesets
+
+- REMORA-research is public (ADR 0002, addendum of 2026-11-17), so `uv` fetches the pinned commit without access rights. The secret `REMORA_READ_TOKEN` is not needed and does not have to be created. `integration.yml` uses it if it exists, and skips that step without it.
+- The branch rules are now two rulesets. `main.json` requires a pull request and the checks, with no exceptions. `main-review.json` requires a code owner's review, which the admin role may skip on its own pull requests while there is one maintainer. Frozen benchmark tags have a ruleset of their own, `benchmark-tags.json`. They are still applied by hand (`docs/guides/bench-runner.md`).

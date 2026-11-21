@@ -53,7 +53,11 @@ def test_each_conclusion_is_marked_robust_or_not_over_the_uncertain_parameters()
     assert len(report.runs) == 1 + sum(len(v.values) for v in VARIATIONS)
 
     dropped = verdicts["No IT load is dropped when chilled water is lost"]
-    assert dropped.baseline is True and dropped.robust is True and dropped.flipped_by == []
+    # With the least thermal capacity the inlet passes the servers' shutdown
+    # temperature within the eight minutes, and the load trips.
+    assert dropped.baseline is True and dropped.robust is False
+    flips = [(f.variation, f.value) for f in dropped.flipped_by]
+    assert flips == [("POD thermal capacity", 3000.0)]
 
     critical = verdicts["Every POD is thermally critical eight minutes after chilled water is lost"]
     assert critical.baseline is True and critical.robust is True

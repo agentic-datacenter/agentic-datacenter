@@ -1,4 +1,5 @@
-# One human review is required on everything; these paths need the owner (SDD 12.4).
+# A pull request from anyone but the maintainer needs the owner's review; these paths need the owner (SDD 12.4).
+# While there is one maintainer, the maintainer's own pull requests merge on the required checks (.github/rulesets/main-review.json).
 *                                         @darklordVirtual
 **/interlocks.py                          @darklordVirtual
 packages/agentic-datacenter-net/                       @darklordVirtual

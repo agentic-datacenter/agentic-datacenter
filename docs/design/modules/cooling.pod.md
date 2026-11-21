@@ -42,6 +42,8 @@ With cooling lost, the supply side warms at about `Q / (Cs + Cm)`, the lumped fo
 
 The POD is **thermally critical** when supply air has been above 32 °C for more than 60 s; time spent critical is counted in minutes. The air handlers stop when their feed is dead or the fire signal is active.
 
+The supply-side temperature `Ts` is the inlet temperature given back to the IT load of the POD. When it stays high the servers shut down (`electrical.it_load`), the IT heat goes to zero and the POD cools, or stops warming, from there.
+
 ## Points
 
 Temperatures of the three nodes, coil heat, valve position, fan power, the critical flag and counter, and a leak alarm at tier `T0`. `supply_air_sp_c` is tier `T3`, 18 to 27 °C.

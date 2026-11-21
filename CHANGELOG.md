@@ -26,7 +26,7 @@ Governance gates and the REMORA binding
 
 Scenarios and benchmark
 
-- Twenty-three scenarios, thirteen operational and ten adversarial, played by scripted agents: careful, hostile, drifting and flooding.
+- Twenty-seven scenarios, thirteen operational and fourteen adversarial, played by scripted agents: careful, hostile, drifting and flooding. The frozen version `benchmark-v1` has 23 of them; `AD-11` to `AD-14` are new on the main branch and are not in a frozen version yet.
 - Counterfactual replay: a blocked proposal is replayed as if it had been carried out, to show whether the block avoided harm or cost a useful step. Every run is also compared with the same scenario and seed with no agent.
 - `agentic-datacenter bench run` in four tiers (`docs/bench/TIERS.md`), in several processes or split over machines and merged. The result card is the same, byte for byte, however it was made.
 - `agentic-datacenter demo`: three scenarios with no gate and with one, from the same seed, as a page with every decision and its record and as a one-page result report in HTML and Markdown.
@@ -59,6 +59,14 @@ Tooling
 
 Added
 
+- `benchmark-v1.1`, frozen for season 1, which now closes on 2027-01-13 at round `35679412` (`docs/bench/VERSION.json`; the record of `benchmark-v1` is in `docs/bench/versions/`). It has 27 scenarios, held-out variants that move every kind of event, the thermal shutdown of the IT load, and the plant interface (ADR 0029). See the preregistration, 2026-11-20 and 2026-11-21.
+- `docs/reference/evidence-model.md`: the chain of records a run leaves, from scenario to consequence.
+- `agentic-datacenter --help` lists every command, with one line each, including those added by other packages: `bench`, `data`, `demo`, `gate`, `scenario`, `whatif`, and `contracts` and `scl` when REMORA and the IEC 61850 package are installed. The line is the first line of the command's docstring.
+- A ruleset for frozen benchmark tags (`.github/rulesets/benchmark-tags.json`): a `benchmark-*` tag cannot be moved or deleted. `docs/guides/bench-runner.md` says how to apply the rulesets when the repository is made public.
+- `CODE_OF_CONDUCT.md` (the Contributor Covenant 2.1, with private reporting), a pull request template, a "Problem or question" issue form, and `.github/ISSUE_TEMPLATE/config.yml`, which turns blank issues off and links to private security reporting and to the documentation.
+- `.github/dependabot.yml`: weekly, grouped update pull requests for the Python lock and for the actions. REMORA is left out; it moves only by a pin bump.
+- `docs/bench/PUBLIC_TEST.md` says how a verified result (run by the maintainers on the benchmark runner, from the frozen tag) differs from a self-reported one (run by a participant). The "Gate result" form says that what it shares is self-reported.
+- Servers shut down on hot inlet air (`electrical.it_load` 0.3.0). When a POD's inlet has been above 40 °C for 60 s, its IT load trips: it draws nothing, releases no heat, and the energy its workload asks for is counted in `it_kwh_lost`. It starts again when the inlet has been at or below 32 °C, the ASHRAE A1 allowable limit, for 300 s. The four values are profile parameters (`shutdown_inlet_c`, `shutdown_hold_s`, `restart_inlet_c`, `restart_hold_s`). The trip is a point, `thermal_trip`, an urgent alarm and an event, `it_load.thermal_trip`. Before, a run could report a POD at 60 °C with no IT energy lost. Runs where a POD gets that hot now lose IT energy, and the POD stops warming once its load has tripped. The committed examples in `docs/demo/`, the result report picture and the figure of the operator guide are made again: in `OP-03` with no control the hottest POD now peaks at 40.7 °C, not 61.7 °C, and 1,104 kWh of IT energy is lost, not 0.
 - The main branch now carries the next benchmark version while it is being made. Season 1 runs on `benchmark-v1` at its tag (`git checkout benchmark-v1`). `bench run --tier quick` is a development run without `--allow-unfrozen`, and a run refused for its version says where the frozen one is.
 - For the next benchmark version, not `benchmark-v1`: authority that changes during an incident (ADR 0028). A scenario event ends, passes on or narrows the mandate of a principal; every gate is told through one more premise; and each run counts the steps executed without a mandate. An approval from a person who has lost access is refused by the control path, whatever the gate, and counted. Four scenarios use it, `AD-11` to `AD-14`. A gate can give reason codes with a refusal (`reason_codes`, an optional field of the wire format), kept on the card and in `decisions.jsonl`, so a refusal for want of a mandate is told from one for another reason. Whatever the gate, each judgement also carries what was established as wrong with the step (`grounds`), and each run counts all its refusals by code and by ground (`refusals`). Card schema version 6.
 - `agentic-datacenter bench run` writes `decisions.jsonl` beside the card: each proposal, the gate's verdict and the reasons the gate gave, with the contract errors, limit errors and premises not established. The card is unchanged, so a card of the season is still the same file.
@@ -68,7 +76,7 @@ Added
 - `agentic-datacenter bench run --replay-jobs <n>` spreads the replay of one run over processes, for `--tier full`, where one week-long run in one process takes days (ADR 0026). The card is the same, byte for byte. The oracle's source and the frozen benchmark version are unchanged. `docs/bench/TIERS.md` says what machine each tier needs.
 - The public test says whose the `full` run of a season is: the maintainers', for built-in gates, never a participant's gate on the maintainers' machine (`docs/bench/PUBLIC_TEST.md`).
 - `tools/forbidden_terms.py`: the owner adds forbidden names as hashes, typed without being shown, and scans every file of every commit for them, not only the current ones.
-- `docs/calibration/contribute-data.md` and the "Offer calibration data" issue form: how equipment makers and operators can share anonymized data to calibrate a plant module, without data ever reaching a public issue.
+- `docs/calibration/contribute-data.md`: how equipment makers and operators can share anonymized data to calibrate a plant module, without data ever reaching a public issue.
 - `tools/season_registrations.py` lists a season's registered gates with the version each issue named at the deadline, read from the issue's edit history. The README is shorter: an operator guide (`docs/guides/operators.md`) and a glossary (`docs/reference/glossary.md`) hold what it no longer does.
 - Season 1 of the public test opens: the benchmark version is frozen (`docs/bench/VERSION.json`, tag `benchmark-v1`), and Track D is drawn from drand quicknet round `34469812` at 2026-12-02 12:00 UTC, the registration deadline (`docs/bench/PUBLIC_TEST.md`). The registration form also offers `command_gate`.
 - A one-page result report, written by `agentic-datacenter demo` as `executive.html` and `executive.md`. It opens with the result, has a chart per scenario, and states what a simulated result does not show. The committed example is `docs/demo/result-report.md`, made from `docs/demo/demo.json` by `tools/demo_example.py`.
@@ -80,6 +88,11 @@ Added
 
 Changed
 
+- The branch rules work for one maintainer. `main.json` requires a pull request and the seven checks from everyone, with no exceptions, and still forbids force pushes and deletion. The code owner's review moved to `main-review.json`, which the admin role may skip on its own pull requests. `CONTRIBUTING.md` says so: a pull request from anyone else is reviewed by the maintainer, and the maintainer's own are merged once the checks pass.
+- Calibration data is first offered by e-mail, to the contact in `COMMERCIAL_LICENSING.md`, so a public issue no longer shows who holds data. The "Offer calibration data" issue form is removed.
+- The result report says who stopped commands when there was no control: the control path and the plant's command service, which apply whatever the gate. `docs/demo/result-report.md` and its picture are regenerated; no figure changes.
+- The README, `docs/bench/PUBLIC_TEST.md` and this changelog say that `benchmark-v1` froze 23 scenarios and that the library on the main branch has 27.
+- `REMORA_READ_TOKEN` is not needed now that REMORA-research is public (ADR 0007, addendum). `integration.yml` still uses it if it exists.
 - `bench check --publication` also refuses a card that is not a complete season: seeds 1 to 30, every scenario of `docs/bench/VERSION.json` at full length, the season's judging bounds, and the frozen hashes themselves rather than the card's own flag.
 - The benchmark runner passes its inputs to the shell as environment variables and checks each first; no workflow pastes an input into a script (`tests/conformance/test_ci.py`).
 - The committed three-scenario example and its result report compare no control with `remora_governed`. Before, they compared it with `static_allowlist`.
@@ -94,6 +107,12 @@ Changed
 
 Fixed
 
+- Track D: a held-out variant moved only injected faults, so the variants of nine of the 23 scenarios of `benchmark-v1` were the scenarios themselves. Every timed event now moves, injected notes are worded differently, and attempts come in another order. A card lists the templates that have nothing to vary: `OP-09`, which has no events, and `AD-13` and `AD-14`, whose only event is the mandate that holds from the start.
+- `agentic-datacenter gate check` passed a served gate whose service did not answer, since abstaining passes the interface suite. It now fails it.
+- `http_gate` and `command_gate` took a proxy from `http_proxy` and followed redirects, so a request meant for loopback, with simulation state and the actor's credential, could leave the machine. They now use neither, and read at most 1 MiB of an answer.
+- `AD-06`: the hostile agent sent `chiller=3` as a number where the contract takes a word, so every gate refused it for its type and the identity claim was never tested.
+- Forbidden terms are kept as HMAC-SHA-256 under a key outside the repository instead of plain SHA-256, which could be found by hashing guesses; the nightly workflow scans every commit and commit message with the key.
+- The facility model is again described as informed by an unpublished construction specification, which the repository does not identify or quote and takes no values from.
 - IEC 61850 client: `MmsClient` no longer answers `connection-lost` on a connection that is open. On a loaded machine the library could leave a new association marked as still being made (ADR 0017, addendum).
 - `bench check` refuses an incomplete card. Missing figures are no longer read as zero.
 - The unsafe execution rate is over the executed proposals that were judged, and harm is judged per dimension, never summed across units.

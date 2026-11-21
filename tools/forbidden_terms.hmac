@@ -1,0 +1,10 @@
+# HMAC-SHA-256 of each forbidden term (ADC-PRV-002), one per line, under a key
+# that is not in the repository. Only the keyed hashes are committed, so the
+# terms are not in the repository and cannot be found by hashing guesses.
+#
+#   python tools/forbidden_terms.py init-key       (once; the key stays outside the repository)
+#   python tools/forbidden_terms.py add            (typed without being shown)
+#   python tools/forbidden_terms.py scan-history   (every file and message of every commit)
+#
+# CI reads the key from the Actions secret ADC_TERMS_KEY. Where the key is not
+# available, as on a fork, the scan is skipped and says so.

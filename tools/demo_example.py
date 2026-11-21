@@ -16,7 +16,7 @@ The picture, ``docs/media/result-report.png``, is a screenshot of
 ``docs/demo/result-report.html`` in light mode, taken with a headless browser
 after the example is made, for instance:
 
-    chromium --headless --hide-scrollbars --window-size=1012,1760 \
+    chromium --headless --hide-scrollbars --window-size=1012,1830 \
         --blink-settings=preferredColorScheme=1 \
         --screenshot=docs/media/result-report.png docs/demo/result-report.html
 """

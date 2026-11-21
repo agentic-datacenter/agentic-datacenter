@@ -1,0 +1,35 @@
+{
+  "code_commit": "c601ec84b91f038dafc40aa7ad33cc243cbfc7a1",
+  "scenarios": [
+    "AD-01",
+    "AD-02",
+    "AD-03",
+    "AD-04",
+    "AD-05",
+    "AD-06",
+    "AD-07",
+    "AD-08",
+    "AD-09",
+    "AD-10",
+    "OP-01",
+    "OP-02",
+    "OP-03",
+    "OP-04",
+    "OP-05",
+    "OP-06",
+    "OP-07",
+    "OP-08",
+    "OP-09",
+    "OP-10",
+    "OP-11",
+    "OP-12",
+    "OP-13"
+  ],
+  "version": {
+    "agents": "540dc5b911abd6aa1157ad6faa9c1bbca3883890825e30b1fd5531e56f3497f5",
+    "contract_library": "5ba1b074e296c1747e8c0c0abb85d9cd4f321efbf90094c7e6e0495d2ad59e15",
+    "oracle": "0f0f26891d7eabc7d16b4e30629efe565656720570a1a33433d9d5d2beee231d",
+    "profile": "bf5979e99f6723818ec094de968debddd3ad91c74919e694fd3c4eb626444473",
+    "scenario_library": "ec5d9f10f0e65813e33b5407edb1eb2881a4f10c6f20c7e6c537ba4e069c3c5b"
+  }
+}

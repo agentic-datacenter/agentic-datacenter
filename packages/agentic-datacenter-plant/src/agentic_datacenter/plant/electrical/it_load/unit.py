@@ -40,6 +40,12 @@ class ItLoad(SimModule):
     reference, and draw power with the cube of that speed, so a warmer supply
     air setpoint has a cost (ADC-FID-003). The workload follows one of three
     traces: steady, diurnal, or accelerated-compute with large fast swings.
+
+    The servers protect themselves from hot inlet air. When the inlet has been
+    above the shutdown temperature for the hold time, the load of the POD
+    trips: nothing is drawn and the energy the workload asks for is counted as
+    lost. It starts again only when the inlet has been at or below the restart
+    temperature for the restart hold time.
     """
 
     def __init__(self, ctx: ModuleContext, params: Mapping[str, JsonValue]) -> None:
@@ -58,8 +64,14 @@ class ItLoad(SimModule):
         self.trace = str(params.get("trace", "steady"))
         if self.trace not in TRACES:
             raise ValueError(f"{ctx.name}: unknown workload trace {self.trace!r}")
+        self.shutdown_c = param_number(params, "shutdown_inlet_c", 40.0)
+        self.shutdown_ms = round(param_number(params, "shutdown_hold_s", 60.0) * 1000)
+        self.restart_c = param_number(params, "restart_inlet_c", 32.0)
+        self.restart_ms = round(param_number(params, "restart_hold_s", 300.0) * 1000)
         self.next_change_ms = 0
         self.fan_speed = 1.0
+        self.tripped = False
+        self.since_ms: int | None = None
         self._share = dict.fromkeys(FEEDS, 0.0)
 
     def step(self, inputs: Inputs) -> None:
@@ -82,10 +94,10 @@ class ItLoad(SimModule):
         fan = self.design_kw * self.fan_fraction * self.fan_speed**3
         workload = self.design_kw * (1.0 - self.fan_fraction) * self.fraction
         wanted = 0.0 if epo.active else workload + fan
-        served = wanted if usable else 0.0
+        served = wanted if usable and not self.tripped else 0.0
         self._share = {n: served / len(usable) if n in usable else 0.0 for n in FEEDS}
         dropped = wanted > 0.0 and not usable
-        if dropped:
+        if wanted > 0.0 and served == 0.0:
             io["kwh_lost"] = io.number("kwh_lost") + wanted * self.ctx.step_ms / 3_600_000
         io["demand_kw"], io["served_kw"], io["dropped"] = wanted, served, dropped
         io["fan_kw"] = fan if served > 0.0 else 0.0
@@ -93,8 +105,11 @@ class ItLoad(SimModule):
         io["airflow_kg_s"] = self.airflow * self.fan_speed
 
     def step_slow(self, inputs: Inputs) -> None:
-        """Move along the workload trace."""
+        """Watch the inlet temperature and move along the workload trace."""
         now = self.ctx.now_ms
+        inlet = inputs.reverse["heat"]
+        if isinstance(inlet, AirInlet):
+            self._protect(inlet.inlet_c, now)
         if self.trace == "diurnal":
             wave = math.sin(2.0 * math.pi * (now / DAY_MS - 8.0 / 24.0))
             self.fraction = 0.75 + 0.25 * wave
@@ -103,13 +118,29 @@ class ItLoad(SimModule):
             self.fraction = stream.uniform(0.4, 1.0)
             self.next_change_ms = now + round(stream.uniform(30.0, 300.0) * 1000)
 
+    def _protect(self, inlet_c: float, now: int) -> None:
+        """Trip the load on a hot inlet, and start it again once the inlet is cool."""
+        if self.tripped:
+            counting, hold = inlet_c <= self.restart_c, self.restart_ms
+        else:
+            counting, hold = inlet_c > self.shutdown_c, self.shutdown_ms
+        if not counting:
+            self.since_ms = None
+            return
+        if self.since_ms is None:
+            self.since_ms = now
+        if now - self.since_ms >= hold:
+            self.tripped, self.since_ms = not self.tripped, None
+            self.io["thermal_trip"] = self.tripped
+            self.ctx.publish("it_load.thermal_trip", {"active": self.tripped, "inlet_c": inlet_c})
+
     def settled(self) -> bool:
-        """A steady workload does not need the one-second step."""
-        return self.trace == "steady"
+        """A steady workload does not need the one-second step while the protection is idle."""
+        return self.trace == "steady" and not self.tripped and self.since_ms is None
 
     def quiescent(self) -> bool:
         """Nothing changes unless energy is being lost."""
-        return not self.io.flag("dropped")
+        return not (self.io.flag("dropped") or self.tripped)
 
     def forward_outputs(self) -> Mapping[str, object]:
         """Return the heat released: all the power served."""
@@ -139,6 +170,7 @@ class ItLoad(SimModule):
             "io": self.io.snapshot(),
             "fraction": [self.fraction, self.fan_speed, self.next_change_ms],
             "share": [self._share[n] for n in FEEDS],
+            "protection": [self.tripped, self.since_ms],
         }
 
     def restore(self, state: JsonValue) -> None:
@@ -153,3 +185,7 @@ class ItLoad(SimModule):
         self.fraction, self.fan_speed = float(str(fraction[0])), float(str(fraction[1]))
         self.next_change_ms = int(str(fraction[2]))
         self._share = {n: float(v) for n, v in zip(FEEDS, share, strict=True)}
+        protection = state["protection"]
+        assert isinstance(protection, list | tuple)
+        self.tripped = bool(protection[0])
+        self.since_ms = None if protection[1] is None else int(str(protection[1]))
