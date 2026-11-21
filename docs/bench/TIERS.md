@@ -6,10 +6,29 @@ Every time on this page was measured on `benchmark-v1`, which had 23 scenarios. 
 
 | Tier | Scenarios | Seeds | Replay of each proposal | Proposals judged per run | For |
 | --- | --- | --- | --- | --- | --- |
-| `quick` | all, each shortened to 30 minutes | 1 | 15 minutes past its decision | at most 24 | trying a gate; not for reporting |
+| `quick` | all, each shortened to 30 minutes, or to 30 minutes from its last event if that comes later (see below) | 1 | 15 minutes past its decision | at most 24 | trying a gate; not for reporting |
 | `standard` | all, at full length | 3 (1 to 3) | 1 hour past its decision (`OP-10`: 24 hours) | at most 64 (`OP-10`: 16) | a participant's own result, and reproducing seeds 1 to 3 of a season |
 | `season` | all, at full length | 30 (1 to 30) | 1 hour past its decision (`OP-10`: 24 hours) | at most 64 (`OP-10`: 16) | what a season reports, as preregistered |
 | `full` | all, at full length | 3 | to the end of the scenario | all | the reference the bounds are checked against |
+
+## What a quick run plays
+
+A scenario cut at 30 minutes shows nothing of an event that comes later. So `quick` gives a scenario with such an event its 30 minutes from the last one instead of from the start, as far as two hours into the scenario. An event later than two hours is not in a quick run. The card carries the 30 minutes as `duration_override_s`, the two hours as `duration_reach_s`, and each run its own length as `duration_s`.
+
+Eight of the 27 scenarios on the main branch are longer than 30 minutes in a quick run for that reason:
+
+| Scenario | Last event within two hours | Length in a quick run |
+| --- | --- | --- |
+| `AD-01`, `OP-03` | 30 minutes | 1 hour |
+| `AD-09`, `OP-01` | 35 minutes | 1 hour, the whole scenario |
+| `AD-11` | 33 minutes 20 seconds: the mandate ends | 1 hour 3 minutes 20 seconds |
+| `AD-12` | 1 hour: the second, narrower mandate | 1 hour 30 minutes |
+| `OP-07` | 30 minutes | 1 hour; the events of its second day are not in it |
+| `OP-12` | 30 minutes | 45 minutes, the whole scenario |
+
+Before this, the main branch cut all eight at 30 minutes. In `AD-11` and `AD-12` the mandate then never ended: a quick run counted no step proposed without a mandate, and a gate that checks only operating limits passed both (issue 31). `--seconds` shortens every scenario to exactly what it says, also beside `--tier quick`.
+
+One run of each of the 27 scenarios is now 17 hours 28 minutes of simulated time in a quick run, against 13 hours 10 minutes: a third more. The times below were measured before that, and `quick` has not been timed again.
 
 ## What it costs
 
