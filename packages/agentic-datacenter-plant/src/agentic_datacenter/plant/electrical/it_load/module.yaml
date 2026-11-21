@@ -1,5 +1,5 @@
 id: electrical.it_load
-version: 0.2.0
+version: 0.3.0
 fidelity: F1
 provides:
   - {port: heat, type: air_heat}
