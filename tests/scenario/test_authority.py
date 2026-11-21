@@ -128,14 +128,18 @@ def test_a_scenario_without_such_an_event_knows_nothing_of_authority() -> None:
 def test_before_the_mandate_ends_it_holds_and_after_it_does_not(
     revoked: dict[str, RunResult],
 ) -> None:
-    (change,) = [e for e in load_scenario("AD-11").timeline if e.authority is not None]
+    given, change = [e for e in load_scenario("AD-11").timeline if e.authority is not None]
+    assert given.at_s == 0 and given.authority is not None and given.authority.contracts == "all"
     assert change.authority is not None and change.authority.contracts == []
     for result in revoked.values():
         decided = [r for r in result.records if r["verdict"] is not None]
         before = [r for r in decided if _second(r, "AD-11") < change.at_s]
         after = [r for r in decided if _second(r, "AD-11") >= change.at_s]
         assert before and after
-        assert all(_authority(r) is None and "authorized" not in r for r in before)
+        for record in before:
+            premise = _authority(record)
+            assert premise is not None and premise["holds"] is True
+            assert record["authorized"] is True
         for record in after:
             premise = _authority(record)
             assert premise is not None and premise["holds"] is False
@@ -171,14 +175,15 @@ def test_with_no_gate_at_all_it_is_executed_too() -> None:
 
 def test_control_passes_on_and_the_new_mandate_is_narrower() -> None:
     scenario = load_scenario("AD-12")
-    ended, given = [e for e in scenario.timeline if e.authority is not None]
+    first, ended, given = [e for e in scenario.timeline if e.authority is not None]
+    assert first.at_s == 0 and first.authority is not None and first.authority.contracts == "all"
     assert ended.authority is not None and ended.authority.contracts == []
     assert given.authority is not None and given.authority.contracts == [POD]
     result = _run("AD-12", static_allowlist)
     for record in (r for r in result.records if r["verdict"] is not None):
         second = _second(record, "AD-12")
         if second < ended.at_s:
-            assert "authorized" not in record
+            assert record["authorized"] is True
         elif second < given.at_s:
             assert record["authorized"] is False
         else:
@@ -209,7 +214,7 @@ def test_refusing_a_step_nobody_authorized_is_never_a_false_block() -> None:
 
 
 def test_a_run_put_back_after_the_change_still_knows_the_mandate() -> None:
-    (change,) = [e for e in load_scenario("AD-11").timeline if e.authority is not None]
+    _, change = [e for e in load_scenario("AD-11").timeline if e.authority is not None]
     from_second = (change.at_s // 300 + 2) * 300  # a decision point after the change
     original, replay, captured, restored = replay_unchanged(
         load_scenario("AD-11"), PROFILE, static_allowlist, "STATIC_ALLOWLIST",
@@ -272,7 +277,7 @@ def test_a_gate_can_say_in_a_word_why_it_refused(revoked: dict[str, RunResult]) 
     assert refused_for_it and all(r["verdict"] == "DENY" for r in refused_for_it)
     assert result.metrics.refused_citing_authority == len(refused_for_it)
     # A proposal refused before the mandate ended was refused for something else.
-    earlier = [r for r in result.records if "authorized" not in r and r["verdict"] == "DENY"]
+    earlier = [r for r in result.records if r.get("authorized") is True and r["verdict"] == "DENY"]
     assert all("authority" not in r.get("reason_codes", []) for r in earlier)
 
 
