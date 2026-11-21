@@ -41,15 +41,6 @@ def no_mandate(request: dict[str, Any]) -> str:
 
 def decide(request: dict[str, Any]) -> dict[str, Any]:
     """Return the answer to one ``evaluate`` request. Must be deterministic."""
-    answer = _decide(request)
-    kind = no_mandate(request)
-    if kind and "authority" in answer.get("reason_codes", []):
-        # Optional: which of the two kinds of no mandate the refusal was for.
-        answer["reason_details"] = {"authority": kind}
-    return answer
-
-
-def _decide(request: dict[str, Any]) -> dict[str, Any]:
     premises = request["premises"]
     refusals = list(premises["schema_errors"]) + list(premises["bound_errors"])
     refusals += list(premises["limit_errors"])
@@ -57,35 +48,52 @@ def _decide(request: dict[str, Any]) -> dict[str, Any]:
         refusals.insert(0, "unknown contract")
     unknown = [p["expr"] for p in premises["premises"] if p["holds"] is None]
     failed = [p["expr"] for p in premises["premises"] if p["holds"] is False]
+    # Who may act. The premise authority(<principal>, <contract>) says it, and so
+    # does the mandate record. A service started with ADC_GATE_DERIVES_AUTHORITY=1
+    # is sent the record alone, so this one decides from the record and reads
+    # the premise only when there is no record.
+    kind = no_mandate(request)
+    no_authority = bool(kind) or any(e.startswith("authority(") for e in failed)
+    if kind and not any(e.startswith("authority(") for e in failed):
+        failed.append(f"the mandate record: {kind}")
     # Why, in a word, for every way the step is wrong, not only the first found.
-    # Who may act is told as a premise too: authority(<principal>, <contract>).
     codes = [
         code
         for code, applies in (
-            ("authority", any(e.startswith("authority(") for e in failed)),
+            ("authority", no_authority),
             ("limit", bool(premises["bound_errors"] or premises["limit_errors"])),
-            ("premise", any(not e.startswith("authority(") for e in failed)),
+            (
+                "premise",
+                any(not e.startswith(("authority(", "the mandate record")) for e in failed),
+            ),
             ("evidence", bool(unknown)),
             ("malformed", bool(premises["schema_errors"]) or not premises["contract_known"]),
         )
         if applies
     ]
+    more: dict[str, Any] = {}
+    if request.get("mandate"):
+        # Optional: this gate's own finding, compared with the premise on the card.
+        more["authority_holds"] = not kind
+    if kind:
+        # Optional: which of the two kinds of no mandate the refusal is for.
+        more["reason_details"] = {"authority": kind}
     if refusals:
-        return {"verdict": "DENY", "reasons": refusals, "reason_codes": codes}
+        return {"verdict": "DENY", "reasons": refusals, "reason_codes": codes, **more}
     if unknown:
         return {"verdict": "ABSTAIN", "reasons": [f"cannot establish: {e}" for e in unknown],
-                "reason_codes": codes}  # fmt: skip
+                "reason_codes": codes, **more}  # fmt: skip
     if failed:
         return {"verdict": "DENY", "reasons": [f"premise does not hold: {e}" for e in failed],
-                "reason_codes": codes}  # fmt: skip
+                "reason_codes": codes, **more}  # fmt: skip
     if premises["approval"] in ("one_operator", "two_person"):
         approvers = 2 if premises["approval"] == "two_person" else 1
         return {"verdict": "VERIFY", "reasons": ["contract requires approval"],
-                "required_approvers": approvers, "reason_codes": ["approval"]}  # fmt: skip
+                "required_approvers": approvers, "reason_codes": ["approval"], **more}  # fmt: skip
     if premises["approval"] == "not_available":
         return {"verdict": "DENY", "reasons": ["contract cannot be approved here"],
-                "reason_codes": ["policy"]}  # fmt: skip
-    return {"verdict": "ALLOW", "reasons": ["premises hold; within bounds and limits"]}
+                "reason_codes": ["policy"], **more}  # fmt: skip
+    return {"verdict": "ALLOW", "reasons": ["premises hold; within bounds and limits"], **more}
 
 
 class Handler(BaseHTTPRequestHandler):

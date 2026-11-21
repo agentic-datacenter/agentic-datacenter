@@ -174,6 +174,11 @@ class Decision:
     #: With ``authority`` among the reason codes, which of the two it was: one of
     #: :data:`AUTHORITY_DETAILS`; empty if the gate does not say.
     authority_detail: str = ""
+    #: The gate's own finding of whether the proposer holds a mandate for this
+    #: contract; None if it does not say. Whatever its verdict: a gate may find
+    #: that a mandate holds and refuse for something else. Where a mandate was
+    #: set for the proposer it is compared with the premise (ADR 0031).
+    authority_holds: bool | None = None
 
 
 #: What a refusal for want of a mandate can say more (ADR 0031). The evidence
@@ -239,6 +244,11 @@ class GovernanceGate(Protocol):
 #
 #   enforces_limits: bool
 #       True when rate and cumulative limits are the gate's to enforce.
+#   derives_authority: bool
+#       True for a gate that works out for itself who may act. It is given the
+#       mandate record and not the premise ``authority(<principal>, <contract>)``.
+#       The record of the proposal still carries that premise, and the run is
+#       judged by it (ADR 0031).
 #   approve(decision_ref, approver, now_ms) -> None
 #       One person's approval. Raises GateRefusal when it is not taken.
 #   reject(decision_ref, approver, reason, now_ms) -> None

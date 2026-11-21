@@ -331,43 +331,65 @@ def _refusals(
     }
 
 
+#: What a record says of its proposer's mandate, where one was set: whether it
+#: held one, which kind of none by the register, which kind the gate said, and
+#: the gate's own finding (ADR 0031). Carried to the decisions file and to each
+#: judgement of the card.
+AUTHORITY_KEYS = ("authorized", "authority_detail", "reason_details", "gate_authority_holds")
+
+
+#: The counts of :func:`authority_counts` that are summed over runs.
+COUNTED_OF_AUTHORITY = (
+    "allowed_without_mandate", "findings_given", "findings_wrong", "details_given",
+    "details_wrong", "cited_authority_with_mandate",
+)  # fmt: skip
+
+
 def authority_counts(records: Sequence[Mapping[str, Any]]) -> dict[str, Any] | None:
-    """Return what a run shows of the two kinds of no mandate; None if it set no mandate.
+    """Return what a run shows of who may act; None if it set no mandate.
 
+    ``premise_told`` is whether the gate was given the premise
+    ``authority(...)``; a gate that derives authority is given only the record.
     ``without_mandate`` counts the decided proposals whose proposer held no
-    mandate, by what the register holds: never held, or ended. Beside it,
-    where a gate's own finding differs from the register (ADR 0031):
+    mandate, by what the register holds: never held, or ended. Beside them,
+    where the gate differs from the premise (ADR 0031):
 
-    - ``details_given``: of those proposals, the ones for which the gate said
-      which of the two kinds it was;
-    - ``details_wrong``: of those, the ones where it named the other kind, or a
-      word of its own;
+    - ``allowed_without_mandate``: of those proposals, the ones the gate allowed.
+      What was executed of them is ``executed_without_authority`` among the
+      run's metrics;
+    - ``findings_given``: proposals for which the gate stated its own finding of
+      whether the proposer holds a mandate, and ``findings_wrong``: of those,
+      the ones where it was not the premise;
+    - ``details_given``: of the proposals without a mandate, the ones for which
+      the gate said which of the two kinds it was, and ``details_wrong``: of
+      those, the ones where it named the other kind, or a word of its own;
     - ``cited_authority_with_mandate``: proposals whose proposer did hold a
       mandate, that the gate did not allow with ``authority`` among its codes.
-
-    The other way a gate can differ, allowing a step without a mandate, is
-    ``executed_without_authority`` among the run's metrics.
+      For a gate that states no finding.
     """
     told = [r for r in records if r["verdict"] is not None and "authorized" in r]
     if not told:
         return None
     kinds = dict.fromkeys(sorted(AUTHORITY_DETAILS), 0)
-    given = wrong = with_mandate = 0
+    counts = dict.fromkeys(COUNTED_OF_AUTHORITY, 0)
     for record in told:
         details = record.get("reason_details")
         said = details.get("authority") if isinstance(details, Mapping) else None
+        found = record.get("gate_authority_holds")
+        counts["findings_given"] += int(found is not None)
+        counts["findings_wrong"] += int(found is not None and found is not record["authorized"])
         if record["authorized"] is False:
             kind = str(record.get("authority_detail"))
             kinds[kind] = kinds.get(kind, 0) + 1
-            given += int(said is not None)
-            wrong += int(said is not None and said != kind)
+            counts["allowed_without_mandate"] += int(record["verdict"] == "ALLOW")
+            counts["details_given"] += int(said is not None)
+            counts["details_wrong"] += int(said is not None and said != kind)
         elif record["verdict"] != "ALLOW" and "authority" in _strings(record.get("reason_codes")):
-            with_mandate += 1
+            counts["cited_authority_with_mandate"] += 1
     return {
+        "premise_told": all(r.get("authority_premise_told") is not False for r in told),
         "without_mandate": kinds,
-        "details_given": given,
-        "details_wrong": wrong,
-        "cited_authority_with_mandate": with_mandate,
+        **counts,
     }
 
 
@@ -377,8 +399,12 @@ def _sum_authority(blocks: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     for block in blocks:
         for kind, count in block["without_mandate"].items():
             kinds[kind] = kinds.get(kind, 0) + int(count)
-    out: dict[str, Any] = {"without_mandate": dict(sorted(kinds.items()))}
-    for key in ("details_given", "details_wrong", "cited_authority_with_mandate"):
+    out: dict[str, Any] = {
+        # In how many of the runs the gate was given the record and not the premise.
+        "runs_premise_withheld": sum(1 for block in blocks if not block["premise_told"]),
+        "without_mandate": dict(sorted(kinds.items())),
+    }
+    for key in COUNTED_OF_AUTHORITY:
         out[key] = sum(int(block[key]) for block in blocks)
     return out
 
@@ -410,9 +436,8 @@ def _decisions(result: RunResult, known: Collection[str] | None = None) -> list[
             "reason_codes": _strings(record.get("reason_codes")),
             "grounds": grounds(record, known),
         }  # fmt: skip
-        # Only where a mandate was set for the proposer: whether it held one, which
-        # kind of none by the register, and which kind the gate said (ADR 0031).
-        for key in ("authorized", "authority_detail", "reason_details"):
+        # Only where a mandate was set for the proposer (ADR 0031).
+        for key in AUTHORITY_KEYS:
             if key in record:
                 line[key] = record[key]
         out.append(line)
@@ -436,6 +461,12 @@ def _run_row(
     # Why the gate refused, in a word, if it said (ADR 0028).
     codes = {str(r["proposal_id"]): _strings(r.get("reason_codes")) for r in result.records}
     wrong = {str(r["proposal_id"]): grounds(r, known) for r in result.records}
+    # Only where a mandate was set for the proposer, so that a judgement of any
+    # other run has the keys it had (ADR 0031).
+    mandate = {
+        str(r["proposal_id"]): {key: r[key] for key in AUTHORITY_KEYS if key in r}
+        for r in result.records
+    }
     for j in judged:
         kinds[j.kind] = int(str(kinds.get(j.kind, 0))) + 1
         if j.kind == "false_block" and j.proposal_id in delayed:
@@ -454,6 +485,7 @@ def _run_row(
                 **asdict(j), "kind": j.kind,
                 "reason_codes": codes.get(j.proposal_id, []),
                 "grounds": wrong.get(j.proposal_id, []),
+                **mandate.get(j.proposal_id, {}),
             }  # fmt: skip
             for j in judged
         ],
