@@ -47,7 +47,9 @@ class ExampleGate:
             elif premises.risk_tier in ("R0", "R1") and premises.approval == "none":
                 verdict, reasons = Verdict.ALLOW, ["low risk; premises hold"]
             else:
-                verdict, approvers, reasons = Verdict.VERIFY, 1, ["a person must approve"]
+                # As many people as the contract asks for, never fewer.
+                approvers = 2 if premises.approval == "two_person" else 1
+                verdict, reasons = Verdict.VERIFY, ["a person must approve"]
         if verdict is Verdict.ALLOW and not premises.writes:
             verdict, reasons = Verdict.DENY, ["nothing that can be executed"]
         # Why, in a word, for every way the step is wrong. Who may act is told as a
