@@ -147,6 +147,8 @@ class GovernedPath:
         #: Unanswered writes: proposal id, when, and what was meant to be written.
         self._unknown: list[tuple[str, int, list[BoundedWrite]]] = []
         self._gate_limits = bool(getattr(gate, "enforces_limits", False))
+        #: A gate that works out for itself who may act is not told the answer.
+        self._derives_authority = bool(getattr(gate, "derives_authority", False))
         #: How far ahead the agent's own clock runs (scenario AD-09). Reported, never used.
         self.agent_clock_skew_ms = 0
         kernel.state.register("governance.path", self, tracked=True)
@@ -265,6 +267,7 @@ class GovernedPath:
             self.restore_origins(),
         )
         authorized = self.authorized(actor.principal, contract_id)
+        shown = snapshot
         if authorized is not None:
             # Told to the gate as a premise, the form in which every gate is
             # already told what was established about a proposal.
@@ -274,17 +277,20 @@ class GovernedPath:
                 authorized,
                 f"{actor.principal} {held} for this contract",
             )
-            snapshot = replace(
-                snapshot,
-                premises=(*snapshot.premises, premise),
-                # What the premise was established from, for a gate that works
-                # out for itself who may act (ADR 0031).
-                mandate=self.mandate(actor.principal),
-            )
+            # The record the premise was established from goes to every gate, for
+            # one that works out for itself who may act (ADR 0031).
+            shown = replace(snapshot, mandate=self.mandate(actor.principal))
+            snapshot = replace(shown, premises=(*snapshot.premises, premise))
+            if not self._derives_authority:
+                shown = snapshot
+            else:
+                # Such a gate is given the record and not the answer. The record
+                # of the proposal keeps the premise: the run is judged by it.
+                record["authority_premise_told"] = False
             record["authorized"] = authorized
             if not authorized:
                 record["authority_detail"] = self._no_mandate(actor.principal, contract_id)
-        decision = self.gate.evaluate(proposal, snapshot, actor)
+        decision = self.gate.evaluate(proposal, shown, actor)
         # Whatever a gate returns, an ALLOW authorizes at most the writes of this
         # contract instance, as built here (INV-GOV-2). A gate from another
         # project is not trusted to keep to that; one that names other writes is
@@ -319,6 +325,10 @@ class GovernedPath:
             # each once.
             given = [c if c in REASON_CODES else "other" for c in decision.reason_codes]
             record["reason_codes"] = [c for c in REASON_CODES if c in given]
+        if decision.authority_holds is not None and authorized is not None:
+            # The gate's own finding, kept beside the premise it is compared with.
+            # Only where a mandate was set: elsewhere there is nothing to compare.
+            record["gate_authority_holds"] = bool(decision.authority_holds)
         if decision.authority_detail and decision.verdict is not Verdict.ALLOW:
             # Which kind of no mandate the gate refused for, if it said. A word of
             # its own is kept as ``other``, as with the codes.

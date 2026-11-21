@@ -38,12 +38,27 @@ class ExampleGate:
         reasons = list(premises.schema_errors + premises.bound_errors + premises.limit_errors)
         if not premises.contract_known:
             reasons.insert(0, "unknown contract")
+        # Who may act. The premise authority(<principal>, <contract>) says it, and so
+        # does the mandate record: every change, oldest first, the last one in force.
+        # A gate with ``derives_authority = True`` is given the record alone, so this
+        # one decides from the record, and reads the premise only when there is none.
+        kind, finding = "", None
+        if premises.mandate is not None:
+            changes = premises.mandate.changes
+            if proposal.contract_id not in changes[-1].contracts:
+                held_before = any(proposal.contract_id in c.contracts for c in changes[:-1])
+                kind = "ended" if held_before else "never_held"
+            finding = not kind  # optional: this gate's own finding, compared with the premise
+        failed = [p.expr for p in premises.premises if p.holds is False]
+        no_authority = bool(kind) or any(e.startswith("authority(") for e in failed)
         verdict, approvers = Verdict.DENY, 0
         if not reasons:
             if any(p.holds is None for p in premises.premises):
                 verdict, reasons = Verdict.ABSTAIN, ["a premise cannot be established"]
-            elif any(p.holds is False for p in premises.premises):
+            elif failed:
                 reasons = ["a premise does not hold"]
+            elif no_authority:
+                reasons = ["the proposer holds no mandate for this contract"]
             elif premises.risk_tier in ("R0", "R1") and premises.approval == "none":
                 verdict, reasons = Verdict.ALLOW, ["low risk; premises hold"]
             else:
@@ -52,13 +67,11 @@ class ExampleGate:
                 verdict, reasons = Verdict.VERIFY, ["a person must approve"]
         if verdict is Verdict.ALLOW and not premises.writes:
             verdict, reasons = Verdict.DENY, ["nothing that can be executed"]
-        # Why, in a word, for every way the step is wrong. Who may act is told as a
-        # premise too: authority(<principal>, <contract>).
-        failed = [p.expr for p in premises.premises if p.holds is False]
+        # Why, in a word, for every way the step is wrong.
         codes = tuple(
             code
             for code, applies in (
-                ("authority", any(e.startswith("authority(") for e in failed)),
+                ("authority", no_authority),
                 ("limit", bool(premises.bound_errors or premises.limit_errors)),
                 ("premise", any(not e.startswith("authority(") for e in failed)),
                 ("evidence", any(p.holds is None for p in premises.premises)),
@@ -67,13 +80,6 @@ class ExampleGate:
             )
             if applies and verdict is not Verdict.ALLOW
         )
-        # Optional: which kind of no mandate it was, from the mandate record. Every
-        # change is in it, oldest first, and the last one is in force.
-        kind = ""
-        if "authority" in codes and premises.mandate is not None:
-            earlier = premises.mandate.changes[:-1]
-            held_before = any(proposal.contract_id in c.contracts for c in earlier)
-            kind = "ended" if held_before else "never_held"
         writes = premises.writes if verdict is Verdict.ALLOW else ()
         ref = decision_ref(
             self.name, proposal.proposal_id, proposal.contract_id, verdict.value,
@@ -82,7 +88,9 @@ class ExampleGate:
         return Decision(
             verdict, ref, proposal.contract_id, writes, premises.time_ms + DECISION_TTL_MS,
             ref[-12:], tuple(reasons), required_approvers=approvers, reason_codes=codes,
-            authority_detail=kind,
+            # Optional: which of the two kinds of no mandate the refusal is for.
+            authority_detail=kind if "authority" in codes else "",
+            authority_holds=finding,
         )  # fmt: skip
 
     def record_outcome(self, decision_ref: str, outcome: Outcome) -> None:

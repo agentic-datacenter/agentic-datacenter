@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "agentic_datacenter.gate.http/1",
   "title": "Agentic-Datacenter gate over HTTP, version 1",
-  "description": "The requests Agentic-Datacenter's http_gate binding sends and the answers it accepts. Every message carries \"schema\": \"agentic_datacenter.gate.http/1\". An answer that does not validate is read as ABSTAIN. The same messages go to a command gate on standard input, as {\"endpoint\": \"/evaluate\" or \"/outcome\", \"request\": ...}, with the answer on standard output.",
+  "description": "The requests Agentic-Datacenter's http_gate binding sends and the answers it accepts. Every message carries \"schema\": \"agentic_datacenter.gate.http/1\". An answer that does not validate is read as ABSTAIN. The same messages go to a command gate on standard input, as {\"endpoint\": \"/evaluate\" or \"/outcome\", \"request\": ...}, with the answer on standard output. A service must ignore a field of a request that it does not know: an optional field can be added to a request within this version, as mandate was.",
   "$defs": {
     "scalar": {
       "type": [
@@ -243,7 +243,7 @@
         },
         "mandate": {
           "type": "object",
-          "description": "Optional. There only when a mandate was set for the proposer: the record the premise authority(<principal>, <contract>) was established from, kept by Agentic-Datacenter's register and never taken from the agent. The last change is in force. A register's entries, not credentials: nothing in it is signed.",
+          "description": "Optional. There only when a mandate was set for the proposer: the record the premise authority(<principal>, <contract>) was established from, kept by Agentic-Datacenter's register and never taken from the agent. The last change is in force. A register's entries, not credentials: nothing in it is signed. A service started with ADC_GATE_DERIVES_AUTHORITY=1 is sent this record and not that premise, and the run is still judged by the premise.",
           "required": [
             "principal",
             "changes"
@@ -260,6 +260,7 @@
                 "type": "object",
                 "required": [
                   "time_ms",
+                  "until_ms",
                   "contracts",
                   "by",
                   "reason"
@@ -268,6 +269,13 @@
                   "time_ms": {
                     "type": "integer",
                     "description": "Simulated time of the change."
+                  },
+                  "until_ms": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "Simulated time at which the next change replaced this one, so when what it held ended; null for the change in force."
                   },
                   "contracts": {
                     "type": "array",
@@ -346,6 +354,10 @@
               "description": "never_held: the proposer never held a mandate for this contract. ended: it held one, and that has ended or been narrowed. Any other word is recorded as other. Kept on the decision, and compared with what the register holds."
             }
           }
+        },
+        "authority_holds": {
+          "type": "boolean",
+          "description": "Optional. The service's own finding of whether the proposer holds a mandate for this contract, whatever its verdict. Where a mandate was set it is kept on the decision and compared with the premise; the card counts where they differ."
         }
       }
     },
