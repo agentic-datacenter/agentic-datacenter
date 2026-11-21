@@ -13,7 +13,7 @@ Every time on this page was measured on `benchmark-v1`, which had 23 scenarios. 
 
 ## What a quick run plays
 
-A scenario cut at 30 minutes shows nothing of an event that comes later. So `quick` gives a scenario with such an event its 30 minutes from the last one instead of from the start, as far as two hours into the scenario. An event later than two hours is not in a quick run. The card carries the 30 minutes as `duration_override_s`, the two hours as `duration_reach_s`, and each run its own length as `duration_s`.
+A scenario cut at 30 minutes shows nothing of an event that comes later. So `quick` gives a scenario with such an event its 30 minutes from the last one instead of from the start, as far as two hours into the scenario (ADR 0030). An event later than two hours is not in a quick run. The card carries the 30 minutes as `duration_override_s`, the two hours as `duration_reach_s`, and each run its own length as `duration_s`.
 
 Eight of the 27 scenarios on the main branch are longer than 30 minutes in a quick run for that reason:
 
