@@ -39,6 +39,8 @@ nav:
       - 0027 Rolling seasons: design/adr/0027-rolling-seasons.md
       - 0028 Authority during an incident: design/adr/0028-authority-during-an-incident.md
       - 0029 Plants from other projects: design/adr/0029-plants-from-other-projects.md
+      - 0030 A quick run reaches the event: design/adr/0030-a-quick-run-reaches-the-event.md
+      - 0031 The mandate record: design/adr/0031-the-mandate-record.md
       - 0030 A quick run shows what a scenario is about: design/adr/0030-a-quick-run-reaches-the-event.md
   - Guides:
       - For data center operators: guides/operators.md
