@@ -849,7 +849,7 @@ Each requirement below maps to at least one named test; a requirement without a 
 
 | ID | Requirement | Verified by |
 | --- | --- | --- |
-| ADC-PLT-001 | The harness, the point database, the command service and the oracle reach a plant only through the plant interface, and the card states the plant's step. Cards made on the built-in plant are unchanged by it, but for the `oracle` hash of the code. | scenario/test\_plant\_interface, bench/test\_plant\_interface\_cards |
+| ADC-PLT-001 | The harness, the point database, the command service and the oracle reach a plant only through the plant interface, and the card states the plant's step. Cards made on the built-in plant are unchanged by it, but for the `oracle` hash of the code. | scenario/test\_plant\_interface, bench/test\_reference\_cards |
 | ADC-PLT-002 | Counterfactual replay branches from a plant capture when the plant offers one and from the start of the run otherwise, and the card says which, for plant and gate separately. | not built yet (ADR 0029) |
 | ADC-PLT-003 | A plant's determinism for a seed is checked before a benchmark and during it, and a card from a plant found not deterministic is labelled so and refused for publication. | not built yet (ADR 0029) |
 | ADC-PLT-004 | A foreign plant runs only with a plant map. A contract, scenario or harm dimension the map does not cover is listed on the card as not run, and is never skipped silently. | not built yet (ADR 0029) |

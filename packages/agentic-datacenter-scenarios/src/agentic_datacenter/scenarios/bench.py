@@ -650,8 +650,8 @@ def run_benchmark(
             "commitment": commitment(heldout_secret),
             "scheme": SCHEME,
             "variants_per_template": heldout_variants,
-            #: Templates whose variants differ only in their title: they have
-            #: nothing a variant can move, so their Track D runs are not held out.
+            #: Templates whose variants differ only in their title: every event is
+            #: at the start, or there is none, so their Track D runs are not held out.
             "unchanged": [
                 template.id
                 for template, number in plan

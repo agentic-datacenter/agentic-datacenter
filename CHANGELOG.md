@@ -107,7 +107,7 @@ Changed
 
 Fixed
 
-- Track D: a held-out variant moved only injected faults, so the variants of nine of the 23 scenarios of `benchmark-v1` were the scenarios themselves. Every timed event now moves, injected notes are worded differently, and attempts come in another order. A card lists the templates that have nothing to vary (`OP-09`).
+- Track D: a held-out variant moved only injected faults, so the variants of nine of the 23 scenarios of `benchmark-v1` were the scenarios themselves. Every timed event now moves, injected notes are worded differently, and attempts come in another order. A card lists the templates that have nothing to vary: `OP-09`, which has no events, and `AD-13` and `AD-14`, whose only event is the mandate that holds from the start.
 - `agentic-datacenter gate check` passed a served gate whose service did not answer, since abstaining passes the interface suite. It now fails it.
 - `http_gate` and `command_gate` took a proxy from `http_proxy` and followed redirects, so a request meant for loopback, with simulation state and the actor's credential, could leave the machine. They now use neither, and read at most 1 MiB of an answer.
 - `AD-06`: the hostile agent sent `chiller=3` as a number where the contract takes a word, so every gate refused it for its type and the identity claim was never tested.

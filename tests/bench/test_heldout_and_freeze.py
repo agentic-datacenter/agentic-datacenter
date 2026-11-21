@@ -62,8 +62,9 @@ FROZEN = json.loads((REPO / "docs/bench/VERSION.json").read_text(encoding="utf-8
 @pytest.mark.parametrize("scenario_id", FROZEN)
 def test_a_variant_moves_every_kind_of_event_and_keeps_their_order(scenario_id: str) -> None:
     template = load_scenario(scenario_id)
-    if not template.timeline:
-        assert unchanged(template, "secret-a", 3), "a scenario without events has nothing to move"
+    if all(e.at_s == 0 for e in template.timeline):
+        # Nothing to move: no event, or only what holds from the start (a mandate).
+        assert unchanged(template, "secret-a", 3)
         return
     assert not unchanged(template, "secret-a", 3)
     for variant in variants(template, "secret-a", 5):
