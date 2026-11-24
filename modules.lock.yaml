@@ -2,7 +2,7 @@
 # CI fails when this file differs from the manifests (ADC-MOD-005).
 modules:
 - id: cooling.chw_plant
-  version: 0.2.0
+  version: 0.3.0
   fidelity: F1
   provides:
   - chws:hydronic

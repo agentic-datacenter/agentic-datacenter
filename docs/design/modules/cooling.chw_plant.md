@@ -41,6 +41,7 @@ Chiller states, supply temperature, cooling, power, part-load ratio and capacity
 
 | Parameter | Default | Unit | Source |
 | --- | --- | --- | --- |
+| `chillers` | 3 | - | the number of chillers, 1 to 9 (ADR 0033). Chiller *n* is fed from `power_<((n - 1) mod 3) + 1>`, and a fourth or later gets points made after those of chiller 3. With three, every tag, port and state is as before |
 | `chiller_kw` | 1600.0 | kW | `assumed: true` |
 | `cop` | 4.5 | - | `assumed: true` |
 | `design_ambient_c` | 35.0 | °C | `assumed: true` |
@@ -63,5 +64,6 @@ Chiller states, supply temperature, cooling, power, part-load ratio and capacity
 - **The generic chillers are 1,600 kW, not the 1,200 kW of the design document.** The heat load at the design point is about 2,650 kW (IT plus UPS losses, fans and pumps), which two 1,200 kW chillers cannot carry, and which would sit above the 85 % stage-up threshold for anything under about 1,560 kW. The design document's own numbers do not balance here; this is reported to its owner.
 - Capacity and efficiency are linear in ambient temperature. SDD 6.6 asks for the DOE-2 curve set.
 - No minimum run or off time, no low-flow or low-ambient trip, no weekly rotation by itself.
-- Chillers share load equally and have no individual temperatures.
+- Chillers share load equally and have no individual temperatures. All chillers of a plant are the same size: an equipment model gives one `chiller_kw` and one `cop`.
+- Three power feeds, whatever the number of chillers.
 - The model advances once a second. Values that cross a port are reported at a resolution of 0.0001 (ADR 0006), and the module rests when it has reached steady state.

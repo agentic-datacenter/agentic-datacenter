@@ -127,7 +127,14 @@ A run under `--facility` gives a card with a `facility` block. The block holds:
 
 ### 7. Counts that are fixed in code
 
-The number of chillers and pumps becomes a module parameter, as `ahu_count` already is. The points and ports of a fourth or later unit are generated from the count. With the count at three, every tag, port and state hash is the one it was. The supervisory overview reads the counts and the required number of units from the plant, not from the code. Two incomers and six zone sensors stay fixed in this ADR, and the facility report says so.
+The number of chillers becomes a module parameter, `chillers` (1 to 9), as `ahu_count` already is.
+
+- **Points.** A fourth or later chiller gets points made after those of chiller 3. A plant of fewer has no points for the chillers it lacks, so a contract that names chiller 3 does not fit it.
+- **Ports.** The three power feeds stay, and chiller *n* is fed from feed ((n - 1) mod 3) + 1.
+- **Unchanged at three.** With the count at three, every tag, port and state hash is the one it was.
+- **The supervisory overview** counts the chillers from the plant's points, not from the code.
+
+The pump station keeps three pumps, two incomers per switchgear stay fixed, and so do six zone sensors per POD. The facility report says so.
 
 ### 8. Not in this ADR
 
@@ -150,9 +157,9 @@ The number of chillers and pumps becomes a module parameter, as `ahu_count` alre
 | `ADC-FAC-007` | Under `--facility`, a contract that does not fit is not loaded and is listed. Under `--profile`, the library is refused as a whole as before. | 2 |
 | `ADC-FAC-008` | Under `--facility`, a scenario that names an instance, key or zone the facility lacks is not run, and is listed and counted. | 2 |
 | `ADC-FAC-009` | A card under `--facility` carries the `facility` block, is never a benchmark result and is refused for publication. A card without it is unchanged. | 2 |
-| `ADC-FAC-010` | Chillers and pumps are counted by a parameter. At three, every tag, port and state hash is unchanged, and the overview reads counts and required units from the plant. | 3 |
+| `ADC-FAC-010` | Chillers are counted by a parameter, 1 to 9. At three, every tag, port and state hash is unchanged, and the overview counts the chillers from the plant's points. | 3 |
 
-The pull requests are: (1) bundle, equipment and declared parameters; (2) `facility check`, `--facility` runs and cards; (3) counts of chillers and pumps. An example bundle with three kinds of POD and the guide `docs/guides/bring-your-own-datacenter.md` come with (2).
+The pull requests are: (1) bundle, equipment and declared parameters; (2) `facility check`, `--facility` runs and cards; (3) the number of chillers. An example bundle with three kinds of POD and the guide `docs/guides/bring-your-own-datacenter.md` come with (2).
 
 ## Consequences
 

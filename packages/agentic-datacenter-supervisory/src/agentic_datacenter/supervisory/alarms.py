@@ -15,6 +15,7 @@ alarms.
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Protocol
@@ -352,11 +353,7 @@ def default_alarms(points: _Database) -> list[AlarmDef]:
         if point.startswith("alarm_") or point in _DISCRETE_PRIORITY:
             priority = _DISCRETE_PRIORITY.get(point, 600)
             out.append(AlarmDef(f"{tag}:on", tag, "discrete", priority, system, description=point))
-        elif name.startswith("cooling.chw_plant[") and point in (
-            "ch1_state",
-            "ch2_state",
-            "ch3_state",
-        ):
+        elif name.startswith("cooling.chw_plant[") and re.fullmatch(r"ch\d_state", point):
             n = point[2]
             out.append(
                 AlarmDef(
