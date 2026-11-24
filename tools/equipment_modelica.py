@@ -11,7 +11,10 @@ from. Nothing of the source file is copied but the facts it states (ADR 0034).
 ``--check`` derives every entry again from the file and fails on any
 difference. The file is fetched at the pinned commit with::
 
-    gh api "repos/lbl-srg/modelica-buildings/contents/Buildings/Fluid/Chillers/Data/ElectricEIR.mo?ref=<commit>" --jq .content | base64 -d
+    gh api "repos/lbl-srg/modelica-buildings/contents/$FILE?ref=<commit>" --jq .content \
+        | base64 -d
+
+with ``FILE=Buildings/Fluid/Chillers/Data/ElectricEIR.mo``.
 """
 
 from __future__ import annotations
@@ -45,9 +48,7 @@ def _number(text: str) -> float:
 
 def read_record(lines: list[str], name: str) -> dict[str, Any]:
     """Return the values of one record and the line each was read from (1-based)."""
-    start = next(
-        (i for i, line in enumerate(lines) if line.strip() == f"record {name} ="), None
-    )
+    start = next((i for i, line in enumerate(lines) if line.strip() == f"record {name} ="), None)
     if start is None:
         raise SystemExit(f"no record {name} in the file")
     values: dict[str, tuple[float, int]] = {}
@@ -123,7 +124,8 @@ def entry(record: dict[str, Any], commit: str) -> dict[str, Any]:
             "redistribution": "allowed",
             "basis": (
                 "facts stated in a file under the BSD-3-Clause-style licence of the Modelica "
-                "Buildings Library, kept with attribution (equipment/licences/modelica-buildings.txt)"
+                "Buildings Library, kept with attribution "
+                "(equipment/licences/modelica-buildings.txt)"
             ),
             "reviewed": "2026-11-24",
         },
