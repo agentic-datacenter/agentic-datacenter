@@ -29,6 +29,7 @@ from agentic_datacenter.scenarios.scenario import library_ids
 CHECK_SECONDS = 300
 #: Things the facility cannot vary yet (ADR 0033, decision 7).
 FIXED = (
+    "three pumps in the pump station",
     "two utility incomers per MV switchgear",
     "six zone sensors per POD",
     "the oracle's limits of 27 degC and 32 degC supply air",
