@@ -45,9 +45,9 @@ def b64(raw: bytes) -> str:
     return base64.b64encode(raw).decode()
 
 
-def flip(field: str, index: int) -> str:
+def flip_last(field: str) -> str:
     raw = bytearray(base64.b64decode(field))
-    raw[index] ^= 0x01
+    raw[-1] ^= 0x01
     return b64(bytes(raw))
 
 
@@ -71,10 +71,10 @@ def test_a_quote_of_another_body_is_a_body_mismatch() -> None:
 @pytest.mark.req("ADC-HST-001")
 def test_a_changed_signature_or_attest_is_a_bad_signature() -> None:
     _, quote, body_sha256 = rows()[0]
-    changed_sig = Quote(quote.attest, flip(quote.sig, len(base64.b64decode(quote.sig)) - 1), quote.ak)
+    changed_sig = Quote(quote.attest, flip_last(quote.sig), quote.ak)
     assert check_quote(changed_sig, body_sha256) == "bad_signature"
     # The last byte of attest is in the PCR digest: it parses, and the signature fails.
-    changed_attest = Quote(flip(quote.attest, len(base64.b64decode(quote.attest)) - 1), quote.sig, quote.ak)
+    changed_attest = Quote(flip_last(quote.attest), quote.sig, quote.ak)
     assert check_quote(changed_attest, body_sha256) == "bad_signature"
 
 

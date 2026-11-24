@@ -12,6 +12,7 @@ requires-python = ">=3.12"
 dependencies = [
     "agentic-datacenter-core",
     "agentic-datacenter-supervisory",
+    "cryptography>=43",
     "pydantic>=2",
     "pyyaml>=6",
 ]
@@ -37,4 +38,5 @@ test = ["pytest", "hypothesis", "agentic-datacenter-plant"]
 [tool.agentic-datacenter]
 requirements = [
     "ADC-GOV-001", "ADC-GOV-003", "ADC-GOV-004", "ADC-GOV-005", "ADC-GOV-008",
+    "ADC-HST-001", "ADC-HST-002", "ADC-HST-003",
 ]
