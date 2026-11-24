@@ -33,6 +33,7 @@ FEEDS = 3
 MAX_CHILLERS = 9
 UNAVAILABLE = frozenset({"TRIPPED", "LOCKED_OUT"})
 _CHILLER_POINT = re.compile(r"^ch\d_")
+_CHILLER_3 = re.compile(r"([Cc]hiller) 3")
 
 
 def plant_points(count: int) -> tuple[PointDecl, ...]:
@@ -53,7 +54,7 @@ def plant_points(count: int) -> tuple[PointDecl, ...]:
                     decl.model_copy(
                         update={
                             "name": decl.name.replace("ch3_", f"ch{n}_", 1),
-                            "description": re.sub(r"([Cc]hiller) 3", rf"\g<1> {n}", decl.description),
+                            "description": _CHILLER_3.sub(rf"\g<1> {n}", decl.description),
                         }
                     )
                 )

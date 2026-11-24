@@ -16,6 +16,7 @@ modules:
   - ADC-PRC-010
   - ADC-CTL-004
   - ADC-CTL-005
+  - ADC-FAC-010
   spec: docs/design/modules/cooling.chw_plant.md
 - id: cooling.eroom
   version: 0.2.0
