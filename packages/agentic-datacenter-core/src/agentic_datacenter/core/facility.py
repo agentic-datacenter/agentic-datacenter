@@ -129,7 +129,10 @@ class Facility:
             "files": dict(self.files),
             "equipment": {
                 key: {
-                    "module": m.module, "maker": m.maker, "model": m.model, "evidence": m.evidence,
+                    "module": m.module,
+                    "maker": m.maker,
+                    "model": m.model,
+                    "evidence": m.evidence,
                 }  # fmt: skip
                 for key, m in sorted(self.equipment.items())
             },
@@ -360,4 +363,3 @@ def load_facility(path: Path) -> Facility:
 def _names_v1(profile: Profile, use: ModuleUse) -> list[str]:
     assert use.for_each is not None
     return list(profile.key_sets[use.for_each])
-

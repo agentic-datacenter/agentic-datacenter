@@ -864,6 +864,16 @@ Each requirement below maps to at least one named test; a requirement without a 
 | ADC-HST-006 | A run without a host register makes no keepalive and carries no host premise, and its state hashes are those it had before. | not built yet (ADR 0032) |
 | ADC-HST-007 | Runs and cards count proposals and executions on an unattested host, and a card from a run with host evidence states that host keys are software keys. | not built yet (ADR 0032) |
 | ADC-HST-008 | An optional Linux job builds `shirudo-quote-check` at the pinned commit and runs it over the quotes of a host scenario; each gets `ok`. | not built yet (ADR 0032) |
+| ADC-FAC-001 | A facility bundle (`datacenter.yaml` and the files it includes) compiles to one schema-1 profile; the same files give the same profile and hash, every input file's SHA-256 is recorded, and a path outside the bundle, a missing include, a name defined twice, more than 256 files or a file over 1 MiB is refused. | core/test\_facility |
+| ADC-FAC-002 | A schema-1 profile reads as before and keeps its hash; `generic_dc.yaml` keeps the hash frozen in `docs/bench/VERSION.json`. | core/test\_facility, conformance/test\_facility\_generic |
+| ADC-FAC-003 | Values resolve per instance: module default, equipment model, use, instance override; each keeps its provenance, and `with_param` can change one instance. | core/test\_facility |
+| ADC-FAC-004 | Building an instance refuses a parameter its module did not read, naming the module; a stub is not checked. | core/test\_param\_reads, conformance/test\_facility\_generic |
+| ADC-FAC-005 | An equipment model names its module, maker, model and evidence, and a use of it by another module is refused. | core/test\_facility |
+| ADC-FAC-006 | `facility check` builds the plant of a bundle, runs it for five minutes and reports the contracts and scenarios that fit, each that does not with its reason, and the values by provenance. | not built yet (ADR 0033) |
+| ADC-FAC-007 | Under `--facility`, a contract that does not fit is not loaded and is listed; under `--profile` the library is refused as a whole, as before. | not built yet (ADR 0033) |
+| ADC-FAC-008 | Under `--facility`, a scenario that names an instance, key, zone, relay, point or contract the facility lacks is not run, and is listed and counted. | not built yet (ADR 0033) |
+| ADC-FAC-009 | A card under `--facility` carries the `facility` block, is never a benchmark result and is refused for publication; a card without it is unchanged. | not built yet (ADR 0033) |
+| ADC-FAC-010 | Chillers are counted by a parameter, 1 to 9; at three every tag, port and state hash is unchanged, and the overview counts the chillers from the plant's points. | not built yet (ADR 0033) |
 
 **What-if (10.4)**
 
@@ -1093,6 +1103,7 @@ This section is build history. The simulator was built in the stages below, in t
 | 9 | Scenario suite, oracle, metrics, evidence bundles, 62443 matrix, demo dashboard, what-if (10.4), tagged release | SCN-001, EVD-001, EVD-002, BEN-001 to 009, WIF-001 to 005 | Nightly matrix green; evidence bundle reproduced on a second machine |
 | 10 | Plants from other projects (ADR 0029): the plant interface, `http_plant`, `plant check`, an example plant | PLT-001 to 006 | A card on the example plant from one scenario end to end |
 | 11 | Evidence about hosts (ADR 0032): keepalives in shirudo's format, `SHIRUDO_PIN`, the host register and premise, host scenarios | HST-001 to 008 | A host scenario refused from a keepalive before the cross-check alarms, under a gate that reads host evidence |
+| 12 | Bring your own data center (ADR 0033): facility bundles, equipment models, values per instance, `facility check`, runs and cards on one's own facility, the number of chillers | FAC-001 to 010 | `facility check` and a `bench run --facility` of the example bundle end to end |
 
 **Milestone M1.** After Stage 4, thin versions of the supervisory command path, the gate interface, the two scripted agents, counterfactual replay and the result card were built first, on four scenarios: `OP-03`, `OP-10`, `AD-01` and `AD-03`. They ran under the operating profile `DECISION_ONLY`: REMORA decides through `evaluate_policy`, and allowed proposals are applied by the command service with the hash of the decision as reference. There is no execution token, no cumulative-limit enforcement on the REMORA side and no audit chain in this profile. Its results MUST be labelled as such and MUST NOT be described as governed execution. `AD-04` and `AD-05` cannot be claimed as passed under it, since replay and cumulative limits are enforced only on the governed path.
 
@@ -1114,6 +1125,7 @@ The reference specification does not contain single-line diagrams, P&IDs, point 
 
 - `compose` mode is not built. There is no `deploy/` directory, no conduit container and no REMORA service in a container. Everything runs, and is tested, in `inproc` mode (ADR 0010, ADR 0016, ADR 0017). `ADC-NET-001` asks for the zone matrix in both run modes and is tested in `inproc` only. Every sentence above about `compose` mode describes a design.
 - No language-model agent (`llm_agent`, 12.1) is implemented. The benchmark and the demonstration use scripted agents.
+- Of ADR 0033, facility bundles, equipment models, values per instance and the refusal of a parameter no module reads are built (`ADC-FAC-001` to `-005`); `facility check`, runs on one's own facility and the number of chillers are not.
 - Of ADR 0032, only the keepalive format and `SHIRUDO_PIN` are built (`ADC-HST-001` to `-004`). No simulated host sends a keepalive yet, no proposal carries a `host_attested` premise, and no scenario uses one.
 - The binding surface in 5.2 and 9.2 differs from REMORA in four places (`remora_binding.md`, section 1).
 - Zones and conduits differ in the points listed in `zone_model.md`, section 6. No data collector and no alarm notification are modelled.
