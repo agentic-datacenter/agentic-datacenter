@@ -290,6 +290,8 @@ def test_the_example_package_asks_for_as_many_people_as_the_contract_does() -> N
     for approval, people in (("one_operator", 1), ("two_person", 2)):
         asked = gate.evaluate(PROPOSAL, replace(CLEAN, risk_tier="R2", approval=approval), ACTOR)
         assert asked.verdict is Verdict.VERIFY and asked.required_approvers == people
+
+
 def _status(code: int, headers: dict[str, str], body: bytes) -> type[BaseHTTPRequestHandler]:
     class Handler(BaseHTTPRequestHandler):
         def do_POST(self) -> None:  # noqa: N802

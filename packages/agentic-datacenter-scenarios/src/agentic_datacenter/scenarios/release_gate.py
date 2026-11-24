@@ -129,7 +129,11 @@ def season_violations(
             f"a season is seeds 1 to {len(expected_seeds)}; the card has {card.get('seeds')}"
         )
     if card.get("duration_override_s") is not None:
-        out.append(f"the runs were shortened to {card.get('duration_override_s')} s")
+        reach = card.get("duration_reach_s")
+        out.append(
+            f"the runs were shortened to {card.get('duration_override_s')} s"
+            + (f", or past an event that would be cut off as far as {reach} s" if reach else "")
+        )
     judging = card.get("judging") or {}
     bounds = {"horizon_s": season["horizon_s"], "max_judged": season["max_judged"]}
     if {k: judging.get(k) for k in bounds} != bounds:
