@@ -17,6 +17,7 @@ registry's gate, held by ``tests/conformance/test_equipment_registry.py``.
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Annotated, Literal
 
@@ -111,16 +112,35 @@ class Entry(_Model):
 
 
 def registry_dir(start: Path | None = None) -> Path:
-    """Return the registry directory: ``equipment/`` of the working directory."""
-    return (start or Path.cwd()) / "equipment"
+    """Return the registry directory.
+
+    In order: ``equipment/`` under *start*; the directory ``ADC_EQUIPMENT_REGISTRY``
+    names; ``equipment/`` of the repository this package is installed from; and
+    ``equipment/`` of the working directory.
+    """
+    if start is not None:
+        return start / "equipment"
+    named = os.environ.get("ADC_EQUIPMENT_REGISTRY")
+    if named:
+        return Path(named)
+    for parent in Path(__file__).resolve().parents:
+        if (parent / "equipment" / "sources.yaml").is_file() and (parent / "packages").is_dir():
+            return parent / "equipment"
+    return Path.cwd() / "equipment"
 
 
 def load_entry(entry_id: str, root: Path | None = None) -> Entry:
-    """Read registry entry *entry_id* from *root* (default: ``equipment/``).
+    """Read registry entry *entry_id* from *root* (default: :func:`registry_dir`).
 
     Raises:
-        RegistryError: If there is no such entry or it is invalid.
+        RegistryError: If there is no such entry, it is invalid, or its rights
+            are not allowed.
     """
+    return load_entry_file(entry_id, root)[0]
+
+
+def load_entry_file(entry_id: str, root: Path | None = None) -> tuple[Entry, Path]:
+    """Read registry entry *entry_id*, and return it with the file it was read from."""
     base = root or registry_dir()
     matches = sorted(base.glob(f"*/{entry_id}.yaml"))
     if len(matches) != 1:
@@ -131,7 +151,9 @@ def load_entry(entry_id: str, root: Path | None = None) -> Entry:
         raise RegistryError(f"{matches[0]}: {exc}") from exc
     if entry.id != entry_id or matches[0].parent.name != entry.module:
         raise RegistryError(f"{matches[0]}: an entry's file is <module>/<id>.yaml")
-    return entry
+    if (entry.rights.commercial_use, entry.rights.redistribution) != ("allowed", "allowed"):
+        raise RegistryError(f"{entry_id}: its rights are not allowed, so it may not be used")
+    return entry, matches[0]
 
 
 def load_registry(root: Path | None = None) -> dict[str, Entry]:

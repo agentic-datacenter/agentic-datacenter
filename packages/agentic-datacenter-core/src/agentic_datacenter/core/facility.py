@@ -35,7 +35,7 @@ from typing import Annotated, Any, Literal
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from agentic_datacenter.core.equipment import PREFIX, load_entry, registry_dir
+from agentic_datacenter.core.equipment import PREFIX, load_entry_file, registry_dir
 from agentic_datacenter.core.profile import (
     ConnectionRule,
     ModuleUse,
@@ -236,6 +236,7 @@ def _lower(
     equipment: dict[str, EquipmentModel],
     values: dict[str, int],
     registry: Path,
+    files: dict[str, str],
 ) -> tuple[list[dict[str, Any]], set[str]]:
     """Return the schema-1 uses of *uses*, and the equipment models they used."""
     out: list[dict[str, Any]] = []
@@ -245,7 +246,8 @@ def _lower(
         if key is None:
             return {}
         if key.startswith(PREFIX) and key not in equipment:
-            entry = load_entry(key.removeprefix(PREFIX), registry)
+            entry, entry_file = load_entry_file(key.removeprefix(PREFIX), registry)
+            files[f"{PREFIX}{entry.id}"] = hashlib.sha256(entry_file.read_bytes()).hexdigest()
             equipment[key] = EquipmentModel(
                 module=entry.module, maker=entry.maker, model=entry.model,
                 evidence=entry.evidence, description=entry.variant, params=entry.params,
@@ -325,7 +327,13 @@ def _bundle(entry: Path, data: Mapping[str, Any], registry: Path) -> Facility:
         raise FacilityError(f"invalid bundle: {problems}") from exc
     key_sets: dict[str, list[str]] = merged.get("key_sets", {})
     values: dict[str, int] = {}
-    lowered, used = _lower(uses, key_sets, equipment, values, registry)
+    forged = sorted(k for k in equipment if k.startswith(PREFIX))
+    if forged:
+        raise FacilityError(
+            f"a bundle may not define {', '.join(forged)}: an entry named {PREFIX}<id> is read "
+            "from the equipment registry, never from the bundle (ADR 0034)"
+        )
+    lowered, used = _lower(uses, key_sets, equipment, values, registry, files)
     profile_data: dict[str, Any] = {
         "schema_version": 1,
         "name": header.name,

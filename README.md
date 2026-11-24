@@ -42,7 +42,7 @@ Open `build/first-run/index.html`. It shows a chiller trip in a heat wave, with 
 | **A data center operator** | Your facility, as a directory of files | A report of which scenarios and controls fit your site, and runs of every gate on it. You see which commands must never run without a person, and how often your staff would be asked | [Bring your own data center](docs/guides/bring-your-own-datacenter.md) |
 | **An equipment maker** | A model of your equipment: values, sources, rated conditions | Your equipment in every facility that names it, with its tier on every card that uses it | [The equipment registry](equipment/README.md) |
 | **A developer of a gate or a governance system** | A gate: a Python package, an HTTP service in any language, or a command | A result card in minutes, against 27 scenarios and two scripted agents, and a place in the public test | [Bring your own gate](docs/guides/bring-your-own-gate.md) |
-| **An operator with measured data** | Weather or plant series, with their licence | Simulations of your own conditions, and calibrated models for everyone | [Calibration data](docs/calibration/contribute-data.md) |
+| **An operator with measured data** | A measured weather series, with its licence | Runs on your own weather today. Plant series and calibration are what such data is collected for next | [Measured weather](docs/guides/measured-weather.md) · [Calibration data](docs/calibration/contribute-data.md) |
 | **A researcher** | A question about agents, safety controls or plant behaviour | Runs that anyone can repeat: deterministic, frozen versions, every result traced to its commit | [Design document](docs/design/SDD-ADC-001.md) |
 
 Agents and scenarios of your own are planned. Today the agents are scripted and the scenarios come from the library (`docs/guides/which-way-in.md`).
@@ -75,13 +75,13 @@ Each contribution makes the others more useful:
 What builds up over time does not lie in the code. It lies in what the code has made, recorded so that it can be checked:
 
 - every frozen benchmark version and every season;
-- every result card, each traced to its commit and signed on the benchmark runner;
+- every result card, each traced to its commit, and signed when the benchmark runner made it;
 - every registry entry, each with its source, its licence and the rights to use it.
 
 ## Rules that keep it fair
 
 - **Results are never bought.** A maker can have its equipment model checked. That changes the model's tier, never a ranking, and no card is ranked by tier.
-- **Every value says where it came from.** A value carries its source or is marked as assumed, and the card counts both. An equipment entry without a recorded right to use and redistribute it does not enter the registry.
+- **Every value says where it came from.** A value carries its source or is marked as assumed, and a card from your own facility counts both. An equipment entry without a recorded right to use and redistribute it does not enter the registry.
 - **Your facility is yours.** A card from your own facility is labelled as such and is never published as a benchmark result.
 - **Simulation only.** Nothing connects to real equipment.
 
