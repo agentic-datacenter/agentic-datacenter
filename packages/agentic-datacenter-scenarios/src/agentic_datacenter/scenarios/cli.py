@@ -27,13 +27,13 @@ from agentic_datacenter.scenarios.bench import (
     write_decisions,
 )
 from agentic_datacenter.scenarios.demo import DEMO_AGENTS, DEMO_SCENARIOS, build_demo, write_demo
-from agentic_datacenter.scenarios.facility_fit import fit_facility
 from agentic_datacenter.scenarios.evidence import (
     build_bundle,
     code_commit,
     verify_bundle,
     write_bundle,
 )
+from agentic_datacenter.scenarios.facility_fit import fit_facility
 from agentic_datacenter.scenarios.harness import RunResult, run_scenario
 from agentic_datacenter.scenarios.heldout import commitment
 from agentic_datacenter.scenarios.provenance import CARD_NAME, verify_record, write_record

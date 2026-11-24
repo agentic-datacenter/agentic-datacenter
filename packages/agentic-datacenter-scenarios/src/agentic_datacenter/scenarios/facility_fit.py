@@ -105,7 +105,11 @@ def contract_problem(view: FacilityView, library: ContractLibrary, contract_id: 
                 continue
             if module_id not in view.modules:
                 return f"a premise names {alias}, and the facility has no {module_id}"
-            if instance and "{" not in instance and f"{module_id}[{instance}]" not in view.instances:
+            if (
+                instance
+                and "{" not in instance
+                and f"{module_id}[{instance}]" not in view.instances
+            ):
                 return f"a premise names {module_id}[{instance}], which the facility lacks"
     return None
 

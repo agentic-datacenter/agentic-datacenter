@@ -82,7 +82,10 @@ def test_a_card_from_ones_own_facility_names_it_and_is_never_a_result(tmp_path: 
     facility = load_facility(small_facility(tmp_path))
     fit = fit_facility(facility.profile, LIBRARY, ["OP-05", "OP-06"])
     card = _card(
-        facility.profile, fit.contracts, fit.runnable, facility={**facility.summary(), **fit.block()}
+        facility.profile,
+        fit.contracts,
+        fit.runnable,
+        facility={**facility.summary(), **fit.block()},
     )
     assert card["label"] == "result on a facility of its owner, not a benchmark result"
     assert card["benchmark_version"]["frozen"] is False

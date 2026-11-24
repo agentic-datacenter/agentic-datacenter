@@ -869,10 +869,10 @@ Each requirement below maps to at least one named test; a requirement without a 
 | ADC-FAC-003 | Values resolve per instance: module default, equipment model, use, instance override; each keeps its provenance, and `with_param` can change one instance. | core/test\_facility |
 | ADC-FAC-004 | Building an instance refuses a parameter its module did not read, naming the module; a stub is not checked. | core/test\_param\_reads, conformance/test\_facility\_generic |
 | ADC-FAC-005 | An equipment model names its module, maker, model and evidence, and a use of it by another module is refused. | core/test\_facility |
-| ADC-FAC-006 | `facility check` builds the plant of a bundle, runs it for five minutes and reports the contracts and scenarios that fit, each that does not with its reason, and the values by provenance. | not built yet (ADR 0033) |
-| ADC-FAC-007 | Under `--facility`, a contract that does not fit is not loaded and is listed; under `--profile` the library is refused as a whole, as before. | not built yet (ADR 0033) |
-| ADC-FAC-008 | Under `--facility`, a scenario that names an instance, key, zone, relay, point or contract the facility lacks is not run, and is listed and counted. | not built yet (ADR 0033) |
-| ADC-FAC-009 | A card under `--facility` carries the `facility` block, is never a benchmark result and is refused for publication; a card without it is unchanged. | not built yet (ADR 0033) |
+| ADC-FAC-006 | `facility check` builds the plant of a bundle, runs it for five minutes and reports the contracts and scenarios that fit, each that does not with its reason, and the values by provenance. | scenario/test\_facility\_fit |
+| ADC-FAC-007 | Under `--facility`, a contract that does not fit is not loaded and is listed; under `--profile` the library is refused as a whole, as before. | scenario/test\_facility\_fit |
+| ADC-FAC-008 | Under `--facility`, a scenario that names an instance, key, zone, relay, point or contract the facility lacks is not run, and is listed and counted. | scenario/test\_facility\_fit |
+| ADC-FAC-009 | A card under `--facility` carries the `facility` block, is never a benchmark result and is refused for publication; a card without it is unchanged. | scenario/test\_facility\_fit |
 | ADC-FAC-010 | Chillers are counted by a parameter, 1 to 9; at three every tag, port and state hash is unchanged, and the overview counts the chillers from the plant's points. | not built yet (ADR 0033) |
 
 **What-if (10.4)**
@@ -1125,7 +1125,7 @@ The reference specification does not contain single-line diagrams, P&IDs, point 
 
 - `compose` mode is not built. There is no `deploy/` directory, no conduit container and no REMORA service in a container. Everything runs, and is tested, in `inproc` mode (ADR 0010, ADR 0016, ADR 0017). `ADC-NET-001` asks for the zone matrix in both run modes and is tested in `inproc` only. Every sentence above about `compose` mode describes a design.
 - No language-model agent (`llm_agent`, 12.1) is implemented. The benchmark and the demonstration use scripted agents.
-- Of ADR 0033, facility bundles, equipment models, values per instance and the refusal of a parameter no module reads are built (`ADC-FAC-001` to `-005`); `facility check`, runs on one's own facility and the number of chillers are not.
+- Of ADR 0033, facility bundles, equipment models, values per instance and the refusal of a parameter no module reads are built, and so are `facility check` and runs and cards on one's own facility (`ADC-FAC-001` to `-009`); the number of chillers is not.
 - Of ADR 0032, only the keepalive format and `SHIRUDO_PIN` are built (`ADC-HST-001` to `-004`). No simulated host sends a keepalive yet, no proposal carries a `host_attested` premise, and no scenario uses one.
 - The binding surface in 5.2 and 9.2 differs from REMORA in four places (`remora_binding.md`, section 1).
 - Zones and conduits differ in the points listed in `zone_model.md`, section 6. No data collector and no alarm notification are modelled.
