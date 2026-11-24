@@ -1,0 +1,22 @@
+# Sources of the equipment registry (ADR 0034). Every entry names one of these.
+# A source is pinned: one commit, and the SHA-256 of each file read from it.
+modelica-buildings:
+  name: Modelica Buildings Library
+  repository: https://github.com/lbl-srg/modelica-buildings
+  commit: e79800b7eb2f0d58d4a49b0c26dc639d1df61089
+  files:
+    Buildings/Fluid/Chillers/Data/ElectricEIR.mo: 64ffef7ee482579dc04b8663f27697828b40bc670b46ebcca4b604cf0bb6c06b
+    Buildings/UsersGuide/License.mo: 2a6390a2c10c9af282832c0853e0fd9f8fa3d476c8ef742eddc834a533345cc3
+  licence: >-
+    A revised 3-clause BSD licence with an added paragraph on enhancements, as the
+    library describes it (Buildings/UsersGuide/License.mo). No SPDX identifier is stated.
+  licence_file: equipment/licences/modelica-buildings.txt
+  attribution: >-
+    Copyright (c) 1998-2026 Modelica Association, International Building Performance
+    Simulation Association (IBPSA), The Regents of the University of California, through
+    Lawrence Berkeley National Laboratory, and contributors.
+  name_use: >-
+    The names of the Modelica Association, IBPSA, the University of California, Lawrence
+    Berkeley National Laboratory, the U.S. Dept. of Energy and the contributors are not used
+    to endorse or promote Agentic-Datacenter.
+  retrieved: 2026-11-24
