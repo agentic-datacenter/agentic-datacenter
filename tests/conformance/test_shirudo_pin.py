@@ -34,11 +34,16 @@ def test_every_copied_file_is_listed_with_its_hash_and_nothing_else_is_copied() 
 
 @pytest.mark.req("ADC-HST-004")
 def test_the_copies_carry_shirudos_licence_and_the_notices_name_it() -> None:
-    licence = (FIXTURES / "LICENSE").read_text(encoding="utf-8")
+    copy = (FIXTURES / "LICENSE").read_bytes()
+    pinned = re.search(r"^licence:\n\s+LICENSE\s+([0-9a-f]{64})\s*$", PIN, re.M)
+    assert pinned, "SHIRUDO_PIN records no hash of shirudo's LICENSE"
+    assert hashlib.sha256(copy).hexdigest() == pinned.group(1), "not shirudo's LICENSE at the pin"
+    licence = copy.decode("utf-8")
     assert licence.startswith("BSD 2-Clause License")
     assert "Copyright (c) 2026 Authors of shirudo" in licence
     notices = (REPO / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
     commit = re.search(r"^commit:\s+([0-9a-f]{40})", PIN, re.M)
     assert commit
-    assert "shirudo" in notices and commit.group(1) in notices
+    assert "https://github.com/shirudo-dev/shirudo" in notices
+    assert commit.group(1) in notices
     assert "tests/fixtures/shirudo/LICENSE" in notices
