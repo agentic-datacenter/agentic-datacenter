@@ -171,7 +171,7 @@ Agentic-Datacenter is a deterministic, fixed-step simulation kernel with plant, 
 | Historian | SQLite for metadata, Parquet for time series | 15 min energy records plus 1 s real-time ring buffer |
 | Operator and agent API | `FastAPI` over mutual TLS | Same service in both run modes |
 | Demo view | Single static HTML dashboard reading the read-only API | No operator actions from the dashboard in v1 |
-| Host evidence | `cryptography`; shirudo's keepalive format `shirudo.keepalive/1` at the commit in `SHIRUDO_PIN` | Software keys, deterministic signatures; nothing of shirudo is installed or run (ADR 0030) |
+| Host evidence | `cryptography`; shirudo's keepalive format `shirudo.keepalive/1` at the commit in `SHIRUDO_PIN` | Software keys, deterministic signatures; nothing of shirudo is installed or run (ADR 0032) |
 
 ### 5.1 Module system
 
@@ -860,10 +860,10 @@ Each requirement below maps to at least one named test; a requirement without a 
 | ADC-HST-002 | A keepalive body is encoded and parsed exactly as `shirudo.keepalive/1`: the 23 keys in their order, compact JSON, at most 4095 bytes, each value of its key's type; every pinned body round-trips byte for byte. | governance/test\_keepalive |
 | ADC-HST-003 | A simulated host's key and quotes are a function of the seed, the host and the TPM clock, and the clock of a quote orders the keepalives of a host. | governance/test\_keepalive |
 | ADC-HST-004 | `SHIRUDO_PIN` names the upstream repository, one full commit and the format; every file copied from it matches its hash and carries shirudo's licence, and `THIRD_PARTY_NOTICES.md` names both. | conformance/test\_shirudo\_pin |
-| ADC-HST-005 | The control path establishes `host_attested(<host>)` from the host register and the latest keepalives under the six conditions of ADR 0030, decision 6, and never from what the agent says. | not built yet (ADR 0030) |
-| ADC-HST-006 | A run without a host register makes no keepalive and carries no host premise, and its state hashes are those it had before. | not built yet (ADR 0030) |
-| ADC-HST-007 | Runs and cards count proposals and executions on an unattested host, and a card from a run with host evidence states that host keys are software keys. | not built yet (ADR 0030) |
-| ADC-HST-008 | An optional Linux job builds `shirudo-quote-check` at the pinned commit and runs it over the quotes of a host scenario; each gets `ok`. | not built yet (ADR 0030) |
+| ADC-HST-005 | The control path establishes `host_attested(<host>)` from the host register and the latest keepalives under the six conditions of ADR 0032, decision 6, and never from what the agent says. | not built yet (ADR 0032) |
+| ADC-HST-006 | A run without a host register makes no keepalive and carries no host premise, and its state hashes are those it had before. | not built yet (ADR 0032) |
+| ADC-HST-007 | Runs and cards count proposals and executions on an unattested host, and a card from a run with host evidence states that host keys are software keys. | not built yet (ADR 0032) |
+| ADC-HST-008 | An optional Linux job builds `shirudo-quote-check` at the pinned commit and runs it over the quotes of a host scenario; each gets `ok`. | not built yet (ADR 0032) |
 
 **What-if (10.4)**
 
@@ -1092,7 +1092,7 @@ This section is build history. The simulator was built in the stages below, in t
 | 8 | Gate interface, three bindings, tool server, contract library, contract compiler to signed REMORA artifacts, register fetch at the pin. Entry condition: a pin that contains remora sign-limits, export-contract-files and build-toolspec | GOV-001 to 008, PIN-001 to 006 | Interface suite green for all bindings; `AD-02`, `AD-04`, `AD-06` pass |
 | 9 | Scenario suite, oracle, metrics, evidence bundles, 62443 matrix, demo dashboard, what-if (10.4), tagged release | SCN-001, EVD-001, EVD-002, BEN-001 to 009, WIF-001 to 005 | Nightly matrix green; evidence bundle reproduced on a second machine |
 | 10 | Plants from other projects (ADR 0029): the plant interface, `http_plant`, `plant check`, an example plant | PLT-001 to 006 | A card on the example plant from one scenario end to end |
-| 11 | Evidence about hosts (ADR 0030): keepalives in shirudo's format, `SHIRUDO_PIN`, the host register and premise, host scenarios | HST-001 to 008 | A host scenario refused from a keepalive before the cross-check alarms, under a gate that reads host evidence |
+| 11 | Evidence about hosts (ADR 0032): keepalives in shirudo's format, `SHIRUDO_PIN`, the host register and premise, host scenarios | HST-001 to 008 | A host scenario refused from a keepalive before the cross-check alarms, under a gate that reads host evidence |
 
 **Milestone M1.** After Stage 4, thin versions of the supervisory command path, the gate interface, the two scripted agents, counterfactual replay and the result card were built first, on four scenarios: `OP-03`, `OP-10`, `AD-01` and `AD-03`. They ran under the operating profile `DECISION_ONLY`: REMORA decides through `evaluate_policy`, and allowed proposals are applied by the command service with the hash of the decision as reference. There is no execution token, no cumulative-limit enforcement on the REMORA side and no audit chain in this profile. Its results MUST be labelled as such and MUST NOT be described as governed execution. `AD-04` and `AD-05` cannot be claimed as passed under it, since replay and cumulative limits are enforced only on the governed path.
 
@@ -1114,7 +1114,7 @@ The reference specification does not contain single-line diagrams, P&IDs, point 
 
 - `compose` mode is not built. There is no `deploy/` directory, no conduit container and no REMORA service in a container. Everything runs, and is tested, in `inproc` mode (ADR 0010, ADR 0016, ADR 0017). `ADC-NET-001` asks for the zone matrix in both run modes and is tested in `inproc` only. Every sentence above about `compose` mode describes a design.
 - No language-model agent (`llm_agent`, 12.1) is implemented. The benchmark and the demonstration use scripted agents.
-- Of ADR 0030, only the keepalive format and `SHIRUDO_PIN` are built (`ADC-HST-001` to `-004`). No simulated host sends a keepalive yet, no proposal carries a `host_attested` premise, and no scenario uses one.
+- Of ADR 0032, only the keepalive format and `SHIRUDO_PIN` are built (`ADC-HST-001` to `-004`). No simulated host sends a keepalive yet, no proposal carries a `host_attested` premise, and no scenario uses one.
 - The binding surface in 5.2 and 9.2 differs from REMORA in four places (`remora_binding.md`, section 1).
 - Zones and conduits differ in the points listed in `zone_model.md`, section 6. No data collector and no alarm notification are modelled.
 - The checks of 12.4 are run locally and reported as commit statuses (ADR 0011).

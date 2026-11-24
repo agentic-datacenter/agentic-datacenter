@@ -1,4 +1,4 @@
-"""Host evidence in shirudo's keepalive format, checked without a TPM (ADR 0030).
+"""Host evidence in shirudo's keepalive format, checked without a TPM (ADR 0032).
 
 The vectors under ``tests/fixtures/shirudo/keepalive/`` are shirudo's own, at the
 commit in ``SHIRUDO_PIN``. A checker that gives the verdict shirudo-quote-check

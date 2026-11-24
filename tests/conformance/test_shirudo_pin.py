@@ -1,4 +1,4 @@
-"""ADC-HST-004: the shirudo vectors are the files of the pin, under shirudo's licence (ADR 0030)."""
+"""ADC-HST-004: the shirudo vectors are the files of the pin, under shirudo's licence (ADR 0032)."""
 
 import hashlib
 import re

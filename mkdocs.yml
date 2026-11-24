@@ -41,7 +41,7 @@ nav:
       - 0029 Plants from other projects: design/adr/0029-plants-from-other-projects.md
       - 0030 A quick run shows what a scenario is about: design/adr/0030-a-quick-run-reaches-the-event.md
       - 0031 The mandate record: design/adr/0031-the-mandate-record.md
-      - 0030 Host evidence from shirudo: design/adr/0030-host-evidence-from-shirudo.md
+      - 0032 Host evidence from shirudo: design/adr/0032-host-evidence-from-shirudo.md
   - Guides:
       - For data center operators: guides/operators.md
       - Run a scenario on measured weather: guides/measured-weather.md

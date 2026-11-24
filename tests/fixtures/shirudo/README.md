@@ -5,6 +5,6 @@ The files under `keepalive/` are copied unchanged from [shirudo](https://github.
 - `node-*.json`: four keepalive bodies, in the format `shirudo.keepalive/1`.
 - `quotes.tsv`: one row per body, with the TPM quote of the body as `shirudo-quote-check` reads it: the body's file name, `attest`, `sig`, `ak` and the SHA-256 of the body.
 
-`SHIRUDO_PIN` lists the SHA-256 of each file, and `tests/conformance/test_shirudo_pin.py` checks them. A change to these files is a pin bump: its own pull request, which changes the pin and the copies together (ADR 0030).
+`SHIRUDO_PIN` lists the SHA-256 of each file, and `tests/conformance/test_shirudo_pin.py` checks them. A change to these files is a pin bump: its own pull request, which changes the pin and the copies together (ADR 0032).
 
 They are used by the tests only, and are not part of any distribution of Agentic-Datacenter.

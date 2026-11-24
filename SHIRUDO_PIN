@@ -1,4 +1,4 @@
-# Pinned shirudo commit for Agentic-Datacenter. See docs/design/adr/0030-host-evidence-from-shirudo.md.
+# Pinned shirudo commit for Agentic-Datacenter. See docs/design/adr/0032-host-evidence-from-shirudo.md.
 # Nothing of shirudo is installed or executed. What is taken is the keepalive format and the
 # test vectors listed under "files", copied unchanged into tests/fixtures/shirudo/keepalive/
 # under shirudo's BSD-2-Clause licence (tests/fixtures/shirudo/LICENSE).
