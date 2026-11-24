@@ -149,11 +149,14 @@ def _count(params: Mapping[str, Param], into: dict[str, int]) -> None:
 
 def _resolve_in(root: Path, pattern: str) -> list[Path]:
     """The files an include pattern names, each checked to lie inside *root*."""
+    if not pattern.strip() or Path(pattern).parts in ((), (".",)):
+        raise FacilityError(f"include {pattern!r}: names no file of the bundle")
     if Path(pattern).is_absolute() or ".." in Path(pattern).parts:
         raise FacilityError(f"include {pattern!r}: a path outside the bundle")
-    matches = sorted(root.glob(pattern))
-    if not matches:
-        raise FacilityError(f"include {pattern!r}: names no file of the bundle")
+    try:
+        matches = sorted(root.glob(pattern))
+    except (ValueError, IndexError) as exc:
+        raise FacilityError(f"include {pattern!r}: not a pattern: {exc}") from exc
     out = []
     for path in matches:
         real = path.resolve()
@@ -161,6 +164,8 @@ def _resolve_in(root: Path, pattern: str) -> list[Path]:
             raise FacilityError(f"include {pattern!r}: {path.name} leads outside the bundle")
         if real.is_file():
             out.append(path)
+    if not out:
+        raise FacilityError(f"include {pattern!r}: names no file of the bundle")
     return out
 
 
@@ -168,9 +173,9 @@ def _read(root: Path, path: Path, files: dict[str, str]) -> Any:
     rel = path.relative_to(root).as_posix() if path.is_relative_to(root) else path.name
     if len(files) >= MAX_FILES:
         raise FacilityError(f"a bundle has at most {MAX_FILES} files")
-    raw = path.read_bytes()
-    if len(raw) > MAX_FILE_BYTES:
+    if path.stat().st_size > MAX_FILE_BYTES:
         raise FacilityError(f"{rel}: a file of a bundle is at most 1 MiB")
+    raw = path.read_bytes()
     files[rel] = hashlib.sha256(raw).hexdigest()
     try:
         return yaml.safe_load(raw.decode("utf-8"))
@@ -263,7 +268,7 @@ def _lower(
                     break
             else:
                 groups.append((resolved, [name]))
-        if len(groups) == 1 and groups[0][0] == use.params:
+        if not groups or (len(groups) == 1 and groups[0][0] == use.params):
             out.append(use.plain())  # nothing to split: the use as it was written
             continue
         for params, members in groups:

@@ -77,7 +77,7 @@ def test_lists_are_joined_in_include_order_and_a_key_defined_twice_is_refused(
 
 @pytest.mark.req("ADC-FAC-001")
 @pytest.mark.parametrize(
-    "include", ["../outside.yaml", "/etc/hosts", "missing.yaml", "none/*.yaml"]
+    "include", ["../outside.yaml", "/etc/hosts", "missing.yaml", "none/*.yaml", "", ".", "sub"]
 )
 def test_an_include_outside_the_bundle_or_that_names_nothing_is_refused(
     tmp_path: Path, include: str
@@ -85,6 +85,7 @@ def test_an_include_outside_the_bundle_or_that_names_nothing_is_refused(
     bundle = tmp_path / "bundle"
     write(tmp_path, "outside.yaml", pods_part())
     write(bundle, "datacenter.yaml", header(include=[include]))
+    (bundle / "sub").mkdir()
     with pytest.raises(FacilityError):
         load_facility(bundle)
 
@@ -254,3 +255,13 @@ def test_the_summary_names_the_facility_its_files_and_its_values(tmp_path: Path)
     assert summary["profile_hash"] == facility.profile.hash()
     assert summary["files"] == facility.files
     assert summary["values"] == {"sourced": 6, "assumed": 0}
+
+
+@pytest.mark.req("ADC-FAC-002")
+def test_a_use_over_an_empty_key_set_lowers_as_the_schema_1_file_has_it(tmp_path: Path) -> None:
+    part = pods_part()
+    part["key_sets"]["pods"] = []
+    v1 = {"schema_version": 1, "name": "my_dc", "site": "DC7", **part}
+    write(tmp_path, "datacenter.yaml", header(include=["pods.yaml"]))
+    write(tmp_path, "pods.yaml", part)
+    assert load_facility(tmp_path).profile.hash() == parse_profile(v1).hash()
