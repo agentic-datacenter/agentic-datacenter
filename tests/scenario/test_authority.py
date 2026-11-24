@@ -253,8 +253,15 @@ def test_the_card_counts_it_for_every_gate() -> None:
     assert {"proposals_without_authority", "executed_without_authority"} <= set(FAIRNESS_METRICS)
 
 
-def test_the_code_is_the_frozen_version_and_adds_the_authority_scenarios_to_v1() -> None:
-    """benchmark-v1.1 holds these scenarios; benchmark-v1, kept for its record, did not."""
+def test_the_frozen_version_holds_these_scenarios_and_main_differs_only_where_adr_0031_does() -> (
+    None
+):
+    """benchmark-v1.1 holds these scenarios; benchmark-v1, kept for its record, did not.
+
+    Main carries the next version while it is made (ADR 0028, ADR 0029 option (d)).
+    ADR 0031 changes the harness and the four authority scenarios, so the oracle
+    and the scenario library differ from the frozen version; nothing else may.
+    """
     frozen = json.loads((REPO / "docs/bench/VERSION.json").read_text(encoding="utf-8"))
     before = json.loads(
         (REPO / "docs/bench/versions/benchmark-v1.json").read_text(encoding="utf-8")
@@ -262,7 +269,9 @@ def test_the_code_is_the_frozen_version_and_adds_the_authority_scenarios_to_v1()
     assert set(AUTHORITY) <= set(frozen["scenarios"])
     assert not set(AUTHORITY) & set(before["scenarios"])
     now = benchmark_version(PROFILE, CONTRACTS, library_ids())
-    assert now == frozen["version"], "the code is not the frozen version; freeze a new one"
+    differing = {k for k in frozen["version"] if now.get(k) != frozen["version"][k]}
+    assert set(now) == set(frozen["version"])
+    assert differing <= {"oracle", "scenario_library"}, differing
 
 
 # --- why a gate refused, in a word (issue 31, point 2) --------------------------

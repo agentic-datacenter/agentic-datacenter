@@ -329,8 +329,13 @@ class GovernedPath:
             # The gate's own finding, kept beside the premise it is compared with.
             # Only where a mandate was set: elsewhere there is nothing to compare.
             record["gate_authority_holds"] = bool(decision.authority_holds)
-        if decision.authority_detail and decision.verdict is not Verdict.ALLOW:
-            # Which kind of no mandate the gate refused for, if it said. A word of
+        if (
+            decision.authority_detail
+            and decision.verdict is not Verdict.ALLOW
+            and record.get("authorized") is False
+        ):
+            # Which kind of no mandate the gate refused for, if it said, and only where
+            # a mandate was set and does not hold (ADR 0031, decision 11). A word of
             # its own is kept as ``other``, as with the codes.
             said = decision.authority_detail
             record["reason_details"] = {"authority": said if said in AUTHORITY_DETAILS else "other"}
