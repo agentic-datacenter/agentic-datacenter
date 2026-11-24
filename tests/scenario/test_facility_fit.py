@@ -124,3 +124,15 @@ def test_facility_compile_writes_the_profile_a_bundle_lowers_to(tmp_path: Path) 
     out = tmp_path / "lowered.yaml"
     assert facility_cli(["compile", str(GENERIC), "--out", str(out)]) == 0
     assert load_profile(out).hash() == load_profile(GENERIC).hash()
+
+
+@pytest.mark.req("ADC-FAC-006")
+def test_the_example_bundle_has_three_kinds_of_pod_and_runs(tmp_path: Path) -> None:
+    example = load_facility(REPO / "examples/byodc")
+    loads = {s.instance: s.params["design_kw"] for s in example.profile.instances()
+             if s.module_id == "electrical.it_load"}  # fmt: skip
+    assert sorted(set(loads.values())) == [80.0, 150.0, 300.0]
+    assert facility_cli(["check", str(REPO / "examples/byodc"), "--out", str(tmp_path)]) == 0
+    report = json.loads((tmp_path / "facility_report.json").read_text(encoding="utf-8"))
+    assert report["run"]["it_served_kw"] == pytest.approx(sum(loads.values()), rel=0.01)
+    assert report["fit"]["contracts_not_loaded"] == {}

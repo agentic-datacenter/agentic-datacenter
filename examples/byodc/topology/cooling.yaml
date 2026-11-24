@@ -1,0 +1,126 @@
+# SPDX-License-Identifier: MIT
+# Illustrative values chosen for this example, not taken from any site or datasheet.
+modules:
+- id: cooling.weather
+  instances:
+  - SITE
+  params:
+    dry_bulb_c:
+      value: 20.0
+      unit: degC
+      assumed: true
+    daily_swing_c:
+      value: 0.0
+      unit: K
+      assumed: true
+    rel_humidity_pct:
+      value: 50.0
+      unit: '%'
+      assumed: true
+- id: cooling.chw_plant
+  instances:
+  - CHW
+  params:
+    chiller_kw:
+      value: 1600.0
+      unit: kW
+      assumed: true
+    cop:
+      value: 4.5
+      unit: '-'
+      assumed: true
+    design_ambient_c:
+      value: 35.0
+      unit: degC
+      assumed: true
+    restart_lockout_s:
+      value: 180.0
+      unit: s
+      assumed: true
+    loop_kj_per_k:
+      value: 83720.0
+      unit: kJ/K
+      assumed: true
+- id: cooling.tes
+  instances:
+  - TES-1
+  params:
+    volume_m3:
+      value: 45.0
+      unit: m3
+      assumed: true
+    usable_rise_k:
+      value: 8.0
+      unit: K
+      assumed: true
+    recharge_kw:
+      value: 250.0
+      unit: kW
+      assumed: true
+- id: cooling.pump_station
+  instances:
+  - PHPS
+  params:
+    pump_flow_kg_s:
+      value: 45.0
+      unit: kg/s
+      assumed: true
+    pump_kw:
+      value: 30.0
+      unit: kW
+      assumed: true
+- id: cooling.eroom
+  for_each: trains
+  instance: '{trains}'
+  params:
+    design_heat_kw:
+      value: 33.3
+      unit: kW
+      assumed: true
+    fan_kw:
+      value: 4.0
+      unit: kW
+      assumed: true
+connections:
+- consumer: cooling.chw_plant[CHW].ambient
+  provider: cooling.weather[SITE].ambient
+- consumer: cooling.chw_plant[CHW].power_1
+  provider: electrical.power_train[A].lv_bus
+- consumer: cooling.chw_plant[CHW].power_2
+  provider: electrical.power_train[B].lv_bus
+- consumer: cooling.chw_plant[CHW].power_3
+  provider: electrical.power_train[C].lv_bus
+- consumer: cooling.tes[TES-1].chws_in
+  provider: cooling.chw_plant[CHW].chws
+- consumer: cooling.pump_station[PHPS].chws_in
+  provider: cooling.tes[TES-1].chws_out
+- consumer: cooling.pump_station[PHPS].power_1
+  provider: electrical.power_train[A].lv_bus
+- consumer: cooling.pump_station[PHPS].power_2
+  provider: electrical.power_train[B].lv_bus
+- consumer: cooling.pump_station[PHPS].power_3
+  provider: electrical.power_train[C].lv_bus
+- consumer: cooling.pod[{pods}].chw
+  provider: cooling.pump_station[PHPS].chw
+  for_each: pods
+- consumer: cooling.pod[{pods}].it_heat
+  provider: electrical.it_load[{pods}].heat
+  for_each: pods
+- consumer: cooling.pod[{pods}].fan_power
+  provider: electrical.power_train[{a}].lv_bus
+  with: pod_feeds
+- consumer: cooling.pod[{pods}].fan_power_b
+  provider: electrical.power_train[{b}].lv_bus
+  with: pod_feeds
+- consumer: cooling.pod[{pods}].fire_stop
+  provider: life_safety[LS].pod_fire[{pods}]
+  for_each: pods
+- consumer: cooling.eroom[{trains}].chw
+  provider: cooling.pump_station[PHPS].chw
+  for_each: trains
+- consumer: cooling.eroom[{trains}].ups_heat
+  provider: electrical.ups[{trains}].heat
+  for_each: trains
+- consumer: cooling.eroom[{trains}].power
+  provider: electrical.power_train[{trains}].lv_bus
+  for_each: trains
