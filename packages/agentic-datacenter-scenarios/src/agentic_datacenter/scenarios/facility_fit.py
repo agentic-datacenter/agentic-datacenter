@@ -23,6 +23,7 @@ from agentic_datacenter.core.scheduler import Kernel
 from agentic_datacenter.governance.contracts import ContractLibrary
 from agentic_datacenter.governance.premises import ALIASES
 from agentic_datacenter.net.zones import zone_instances
+from agentic_datacenter.scenarios.agents import CHWS, DP, FUEL_TIME_TO_EMPTY
 from agentic_datacenter.scenarios.plant import BuiltinPlant
 from agentic_datacenter.scenarios.scenario import Event, Scenario, load_scenario
 from agentic_datacenter.supervisory.points import PointDatabase
@@ -51,12 +52,17 @@ class FacilityView:
     tags: frozenset[str]
     zones: frozenset[str]
     relays: frozenset[str]
+    #: Every module id the installed registry knows, whether or not the facility uses it.
+    known_modules: frozenset[str]
+    #: Parameters the modules read and the facility did not give: left to defaults.
+    defaults: int
     points: PointDatabase = field(repr=False)
 
     @classmethod
     def build(cls, profile: Profile, registry: ModuleRegistry | None = None) -> FacilityView:
         """Build the plant of *profile* and read what it has."""
         kernel = Kernel(seed=0)
+        registry = registry or ModuleRegistry.from_entry_points()
         model = BuiltinPlant(profile, kernel, registry)
         points = PointDatabase(kernel, model.modules)
         specs = profile.instances()
@@ -68,6 +74,10 @@ class FacilityView:
             tags=frozenset(points.tags()),
             zones=frozenset(zone_instances(model.modules)),
             relays=frozenset(model.describe().relays),
+            known_modules=frozenset(m.id for m in registry.manifests()),
+            defaults=sum(
+                len(registry.reads.get(spec.name, frozenset()) - set(spec.params)) for spec in specs
+            ),
             points=points,
         )
 
@@ -80,6 +90,7 @@ class Fit:
     not_loaded: dict[str, str]
     runnable: list[str]
     not_run: dict[str, str]
+    defaults: int = 0
 
     def block(self) -> dict[str, Any]:
         """The part of a card's ``facility`` block that says what did not fit."""
@@ -88,6 +99,7 @@ class Fit:
             "contracts_not_loaded": dict(sorted(self.not_loaded.items())),
             "scenarios_run": list(self.runnable),
             "scenarios_not_run": dict(sorted(self.not_run.items())),
+            "values_left_to_defaults": self.defaults,
         }
 
 
@@ -129,7 +141,7 @@ def _event_need(event: Event, view: FacilityView, loaded: set[str]) -> str | Non
     data = event.model_dump(exclude_none=True)
     for text in _strings(data):
         for module_id, instance in _REF.findall(text):
-            if module_id in view.modules or module_id in ALIASES.values():
+            if module_id in view.known_modules or module_id in ALIASES.values():
                 if f"{module_id}[{instance}]" not in view.instances:
                     return f"{module_id}[{instance}]"
     if event.module is not None:
@@ -145,7 +157,7 @@ def _event_need(event: Event, view: FacilityView, loaded: set[str]) -> str | Non
             if units is not None:
                 param, default = units
                 count = view.params.get(event.module, {}).get(param, default)
-                if not isinstance(value, int) or not 1 <= value <= int(str(count)):
+                if not isinstance(value, int) or not 1 <= value <= int(float(str(count))):
                     return f"{name} {value} of {event.module}, which has {count}"
     if event.operator_write is not None:
         tag = str(event.operator_write.get("tag", ""))
@@ -170,8 +182,21 @@ def _event_need(event: Event, view: FacilityView, loaded: set[str]) -> str | Non
     return None
 
 
+def agent_tags(view: FacilityView) -> list[str]:
+    """The points the scripted agents read, in every scenario (``scenarios.agents``)."""
+    fuel = [FUEL_TIME_TO_EMPTY.format(train=t.lower()) for t in view.key_sets.get("trains", ())]
+    return [CHWS, DP, *(fuel if "fuel" in view.modules else [])]
+
+
 def scenario_need(scenario: Scenario, view: FacilityView, loaded: set[str]) -> str | None:
-    """Return the first thing *scenario* needs that the facility lacks, or ``None``."""
+    """Return the first thing *scenario* needs that the facility lacks, or ``None``.
+
+    Every scenario is played by a scripted agent, so the points those agents
+    read are needed by every scenario.
+    """
+    for tag in agent_tags(view):
+        if tag not in view.tags:
+            return f"the point {tag}, which the scripted agents read"
     for contract_id in scenario.planned_work:
         if contract_id not in loaded:
             return f"the contract {contract_id}"
@@ -205,4 +230,4 @@ def fit_facility(
             runnable.append(scenario_id)
         else:
             not_run[scenario_id] = f"needs {need}"
-    return Fit(contracts, not_loaded, runnable, not_run)
+    return Fit(contracts, not_loaded, runnable, not_run, view.defaults)

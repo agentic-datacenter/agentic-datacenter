@@ -684,6 +684,10 @@ def _run_all(
     return [row for row in rows if row is not None]
 
 
+#: The label of a card from a facility of its owner's (ADR 0033, decision 6).
+FACILITY_LABEL = "result on a facility of its owner, not a benchmark result"
+
+
 def run_benchmark(
     profile: Profile,
     contracts: ContractLibrary,
@@ -919,9 +923,6 @@ def _differences(
 
 
 #: What must be the same on cards that are merged into one.
-#: The label of a card from a facility of its owner's (ADR 0033, decision 6).
-FACILITY_LABEL = "result on a facility of its owner, not a benchmark result"
-
 MERGE_KEYS = (
     "facility", "schema_version", "benchmark_version", "label", "lowest_fidelity", "statements",
     "counterfactual", "judging", "agents", "scenarios", "duration_override_s",
@@ -997,6 +998,26 @@ def merge_cards(cards: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
 
 def _pct(value: Any) -> str:
     return "n/a" if value is None else f"{100.0 * float(str(value)):.0f} %"
+
+
+def _facility_note(card: Mapping[str, Any]) -> str:
+    """The lines of a report from a facility of its owner's: which one, and what did not run."""
+    facility = card.get("facility")
+    if not isinstance(facility, Mapping):
+        return ""
+    not_run = facility.get("scenarios_not_run") or {}
+    not_loaded = facility.get("contracts_not_loaded") or {}
+    ran = len(card.get("scenarios", []))
+    return (
+        f"<p>Facility <strong>{html.escape(str(facility.get('name')))}</strong>, site "
+        f"{html.escape(str(facility.get('site')))}: {ran} of {ran + len(not_run)} scenarios "
+        f"ran, {len(not_loaded)} contracts did not fit. "
+        + "".join(
+            f"<br>Not run: {html.escape(str(k))}, {html.escape(str(v))}."
+            for k, v in not_run.items()
+        )
+        + "</p>"
+    )
 
 
 def render_report(card: Mapping[str, Any]) -> str:
@@ -1086,6 +1107,7 @@ code {{ font-size: 12px; }}
 Lowest module fidelity: <strong>{html.escape(str(card["lowest_fidelity"]))}</strong>.
 Scenarios: {html.escape(", ".join(str(s) for s in card["scenarios"]))}.
 Seeds: {html.escape(", ".join(str(s) for s in card["seeds"]))}.</p>
+{_facility_note(card)}
 <ul>{statements}</ul>
 <h2>Safety and utility</h2>
 <svg viewBox="0 0 {size} {size}" width="{size}" height="{size}" role="img"
