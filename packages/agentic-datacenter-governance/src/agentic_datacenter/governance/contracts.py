@@ -201,22 +201,41 @@ class ContractLibrary:
         Raises:
             ContractError: Naming the first contract and tag that does not fit.
         """
+        for contract_id in self._contracts:
+            problem = self.problem(contract_id, points, key_sets)
+            if problem is not None:
+                raise ContractError(f"{contract_id}: {problem}")
+
+    def problem(
+        self, contract_id: str, points: PointDatabase, key_sets: dict[str, tuple[str, ...]]
+    ) -> str | None:
+        """Return why one contract does not fit the facility, or ``None`` when it does.
+
+        The checks are those of :meth:`check_against`, for one contract.
+        """
+        contract = self._contracts[contract_id]
         tags = set(points.tags())
-        for contract in self._contracts.values():
-            for write in contract.writes:
-                for tag in _expand(write.tag, contract, key_sets):
-                    if tag not in tags:
-                        raise ContractError(f"{contract.id}: no such point {tag}")
-                    decl = points.declaration(tag)
-                    if decl.tier not in ("T2", "T3"):
-                        raise ContractError(
-                            f"{contract.id}: {tag} is tier {decl.tier} and can never be written"
-                        )
-                    if contract.risk_tier == "R1" and decl.tier != "T3":
-                        raise ContractError(f"{contract.id}: an R1 contract may write T3 only")
-                    bounds, limits = write.bounds, decl.range
-                    if bounds and limits and not limits[0] <= bounds.min <= bounds.max <= limits[1]:
-                        raise ContractError(f"{contract.id}: bounds on {tag} exceed its range")
+        for write in contract.writes:
+            try:
+                expanded = _expand(write.tag, contract, key_sets)
+            except ContractError as exc:
+                return str(exc).removeprefix(f"{contract_id}: ")
+            for tag in expanded:
+                if tag not in tags:
+                    return f"no such point {tag}"
+                decl = points.declaration(tag)
+                if decl.tier not in ("T2", "T3"):
+                    return f"{tag} is tier {decl.tier} and can never be written"
+                if contract.risk_tier == "R1" and decl.tier != "T3":
+                    return "an R1 contract may write T3 only"
+                bounds, limits = write.bounds, decl.range
+                if bounds and limits and not limits[0] <= bounds.min <= bounds.max <= limits[1]:
+                    return f"bounds on {tag} exceed its range"
+        return None
+
+    def subset(self, contract_ids: list[str]) -> ContractLibrary:
+        """Return the library of the contracts *contract_ids* only (ADR 0033)."""
+        return ContractLibrary([self._contracts[c] for c in contract_ids])
 
 
 def _expand(template: str, contract: Contract, key_sets: dict[str, tuple[str, ...]]) -> list[str]:

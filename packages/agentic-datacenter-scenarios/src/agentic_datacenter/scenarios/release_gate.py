@@ -164,6 +164,10 @@ def check_card(
     from agentic_datacenter.scenarios.bench import against_no_agent  # noqa: PLC0415
 
     report = GateReport(gate)
+    if publication and card.get("facility") is not None:
+        report.violations.append(
+            "the card is from a facility of its owner, not a benchmark result (ADR 0033)"
+        )
     if not card.get("counterfactual"):
         report.violations.append(
             "the card was made without the counterfactual replay; harm cannot be ruled out"
