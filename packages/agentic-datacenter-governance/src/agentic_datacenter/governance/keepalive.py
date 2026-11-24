@@ -1,4 +1,4 @@
-"""Host evidence in shirudo's keepalive format, made and checked without a TPM (ADR 0030).
+"""Host evidence in shirudo's keepalive format, made and checked without a TPM (ADR 0032).
 
 A shirudo target sends its collector a keepalive: a compact JSON body that says
 which build, configuration, kernel and upatch set it runs and whether its guards

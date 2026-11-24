@@ -1,4 +1,4 @@
-# ADR 0030: Evidence about the hosts an action relies on, in shirudo's keepalive format
+# ADR 0032: Evidence about the hosts an action relies on, in shirudo's keepalive format
 
 - **Status:** Proposed. Accepted when the PR that adds it is merged by the owner.
 - **Date:** 2026-11-24

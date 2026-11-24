@@ -83,7 +83,7 @@ As installed from `uv.lock` on 2026-11-13, with the licence each project declare
 | `bacpypes3` | 0.0.110 | MIT as its licence expression, with the classifier "BSD License"; the package and its repository carry no licence text (ADR 0013) | `agentic-datacenter-net` |
 | `pysnmp` (with `pyasn1`) | 7.1.32 (`pyasn1` 0.6.5) | BSD-2-Clause, from the licence file in the package (its metadata declares none); `pyasn1` BSD-2-Clause | `agentic-datacenter-net` |
 | `asyncua` (with `aiosqlite`, `pytz`, `sortedcontainers`, `python-dateutil`, `cryptography`) | 2.1.0 | LGPL-3.0-or-later; `aiosqlite` and `pytz` MIT; `sortedcontainers` Apache-2.0; `python-dateutil` BSD-3-Clause; `cryptography` Apache-2.0 or BSD-3-Clause | `agentic-datacenter-net` |
-| `cryptography` | 50.0.2 | Apache-2.0 or BSD-3-Clause | `agentic-datacenter-governance`, for the host keys and quotes of ADR 0030; also installed with `asyncua` above |
+| `cryptography` | 50.0.2 | Apache-2.0 or BSD-3-Clause | `agentic-datacenter-governance`, for the host keys and quotes of ADR 0032; also installed with `asyncua` above |
 | REMORA (`remora-assurance`) | 0.12.0 at the commit in `REMORA_PIN` | BUSL-1.1, with a separate commercial licence, as declared by that project | `agentic-datacenter-remora` only |
 | `pyiec61850-ng`, carrying `libiec61850` 1.6.1 and Mbed TLS | 1.6.1.10 | GPLv3; Mbed TLS Apache-2.0 | `agentic-datacenter-iec61850` only, on Linux only (ADR 0017). That distribution is GPL-3.0-or-later; its licence text is `packages/agentic-datacenter-iec61850/LICENSE` |
 
@@ -93,7 +93,7 @@ As installed from `uv.lock` on 2026-11-13, with the licence each project declare
 
 ### Formats and test data from shirudo
 
-[shirudo](https://github.com/shirudo-dev/shirudo), BSD-2-Clause, copyright (c) 2026 Authors of shirudo, at commit `6514073a6b62bb0ae1e2b55a8ab7dabe8c50e414`, the commit in `SHIRUDO_PIN` (ADR 0030).
+[shirudo](https://github.com/shirudo-dev/shirudo), BSD-2-Clause, copyright (c) 2026 Authors of shirudo, at commit `6514073a6b62bb0ae1e2b55a8ab7dabe8c50e414`, the commit in `SHIRUDO_PIN` (ADR 0032).
 
 - **The keepalive format `shirudo.keepalive/1`.** `agentic_datacenter.governance.keepalive` makes and checks keepalive bodies and quotes in this format. It was written from shirudo's published description of the format and of `shirudo-quote-check`; no shirudo source code is copied into it or translated from it.
 - **Five test files, copied unchanged** into `tests/fixtures/shirudo/keepalive/` from shirudo's `testing/fixtures/keepalive/`: four keepalive bodies and `quotes.tsv`. They stay under shirudo's licence, whose text is in `tests/fixtures/shirudo/LICENSE`, as the licence asks. `SHIRUDO_PIN` lists their SHA-256. They are used by the tests only and are in no wheel or source distribution of Agentic-Datacenter.
