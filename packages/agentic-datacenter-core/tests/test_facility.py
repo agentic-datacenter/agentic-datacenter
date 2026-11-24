@@ -76,7 +76,9 @@ def test_lists_are_joined_in_include_order_and_a_key_defined_twice_is_refused(
 
 
 @pytest.mark.req("ADC-FAC-001")
-@pytest.mark.parametrize("include", ["../outside.yaml", "/etc/hosts", "missing.yaml", "none/*.yaml"])
+@pytest.mark.parametrize(
+    "include", ["../outside.yaml", "/etc/hosts", "missing.yaml", "none/*.yaml"]
+)
 def test_an_include_outside_the_bundle_or_that_names_nothing_is_refused(
     tmp_path: Path, include: str
 ) -> None:
