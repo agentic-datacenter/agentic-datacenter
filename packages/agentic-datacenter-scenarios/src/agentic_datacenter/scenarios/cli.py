@@ -9,7 +9,10 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from agentic_datacenter.core.profile import load_profile
+import yaml
+
+from agentic_datacenter.core.facility import FacilityError, load_facility
+from agentic_datacenter.core.profile import ProfileError, load_profile
 from agentic_datacenter.governance.contracts import ContractLibrary
 from agentic_datacenter.scenarios.agents import AGENTS
 from agentic_datacenter.scenarios.bench import (
@@ -24,6 +27,7 @@ from agentic_datacenter.scenarios.bench import (
     write_decisions,
 )
 from agentic_datacenter.scenarios.demo import DEMO_AGENTS, DEMO_SCENARIOS, build_demo, write_demo
+from agentic_datacenter.scenarios.facility_fit import fit_facility
 from agentic_datacenter.scenarios.evidence import (
     build_bundle,
     code_commit,
@@ -63,6 +67,11 @@ def bench(argv: Sequence[str]) -> int:
         help="Shorten every scenario to exactly this many seconds, also beside a tier.",
     )  # fmt: skip
     run.add_argument("--profile", type=Path, default=Path("profiles/generic_dc.yaml"))
+    run.add_argument(
+        "--facility", type=Path,
+        help="A facility of your own: a bundle directory or a profile (ADR 0033). Contracts "
+        "and scenarios that do not fit it are listed on the card, not run.",
+    )  # fmt: skip
     run.add_argument("--contracts", type=Path, default=Path("contracts"))
     run.add_argument("--frozen", type=Path, default=Path("docs/bench/VERSION.json"))
     run.add_argument(
@@ -213,13 +222,30 @@ def bench(argv: Sequence[str]) -> int:
         print(f"[{done}/{total}] {run_id}", file=sys.stderr, flush=True)
 
     decided: list[dict[str, object]] = []
+    profile, contracts = load_profile(args.profile), ContractLibrary.load(args.contracts)
+    scenario_ids = args.scenario or library_ids()
+    facility_block = None
+    if args.facility is not None:
+        try:
+            own = load_facility(args.facility)
+        except ProfileError as exc:
+            print(f"agentic-datacenter bench: {exc}", file=sys.stderr)
+            return 1
+        fit = fit_facility(own.profile, contracts, scenario_ids)
+        if not fit.runnable:
+            print("agentic-datacenter bench: no scenario fits this facility", file=sys.stderr)
+            return 1
+        profile, contracts, scenario_ids = own.profile, fit.contracts, fit.runnable
+        facility_block = {**own.summary(), **fit.block()}
+        for scenario_id, reason in fit.not_run.items():
+            print(f"not run: {scenario_id}, {reason}", file=sys.stderr)
 
     try:
         card = run_benchmark(
-            load_profile(args.profile), ContractLibrary.load(args.contracts),
+            profile, contracts,
             {name: installed[name] for name in names},
             args.agent or sorted(AGENTS),
-            args.scenario or library_ids(),
+            scenario_ids,
             list(range(args.first_seed, args.first_seed + seeds)), seconds,
             counterfactual=not args.no_counterfactual, frozen_version=frozen,
             # A quick run is for trying a gate and is never a result, so it needs no flag.
@@ -227,6 +253,7 @@ def bench(argv: Sequence[str]) -> int:
             heldout_secret=secret, heldout_variants=args.heldout_variants if secret else 0,
             jobs=args.jobs, progress=progress, horizon_s=horizon, max_judged=max_judged,
             replay_jobs=args.replay_jobs, decisions=decided, reach_s=reach,
+            facility=facility_block,
         )  # fmt: skip
     except BenchVersionError as exc:
         print(
@@ -379,6 +406,10 @@ def scenario(argv: Sequence[str]) -> int:
     run.add_argument("--seed", type=int, default=1)
     run.add_argument("--seconds", type=int, help="Shorten the scenario to this many seconds.")
     run.add_argument("--profile", type=Path, default=Path("profiles/generic_dc.yaml"))
+    run.add_argument(
+        "--facility", type=Path,
+        help="A facility of your own: a bundle directory or a profile (ADR 0033).",
+    )  # fmt: skip
     run.add_argument("--contracts", type=Path, default=Path("contracts"))
     run.add_argument("--out", type=Path, default=Path("build/evidence"))
     verify = actions.add_parser("verify", help="Check an evidence bundle against its manifest.")
@@ -400,6 +431,23 @@ def scenario(argv: Sequence[str]) -> int:
         )
         return 2
     profile, contracts = load_profile(args.profile), ContractLibrary.load(args.contracts)
+    if args.facility is not None:
+        try:
+            own = load_facility(args.facility)
+        except ProfileError as exc:
+            print(f"agentic-datacenter scenario: {exc}", file=sys.stderr)
+            return 1
+        fit = fit_facility(own.profile, contracts, [args.scenario])
+        if args.scenario in fit.not_run:
+            print(
+                f"agentic-datacenter scenario: {args.scenario} does not fit this facility: "
+                f"{fit.not_run[args.scenario]}",
+                file=sys.stderr,
+            )
+            return 2
+        profile, contracts = own.profile, fit.contracts
+        for contract_id, reason in fit.not_loaded.items():
+            print(f"not loaded: {contract_id}, {reason}", file=sys.stderr)
     chosen = load_scenario(args.scenario)
     gate = installed[args.gate](contracts)
     operating = str(getattr(gate, "profile", "UNSPECIFIED"))
@@ -485,5 +533,50 @@ def gate(argv: Sequence[str]) -> int:
     print(
         "next: agentic-datacenter bench run --gate "
         f"{args.gate} --seeds 3 --allow-unfrozen --out build/bench-{args.gate}"
+    )
+    return 0
+
+
+def facility(argv: Sequence[str]) -> int:
+    """Compile a facility of your own and check what of the libraries fits it.
+
+    Runs ``agentic-datacenter facility compile|check`` and returns the exit status.
+    The first line is the help text of ``agentic-datacenter --help``.
+    """
+    from agentic_datacenter.scenarios.facility_report import check_facility, write_report
+
+    parser = argparse.ArgumentParser(
+        prog="agentic-datacenter facility",
+        description="Bring your own data center: a bundle of files (ADR 0033).",
+    )
+    actions = parser.add_subparsers(dest="action", required=True)
+    compile_ = actions.add_parser("compile", help="Write the profile a bundle compiles to.")
+    compile_.add_argument("path", type=Path, help="A bundle directory, or a profile file.")
+    compile_.add_argument("--out", type=Path, required=True)
+    check = actions.add_parser(
+        "check", help="Build the plant, run it, and report what contracts and scenarios fit."
+    )
+    check.add_argument("path", type=Path, help="A bundle directory, or a profile file.")
+    check.add_argument("--contracts", type=Path, default=Path("contracts"))
+    check.add_argument("--out", type=Path, default=Path("build/facility"))
+    args = parser.parse_args(argv)
+    try:
+        own = load_facility(args.path)
+    except (FacilityError, ProfileError) as exc:
+        print(f"agentic-datacenter facility: {exc}", file=sys.stderr)
+        return 1
+    if args.action == "compile":
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        data = own.profile.model_dump(mode="json", by_alias=True, exclude_none=True)
+        args.out.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+        print(f"{own.profile.name}: hash {own.profile.hash()}, written to {args.out}")
+        return 0
+    report = check_facility(own, ContractLibrary.load(args.contracts))
+    write_report(report, args.out)
+    fit = report["fit"]
+    print(
+        f"{own.profile.name}: {len(fit['contracts_loaded'])} contracts load, "
+        f"{len(fit['contracts_not_loaded'])} do not; {len(fit['scenarios_run'])} scenarios "
+        f"fit, {len(fit['scenarios_not_run'])} do not. Report: {args.out / 'facility_report.md'}"
     )
     return 0

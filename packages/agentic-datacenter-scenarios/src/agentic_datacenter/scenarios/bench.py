@@ -704,8 +704,13 @@ def run_benchmark(
     replay_jobs: int = 1,
     decisions: list[dict[str, Any]] | None = None,
     reach_s: int | None = None,
+    facility: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Run every gate against every agent, scenario and seed, and return the result card.
+
+    With *facility*, the card is from a facility of its owner's (ADR 0033): it
+    carries *facility* as its ``facility`` block, is never of the frozen
+    version, and is labelled so.
 
     Every scenario and seed is also run once with no agent, and each run is
     compared with it (ADC-BEN-007).
@@ -744,8 +749,8 @@ def run_benchmark(
     if replay_jobs < 1:
         raise ValueError("replay_jobs must be at least 1")
     version = benchmark_version(profile, contracts, scenario_ids)
-    frozen = frozen_version is not None and dict(frozen_version) == version
-    if not frozen and not allow_unfrozen:
+    frozen = facility is None and frozen_version is not None and dict(frozen_version) == version
+    if facility is None and not frozen and not allow_unfrozen:
         differing = sorted(k for k in version if (frozen_version or {}).get(k) != version[k])
         raise BenchVersionError(
             "this is not the frozen benchmark version; differing component(s): "
@@ -800,11 +805,15 @@ def run_benchmark(
                 if number == 0 and unchanged(template, heldout_secret, heldout_variants)
             ],
         }
+    label = "benchmark result" if frozen else "development run, not a benchmark result"
+    if facility is not None:
+        label = FACILITY_LABEL
     head: dict[str, Any] = {
+        **({"facility": dict(facility)} if facility is not None else {}),
         "heldout": card_heldout,
         "schema_version": CARD_SCHEMA_VERSION,
         "benchmark_version": {**version, "frozen": frozen},
-        "label": "benchmark result" if frozen else "development run, not a benchmark result",
+        "label": label,
         "lowest_fidelity": fidelity,
         "statements": list(STATEMENTS),
         "counterfactual": counterfactual,
@@ -910,8 +919,11 @@ def _differences(
 
 
 #: What must be the same on cards that are merged into one.
+#: The label of a card from a facility of its owner's (ADR 0033, decision 6).
+FACILITY_LABEL = "result on a facility of its owner, not a benchmark result"
+
 MERGE_KEYS = (
-    "schema_version", "benchmark_version", "label", "lowest_fidelity", "statements",
+    "facility", "schema_version", "benchmark_version", "label", "lowest_fidelity", "statements",
     "counterfactual", "judging", "agents", "scenarios", "duration_override_s",
     "duration_reach_s", "heldout",
 )  # fmt: skip
