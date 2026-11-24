@@ -13,3 +13,5 @@ files:
   testing/fixtures/keepalive/node-b-1.0.0.json  676584962325f376c5a911753161a5559cbb3912948772e1ae79c87fa526e1a5
   testing/fixtures/keepalive/node-b-1.1.0.json  c9d1b7d0687bf8268848742ccad4b17851aee9c6e3721cc98c296183a5ecda84
   testing/fixtures/keepalive/quotes.tsv         1c924b70b0863e1f6986e970b80ae2367d9b4f8bf2dfa5d0700f64b00e83bcea
+licence:
+  LICENSE                                       b867b6a7c42630db3b2ee8fe2105b18751dbc554e53f37a0095f98bdbbf7f1aa
