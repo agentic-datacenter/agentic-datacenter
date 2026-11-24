@@ -19,7 +19,7 @@ REPO = Path(__file__).resolve().parents[2]
 GENERIC = REPO / "profiles/generic_dc.yaml"
 
 
-def with_chillers(count: int) -> Any:
+def with_chillers(count: float) -> Any:
     data: dict[str, Any] = yaml.safe_load(GENERIC.read_text(encoding="utf-8"))
     use = next(u for u in data["modules"] if u["id"] == "cooling.chw_plant")
     use["params"]["chillers"] = {"value": count, "unit": "-", "assumed": True}
@@ -70,3 +70,12 @@ def test_two_chillers_have_no_points_of_a_third_and_its_contracts_do_not_fit() -
 def test_a_count_outside_one_to_nine_is_refused() -> None:
     with pytest.raises(ValueError, match="1 to 9"):
         built(with_chillers(10))
+
+
+@pytest.mark.req("ADC-FAC-010")
+def test_a_whole_number_given_as_a_float_is_taken_and_a_fraction_is_refused() -> None:
+    """From the review of PR 44: 4.0 crashed the fit check, and 2.7 became 2 without a word."""
+    fit = fit_facility(with_chillers(4.0), ContractLibrary.load(REPO / "contracts"), ["OP-03"])
+    assert fit.runnable == ["OP-03"]
+    with pytest.raises(ValueError, match="whole number"):
+        built(with_chillers(2.7))

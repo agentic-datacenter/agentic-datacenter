@@ -87,7 +87,10 @@ class ChwPlant(SimModule):
         from ``power_<((n - 1) mod 3) + 1>``, so a fourth shares the first feed.
         """
         super().__init__(ctx, params)
-        count = int(param_number(params, "chillers", float(len(CHILLERS))))
+        given = param_number(params, "chillers", float(len(CHILLERS)))
+        if given != int(given):
+            raise ValueError(f"chillers is a whole number, got {given}")
+        count = int(given)
         self.io = IOBoard(plant_points(count))
         self.chillers = tuple(range(1, count + 1))
         self.feed_of = {n: (n - 1) % FEEDS + 1 for n in self.chillers}
