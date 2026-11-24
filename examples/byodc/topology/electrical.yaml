@@ -1,0 +1,112 @@
+# SPDX-License-Identifier: MIT
+# Illustrative values chosen for this example, not taken from any site or datasheet.
+modules:
+- id: electrical.utility
+  instances:
+  - INC-1
+  - INC-2
+- id: electrical.mv_switchgear
+  instances:
+  - SWG-MV
+- id: electrical.power_train
+  for_each: trains
+  instance: '{trains}'
+- id: electrical.genset
+  for_each: trains
+  instance: '{trains}'
+  params:
+    rated_kw:
+      value: 1800.0
+      unit: kW
+      assumed: true
+    start_s:
+      value: 10.0
+      unit: s
+      assumed: true
+    fuel_l_per_h_full:
+      value: 430.0
+      unit: l/h
+      assumed: true
+    fuel_l_per_h_quarter:
+      value: 130.0
+      unit: l/h
+      assumed: true
+- id: electrical.ups
+  for_each: trains
+  instance: '{trains}'
+  params:
+    rated_kw:
+      value: 1200.0
+      unit: kW
+      assumed: true
+    autonomy_s:
+      value: 300.0
+      unit: s
+      assumed: true
+    efficiency:
+      value: 0.96
+      unit: '-'
+      assumed: true
+- id: fuel
+  instances:
+  - FUEL
+  params:
+    bulk_tank_m3:
+      value: 25.0
+      unit: m3
+      assumed: true
+    sub_base_tank_l:
+      value: 4000.0
+      unit: l
+      assumed: true
+    low_switch_pct:
+      value: 50.0
+      unit: '%'
+      assumed: true
+    high_switch_pct:
+      value: 90.0
+      unit: '%'
+      assumed: true
+    transfer_l_per_h:
+      value: 1500.0
+      unit: l/h
+      assumed: true
+- id: life_safety
+  instances:
+  - LS
+- id: security
+  instances:
+  - SEC
+- id: sensors
+  instances:
+  - SENSORS
+connections:
+- consumer: electrical.mv_switchgear[SWG-MV].incomer_1
+  provider: electrical.utility[INC-1].supply
+- consumer: electrical.mv_switchgear[SWG-MV].incomer_2
+  provider: electrical.utility[INC-2].supply
+- consumer: electrical.power_train[{trains}].utility_feed
+  provider: electrical.mv_switchgear[SWG-MV].feeder[{trains}]
+  for_each: trains
+- consumer: electrical.power_train[{trains}].gen_output
+  provider: electrical.genset[{trains}].output
+  for_each: trains
+- consumer: electrical.power_train[{trains}].gen_ready_to_load
+  provider: electrical.genset[{trains}].ready_to_load
+  for_each: trains
+- consumer: electrical.power_train[{trains}].gen_fault
+  provider: electrical.genset[{trains}].fault
+  for_each: trains
+- consumer: electrical.genset[{trains}].start_request
+  provider: electrical.power_train[{trains}].gen_start_request
+  for_each: trains
+- consumer: electrical.genset[{trains}].fuel
+  provider: fuel[FUEL].supply[{trains}]
+  for_each: trains
+- consumer: electrical.ups[{trains}].input
+  provider: electrical.power_train[{trains}].lv_bus
+  for_each: trains
+- consumer: fuel[FUEL].power
+  provider: electrical.power_train[A].lv_bus
+- consumer: life_safety[LS].power
+  provider: electrical.power_train[B].lv_bus

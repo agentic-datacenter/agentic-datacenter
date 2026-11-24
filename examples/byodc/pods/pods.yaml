@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: MIT
+# Two AI PODs, two enterprise PODs, two storage PODs.
+# Illustrative values chosen for this example, not taken from any site or datasheet.
+modules:
+- id: electrical.it_load
+  for_each: pods
+  instance: '{pods}'
+  equipment: it_enterprise
+  overrides:
+    '01':
+      equipment: it_ai
+    '02':
+      equipment: it_ai
+    '05':
+      equipment: it_storage
+    '06':
+      equipment: it_storage
+- id: cooling.pod
+  for_each: pods
+  instance: '{pods}'
+  equipment: pod_enterprise
+  overrides:
+    '01':
+      equipment: pod_ai
+    '02':
+      equipment: pod_ai
+    '05':
+      equipment: pod_storage
+    '06':
+      equipment: pod_storage
+connections:
+- consumer: electrical.it_load[{pods}].feed_a
+  provider: electrical.ups[{a}].output
+  with: pod_feeds
+- consumer: electrical.it_load[{pods}].feed_b
+  provider: electrical.ups[{b}].output
+  with: pod_feeds
+- consumer: electrical.it_load[{pods}].epo
+  provider: life_safety[LS].pod_epo[{pods}]
+  for_each: pods
