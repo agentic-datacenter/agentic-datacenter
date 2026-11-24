@@ -9,5 +9,5 @@ requires:
   - {port: power_2, type: electrical}
   - {port: power_3, type: electrical}
 zone: Z1-CHW
-requirements: [ADC-PRC-002, ADC-PRC-010, ADC-CTL-004, ADC-CTL-005]
+requirements: [ADC-PRC-002, ADC-PRC-010, ADC-CTL-004, ADC-CTL-005, ADC-FAC-010]
 spec: docs/design/modules/cooling.chw_plant.md
