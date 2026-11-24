@@ -871,7 +871,7 @@ Each requirement below maps to at least one named test; a requirement without a 
 | ADC-FAC-005 | An equipment model names its module, maker, model and evidence, and a use of it by another module is refused. | core/test\_facility |
 | ADC-FAC-006 | `facility check` builds the plant of a bundle, runs it for five minutes and reports the contracts and scenarios that fit, each that does not with its reason, and the values by provenance. | scenario/test\_facility\_fit |
 | ADC-FAC-007 | Under `--facility`, a contract that does not fit is not loaded and is listed; under `--profile` the library is refused as a whole, as before. | scenario/test\_facility\_fit |
-| ADC-FAC-008 | Under `--facility`, a scenario that names an instance, key, zone, relay, point or contract the facility lacks is not run, and is listed and counted. | scenario/test\_facility\_fit |
+| ADC-FAC-008 | Under `--facility`, a scenario that names an instance, key, zone, relay, point or contract the facility lacks, or needs a point the scripted agents read, is not run; it is listed on the card and the report says how many of all ran. | scenario/test\_facility\_fit |
 | ADC-FAC-009 | A card under `--facility` carries the `facility` block, is never a benchmark result and is refused for publication; a card without it is unchanged. | scenario/test\_facility\_fit |
 | ADC-FAC-010 | Chillers are counted by a parameter, 1 to 9; at three every tag, port and state hash is unchanged, and the overview counts the chillers from the plant's points. | not built yet (ADR 0033) |
 

@@ -139,3 +139,62 @@ def test_the_example_bundle_has_three_kinds_of_pod_and_runs(tmp_path: Path) -> N
     report = json.loads((tmp_path / "facility_report.json").read_text(encoding="utf-8"))
     assert report["run"]["it_served_kw"] == pytest.approx(sum(loads.values()), rel=0.01)
     assert report["fit"]["contracts_not_loaded"] == {}
+
+
+def _variant(tmp_path: Path, change: Any) -> Path:
+    data: dict[str, Any] = yaml.safe_load(GENERIC.read_text(encoding="utf-8"))
+    change(data)
+    path = tmp_path / "variant.yaml"
+    path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+    return path
+
+
+@pytest.mark.req("ADC-FAC-008")
+def test_a_scenario_that_names_a_module_the_facility_lacks_altogether_is_not_run(
+    tmp_path: Path,
+) -> None:
+    """From the review of PR 43: OP-04 was declared to fit with no sensors module at all."""
+
+    def drop_sensors(data: dict[str, Any]) -> None:
+        data["modules"] = [m for m in data["modules"] if m["id"] != "sensors"]
+
+    fit = fit_facility(load_profile(_variant(tmp_path, drop_sensors)), LIBRARY, library_ids())
+    assert fit.not_run["OP-04"] == "needs sensors[SENSORS]"
+    assert fit.not_run["AD-03"] == "needs sensors[SENSORS]"
+
+
+@pytest.mark.req("ADC-FAC-008")
+def test_without_the_points_the_scripted_agents_read_no_scenario_fits(tmp_path: Path) -> None:
+    """From the review of PR 43: with the chiller plant renamed, AD-07 crashed on the agent."""
+
+    def rename(data: dict[str, Any]) -> None:
+        text = yaml.safe_dump(data).replace("cooling.chw_plant[CHW]", "cooling.chw_plant[CHW1]")
+        data.clear()
+        data.update(yaml.safe_load(text))
+        next(m for m in data["modules"] if m["id"] == "cooling.chw_plant")["instances"] = ["CHW1"]
+
+    fit = fit_facility(load_profile(_variant(tmp_path, rename)), LIBRARY, library_ids())
+    assert fit.runnable == []
+    assert all("scripted agents read" in why for why in fit.not_run.values())
+
+
+@pytest.mark.req("ADC-FAC-006")
+def test_the_values_a_facility_leaves_to_the_modules_defaults_are_counted() -> None:
+    fit = fit_facility(load_profile(GENERIC), LIBRARY, ["OP-03"])
+    assert fit.block()["values_left_to_defaults"] > 0
+
+
+@pytest.mark.req("ADC-FAC-008")
+def test_the_report_of_a_facility_card_says_how_many_scenarios_ran(tmp_path: Path) -> None:
+    from agentic_datacenter.scenarios.bench import render_report
+
+    facility = load_facility(small_facility(tmp_path))
+    fit = fit_facility(facility.profile, LIBRARY, ["OP-05", "OP-06"])
+    card = _card(
+        facility.profile,
+        fit.contracts,
+        fit.runnable,
+        facility={**facility.summary(), **fit.block()},
+    )
+    page = render_report(card)
+    assert "1 of 2 scenarios ran" in page and "Not run: OP-06" in page
