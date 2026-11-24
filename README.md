@@ -1,15 +1,15 @@
 # Agentic-Datacenter
 
-**A shared test arena for autonomous data center operations.** Bring your facility, your equipment, your agent or your safety control, and see what each decision does to the plant before it gets near a real one.
+**Independent validation of autonomous AI operations in a data center, before they reach a real one.**
 
-Agentic-Datacenter simulates a data center down to its power trains, chillers and PODs. AI agents propose control actions, and a safety control, a *gate*, decides which ones run. Every run shows what got through, what was stopped, what it cost, and how often a person had to step in.
+Put an AI agent, a safety control and a facility together in a simulated plant. Agentic-Datacenter shows what each decision does to temperatures, IT load, energy and approvals. For every command that was stopped, it plays the same moment again as if the command had run, so a block that avoided harm is told from a block that only cost a useful step.
 
 <p align="center">
   <a href="docs/media/agentic_datacenter_visual.mp4"><img src="docs/media/agentic_datacenter_visual.webp" alt="Fly-over of a rendered modular data center: the site, generator enclosures, air-cooled chillers, thermal storage and the gatehouse" width="100%"></a>
 </p>
 <p align="center"><sub>A rendered, illustrative facility</sub></p>
 
-## Try it in a minute
+## See it in one minute
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/darklordVirtual/agentic-datacenter)
 
@@ -23,19 +23,44 @@ uv run agentic-datacenter demo --scenario OP-03 --gate static_allowlist --out bu
 
 Open `build/first-run/index.html`. It shows a chiller trip in a heat wave, with and without a safety control. No API keys and no external service are needed.
 
+**What a result looks like.** The [one-page report](docs/demo/result-report.md) of three scenarios, a development run with scripted agents and REMORA's governed execution as the safety control:
+
+| | No safety control | With the safety control |
+| --- | ---: | ---: |
+| Scenarios in which the plant was harmed | 1 of 3 | 0 of 3 |
+| Agent commands stopped | 15 of 69 | 40 of 69 |
+| … of those, replayed: would have done harm | | 3 |
+| … of those, replayed: would have been a useful step | | 0 |
+| Times a person was asked | 0 | 1 |
+
+<p align="center"><a href="docs/demo/result-report.md"><img src="docs/media/result-report.png" alt="The one-page result report of three scenarios: the plant was harmed in 1 of 3 scenarios with no safety control and in 0 of 3 with REMORA's governed execution" width="560"></a></p>
+
 ## What you bring, and what you get back
 
 | You are | You bring | You get back, at once | Start here |
 | --- | --- | --- | --- |
-| **A data center operator** | Your facility, as a directory of files | A report of which scenarios and controls fit your site, and runs of every gate on it. Before any agent touches your plant you see which commands must never run without a person, and how often your staff would be asked | [Bring your own data center](docs/guides/bring-your-own-datacenter.md) |
-| **An equipment maker** | A model of your equipment: values, sources, rated conditions | Your equipment in every facility that names it, with your tier on every card that uses it | [The equipment registry](equipment/README.md) |
+| **A data center operator** | Your facility, as a directory of files | A report of which scenarios and controls fit your site, and runs of every gate on it. You see which commands must never run without a person, and how often your staff would be asked | [Bring your own data center](docs/guides/bring-your-own-datacenter.md) |
+| **An equipment maker** | A model of your equipment: values, sources, rated conditions | Your equipment in every facility that names it, with its tier on every card that uses it | [The equipment registry](equipment/README.md) |
 | **A developer of a gate or a governance system** | A gate: a Python package, an HTTP service in any language, or a command | A result card in minutes, against 27 scenarios and two scripted agents, and a place in the public test | [Bring your own gate](docs/guides/bring-your-own-gate.md) |
 | **An operator with measured data** | Weather or plant series, with their licence | Simulations of your own conditions, and calibrated models for everyone | [Calibration data](docs/calibration/contribute-data.md) |
 | **A researcher** | A question about agents, safety controls or plant behaviour | Runs that anyone can repeat: deterministic, frozen versions, every result traced to its commit | [Design document](docs/design/SDD-ADC-001.md) |
 
-An agent of your own is planned; today the agents are scripted (`docs/guides/which-way-in.md`).
+Agents and scenarios of your own are planned. Today the agents are scripted and the scenarios come from the library (`docs/guides/which-way-in.md`).
 
-<p align="center"><a href="docs/demo/result-report.md"><img src="docs/media/result-report.png" alt="The one-page result report of three scenarios: the plant was harmed in 1 of 3 scenarios with no safety control and in 0 of 3 with REMORA's governed execution" width="560"></a></p>
+## Free, and under agreement
+
+Everything needed to try, evaluate and research is free. What a business runs on, and what is made for one customer, is under a commercial agreement.
+
+| Free under the [Business Source License](LICENSE) | Under a [commercial agreement](COMMERCIAL_LICENSING.md) |
+| --- | --- |
+| The simulator, the scenarios, the contracts and the benchmark method | Use in production, and inside a product or service |
+| The formats: facility bundles, equipment entries, the gate wire format | Private facility environments, kept and run for one operator |
+| The public equipment entries, each with its source and licence | Calibrated models of a customer's own equipment and site |
+| `facility check` and runs on your own facility, for evaluation | Regression testing on every change: a new agent version, a policy, firmware, a topology |
+| The public test, and every public result card | Private evidence reports, for approval of autonomous operation, an insurer or a due diligence |
+| The example gates and facilities, under MIT, yours to keep | Large runs on the benchmark runner, and support |
+
+A commercial agreement never buys a result. Rankings, seasons and the gate of the equipment registry are the same for everyone (see the rules below).
 
 ## Why every contribution is worth more than itself
 

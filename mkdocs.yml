@@ -43,6 +43,7 @@ nav:
       - 0031 The mandate record: design/adr/0031-the-mandate-record.md
       - 0032 Host evidence from shirudo: design/adr/0032-host-evidence-from-shirudo.md
       - 0033 Bring your own data center: design/adr/0033-bring-your-own-datacenter.md
+      - 0034 The equipment registry: design/adr/0034-equipment-registry.md
   - Guides:
       - For data center operators: guides/operators.md
       - Bring your own data center: guides/bring-your-own-datacenter.md

@@ -1,4 +1,4 @@
-"""The equipment registry's gate: no entry without its source, its licence and its rights (ADR 0034)."""
+"""The equipment registry's gate: no entry without its source, licence and rights (ADR 0034)."""
 
 from pathlib import Path
 from typing import Any
