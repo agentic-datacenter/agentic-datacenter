@@ -163,25 +163,63 @@ class Profile(_Model):
             for row in self._rows(rule.for_each, rule.rows)
         ]
 
-    def with_param(self, module_id: str, name: str, value: bool | int | float | str) -> Profile:
+    def with_param(
+        self,
+        module_id: str,
+        name: str,
+        value: bool | int | float | str,
+        instance: str | None = None,
+    ) -> Profile:
         """Return a copy in which parameter *name* of module *module_id* is *value*.
 
-        For sensitivity runs. The value is tagged ``assumed``.
+        For sensitivity runs. The value is tagged ``assumed``. With *instance*,
+        only that instance changes: it is taken out of its use into a use of its
+        own (ADR 0033).
 
         Raises:
-            ValueError: If the profile has no such module.
+            ValueError: If the profile has no such module, or no such instance of it.
         """
         if not any(use.id == module_id for use in self.module_uses):
             raise ValueError(f"profile {self.name} has no module {module_id!r}")
-        uses = [
-            use.model_copy(
-                update={"params": {**use.params, name: Param(value=value, assumed=True)}}
-            )
-            if use.id == module_id
-            else use
-            for use in self.module_uses
-        ]
+        param = Param(value=value, assumed=True)
+        if instance is None:
+            uses = [
+                use.model_copy(update={"params": {**use.params, name: param}})
+                if use.id == module_id
+                else use
+                for use in self.module_uses
+            ]
+            return self.model_copy(update={"module_uses": uses})
+        uses = []
+        found = False
+        for use in self.module_uses:
+            names = self._use_names(use) if use.id == module_id else []
+            if instance not in names:
+                uses.append(use)
+                continue
+            found = True
+            rest = [n for n in names if n != instance]
+            if rest:
+                uses.append(
+                    use.model_copy(update={"instances": rest, "for_each": None, "instance": None})
+                )
+            uses.append(
+                use.model_copy(
+                    update={
+                        "instances": [instance], "for_each": None, "instance": None,
+                        "params": {**use.params, name: param},
+                    }
+                )
+            )  # fmt: skip
+        if not found:
+            raise ValueError(f"profile {self.name} has no instance {module_id}[{instance}]")
         return self.model_copy(update={"module_uses": uses})
+
+    def _use_names(self, use: ModuleUse) -> list[str]:
+        if use.instances is not None:
+            return list(use.instances)
+        assert use.instance is not None
+        return [self._fill(use.instance, row) for row in self._rows(use.for_each, None)]
 
     def hash(self) -> str:
         """Return the hash that identifies this profile in an evidence bundle."""

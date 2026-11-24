@@ -9,9 +9,10 @@ kernel. Nothing runs until the wiring is known to be complete.
 from __future__ import annotations
 
 import functools
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from importlib.metadata import entry_points
+from typing import Any
 
 from agentic_datacenter.core.module import (
     ENDPOINT,
@@ -62,6 +63,51 @@ class InstanceSpec:
     def name(self) -> str:
         """``module_id[instance]``."""
         return f"{self.module_id}[{self.instance}]"
+
+
+class _ReadParams(dict[str, JsonValue]):
+    """An instance's parameters that record which names the module reads (ADR 0033).
+
+    A name counts as read when the module looks it up by index, by ``get`` or
+    by ``in``, or iterates the parameters, as a module that maps any name onto
+    its points does.
+    """
+
+    def __init__(self, params: Mapping[str, JsonValue]) -> None:
+        super().__init__(params)
+        self.read: set[str] = set()
+
+    def __getitem__(self, name: str) -> JsonValue:
+        self.read.add(name)
+        return super().__getitem__(name)
+
+    def get(self, name: str, default: Any = None) -> Any:  # noqa: D102
+        self.read.add(name)
+        return super().get(name, default)
+
+    def __contains__(self, name: object) -> bool:
+        if isinstance(name, str):
+            self.read.add(name)
+        return super().__contains__(name)
+
+    def _all(self) -> None:
+        self.read.update(super().keys())
+
+    def __iter__(self) -> Iterator[str]:
+        self._all()
+        return super().__iter__()
+
+    def keys(self) -> Any:  # noqa: D102
+        self._all()
+        return super().keys()
+
+    def values(self) -> Any:  # noqa: D102
+        self._all()
+        return super().values()
+
+    def items(self) -> Any:  # noqa: D102
+        self._all()
+        return super().items()
 
 
 @dataclass(frozen=True)
@@ -455,7 +501,17 @@ class ModuleRegistry:
                 kernel.rng,
                 kernel.events,
             )
-            module = (reg.stub if spec.stub else reg.factory)(ctx, dict(spec.params))
+            if spec.stub:
+                module = reg.stub(ctx, dict(spec.params))
+            else:
+                params = _ReadParams(spec.params)
+                module = reg.factory(ctx, params)
+                unread = sorted(set(spec.params) - params.read)
+                if unread:
+                    raise WiringError(
+                        f"{spec.name}: the module reads no parameter {', '.join(unread)}; "
+                        f"it reads {', '.join(sorted(params.read)) or 'none'} (ADR 0033)"
+                    )
             built[spec.name] = _Instance(spec.name, reg.manifest, module, provided, required)
 
         links: dict[tuple[str, str], tuple[str, str]] = {}
