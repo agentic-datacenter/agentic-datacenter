@@ -459,9 +459,6 @@ def test_the_example_service_decides_from_the_record_when_it_is_not_told(
 
 
 def test_the_example_package_decides_from_the_record_when_it_is_not_told() -> None:
-def test_the_example_package_asks_for_as_many_people_as_the_contract_does() -> None:
-    """It asked for one person whatever the contract said, so work that needs two was
-    executed on one approval (AD-14 at full length)."""
     from dataclasses import replace
 
     template = _load(REPO / "examples/python-gate/src/example_gate/__init__.py", "example_gate")
@@ -472,6 +469,15 @@ def test_the_example_package_asks_for_as_many_people_as_the_contract_does() -> N
     holding = gate.evaluate(PROPOSAL, replace(CLEAN, mandate=_mandate((SETPOINT,))), ACTOR)
     assert holding.verdict is Verdict.ALLOW and holding.authority_holds is True
     assert gate.evaluate(PROPOSAL, CLEAN, ACTOR).authority_holds is None
+
+
+def test_the_example_package_asks_for_as_many_people_as_the_contract_does() -> None:
+    """It asked for one person whatever the contract said, so work that needs two was
+    executed on one approval (AD-14 at full length)."""
+    from dataclasses import replace
+
+    template = _load(REPO / "examples/python-gate/src/example_gate/__init__.py", "example_gate")
+    gate = template.create(None)
     for approval, people in (("one_operator", 1), ("two_person", 2)):
         asked = gate.evaluate(PROPOSAL, replace(CLEAN, risk_tier="R2", approval=approval), ACTOR)
         assert asked.verdict is Verdict.VERIFY and asked.required_approvers == people

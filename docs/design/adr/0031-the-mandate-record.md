@@ -1,6 +1,6 @@
 # ADR 0031: The mandate record, a gate's own finding, and a gate that is not told
 
-- **Status:** Proposed, as part of the next benchmark version. Accepted when the PR that adds it is merged by the owner. It adds to ADR 0028 and changes none of its decisions.
+- **Status:** Accepted, for the benchmark version after `benchmark-v1.1`. Season 1 runs on `benchmark-v1.1` at its tag, which does not have it; main carries it while the next version is made. It adds to ADR 0028 and changes none of its decisions.
 - **Date:** 2026-11-21
 - **SDD:** 9, 10.2, 12.1; ADR 0022, 0028, 0030; issue 31
 

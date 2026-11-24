@@ -335,7 +335,10 @@ def _refusals(
 #: held one, which kind of none by the register, which kind the gate said, and
 #: the gate's own finding (ADR 0031). Carried to the decisions file and to each
 #: judgement of the card.
-AUTHORITY_KEYS = ("authorized", "authority_detail", "reason_details", "gate_authority_holds")
+AUTHORITY_KEYS = (
+    "authorized", "authority_detail", "reason_details", "gate_authority_holds",
+    "authority_premise_told",
+)  # fmt: skip
 
 
 #: The counts of :func:`authority_counts` that are summed over runs.
