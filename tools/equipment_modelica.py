@@ -56,7 +56,7 @@ def read_record(lines: list[str], name: str) -> dict[str, Any]:
     for i in range(start + 1, min(start + 40, len(lines))):
         line = lines[i].strip()
         for field in FIELDS:
-            if line.startswith(field) and "=" in line:
+            if "=" in line and line.split("=", 1)[0].strip() == field:
                 values[field] = (_number(line.split("=", 1)[1]), i + 1)
         match = re.match(r'^"(.+)" annotation', line)
         if match:
@@ -100,7 +100,10 @@ def entry(record: dict[str, Any], commit: str) -> dict[str, Any]:
         "fit": (
             "The record describes a water-cooled chiller at the rated conditions above. "
             "cooling.chw_plant models an air-cooled plant of identical chillers: only the rated "
-            "capacity and COP are taken, and the module's own curves apply to them."
+            "capacity and COP are taken, and the module's own curves apply to them. The COP was "
+            f"rated with condenser water entering at {round(v['TConEnt_nominal'][0] - 273.15, 2)} "
+            "degC; the module applies it at its design ambient air temperature, so the plant's "
+            "efficiency is likely higher than an air-cooled chiller of the same capacity reaches."
         ),
         "provenance": {
             "source": SOURCE_ID,

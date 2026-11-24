@@ -21,7 +21,9 @@ rated_conditions:
   part_load_ratio_min: 0.09
 fit: 'The record describes a water-cooled chiller at the rated conditions above. cooling.chw_plant models
   an air-cooled plant of identical chillers: only the rated capacity and COP are taken, and the module''s
-  own curves apply to them.'
+  own curves apply to them. The COP was rated with condenser water entering at 15.56 degC; the module
+  applies it at its design ambient air temperature, so the plant''s efficiency is likely higher than an
+  air-cooled chiller of the same capacity reaches.'
 provenance:
   source: modelica-buildings
   record: ElectricEIRChiller_York_YS_672kW_7_90COP_Valve

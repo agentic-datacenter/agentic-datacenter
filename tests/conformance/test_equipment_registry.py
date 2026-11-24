@@ -7,7 +7,7 @@ import pytest
 import yaml
 
 from agentic_datacenter.core.equipment import Entry, RegistryError, load_entry, load_registry
-from agentic_datacenter.core.facility import load_facility
+from agentic_datacenter.core.facility import FacilityError, load_facility
 from agentic_datacenter.core.profile import build_plant
 from agentic_datacenter.core.registry import ModuleRegistry
 from agentic_datacenter.core.scheduler import Kernel
@@ -122,3 +122,61 @@ def test_the_notices_name_every_source_with_its_commit_and_licence_file() -> Non
         assert source["repository"] in NOTICES
         assert source["commit"] in NOTICES
         assert source["licence_file"] in NOTICES
+
+
+@pytest.mark.req("ADC-EQP-003")
+def test_a_bundle_cannot_define_an_entry_under_a_registry_name(tmp_path: Path) -> None:
+    """From the review of PR 45: a bundle's own `registry:` key was used as the entry."""
+    entry_id = sorted(ENTRIES)[0]
+    forged = {
+        "module": "cooling.chw_plant", "maker": "X", "model": "Y", "evidence": "none",
+        "params": {"cop": {"value": 99.0, "unit": "-", "assumed": True}},
+    }  # fmt: skip
+    (tmp_path / "datacenter.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 2, "name": "x", "site": "S",
+                "equipment": {f"registry:{entry_id}": forged},
+                "modules": [{"id": "cooling.chw_plant", "instances": ["CHW"],
+                             "equipment": f"registry:{entry_id}"}],
+            }
+        ),
+        encoding="utf-8",
+    )  # fmt: skip
+    with pytest.raises(FacilityError, match="may not define"):
+        load_facility(tmp_path, registry=ROOT)
+
+
+@pytest.mark.req("ADC-EQP-003")
+def test_an_entry_used_is_hashed_with_the_bundle_and_found_from_any_directory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    entry_id = sorted(ENTRIES)[0]
+    (tmp_path / "datacenter.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "schema_version": 2, "name": "x", "site": "S",
+                "modules": [{"id": "cooling.chw_plant", "instances": ["CHW"],
+                             "equipment": f"registry:{entry_id}"}],
+            }
+        ),
+        encoding="utf-8",
+    )  # fmt: skip
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("ADC_EQUIPMENT_REGISTRY", raising=False)
+    facility = load_facility(tmp_path)
+    path = next(ROOT.glob(f"*/{entry_id}.yaml"))
+    import hashlib
+
+    assert facility.files[f"registry:{entry_id}"] == hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+@pytest.mark.req("ADC-EQP-002")
+def test_an_entry_whose_rights_are_not_allowed_cannot_be_used(tmp_path: Path) -> None:
+    source = next(ROOT.glob("*/*.yaml"))
+    data = yaml.safe_load(source.read_text(encoding="utf-8"))
+    data["rights"]["redistribution"] = "pending_review"
+    (tmp_path / data["module"]).mkdir()
+    (tmp_path / data["module"] / source.name).write_text(yaml.safe_dump(data), encoding="utf-8")
+    with pytest.raises(RegistryError, match="rights"):
+        load_entry(source.stem, tmp_path)
