@@ -9,9 +9,12 @@ The simulator plays the hosts between the agent and the plant as such targets.
 Their keys are software P-256 keys derived from the run's seed, and every
 signature is deterministic (RFC 6979), so a run stays reproducible.
 :func:`check_quote` runs the seven checks of ``shirudo-quote-check`` in its order
-and gives its verdicts. A quote that checks proves that the body is unchanged
-since the key signed it. It never proves that the key lives in a TPM, here or in
-shirudo.
+and gives its verdicts. Its parsers take what shirudo's take and refuse what they
+refuse (``tpm_public_parse``, ``tpm_attest_parse`` and
+``tpm_ecdsa_signature_parse`` in ``util/tpm_wire.c``, ``quote_row_check`` in
+``tools/quote-check/row.c``), down to the size of every field. A quote that
+checks proves that the body is unchanged since the key signed it. It never
+proves that the key lives in a TPM, here or in shirudo.
 """
 
 from __future__ import annotations
@@ -20,6 +23,7 @@ import base64
 import binascii
 import hashlib
 import json
+import re
 import struct
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -60,6 +64,9 @@ _TPM_RH_ENDORSEMENT = 0x4000000B
 #: attributes of the attestation key shirudo creates. A software key carries them too.
 _AK_ATTRIBUTES = 0x00050072
 _MAX_ATTEST, _MAX_SIG, _MAX_AK = 1024, 160, 512
+_NAME_LEN = 34
+_PCR_SELECT_LEN = 3
+_HEX64 = re.compile(r"[0-9a-fA-F]{64}")
 _P256_ORDER = 0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551
 
 
@@ -115,32 +122,65 @@ def _sized(data: bytes) -> bytes:
     return struct.pack(">H", len(data)) + data
 
 
+def _sized_max(r: _Reader, limit: int) -> bytes:
+    """A ``TPM2B`` of at most *limit* bytes, as ``get2b`` in shirudo's ``util/tpm_wire.c``."""
+    n = r.u16()
+    if n > limit:
+        raise ValueError(f"a sized field of {n} bytes, more than {limit}")
+    return r.take(n)
+
+
+def _sized_exact(r: _Reader, size: int) -> bytes:
+    """A ``TPM2B`` of exactly *size* bytes, as ``get2b_fixed``."""
+    data = _sized_max(r, size)
+    if len(data) != size:
+        raise ValueError(f"a sized field of {len(data)} bytes, not {size}")
+    return data
+
+
 def _decode(field: str, limit: int) -> bytes:
+    """The bytes of a base64 field, which must be exactly their own encoding."""
+    if len(field) > 4 * ((limit + 2) // 3):
+        raise ValueError("a base64 field longer than its limit")
     raw = base64.b64decode(field, validate=True)
-    if base64.b64encode(raw).decode("ascii") != field or not raw or len(raw) > limit:
+    if base64.b64encode(raw).decode("ascii") != field or len(raw) > limit:
         raise ValueError("not the base64 of its bytes, or out of size")
     return raw
 
 
 def _point(ak: bytes) -> tuple[int, int]:
-    """Return the public point of a ``TPMT_PUBLIC``: ECC, ECDSA with SHA-256, NIST P-256."""
+    """Return the public point of a ``TPMT_PUBLIC``: ECC, ECDSA with SHA-256, NIST P-256.
+
+    Follows ``tpm_public_parse`` and ``ak_is_p256_ecdsa`` of shirudo: the name
+    algorithm is SHA-256, the auth policy is empty or 32 bytes, a symmetric
+    algorithm is absent or AES-128-CFB, there is no KDF, and the coordinates are
+    32 bytes each. The object attributes are what the node declares and are not
+    checked, as in ``shirudo-quote-check``.
+    """
     r = _Reader(ak)
-    if r.u16() != _TPM_ALG_ECC or r.u16() != _TPM_ALG_SHA256:
-        raise ValueError("not an ECC key named with SHA-256")
-    r.u32()  # objectAttributes: what the node declares, not checked (see the module doc)
-    r.sized()  # authPolicy
+    kind = r.u16()
+    if r.u16() != _TPM_ALG_SHA256:
+        raise ValueError("a key not named with SHA-256")
+    r.u32()  # objectAttributes
+    if len(_sized_max(r, 32)) not in (0, 32):
+        raise ValueError("an auth policy that is neither empty nor 32 bytes")
     symmetric = r.u16()
-    if symmetric != _TPM_ALG_NULL:  # AES-128-CFB is taken, as by shirudo-quote-check
-        if symmetric != _TPM_ALG_AES or r.u16() != 128 or r.u16() != _TPM_ALG_CFB:
-            raise ValueError("symmetric algorithm")
-    if r.u16() != _TPM_ALG_ECDSA or r.u16() != _TPM_ALG_SHA256:
-        raise ValueError("not ECDSA with SHA-256")
-    if r.u16() != _TPM_ECC_NIST_P256 or r.u16() != _TPM_ALG_NULL:
-        raise ValueError("not NIST P-256 without a KDF")
-    x, y = r.sized(), r.sized()
+    bits = mode = 0
+    if symmetric != _TPM_ALG_NULL:
+        bits, mode = r.u16(), r.u16()
+    scheme = r.u16()
+    scheme_hash = r.u16() if scheme != _TPM_ALG_NULL else 0
+    if kind != _TPM_ALG_ECC:
+        raise ValueError("not an ECC key")
+    curve = r.u16()
+    if r.u16() != _TPM_ALG_NULL:
+        raise ValueError("a KDF")
+    x, y = _sized_exact(r, 32), _sized_exact(r, 32)
     r.done()
-    if len(x) != 32 or len(y) != 32:
-        raise ValueError("point size")
+    if symmetric != _TPM_ALG_NULL and (symmetric, bits, mode) != (_TPM_ALG_AES, 128, _TPM_ALG_CFB):
+        raise ValueError("a symmetric algorithm other than AES-128-CFB")
+    if (scheme, scheme_hash, curve) != (_TPM_ALG_ECDSA, _TPM_ALG_SHA256, _TPM_ECC_NIST_P256):
+        raise ValueError("not ECDSA with SHA-256 on NIST P-256")
     return int.from_bytes(x, "big"), int.from_bytes(y, "big")
 
 
@@ -155,22 +195,37 @@ def _qualified_name(ak: bytes) -> bytes:
 
 
 def _attest(attest: bytes) -> tuple[bytes, bytes, int, int]:
-    """Return signer, qualifying data, reset count and clock of a keepalive quote."""
+    """Return signer, qualifying data, reset count and clock of a keepalive quote.
+
+    Follows ``tpm_attest_parse`` and ``attest_is_keepalive_quote`` of shirudo: a
+    signer of at most 34 bytes, qualifying data of at most 64, one SHA-256
+    selection of exactly three bytes with no PCR set, and a 32-byte PCR digest.
+    """
     r = _Reader(attest)
     if r.u32() != _TPM_GENERATED or r.u16() != _TPM_ST_ATTEST_QUOTE:
         raise ValueError("not a quote")
-    signer, extra = r.sized(), r.sized()
+    signer, extra = _sized_max(r, _NAME_LEN), _sized_max(r, 64)
     clock, reset = r.u64(), r.u32()
     r.u32()  # restartCount
     r.u8()  # safe
     r.u64()  # firmwareVersion
-    if r.u32() != 1 or r.u16() != _TPM_ALG_SHA256:
-        raise ValueError("not one SHA-256 selection")
-    if any(r.take(r.u8())):
+    if r.u32() != 1 or r.u16() != _TPM_ALG_SHA256 or r.u8() != _PCR_SELECT_LEN:
+        raise ValueError("not one SHA-256 selection of three bytes")
+    if any(r.take(_PCR_SELECT_LEN)):
         raise ValueError("a PCR is selected")
-    r.sized()  # pcrDigest
+    _sized_exact(r, 32)  # pcrDigest
     r.done()
     return signer, extra, reset, clock
+
+
+def _signature(sig: bytes) -> tuple[int, int]:
+    """Return ``r`` and ``s`` of a ``TPMT_SIGNATURE``, as ``tpm_ecdsa_signature_parse``."""
+    s = _Reader(sig)
+    if s.u16() != _TPM_ALG_ECDSA or s.u16() != _TPM_ALG_SHA256:
+        raise ValueError("not ECDSA with SHA-256")
+    sig_r, sig_s = _sized_exact(s, 32), _sized_exact(s, 32)
+    s.done()
+    return int.from_bytes(sig_r, "big"), int.from_bytes(sig_s, "big")
 
 
 def check_quote(quote: Quote, body_sha256: str) -> Verdict:
@@ -184,7 +239,7 @@ def check_quote(quote: Quote, body_sha256: str) -> Verdict:
         attest = _decode(quote.attest, _MAX_ATTEST)
         sig = _decode(quote.sig, _MAX_SIG)
         ak = _decode(quote.ak, _MAX_AK)
-        if len(body_sha256) != 64:
+        if not _HEX64.fullmatch(body_sha256):
             raise ValueError("body_sha256 is not 64 hex digits")
         wanted = bytes.fromhex(body_sha256)
         x, y = _point(ak)
@@ -194,17 +249,12 @@ def check_quote(quote: Quote, body_sha256: str) -> Verdict:
     if signer != _qualified_name(ak):
         return "bad_signature"
     try:
-        s = _Reader(sig)
-        if s.u16() != _TPM_ALG_ECDSA or s.u16() != _TPM_ALG_SHA256:
-            raise ValueError("not ECDSA with SHA-256")
-        sig_r, sig_s = s.sized(), s.sized()
-        s.done()
+        sig_r, sig_s = _signature(sig)
     except ValueError:
         return "malformed"
     try:
         key = ec.EllipticCurvePublicNumbers(x, y, ec.SECP256R1()).public_key()
-        der = encode_dss_signature(int.from_bytes(sig_r, "big"), int.from_bytes(sig_s, "big"))
-        key.verify(der, attest, ec.ECDSA(hashes.SHA256()))
+        key.verify(encode_dss_signature(sig_r, sig_s), attest, ec.ECDSA(hashes.SHA256()))
     except (InvalidSignature, ValueError):  # a point off the curve verifies nothing
         return "bad_signature"
     if extra != wanted:
@@ -218,16 +268,63 @@ def quote_clock(quote: Quote) -> tuple[int, int]:
     return reset, clock
 
 
+_HASH = re.compile(r"[0-9a-f]{64}")
+#: The type of each key: ``hash`` is 64 lowercase hex digits, ``int`` an integer with
+#: no sign, fraction or exponent, ``ints`` an array of them; ``?`` allows ``null``.
+_TYPES = {
+    "schema": "str", "boot_id": "str", "version_id": "hash", "config_root": "hash?",
+    "kernel_release": "str", "image_id": "str?", "image_version": "str?", "image_root": "hash?",
+    "verdict": "str", "cond": "int", "flags": "int", "tamper": "ints?", "integrity": "ints?",
+    "tree_id": "str?", "generation": "int?", "base_seq": "int?", "last_seq": "int?",
+    "base_root": "hash?", "projection_root": "hash?", "mask": "str?", "set_sha256": "hash",
+    "count": "int", "not_ok": "int",
+}  # fmt: skip
+
+
+def _plain(value: object) -> bool:
+    """A string this module writes: printable ASCII that JSON carries without an escape.
+
+    shirudo's own bodies are UTF-8 and may hold more. The simulator never needs
+    more, and a body without escapes has one encoding only, so its hash is the
+    same whichever JSON writer made it.
+    """
+    return isinstance(value, str) and all(0x20 <= ord(c) < 0x7F and c not in '"\\' for c in value)
+
+
+def _unsigned(value: object) -> bool:
+    return type(value) is int and value >= 0
+
+
+def _typed(key: str, value: object) -> bool:
+    kind = _TYPES[key]
+    if kind.endswith("?"):
+        if value is None:
+            return True
+        kind = kind[:-1]
+    if kind == "str":
+        return _plain(value)
+    if kind == "hash":
+        return isinstance(value, str) and _HASH.fullmatch(value) is not None
+    if kind == "int":
+        return _unsigned(value)
+    return isinstance(value, list) and all(_unsigned(v) for v in value)
+
+
 def encode_body(fields: Mapping[str, Any]) -> bytes:
-    """Return the body bytes: compact JSON, the 23 keys in their order, at most 4095 bytes."""
+    """Return the body bytes: compact JSON, the 23 keys in their order, at most 4095 bytes.
+
+    Every value must have the type the format gives its key. Strings are
+    limited to printable ASCII without a quote or a backslash (see ``_plain``).
+    """
     missing = [k for k in BODY_KEYS if k not in fields]
     if missing or len(fields) != len(BODY_KEYS):
         raise KeepaliveError(f"a body has exactly the keys of the format; missing {missing}")
     if fields["schema"] != SCHEMA:
         raise KeepaliveError(f"schema is not {SCHEMA}")
-    body = json.dumps(
-        {k: fields[k] for k in BODY_KEYS}, separators=(",", ":"), ensure_ascii=False
-    ).encode("utf-8")
+    wrong = [k for k in BODY_KEYS if not _typed(k, fields[k])]
+    if wrong:
+        raise KeepaliveError(f"values not of the type of their key: {', '.join(wrong)}")
+    body = json.dumps({k: fields[k] for k in BODY_KEYS}, separators=(",", ":")).encode("ascii")
     if len(body) > MAX_BODY_BYTES:
         raise KeepaliveError(f"a body is at most {MAX_BODY_BYTES} bytes, this one {len(body)}")
     return body
@@ -237,8 +334,12 @@ def parse_body(body: bytes) -> dict[str, Any]:
     """Return the fields of a body, refusing one that is not exactly in the format."""
     if len(body) > MAX_BODY_BYTES:
         raise KeepaliveError(f"a body is at most {MAX_BODY_BYTES} bytes, this one {len(body)}")
+
+    def no_constant(name: str) -> object:
+        raise KeepaliveError(f"{name} is not a JSON number")
+
     try:
-        fields = json.loads(body.decode("utf-8"))
+        fields = json.loads(body.decode("utf-8"), parse_constant=no_constant)
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise KeepaliveError(f"not JSON in UTF-8: {exc}") from exc
     if not isinstance(fields, dict) or tuple(fields) != BODY_KEYS:

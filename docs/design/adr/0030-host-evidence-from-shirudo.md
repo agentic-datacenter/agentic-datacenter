@@ -45,7 +45,7 @@ A host's attestation key is a P-256 key derived from the run's seed and the host
 
 ### 3. The checker gives shirudo's verdicts on shirudo's vectors
 
-`agentic_datacenter.governance.keepalive` makes and checks bodies and quotes. Its checker runs the seven checks of `shirudo-quote-check` in their order, and the first one that fails gives the verdict: `malformed`, `bad_signature` or `body_mismatch`; a quote that passes is `ok`. It must give `ok` on every pinned vector and the documented verdict on each failure case. It must also accept every quote the simulator makes, and refuse that quote when a byte of its body is changed. The module was written from shirudo's published description. No shirudo code is copied or translated.
+`agentic_datacenter.governance.keepalive` makes and checks bodies and quotes. Its checker runs the seven checks of `shirudo-quote-check` in their order, and the first one that fails gives the verdict: `malformed`, `bad_signature` or `body_mismatch`; a quote that passes is `ok`. Its parsers take and refuse what shirudo's own parsers take and refuse, down to the size of every field: a signer of at most 34 bytes, qualifying data of at most 64, a PCR selection of exactly three bytes, a 32-byte PCR digest, `r` and `s` of exactly 32 bytes, and an auth policy that is empty or 32 bytes. Each such bound has a test with a validly signed quote that breaks only that bound. It must give `ok` on every pinned vector and the documented verdict on each failure case. It must also accept every quote the simulator makes, and refuse that quote when a byte of its body is changed. The module was written from shirudo's published description. No shirudo code is copied or translated.
 
 ### 4. The pin: `SHIRUDO_PIN`
 
@@ -102,7 +102,7 @@ A run without a host register carries no `host_attested` premise and makes no ke
 | ID | Requirement | PR |
 | --- | --- | --- |
 | `ADC-HST-001` | The checker gives `shirudo-quote-check`'s verdict on every pinned vector and documented failure case, accepts every quote the simulator makes, and refuses it when its body changes. | This one |
-| `ADC-HST-002` | A body is encoded and parsed exactly as `shirudo.keepalive/1`: the 23 keys in order, compact, at most 4095 bytes. Every pinned body round-trips byte for byte. | This one |
+| `ADC-HST-002` | A body is encoded and parsed exactly as `shirudo.keepalive/1`: the 23 keys in order, compact, at most 4095 bytes, each value of its key's type (hash, unsigned integer, string, or `null` where allowed). Every pinned body round-trips byte for byte. The simulator writes strings of printable ASCII without escapes only, so a body has one encoding. | This one |
 | `ADC-HST-003` | A host's key and quotes are a function of seed, host and TPM clock. The clock of a quote orders the keepalives of a host. | This one |
 | `ADC-HST-004` | `SHIRUDO_PIN` names upstream, one full commit and the format. Every copied file matches its hash and carries shirudo's licence, and the notices name both. | This one |
 | `ADC-HST-005` | The control path establishes `host_attested` from the register and the keepalives under the six conditions of decision 6, never from the agent. | Next |
