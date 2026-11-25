@@ -241,3 +241,136 @@ def test_the_wire_schema_describes_what_is_sent() -> None:
     assert set(outcome) == set(defs["outcome_request"]["required"])
     assert "receipt" in defs["evaluate_answer"]["properties"]
     assert "receipt" not in defs["evaluate_answer"]["required"]
+
+
+def _chain_file(tmp_path: Path, members: list[dict[str, Any]]) -> Path:
+    path = tmp_path / "chain.json"
+    path.write_text(json.dumps({"name": "pilot", "members": members}))
+    return path
+
+
+@pytest.mark.req("ADC-INT-007")
+def test_a_chain_asks_every_member_and_the_strictest_verdict_decides(tmp_path: Path) -> None:
+    from agentic_datacenter.governance.bindings.chain_gate import ChainGate
+
+    allowing, refusing = Captured(), Captured(answer={"verdict": "block"})
+    asking = Captured(answer={"verdict": "VERIFY", "required_approvers": 2})
+    result = _run(ChainGate({"a": allowing, "b": asking}))
+    first = result.records[0]
+    assert first["verdict"] == "VERIFY" and first["required_approvers"] == 2
+    members = first["gate_detail"]["members"]
+    assert [m["name"] for m in members] == ["a", "b"]
+    assert [m["verdict"] for m in members] == ["ALLOW", "VERIFY"]
+    assert [m["decisive"] for m in members] == [False, True]
+    assert all(HASH.fullmatch(m["action_ref"]) for m in members)
+    result = _run(ChainGate({"a": allowing, "b": refusing, "c": asking}))
+    assert {r["verdict"] for r in result.records} == {"DENY"}
+    assert any(r.startswith("b: ") for r in result.records[0]["reasons"])
+    # Each member is told the outcome of its own decision.
+    told = [b for p, b in allowing.sent if p == "/outcome"]
+    assert told and all(b["correlation_id"].startswith(allowing.session) for b in told)
+
+
+@pytest.mark.req("ADC-INT-007")
+def test_a_chain_is_configured_by_a_file_and_passes_the_interface_check(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from agentic_datacenter.governance.bindings.chain_gate import ChainConfigError, from_file
+
+    command = shlex.join([sys.executable, str(ADAPTER)])
+    path = _chain_file(tmp_path, [
+        {"name": "policy", "command": command, "context": True},
+        {"name": "baseline", "gate": "static_allowlist"},
+    ])  # fmt: skip
+    chain = from_file(path, CONTRACTS)
+    assert (
+        chain.name == "pilot"
+        and chain.wants_context
+        and list(chain.members) == ["policy", "baseline"]
+    )
+    monkeypatch.chdir(REPO)
+    monkeypatch.setenv("ADC_CHAIN_FILE", str(path))
+    assert gate_cli(["check", "chain_gate"]) == 0
+    for wrong in ([{"name": "x"}], [{"name": "x", "gate": "no_such_gate"}],
+                  [{"name": "x", "gate": "chain_gate"}], [{"command": command}]):  # fmt: skip
+        with pytest.raises(ChainConfigError):
+            from_file(_chain_file(tmp_path, wrong), CONTRACTS)
+
+
+@pytest.mark.req("ADC-INT-007")
+def test_receipts_of_each_member_of_a_chain_verify(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    receipts = tmp_path / "receipts.jsonl"
+    command = shlex.join([sys.executable, str(ADAPTER)])
+    path = _chain_file(tmp_path, [
+        {"name": "one", "command": command}, {"name": "two", "command": command},
+    ])  # fmt: skip
+    monkeypatch.chdir(REPO)
+    monkeypatch.setenv("ADC_CHAIN_FILE", str(path))
+    monkeypatch.setenv("ADC_RECEIPTS_FILE", str(receipts))
+    bundle = tmp_path / "bundle"
+    scenario_cli(["run", "OP-03", "--gate", "chain_gate", "--seconds", "900", "--out", str(bundle)])
+    capsys.readouterr()
+    assert gate_cli(["verify-receipts", str(bundle), str(receipts), "--require-all"]) == 0
+    report = json.loads(capsys.readouterr().out)
+    sessions = {cid.split("/")[0] for cid in report["matched"]}
+    assert len(sessions) == 2
+
+
+@pytest.mark.req("ADC-INT-008")
+def test_every_card_comes_with_a_summary_a_maintainer_can_read(tmp_path: Path) -> None:
+    from agentic_datacenter.governance.bindings import static_allowlist
+    from agentic_datacenter.scenarios.bench import SUMMARY_FIGURES, run_benchmark, write_card
+
+    card = run_benchmark(
+        PROFILE, CONTRACTS, {"static_allowlist": static_allowlist.create},
+        ["scripted_adversarial", "scripted_benign"], ["OP-03"], [1], 900, allow_unfrozen=True,
+    )  # fmt: skip
+    write_card(card, tmp_path)
+    summary = (tmp_path / "summary.md").read_text(encoding="utf-8")
+    assert summary.startswith("# What each safety control did")
+    assert "static_allowlist (built in, by this project's authors)" in summary
+    assert "| | `scripted_adversarial` | `scripted_benign` |" in summary
+    for _, title, _meaning in SUMMARY_FIGURES:
+        assert f"| {title} |" in summary and f"**{title}:**" in summary
+    assert "development run, not a benchmark result" in summary
+    assert "Not a certification" in summary
+
+
+@pytest.mark.req("ADC-INT-009")
+def test_the_maintainers_workflow_runs_commands_that_exist() -> None:
+    import yaml
+
+    path = REPO / "examples/ci/agentic-datacenter.yml"
+    text = path.read_text(encoding="utf-8")
+    assert text.startswith("# SPDX-License-Identifier: MIT")
+    flow = yaml.safe_load(text)
+    assert flow["permissions"] == {"contents": "read"}
+    triggers = flow[True] if True in flow else flow["on"]  # YAML reads a bare on as True
+    assert {"pull_request", "push", "schedule"} <= set(triggers)
+    steps = flow["jobs"]["gate"]["steps"]
+    commands = [line.strip() for s in steps for line in str(s.get("run", "")).splitlines()]
+    used = {tuple(c.split()[3:5]) for c in commands if c.startswith("uv run agentic-datacenter")}
+    assert used == {
+        ("gate", "check"),
+        ("scenario", "run"),
+        ("gate", "verify-receipts"),
+        ("bench", "run"),
+        ("bench", "check"),
+    }
+    # As given it runs the starter, so a copy is green before anything is changed.
+    assert "adc/examples/command-gate/adapter.py" in flow["env"]["ADC_GATE_COMMAND"]
+    assert (REPO / "examples/command-gate/adapter.py").is_file()
+
+
+@pytest.mark.req("ADC-INT-009")
+def test_the_page_for_maintainers_says_what_they_get_and_do_not() -> None:
+    page = (REPO / "docs/guides/for-governance-maintainers.md").read_text(encoding="utf-8")
+    for words in (
+        "## What you get", "## What it costs, in order", "## What you do not get",
+        "No certification", "also owns REMORA", "byte for byte",
+        "examples/ci/agentic-datacenter.yml",
+        "chain_gate", "verify-receipts", "ADC_GATE_CONTEXT=1", "ADR 0037",
+    ):  # fmt: skip
+        assert words in page, words
