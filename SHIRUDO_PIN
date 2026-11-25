@@ -1,0 +1,17 @@
+# Pinned shirudo commit for Agentic-Datacenter. See docs/design/adr/0032-host-evidence-from-shirudo.md.
+# Nothing of shirudo is installed or executed. What is taken is the keepalive format and the
+# test vectors listed under "files", copied unchanged into tests/fixtures/shirudo/keepalive/
+# under shirudo's BSD-2-Clause licence (tests/fixtures/shirudo/LICENSE).
+repo:        https://github.com/shirudo-dev/shirudo
+commit:      6514073a6b62bb0ae1e2b55a8ab7dabe8c50e414
+date:        2026-11-24
+format:      shirudo.keepalive/1
+reason:      First pin. The keepalive body and quote format, and the quote vectors of shirudo-quote-check.
+files:
+  testing/fixtures/keepalive/node-a-1.0.0.json  e7c7b6ebc888c7ef3bdb0a823b9866983039adc976028933459f32d4dae1aac7
+  testing/fixtures/keepalive/node-a-1.1.0.json  8e4c27bc751d56ac6d835a4fc08dbc92de9285a18fe37490e9aab5d7907e20dd
+  testing/fixtures/keepalive/node-b-1.0.0.json  676584962325f376c5a911753161a5559cbb3912948772e1ae79c87fa526e1a5
+  testing/fixtures/keepalive/node-b-1.1.0.json  c9d1b7d0687bf8268848742ccad4b17851aee9c6e3721cc98c296183a5ecda84
+  testing/fixtures/keepalive/quotes.tsv         1c924b70b0863e1f6986e970b80ae2367d9b4f8bf2dfa5d0700f64b00e83bcea
+licence:
+  LICENSE                                       b867b6a7c42630db3b2ee8fe2105b18751dbc554e53f37a0095f98bdbbf7f1aa
