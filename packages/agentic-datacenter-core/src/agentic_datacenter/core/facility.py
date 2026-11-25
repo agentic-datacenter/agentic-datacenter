@@ -35,6 +35,7 @@ from typing import Annotated, Any, Literal
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from agentic_datacenter.core.equipment import PREFIX, load_entry_file, registry_dir
 from agentic_datacenter.core.profile import (
     ConnectionRule,
     ModuleUse,
@@ -232,8 +233,10 @@ def _from_model(key: str, model: EquipmentModel) -> dict[str, Param]:
 def _lower(
     uses: list[BundleUse],
     key_sets: Mapping[str, list[str]],
-    equipment: Mapping[str, EquipmentModel],
+    equipment: dict[str, EquipmentModel],
     values: dict[str, int],
+    registry: Path,
+    files: dict[str, str],
 ) -> tuple[list[dict[str, Any]], set[str]]:
     """Return the schema-1 uses of *uses*, and the equipment models they used."""
     out: list[dict[str, Any]] = []
@@ -242,6 +245,13 @@ def _lower(
     def model(key: str | None, module_id: str) -> dict[str, Param]:
         if key is None:
             return {}
+        if key.startswith(PREFIX) and key not in equipment:
+            entry, entry_file = load_entry_file(key.removeprefix(PREFIX), registry)
+            files[f"{PREFIX}{entry.id}"] = hashlib.sha256(entry_file.read_bytes()).hexdigest()
+            equipment[key] = EquipmentModel(
+                module=entry.module, maker=entry.maker, model=entry.model,
+                evidence=entry.evidence, description=entry.variant, params=entry.params,
+            )  # fmt: skip
         if key not in equipment:
             raise FacilityError(f"module {module_id}: no equipment model {key!r}")
         if equipment[key].module != module_id:
@@ -279,7 +289,7 @@ def _lower(
     return out, used
 
 
-def _bundle(entry: Path, data: Mapping[str, Any]) -> Facility:
+def _bundle(entry: Path, data: Mapping[str, Any], registry: Path) -> Facility:
     root = entry.parent.resolve()
     files: dict[str, str] = {}
     _read(root, entry, files)
@@ -317,7 +327,13 @@ def _bundle(entry: Path, data: Mapping[str, Any]) -> Facility:
         raise FacilityError(f"invalid bundle: {problems}") from exc
     key_sets: dict[str, list[str]] = merged.get("key_sets", {})
     values: dict[str, int] = {}
-    lowered, used = _lower(uses, key_sets, equipment, values)
+    forged = sorted(k for k in equipment if k.startswith(PREFIX))
+    if forged:
+        raise FacilityError(
+            f"a bundle may not define {', '.join(forged)}: an entry named {PREFIX}<id> is read "
+            "from the equipment registry, never from the bundle (ADR 0034)"
+        )
+    lowered, used = _lower(uses, key_sets, equipment, values, registry, files)
     profile_data: dict[str, Any] = {
         "schema_version": 1,
         "name": header.name,
@@ -341,8 +357,12 @@ def _bundle(entry: Path, data: Mapping[str, Any]) -> Facility:
     )
 
 
-def load_facility(path: Path) -> Facility:
+def load_facility(path: Path, registry: Path | None = None) -> Facility:
     """Read a facility: a bundle directory, its ``datacenter.yaml``, or a schema-1 profile.
+
+    A bundle may name entries of the equipment registry as ``registry:<id>``
+    (ADR 0034); they are read from *registry*, by default ``equipment/`` of the
+    working directory.
 
     Raises:
         FacilityError: If the bundle is unsafe, unreadable or invalid.
@@ -356,7 +376,7 @@ def load_facility(path: Path) -> Facility:
     if not isinstance(data, Mapping):
         raise FacilityError(f"{entry}: a facility is a mapping")
     if data.get("schema_version") == 2:
-        return _bundle(entry.resolve(), data)
+        return _bundle(entry.resolve(), data, registry or registry_dir())
     profile = parse_profile(data)
     values: dict[str, int] = {}
     for use in profile.module_uses:

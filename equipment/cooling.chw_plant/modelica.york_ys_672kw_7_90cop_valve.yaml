@@ -1,0 +1,47 @@
+# Made by tools/equipment_modelica.py; do not edit by hand.
+id: modelica.york_ys_672kw_7_90cop_valve
+module: cooling.chw_plant
+maker: York
+model: YS
+variant: 672kW_7_90COP_Valve
+tier: factual
+params:
+  chiller_kw:
+    value: 671.6
+    unit: kW
+    source: modelica-buildings Buildings/Fluid/Chillers/Data/ElectricEIR.mo:7584 QEva_flow_nominal (commit
+      e79800b7eb2f)
+  cop:
+    value: 7.9
+    unit: '-'
+    source: modelica-buildings Buildings/Fluid/Chillers/Data/ElectricEIR.mo:7585 COP_nominal (commit e79800b7eb2f)
+rated_conditions:
+  chilled_water_leaving_c: 6.11
+  condenser_entering_c: 15.56
+  part_load_ratio_min: 0.09
+fit: 'The record describes a water-cooled chiller at the rated conditions above. cooling.chw_plant models
+  an air-cooled plant of identical chillers: only the rated capacity and COP are taken, and the module''s
+  own curves apply to them. The COP was rated with condenser water entering at 15.56 degC; the module
+  applies it at its design ambient air temperature, so the plant''s efficiency is likely higher than an
+  air-cooled chiller of the same capacity reaches.'
+provenance:
+  source: modelica-buildings
+  record: ElectricEIRChiller_York_YS_672kW_7_90COP_Valve
+  description: ElectricEIRChiller York YS 672kW/7.90COP/Valve
+  lines:
+  - 7582
+  - 7601
+  data_type: factual_specification
+  redistributes_source_document: false
+  derived_from: the EnergyPlus Chiller:Electric:EIR object embedded in the record, which the record names
+    as its origin
+simulation:
+  model_origin: independently_developed
+  manufacturer_validated: false
+  calibration: uncalibrated
+rights:
+  commercial_use: allowed
+  redistribution: allowed
+  basis: facts stated in a file under the BSD-3-Clause-style licence of the Modelica Buildings Library,
+    kept with attribution (equipment/licences/modelica-buildings.txt)
+  reviewed: '2026-11-24'

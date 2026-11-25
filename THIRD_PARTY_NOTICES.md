@@ -100,6 +100,14 @@ As installed from `uv.lock` on 2026-11-13, with the licence each project declare
 - Nothing of shirudo is installed, built or run. Its BPF programs, which are dual-licensed BSD/GPL, and the files it vendors from other projects under their own licences are not used.
 - shirudo is named only to say which format is implemented. Its name and logos are not used for anything else, and nothing here says that its authors endorse Agentic-Datacenter.
 
+### Equipment data from the Modelica Buildings Library
+
+[Modelica Buildings Library](https://github.com/lbl-srg/modelica-buildings), at commit `e79800b7eb2f0d58d4a49b0c26dc639d1df61089` (`equipment/sources.yaml`, ADR 0034). Copyright (c) 1998-2026 Modelica Association, International Building Performance Simulation Association (IBPSA), The Regents of the University of California, through Lawrence Berkeley National Laboratory, and contributors. It is under a revised 3-clause BSD licence with an added paragraph on enhancements, as the library describes it. Its text is in `equipment/licences/modelica-buildings.txt`.
+
+- **What is taken.** The entries under `equipment/cooling.chw_plant/` take facts from `Buildings/Fluid/Chillers/Data/ElectricEIR.mo`: a record's name, rated capacity, COP, rated temperatures and minimum part-load ratio. Each value cites its line. No file of the library is copied, and its performance curves are not taken.
+- **Where the records come from.** The records name EnergyPlus `Chiller:Electric:EIR` reference data as their origin. EnergyPlus is named here for provenance only, and not in a name of, or the promotion of, this project, as its licence asks.
+- **No endorsement.** The names of the Modelica Association, IBPSA, the University of California, Lawrence Berkeley National Laboratory, the U.S. Dept. of Energy and the library's contributors are not used to endorse or promote Agentic-Datacenter. The makers named in the entries, such as Trane, Carrier and York, are named because the records name them. They have not checked or endorsed any entry.
+
 ### Development and test tools
 
 `uv`, `ruff`, `mypy`, `pytest`, `pytest-xdist`, `hypothesis`, `import-linter`, `hatchling`, `httpx`, `mkdocs`, `pip-audit`. Each under the licence its project declares; versions are fixed by `uv.lock`. They are not part of what Agentic-Datacenter distributes.
