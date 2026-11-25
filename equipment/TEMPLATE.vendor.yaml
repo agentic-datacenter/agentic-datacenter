@@ -1,0 +1,34 @@
+# A maker's own entry (ADR 0034). Copy it to equipment/<module>/<id>.yaml, fill it in,
+# add your source to sources.yaml (see TEMPLATE.source.yaml) and run:
+#   uv run agentic-datacenter equipment check equipment/<module>/<id>.yaml
+# An entry from a maker is under CC-BY-4.0 (equipment/licences/CC-BY-4.0.txt), with the
+# attribution its source names. It is not under the contribution terms of CONTRIBUTING.md.
+id: example.maker_model_variant
+module: cooling.chw_plant
+maker: Example Maker
+model: Model name
+variant: capacity, control
+tier: factual
+params:
+  chiller_kw: {value: 1000.0, unit: kW, source: "vendor-example datasheet rev A, table 1"}
+  cop: {value: 5.0, unit: "-", source: "vendor-example datasheet rev A, table 1"}
+rated_conditions:
+  chilled_water_leaving_c: 7.0
+  condenser_entering_c: 30.0
+fit: >-
+  Say how the module takes the values: which values are taken, at which rated
+  conditions, and what the module does not model.
+provenance:
+  source: vendor-example
+  record: datasheet rev A
+  data_type: vendor_statement
+  redistributes_source_document: false
+simulation:
+  model_origin: vendor_supplied
+  manufacturer_validated: false
+  calibration: uncalibrated
+rights:
+  commercial_use: allowed
+  redistribution: allowed
+  basis: CC-BY-4.0, by the maker's submission
+  reviewed: "2026-11-25"

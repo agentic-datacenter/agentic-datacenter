@@ -540,10 +540,16 @@ def gate(argv: Sequence[str]) -> int:
 def facility(argv: Sequence[str]) -> int:
     """Compile a facility of your own and check what of the libraries fits it.
 
-    Runs ``agentic-datacenter facility compile|check`` and returns the exit status.
-    The first line is the help text of ``agentic-datacenter --help``.
+    Runs ``agentic-datacenter facility init|compile|check|report`` and returns the exit
+    status. The first line is the help text of ``agentic-datacenter --help``.
     """
-    from agentic_datacenter.scenarios.facility_report import check_facility, write_report
+    from agentic_datacenter.scenarios.facility_report import (
+        check_facility,
+        example_bundle,
+        operator_report,
+        write_operator_report,
+        write_report,
+    )
 
     parser = argparse.ArgumentParser(
         prog="agentic-datacenter facility",
@@ -559,7 +565,29 @@ def facility(argv: Sequence[str]) -> int:
     check.add_argument("path", type=Path, help="A bundle directory, or a profile file.")
     check.add_argument("--contracts", type=Path, default=Path("contracts"))
     check.add_argument("--out", type=Path, default=Path("build/facility"))
+    init = actions.add_parser("init", help="Start a bundle of your own from the example one.")
+    init.add_argument("path", type=Path, help="A directory that does not exist yet, or is empty.")
+    report_ = actions.add_parser(
+        "report",
+        help="One report for an operator: what fits, and what each gate does on the facility.",
+    )
+    report_.add_argument("path", type=Path, help="A bundle directory, or a profile file.")
+    report_.add_argument("--gate", action="append", help="Gate to compare; repeat for several.")
+    report_.add_argument("--contracts", type=Path, default=Path("contracts"))
+    report_.add_argument("--out", type=Path, default=Path("build/operator-report"))
     args = parser.parse_args(argv)
+    if args.action == "init":
+        if args.path.exists() and any(args.path.iterdir()):
+            print(f"agentic-datacenter facility: {args.path} is not empty", file=sys.stderr)
+            return 1
+        import shutil
+
+        shutil.copytree(example_bundle(), args.path, dirs_exist_ok=True)
+        print(
+            f"a bundle of six PODs of three kinds is in {args.path}; change it, then run "
+            f"`agentic-datacenter facility check {args.path}`"
+        )
+        return 0
     try:
         own = load_facility(args.path)
     except (FacilityError, ProfileError) as exc:
@@ -571,6 +599,21 @@ def facility(argv: Sequence[str]) -> int:
         args.out.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
         print(f"{own.profile.name}: hash {own.profile.hash()}, written to {args.out}")
         return 0
+    if args.action == "report":
+        installed = load_gates()
+        names = args.gate or [g for g in ("null_gate", "static_allowlist") if g in installed]
+        unknown = [n for n in names if n not in installed]
+        if unknown:
+            print(
+                f"agentic-datacenter facility: no such gate: {', '.join(unknown)}", file=sys.stderr
+            )
+            return 2
+        result = operator_report(
+            own, ContractLibrary.load(args.contracts), {n: installed[n] for n in names}
+        )
+        write_operator_report(result, args.out)
+        print(f"{own.profile.name}: {args.out / 'operator_report.md'}")
+        return 0
     report = check_facility(own, ContractLibrary.load(args.contracts))
     write_report(report, args.out)
     fit = report["fit"]
@@ -580,3 +623,57 @@ def facility(argv: Sequence[str]) -> int:
         f"fit, {len(fit['scenarios_not_run'])} do not. Report: {args.out / 'facility_report.md'}"
     )
     return 0
+
+
+def equipment(argv: Sequence[str]) -> int:
+    """Check an equipment registry entry before it is submitted (ADR 0034).
+
+    Runs ``agentic-datacenter equipment check <entry.yaml>`` and returns the exit status.
+    The first line is the help text of ``agentic-datacenter --help``.
+    """
+    from pydantic import ValidationError
+
+    from agentic_datacenter.core.equipment import Entry, load_sources, problems, registry_dir
+    from agentic_datacenter.core.profile import build_plant, parse_profile
+    from agentic_datacenter.core.registry import ModuleRegistry, WiringError
+    from agentic_datacenter.core.scheduler import Kernel
+
+    parser = argparse.ArgumentParser(
+        prog="agentic-datacenter equipment", description="The equipment registry (ADR 0034)."
+    )
+    actions = parser.add_subparsers(dest="action", required=True)
+    check = actions.add_parser("check", help="Check one entry, as the registry's gate would.")
+    check.add_argument("entry", type=Path)
+    check.add_argument(
+        "--source", type=Path,
+        help="A YAML file with the entry's source, when it is not in sources.yaml yet.",
+    )  # fmt: skip
+    check.add_argument("--registry", type=Path, help="The registry directory (default: found).")
+    args = parser.parse_args(argv)
+    root = args.registry or registry_dir()
+    try:
+        entry = Entry.model_validate(yaml.safe_load(args.entry.read_text(encoding="utf-8")))
+    except (OSError, yaml.YAMLError, ValidationError) as exc:
+        print(f"{args.entry}: not a valid entry:\n{exc}", file=sys.stderr)
+        return 1
+    sources = load_sources(root)
+    if args.source is not None:
+        sources.update(yaml.safe_load(args.source.read_text(encoding="utf-8")) or {})
+    found = problems(entry, sources, root.parent)
+    generic = yaml.safe_load((root.parent / "profiles/generic_dc.yaml").read_text("utf-8"))
+    uses = [u for u in generic["modules"] if u["id"] == entry.module]
+    if not uses:
+        found.append(f"the generic facility has no {entry.module} to try the entry on")
+    for use in uses:
+        use["params"] = {k: p.model_dump(exclude_none=True) for k, p in entry.params.items()}
+    if uses:
+        try:
+            build_plant(parse_profile(generic), Kernel(seed=1), ModuleRegistry.from_entry_points())
+        except (WiringError, ValueError) as exc:
+            found.append(f"{entry.module} does not take these values: {exc}")
+    expected = root / entry.module / f"{entry.id}.yaml"
+    for problem in found:
+        print(f"  {problem}", file=sys.stderr)
+    verdict = "can enter the registry" if not found else "cannot enter the registry yet"
+    print(f"{entry.id} ({entry.maker} {entry.model}, {entry.tier}): {verdict}; file: {expected}")
+    return 1 if found else 0

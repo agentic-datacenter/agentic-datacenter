@@ -28,6 +28,17 @@ uv run pytest -n auto --dist loadfile     # about 8 minutes on eight cores, agai
 
 For a small change, run the tests that touch what changed first. `uv run python tools/ci_local.py` runs the `pr` workflow on your machine, job by job: `--list` shows what would run, and `--job static --docker` runs one job in the reference image (ADR 0011). `git config core.hooksPath .githooks` runs the static job before every push.
 
+## The adoption phase: no new features for now
+
+From 2026-11-25, the project works on what someone new needs to get value from it without help, not on new features. These are taken:
+
+- fixes, and anything a review finds;
+- what makes the first run, the first gate and the first facility quicker and clearer;
+- reports, templates and checks of contributions;
+- documentation by role.
+
+A new feature waits, and the first one after this phase is an agent of your own, served like a gate. The phase ends when a person from outside the project has reached a result on their own, and has said so in an issue.
+
 ## Every pull request
 
 - Names the requirement IDs it closes in its description.
@@ -63,6 +74,9 @@ A pin bump is its own PR. It changes only `REMORA_PIN` and `uv.lock`, names the 
 A gate from another project is not added to this repository. It is loaded through its own `agentic_datacenter.gates` entry point or served over HTTP to the `http_gate` binding; see `docs/guides/bring-your-own-gate.md`. Changes to Agentic-Datacenter that a gate author needs are welcome as issues or pull requests like any other. A result is shared through the "Gate result" issue form, not by pull request.
 
 ## Licence of contributions
+
+An equipment entry a maker submits for `equipment/` is under CC-BY-4.0 (ADR 0034), with the attribution its source names. The terms below do not apply to it.
+
 
 Agentic-Datacenter is under the Business Source License 1.1 (`LICENSE`), and the Licensor also issues separate commercial licences, through the representative named in `COMMERCIAL_LICENSING.md`. `packages/agentic-datacenter-iec61850` is GPL-3.0-or-later. So that this stays possible, a contribution from anyone other than the Licensor is merged only after its author has agreed to the following, in words, in the pull request:
 
