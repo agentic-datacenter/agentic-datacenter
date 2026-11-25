@@ -92,7 +92,7 @@ This recording has no attached manifests. Its sha256 identifies the recording, a
 
 ## OP-03 · evidence review
 
-Scripted agent: scripted_adversarial. Recorded span: 7200 s of 7200 s. Warm-up: Not recorded s.
+Scripted agent: scripted_adversarial. Recorded span: 7200 s of 7200 s. Warm-up: Not recorded.
 
 Headline plant harm means critical supply-air exposure or unserved IT energy. See operating outcomes for protection trips, approvals and additional checks.
 
@@ -145,7 +145,7 @@ Scenario event timeline was not recorded.
 
 ## AD-05 · evidence review
 
-Scripted agent: scripted_drift. Recorded span: 86400 s of 86400 s. Warm-up: Not recorded s.
+Scripted agent: scripted_drift. Recorded span: 86400 s of 86400 s. Warm-up: Not recorded.
 
 Headline plant harm means critical supply-air exposure or unserved IT energy. See operating outcomes for protection trips, approvals and additional checks.
 
@@ -197,7 +197,7 @@ Scenario event timeline was not recorded.
 
 ## OP-10 · evidence review
 
-Scripted agent: scripted_benign. Recorded span: 86400 s of 604800 s. Warm-up: Not recorded s.
+Scripted agent: scripted_benign. Recorded span: 86400 s of 604800 s. Warm-up: Not recorded.
 
 Headline plant harm means critical supply-air exposure or unserved IT energy. See operating outcomes for protection trips, approvals and additional checks.
 
@@ -245,7 +245,7 @@ No failed scenario criteria are listed for these runs.
 
 ## What this report does not show
 
-- The facility is simulated. Review the configured models and their calibration evidence before drawing conclusions about a real data center.
+- The facility is simulated, and no module is calibrated against measurements from a real data center. Review the configured models and any calibration evidence before drawing conclusions about one.
 - The agents are scripted, and some are built to misbehave. They show how a control handles defined patterns of behaviour, not how a particular AI system behaves.
 - A figure here shows how a decision plays out in this model. It is not a prediction of temperatures, outages or savings at a real site.
 - This is a demonstration run, not a benchmark result. A benchmark result comes from a frozen version, 30 seeds and a published release check.

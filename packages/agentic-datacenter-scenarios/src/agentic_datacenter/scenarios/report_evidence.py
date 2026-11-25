@@ -28,7 +28,16 @@ def _text(value: Any) -> str:
 
 
 def _number(value: Any) -> str:
-    return f"{value:,.3f}".rstrip("0").rstrip(".") if isinstance(value, (int, float)) else MISSING
+    usable = isinstance(value, (int, float)) and not isinstance(value, bool)
+    if not usable or not math.isfinite(value):
+        return MISSING
+    return f"{value:,.3f}".rstrip("0").rstrip(".")
+
+
+def _seconds(value: Any) -> str:
+    """Return *value* in seconds with its unit, or the missing text with none."""
+    text = _text(value)
+    return text if text == MISSING else f"{text} s"
 
 
 def _range(values: Sequence[Any]) -> str:
@@ -247,9 +256,9 @@ def report_sections(demo: Mapping[str, Any]) -> list[tuple[str, list[str], list[
         sides = sc["sides"]
         notes = [
             f"Scripted agent: {_text(sc.get('agent'))}. "
-            f"Recorded span: {_text(sc.get('duration_s'))} s of "
-            f"{_text(sc.get('full_duration_s'))} s. "
-            f"Warm-up: {_text(sc.get('warmup_s'))} s.",
+            f"Recorded span: {_seconds(sc.get('duration_s'))} of "
+            f"{_seconds(sc.get('full_duration_s'))}. "
+            f"Warm-up: {_seconds(sc.get('warmup_s'))}.",
             "Headline plant harm means critical supply-air exposure or unserved IT energy. "
             "See operating outcomes for protection trips, approvals and additional checks.",
             "The outcomes table shows run totals. Proposal examples include up to three "
@@ -477,10 +486,11 @@ def _telemetry_figures(scenario: Mapping[str, Any]) -> str:
                 if start:
                     marks.append(f'<circle cx="{x:.2f}" cy="{y:.2f}" r="2" fill="{color}"/>')
                 start = False
-            marks.append(
-                f'<path d="{" ".join(path)}" fill="none" stroke="{color}" stroke-width="2" '
-                f'stroke-dasharray="{index * 2} {index}" />'
-            )
+            if path:  # no line at all when every sample is missing
+                marks.append(
+                    f'<path d="{" ".join(path)}" fill="none" stroke="{color}" stroke-width="2" '
+                    f'stroke-dasharray="{index * 2} {index}" />'
+                )
             legend.append(f'<li style="border-left:4px solid {color}">{html.escape(gate)}</li>')
         figures.append(
             " <figure><figcaption>"
