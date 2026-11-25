@@ -374,3 +374,87 @@ def test_the_page_for_maintainers_says_what_they_get_and_do_not() -> None:
         "chain_gate", "verify-receipts", "ADC_GATE_CONTEXT=1", "ADR 0037",
     ):  # fmt: skip
         assert words in page, words
+
+
+@pytest.mark.req("ADC-INT-002")
+def test_a_receipt_must_bind_the_action_and_verdict_and_lines_may_not_disagree() -> None:
+    records = _run(Captured()).records
+    cid, ref = records[0]["gate_detail"]["correlation_id"], records[0]["gate_detail"]["action_ref"]
+    bare = verify_receipts(records, [{"correlation_id": cid}], read_verdict)
+    assert bare.mismatched[cid] == ["no action_ref", "no verdict"] and not bare.ok
+    two = [
+        {"correlation_id": cid, "action_ref": ref, "verdict": "DENY"},
+        {"correlation_id": cid, "verdict": "ALLOW"},
+    ]
+    report = verify_receipts(records, two, read_verdict)
+    assert "conflicting verdict" in report.mismatched[cid] and not report.ok
+    twice = [records[0], {**records[1], "gate_detail": records[0]["gate_detail"]}]
+    good = [{"correlation_id": cid, "action_ref": ref, "verdict": "ALLOW"}]
+    assert (
+        "correlation_id on two records"
+        in verify_receipts(twice, good, read_verdict).mismatched[cid]
+    )
+
+
+@pytest.mark.req("ADC-INT-002")
+def test_a_receipt_is_compared_with_what_the_service_answered() -> None:
+    from agentic_datacenter.governance.gate import AuthenticatedActor, PremiseSnapshot, Proposal
+
+    gate = Captured()
+    decision = gate.evaluate(
+        Proposal("p1", "c", {}), PremiseSnapshot(0, True, approval="none"),
+        AuthenticatedActor("agent", "x"),
+    )  # fmt: skip
+    assert decision.verdict.value == "DENY"  # nothing that can be executed
+    assert decision.detail["answered_verdict"] == "ALLOW"
+
+
+@pytest.mark.req("ADC-INT-005")
+def test_a_bundle_of_a_served_gate_is_the_same_bytes_and_its_changes_are_found(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.chdir(REPO)
+    monkeypatch.setenv("ADC_GATE_COMMAND", shlex.join([sys.executable, str(ADAPTER)]))
+    receipts = tmp_path / "receipts.jsonl"
+    monkeypatch.setenv("ADC_RECEIPTS_FILE", str(receipts))
+    for name in ("a", "b"):
+        scenario_cli(["run", "OP-03", "--gate", "command_gate", "--seconds", "900",
+                      "--out", str(tmp_path / name)])  # fmt: skip
+    for name in ("decisions.jsonl", "manifest.json"):
+        assert (tmp_path / "a" / name).read_bytes() == (tmp_path / "b" / name).read_bytes()
+    manifest = json.loads((tmp_path / "a/manifest.json").read_text())
+    assert manifest["execution_specific"] == ["correlation.jsonl"]
+    assert "correlation.jsonl" not in manifest["files"]
+    assert "gate_detail" not in (tmp_path / "a/decisions.jsonl").read_text()
+    # Only the receipts of run b; a verdict changed in its decisions after the run is found.
+    lines = receipts.read_text().splitlines()
+    receipts.write_text("\n".join(lines[len(lines) // 2 :]) + "\n")
+    capsys.readouterr()
+    assert gate_cli(["verify-receipts", str(tmp_path / "b"), str(receipts)]) == 0
+    decisions = tmp_path / "b/decisions.jsonl"
+    decisions.write_text(
+        decisions.read_text().replace('"verdict": "ALLOW"', '"verdict": "DENY"', 1)
+    )
+    assert gate_cli(["verify-receipts", str(tmp_path / "b"), str(receipts)]) == 1
+    assert "does not match the hash" in capsys.readouterr().err
+
+
+@pytest.mark.req("ADC-INT-007")
+def test_a_chain_sends_context_only_where_asked_counts_failures_and_asks_no_one_on_deny() -> None:
+    from agentic_datacenter.governance.bindings.chain_gate import ChainGate
+    from agentic_datacenter.scenarios.harness import fairness_counts
+
+    wants, plain = Captured(wants_context=True), Captured()
+    _run(ChainGate({"wants": wants, "plain": plain}), 600)
+    assert all("context" in b for p, b in wants.sent if p == "/evaluate")
+    assert all("context" not in b for p, b in plain.sent if p == "/evaluate")
+
+    class Dead(Captured):
+        def _post(self, path: str, body: Mapping[str, Any]) -> Any:
+            raise OSError("down")
+
+    result = _run(ChainGate({"ok": Captured(), "dead": Dead()}), 600)
+    assert fairness_counts(result.records, CONTRACTS)["gate_service_failures"] > 0
+    asking = Captured(answer={"verdict": "VERIFY", "required_approvers": 2})
+    result = _run(ChainGate({"no": Captured(answer={"verdict": "DENY"}), "ask": asking}), 600)
+    assert all(r["verdict"] == "DENY" and r["required_approvers"] == 0 for r in result.records)
