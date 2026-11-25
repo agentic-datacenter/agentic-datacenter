@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: MIT
+# A facility bundle (ADR 0033). Run: agentic-datacenter facility check examples/byodc
+schema_version: 2
+name: example_mixed_pods
+site: EX1
+description: 'Example facility: six PODs of three kinds on the generic electrical and cooling plant.'
+include:
+- topology/*.yaml
+- pods/*.yaml
+- equipment/*.yaml
+key_sets:
+  trains:
+  - A
+  - B
+  - C
+  pods:
+  - '01'
+  - '02'
+  - '03'
+  - '04'
+  - '05'
+  - '06'
+tables:
+  pod_feeds:
+  - pods: '01'
+    a: A
+    b: B
+  - pods: '02'
+    a: B
+    b: C
+  - pods: '03'
+    a: C
+    b: A
+  - pods: '04'
+    a: A
+    b: B
+  - pods: '05'
+    a: B
+    b: C
+  - pods: '06'
+    a: C
+    b: A

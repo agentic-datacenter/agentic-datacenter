@@ -407,6 +407,9 @@ class ModuleRegistry:
     def __init__(self) -> None:
         """Create an empty registry."""
         self._modules: dict[str, _Registered] = {}
+        #: The parameter names each instance's module read in the last build, given
+        #: or not: what a facility leaves to a module's defaults (ADR 0033).
+        self.reads: dict[str, frozenset[str]] = {}
 
     def register(self, manifest: Manifest, factory: type[SimModule], stub: type[SimModule]) -> None:
         """Add a module with its manifest and its stub.
@@ -506,6 +509,7 @@ class ModuleRegistry:
             else:
                 params = _ReadParams(spec.params)
                 module = reg.factory(ctx, params)
+                self.reads[spec.name] = frozenset(params.read)
                 unread = sorted(set(spec.params) - params.read)
                 if unread:
                     raise WiringError(

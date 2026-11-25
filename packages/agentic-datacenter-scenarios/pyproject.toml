@@ -34,6 +34,7 @@ bench = "agentic_datacenter.scenarios.cli:bench"
 demo = "agentic_datacenter.scenarios.cli:demo"
 scenario = "agentic_datacenter.scenarios.cli:scenario"
 gate = "agentic_datacenter.scenarios.cli:gate"
+facility = "agentic_datacenter.scenarios.cli:facility"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/agentic_datacenter"]
@@ -47,4 +48,5 @@ requirements = [
     "ADC-BEN-001", "ADC-BEN-002", "ADC-BEN-003", "ADC-BEN-004", "ADC-BEN-005",
     "ADC-BEN-006", "ADC-BEN-007", "ADC-BEN-008", "ADC-BEN-009",
     "ADC-EVD-001",
+    "ADC-FAC-006", "ADC-FAC-007", "ADC-FAC-008", "ADC-FAC-009",
 ]

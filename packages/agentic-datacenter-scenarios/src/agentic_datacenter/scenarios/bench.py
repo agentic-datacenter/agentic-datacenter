@@ -684,6 +684,10 @@ def _run_all(
     return [row for row in rows if row is not None]
 
 
+#: The label of a card from a facility of its owner's (ADR 0033, decision 6).
+FACILITY_LABEL = "result on a facility of its owner, not a benchmark result"
+
+
 def run_benchmark(
     profile: Profile,
     contracts: ContractLibrary,
@@ -704,8 +708,13 @@ def run_benchmark(
     replay_jobs: int = 1,
     decisions: list[dict[str, Any]] | None = None,
     reach_s: int | None = None,
+    facility: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Run every gate against every agent, scenario and seed, and return the result card.
+
+    With *facility*, the card is from a facility of its owner's (ADR 0033): it
+    carries *facility* as its ``facility`` block, is never of the frozen
+    version, and is labelled so.
 
     Every scenario and seed is also run once with no agent, and each run is
     compared with it (ADC-BEN-007).
@@ -744,8 +753,8 @@ def run_benchmark(
     if replay_jobs < 1:
         raise ValueError("replay_jobs must be at least 1")
     version = benchmark_version(profile, contracts, scenario_ids)
-    frozen = frozen_version is not None and dict(frozen_version) == version
-    if not frozen and not allow_unfrozen:
+    frozen = facility is None and frozen_version is not None and dict(frozen_version) == version
+    if facility is None and not frozen and not allow_unfrozen:
         differing = sorted(k for k in version if (frozen_version or {}).get(k) != version[k])
         raise BenchVersionError(
             "this is not the frozen benchmark version; differing component(s): "
@@ -800,11 +809,15 @@ def run_benchmark(
                 if number == 0 and unchanged(template, heldout_secret, heldout_variants)
             ],
         }
+    label = "benchmark result" if frozen else "development run, not a benchmark result"
+    if facility is not None:
+        label = FACILITY_LABEL
     head: dict[str, Any] = {
+        **({"facility": dict(facility)} if facility is not None else {}),
         "heldout": card_heldout,
         "schema_version": CARD_SCHEMA_VERSION,
         "benchmark_version": {**version, "frozen": frozen},
-        "label": "benchmark result" if frozen else "development run, not a benchmark result",
+        "label": label,
         "lowest_fidelity": fidelity,
         "statements": list(STATEMENTS),
         "counterfactual": counterfactual,
@@ -911,7 +924,7 @@ def _differences(
 
 #: What must be the same on cards that are merged into one.
 MERGE_KEYS = (
-    "schema_version", "benchmark_version", "label", "lowest_fidelity", "statements",
+    "facility", "schema_version", "benchmark_version", "label", "lowest_fidelity", "statements",
     "counterfactual", "judging", "agents", "scenarios", "duration_override_s",
     "duration_reach_s", "heldout",
 )  # fmt: skip
@@ -985,6 +998,26 @@ def merge_cards(cards: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
 
 def _pct(value: Any) -> str:
     return "n/a" if value is None else f"{100.0 * float(str(value)):.0f} %"
+
+
+def _facility_note(card: Mapping[str, Any]) -> str:
+    """The lines of a report from a facility of its owner's: which one, and what did not run."""
+    facility = card.get("facility")
+    if not isinstance(facility, Mapping):
+        return ""
+    not_run = facility.get("scenarios_not_run") or {}
+    not_loaded = facility.get("contracts_not_loaded") or {}
+    ran = len(card.get("scenarios", []))
+    return (
+        f"<p>Facility <strong>{html.escape(str(facility.get('name')))}</strong>, site "
+        f"{html.escape(str(facility.get('site')))}: {ran} of {ran + len(not_run)} scenarios "
+        f"ran, {len(not_loaded)} contracts did not fit. "
+        + "".join(
+            f"<br>Not run: {html.escape(str(k))}, {html.escape(str(v))}."
+            for k, v in not_run.items()
+        )
+        + "</p>"
+    )
 
 
 def render_report(card: Mapping[str, Any]) -> str:
@@ -1074,6 +1107,7 @@ code {{ font-size: 12px; }}
 Lowest module fidelity: <strong>{html.escape(str(card["lowest_fidelity"]))}</strong>.
 Scenarios: {html.escape(", ".join(str(s) for s in card["scenarios"]))}.
 Seeds: {html.escape(", ".join(str(s) for s in card["seeds"]))}.</p>
+{_facility_note(card)}
 <ul>{statements}</ul>
 <h2>Safety and utility</h2>
 <svg viewBox="0 0 {size} {size}" width="{size}" height="{size}" role="img"
