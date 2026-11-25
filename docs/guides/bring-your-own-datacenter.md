@@ -73,7 +73,7 @@ equipment:
 - the IT load served against design, the power at the incomers and the hottest supply air, after five minutes with no agent;
 - the contracts that load, and those that do not, with the first point or kind of equipment each lacks;
 - the scenarios that fit, and those that do not, with what each needs. `OP-06` needs a POD 07, for example;
-- what cannot be varied yet: two utility incomers per MV switchgear, six zone sensors per POD, and the oracle's limits of 27 °C and 32 °C.
+- what cannot be varied yet: three pumps in the pump station, two utility incomers per MV switchgear, six zone sensors per POD, and the oracle's limits of 27 °C and 32 °C. The number of chillers can be varied: `chillers`, 1 to 9, on `cooling.chw_plant`.
 
 ## Results on your facility
 

@@ -4,7 +4,7 @@
 
 | Module | Version | Fidelity | Zone | Requirements |
 | --- | --- | --- | --- | --- |
-| [`cooling.chw_plant`](../design/modules/cooling.chw_plant.md) | 0.2.0 | `F1` | `Z1-CHW` | ADC-PRC-002, ADC-PRC-010, ADC-CTL-004, ADC-CTL-005 |
+| [`cooling.chw_plant`](../design/modules/cooling.chw_plant.md) | 0.3.0 | `F1` | `Z1-CHW` | ADC-PRC-002, ADC-PRC-010, ADC-CTL-004, ADC-CTL-005, ADC-FAC-010 |
 | [`cooling.eroom`](../design/modules/cooling.eroom.md) | 0.2.0 | `F1` | `Z1-PWR-{instance}` | ADC-PRC-002 |
 | [`cooling.pod`](../design/modules/cooling.pod.md) | 0.2.0 | `F1` | `Z1-POD-{instance}` | ADC-PRC-004, ADC-CTL-003, ADC-CTL-006, ADC-CTL-004, ADC-CTL-005 |
 | [`cooling.pump_station`](../design/modules/cooling.pump_station.md) | 0.2.0 | `F1` | `Z1-CHW` | ADC-PRC-002, ADC-CTL-005, ADC-CTL-004 |

@@ -4,7 +4,7 @@
 
 The design document assigns each requirement to a stage of its build plan (section 13). The traceability check requires a passing test and an owner for every requirement up to stage 9; those are marked as due. This page lists which tests cite each requirement; whether they pass is decided by a run of the whole suite, in the `traceability` job of `.github/workflows/pr.yml`.
 
-A requirement of a later stage is not due. That does not mean it is not built: most have tests, listed below, that run with the others. A stage is counted only when every requirement up to it has a passing test and an owner. Requirements of later stages that lack a test or an owner: `ADC-FAC-010` (stage 12: no test and no owner), `ADC-HST-005` (stage 11: no test and no owner), `ADC-HST-006` (stage 11: no test and no owner), `ADC-HST-007` (stage 11: no test and no owner), `ADC-HST-008` (stage 11: no test and no owner), `ADC-PLT-001` (stage 10: no owner), `ADC-PLT-002` (stage 10: no test and no owner), `ADC-PLT-003` (stage 10: no test and no owner), `ADC-PLT-004` (stage 10: no test and no owner), `ADC-PLT-005` (stage 10: no test and no owner), `ADC-PLT-006` (stage 10: no test and no owner).
+A requirement of a later stage is not due. That does not mean it is not built: most have tests, listed below, that run with the others. A stage is counted only when every requirement up to it has a passing test and an owner. Requirements of later stages that lack a test or an owner: `ADC-HST-005` (stage 11: no test and no owner), `ADC-HST-006` (stage 11: no test and no owner), `ADC-HST-007` (stage 11: no test and no owner), `ADC-HST-008` (stage 11: no test and no owner), `ADC-PLT-001` (stage 10: no owner), `ADC-PLT-002` (stage 10: no test and no owner), `ADC-PLT-003` (stage 10: no test and no owner), `ADC-PLT-004` (stage 10: no test and no owner), `ADC-PLT-005` (stage 10: no test and no owner), `ADC-PLT-006` (stage 10: no test and no owner).
 
 | Requirement | Stage | Due | Claimed by | Tests citing it |
 | --- | --- | --- | --- | --- |
@@ -42,7 +42,7 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-FAC-007` | 12 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_facility_fit.py` |
 | `ADC-FAC-008` | 12 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_facility_fit.py` |
 | `ADC-FAC-009` | 12 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_facility_fit.py` |
-| `ADC-FAC-010` | 12 | no | none | none |
+| `ADC-FAC-010` | 12 | no | `cooling.chw_plant` | `tests/scenario/test_chiller_count.py` |
 | `ADC-FID-001` | 4 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_module_manifests.py` |
 | `ADC-FID-002` | 4 | yes | `agentic-datacenter-workspace` | `tests/bench/test_sensitivity.py` |
 | `ADC-FID-003` | 4 | yes | `electrical.it_load` | `packages/agentic-datacenter-plant/tests/test_module_behaviour.py` |
