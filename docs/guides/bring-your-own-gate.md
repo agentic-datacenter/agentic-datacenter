@@ -9,7 +9,7 @@ What you get:
 - a result card, with the safety, false block and approval figures beside those of the built-in gates, and the release gate (`agentic-datacenter bench check`) that refuses a card in which harm got through;
 - an evidence bundle per run that anyone can verify.
 
-For a first local run, use the [command adapter quickstart](which-way-in.md#try-a-local-adapter).
+For a first local run, use the [command adapter quickstart](which-way-in.md#try-a-local-adapter). If you maintain a governance system, [For maintainers of governance systems](for-governance-maintainers.md) says what you get, what it costs, and how to keep testing as this project grows.
 
 Every request carries a `correlation` that its outcome message carries too, with a content address of the action and the time as UTC from a fixed anchor, and a gate can ask for a read-only sample of the plant (`ADC_GATE_CONTEXT=1`). Receipts you export are checked against the run with `gate verify-receipts`. See [Preserve the policy's meaning](which-way-in.md#preserve-the-policys-meaning) and ADR 0036.
 

@@ -27,6 +27,7 @@ null_gate = "agentic_datacenter.governance.bindings.null_gate:create"
 static_allowlist = "agentic_datacenter.governance.bindings.static_allowlist:create"
 http_gate = "agentic_datacenter.governance.bindings.http_gate:create"
 command_gate = "agentic_datacenter.governance.bindings.http_gate:create_command"
+chain_gate = "agentic_datacenter.governance.bindings.chain_gate:create"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/agentic_datacenter"]
@@ -40,4 +41,5 @@ requirements = [
     "ADC-GOV-001", "ADC-GOV-003", "ADC-GOV-004", "ADC-GOV-005", "ADC-GOV-008",
     "ADC-HST-001", "ADC-HST-002", "ADC-HST-003",
     "ADC-INT-001", "ADC-INT-002", "ADC-INT-003", "ADC-INT-004", "ADC-INT-005", "ADC-INT-006",
+    "ADC-INT-007", "ADC-INT-008", "ADC-INT-009",
 ]
