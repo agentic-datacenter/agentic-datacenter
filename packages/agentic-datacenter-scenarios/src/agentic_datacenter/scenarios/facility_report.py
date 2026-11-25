@@ -16,6 +16,7 @@ It is a report on the description, not on the site it describes.
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -110,3 +111,92 @@ def write_report(report: dict[str, Any], out: Path) -> None:
         json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     (out / "facility_report.md").write_text(_markdown(report), encoding="utf-8")
+
+
+def example_bundle() -> Path:
+    """The example bundle ``examples/byodc``, from the repository this package runs in."""
+    for parent in Path(__file__).resolve().parents:
+        candidate = parent / "examples" / "byodc"
+        if (candidate / "datacenter.yaml").is_file():
+            return candidate
+    raise FileNotFoundError("examples/byodc is not found next to this installation")
+
+
+def operator_report(
+    facility: Facility, library: ContractLibrary, gates: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Return the report for an operator: the facility check and a quick run of each gate.
+
+    Every gate is run with both scripted agents over every scenario that fits,
+    at the ``quick`` tier, one seed. It is a development run on a description
+    of a facility, and the report says so.
+    """
+    from agentic_datacenter.scenarios.agents import AGENTS
+    from agentic_datacenter.scenarios.bench import TIERS, run_benchmark
+
+    check = check_facility(facility, library)
+    fit = fit_facility(facility.profile, library, library_ids())
+    quick = TIERS["quick"]
+    card = run_benchmark(
+        facility.profile, fit.contracts, dict(gates), sorted(AGENTS), fit.runnable, [1],
+        duration_s=quick["seconds"], reach_s=quick["reach_s"], horizon_s=quick["horizon_s"],
+        max_judged=quick["max_judged"], allow_unfrozen=True,
+        facility={**facility.summary(), **fit.block()},
+    )  # fmt: skip
+    return {"check": check, "card": card}
+
+
+def _pct(value: Any) -> str:
+    return "n/a" if value is None else f"{100.0 * float(value):.0f} %"
+
+
+def write_operator_report(report: dict[str, Any], out: Path) -> None:
+    """Write ``operator_report.md`` beside the facility report and the result card."""
+    from agentic_datacenter.scenarios.bench import write_card
+
+    write_report(report["check"], out)
+    write_card(report["card"], out)
+    check, card = report["check"], report["card"]
+    facility = check["facility"]
+    ran = len(check["fit"]["scenarios_run"])
+    lines = [
+        f"# What autonomous operation would do at {facility['name']}",
+        "",
+        f"*{card['label']}.* {check['statement']}",
+        "",
+        "## Your facility",
+        "",
+        f"- {ran} of {ran + len(check['fit']['scenarios_not_run'])} scenarios fit it, "
+        f"and {len(check['fit']['contracts_loaded'])} of "
+        f"{len(check['fit']['contracts_loaded']) + len(check['fit']['contracts_not_loaded'])} "
+        "control contracts.",
+        f"- {facility['values'].get('sourced', 0)} values have a source, "
+        f"{facility['values'].get('assumed', 0)} are assumed, and "
+        f"{check['fit'].get('values_left_to_defaults', 0)} are left to the simulator's defaults.",
+        f"- IT load served after five minutes: {check['run']['it_served_kw']} kW of "
+        f"{check['run']['it_design_kw']} kW design.",
+        "",
+        "## What each safety control did, with a careful and a hostile agent",
+        "",
+        "| Control | Agent | Scenarios without harm | Useful steps blocked | "
+        "Needed a person | Executed without the person |",
+        "| --- | --- | ---: | ---: | ---: | ---: |",
+    ]
+    for row in card["results"]:
+        lines.append(
+            f"| `{row['gate']}` | {row['agent']} | {_pct(row['safety'])} | "
+            f"{_pct(row['false_block_rate'])} | {row.get('approval_required', 0)} | "
+            f"{row.get('executed_without_required_approval', 0)} |"
+        )
+    lines += [
+        "",
+        "Scenarios without harm: the share of scenarios in which no step the control let "
+        "through harmed the plant. Useful steps blocked: of the steps that the replay found safe "
+        "and useful, the share the control blocked. Needed a person: steps whose contract asks "
+        "for a person's approval.",
+        "",
+        "The details are in `facility_report.md`, `result_card.json` and `report.html` beside "
+        "this file. To go further, a commercial agreement covers private runs on your own "
+        "equipment data and regression tests on every change (`COMMERCIAL_LICENSING.md`).",
+    ]
+    (out / "operator_report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")

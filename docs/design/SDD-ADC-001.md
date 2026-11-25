@@ -874,10 +874,28 @@ Each requirement below maps to at least one named test; a requirement without a 
 | ADC-FAC-008 | Under `--facility`, a scenario that names an instance, key, zone, relay, point or contract the facility lacks, or needs a point the scripted agents read, is not run; it is listed on the card and the report says how many of all ran. | scenario/test\_facility\_fit |
 | ADC-FAC-009 | A card under `--facility` carries the `facility` block, is never a benchmark result and is refused for publication; a card without it is unchanged. | scenario/test\_facility\_fit |
 | ADC-FAC-010 | Chillers are counted by a parameter, 1 to 9; at three every tag, port and state hash is unchanged, and the overview counts the chillers from the plant's points. | scenario/test\_chiller\_count |
+| ADC-FAC-011 | `facility init <dir>` starts a bundle of one's own from the example bundle, and refuses a directory that has files. | scenario/test\_adoption |
+| ADC-FAC-012 | `facility report <bundle>` writes one report for an operator: what fits, and what each gate did with both scripted agents at the quick tier, labelled as a result on a facility of its owner. | scenario/test\_adoption |
 | ADC-EQP-001 | Every equipment registry entry validates, lies at `equipment/<module>/<id>.yaml`, names a source pinned in `equipment/sources.yaml`, and each value cites that source's file and commit. | conformance/test\_equipment\_registry |
 | ADC-EQP-002 | Every entry in the repository may be used commercially and redistributed, and no entry claims a tier beyond what it shows. | conformance/test\_equipment\_registry |
 | ADC-EQP-003 | A bundle names an entry as `registry:<id>`; every value of every entry is read by its module, and an unknown entry is refused. | conformance/test\_equipment\_registry |
 | ADC-EQP-004 | `THIRD_PARTY_NOTICES.md` names every registry source's repository, commit and licence file. | conformance/test\_equipment\_registry |
+| ADC-EQP-005 | A maker's entry is under CC-BY-4.0 with its source's attribution, and `equipment check` runs the registry's gate on one entry and tries it in the generic facility. | scenario/test\_adoption |
+| ADC-UX-001 | The README states the purpose, then one demo action, then four role actions, then the media, in at most 500 words, with no two actions to one place. | conformance/test\_readme\_experience |
+| ADC-UX-002 | Every button is a local static SVG of at most 10 KiB with no active content, linked to a real destination with meaningful alt text. | conformance/test\_readme\_experience |
+| ADC-UX-003 | The hero animation and video are kept unchanged and labelled illustrative. | conformance/test\_readme\_experience |
+| ADC-UX-004 | The README reads at 360, 390, 768 and 1280 px, in light and dark themes, by keyboard and with images off. | manual, SDD-ADC-002 section 7 |
+| ADC-UX-005 | The demo action opens a Markdown report with its development label, not raw HTML or a live service. | conformance/test\_readme\_experience |
+| ADC-UX-006 | The datacenter path gives the facility reports and lists what does not fit. | scenario/test\_facility\_fit, scenario/test\_adoption |
+| ADC-UX-007 | The equipment path shows an entry's provenance, rights, tier and fit, with a runnable check. | conformance/test\_equipment\_registry, scenario/test\_adoption |
+| ADC-UX-008 | The agent path is labelled planned on its button, its alt text and its guide until an external agent runs. | conformance/test\_readme\_experience |
+| ADC-UX-009 | The governance path gives an inspectable card from the existing gate interface. | conformance/test\_gate\_check\_service |
+| ADC-UX-010 | Every local link and image of the README and the role guides resolves. | conformance/test\_readme\_experience |
+| ADC-UX-011 | The README's result is the one the report records, with its development label. | conformance/test\_readme\_experience |
+| ADC-UX-012 | Licence, safety and commercial boundaries are visible and linked. | conformance/test\_readme\_experience |
+| ADC-UX-013 | The first run needs no credentials, no API key, no privileged access and no OT connection. | tools/first\_run |
+| ADC-UX-014 | The hero names no date, season or library count that goes stale. | conformance/test\_readme\_experience |
+| ADC-UX-015 | Two independent first-time users reach their role's result without the maintainer. | manual, not done |
 
 **What-if (10.4)**
 
@@ -1109,6 +1127,7 @@ This section is build history. The simulator was built in the stages below, in t
 | 11 | Evidence about hosts (ADR 0032): keepalives in shirudo's format, `SHIRUDO_PIN`, the host register and premise, host scenarios | HST-001 to 008 | A host scenario refused from a keepalive before the cross-check alarms, under a gate that reads host evidence |
 | 12 | Bring your own data center (ADR 0033): facility bundles, equipment models, values per instance, `facility check`, runs and cards on one's own facility, the number of chillers | FAC-001 to 010 | `facility check` and a `bench run --facility` of the example bundle end to end |
 | 13 | The equipment registry (ADR 0034): entries from open sources with their rights recorded, the registry's gate, `registry:` entries in bundles | EQP-001 to 004 | A bundle that names a registry chiller runs, and the gate refuses an entry without its rights |
+| 14 | The front door and onboarding (SDD-ADC-002): buttons, role guides, `facility init` and `report`, a maker's own entries | FAC-011 to 012, EQP-005, UX-001 to 015 | Two independent first-time users reach their role's result without help |
 
 **Milestone M1.** After Stage 4, thin versions of the supervisory command path, the gate interface, the two scripted agents, counterfactual replay and the result card were built first, on four scenarios: `OP-03`, `OP-10`, `AD-01` and `AD-03`. They ran under the operating profile `DECISION_ONLY`: REMORA decides through `evaluate_policy`, and allowed proposals are applied by the command service with the hash of the decision as reference. There is no execution token, no cumulative-limit enforcement on the REMORA side and no audit chain in this profile. Its results MUST be labelled as such and MUST NOT be described as governed execution. `AD-04` and `AD-05` cannot be claimed as passed under it, since replay and cumulative limits are enforced only on the governed path.
 

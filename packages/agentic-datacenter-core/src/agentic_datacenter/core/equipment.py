@@ -160,3 +160,60 @@ def load_registry(root: Path | None = None) -> dict[str, Entry]:
     """Read every entry of the registry at *root*."""
     base = root or registry_dir()
     return {p.stem: load_entry(p.stem, base) for p in sorted(base.glob("*/*.yaml"))}
+
+
+#: The licence every entry a maker contributes is under (decided by the owner on 2026-11-25).
+VENDOR_LICENCE = "CC-BY-4.0"
+
+
+def load_sources(root: Path | None = None) -> dict[str, dict[str, object]]:
+    """Read ``sources.yaml`` of the registry at *root*."""
+    base = root or registry_dir()
+    data = yaml.safe_load((base / "sources.yaml").read_text(encoding="utf-8")) or {}
+    if not isinstance(data, dict):
+        raise RegistryError(f"{base / 'sources.yaml'}: a mapping of sources")
+    return data
+
+
+def problems(entry: Entry, sources: dict[str, dict[str, object]], repo: Path) -> list[str]:
+    """Return why *entry* may not be in the registry, or nothing when it may (ADR 0034).
+
+    The checks of the registry's gate that need more than the entry itself: its
+    source is listed with a licence text, each value cites the source, and the
+    rights fit the kind of source. A source of ``kind: vendor`` is a maker's own
+    submission, under CC-BY-4.0; any other is an open source pinned by commit.
+    """
+    out: list[str] = []
+    source = sources.get(entry.provenance.source)
+    if source is None:
+        return [f"source {entry.provenance.source!r} is not in sources.yaml"]
+    licence_file = str(source.get("licence_file", ""))
+    if not licence_file or not (repo / licence_file).is_file():
+        out.append(f"source {entry.provenance.source}: no licence text at {licence_file!r}")
+    if (entry.rights.commercial_use, entry.rights.redistribution) != ("allowed", "allowed"):
+        out.append("commercial use and redistribution must both be allowed")
+    vendor = source.get("kind") == "vendor"
+    if vendor:
+        if source.get("licence") != VENDOR_LICENCE:
+            out.append(f"a maker's submission is under {VENDOR_LICENCE}")
+        for key in ("submitted_by", "date", "attribution"):
+            if not source.get(key):
+                out.append(f"source {entry.provenance.source}: a maker's submission names {key}")
+        if entry.simulation.model_origin != "vendor_supplied":
+            out.append("a maker's entry has model_origin: vendor_supplied")
+        if entry.provenance.data_type != "vendor_statement":
+            out.append("a maker's entry has data_type: vendor_statement")
+    else:
+        commit = str(source.get("commit", ""))
+        files = source.get("files")
+        paths = list(files) if isinstance(files, dict) else []
+        if len(commit) != 40:
+            out.append(f"source {entry.provenance.source}: an open source is pinned by commit")
+        for name, param in entry.params.items():
+            text = param.source or ""
+            if commit[:12] not in text or not any(path in text for path in paths):
+                out.append(f"{name}: its source cites no pinned file and commit")
+    for name, param in entry.params.items():
+        if not (param.source or "").startswith(entry.provenance.source):
+            out.append(f"{name}: its source does not start with {entry.provenance.source}")
+    return out
