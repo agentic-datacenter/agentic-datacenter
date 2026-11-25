@@ -297,6 +297,8 @@ class GovernedPath:
             context = plant_context(self._points, Overview(self._points, []), now, epoch)
             shown = replace(shown, context=context)
         decision = self.gate.evaluate(proposal, shown, actor)
+        # What the gate said of its own decision, kept even if it is replaced below.
+        kept = {k: decision.detail[k] for k in GATE_DETAIL_KEPT if k in decision.detail}
         # Whatever a gate returns, an ALLOW authorizes at most the writes of this
         # contract instance, as built here (INV-GOV-2). A gate from another
         # project is not trusted to keep to that; one that names other writes is
@@ -325,7 +327,6 @@ class GovernedPath:
                 proposal.contract_id,
                 reasons=("counterfactual: not executed",),
             )
-        kept = {k: decision.detail[k] for k in GATE_DETAIL_KEPT if k in decision.detail}
         if kept:
             # Only for a gate that says any of it, so every other gate has the
             # records, and the state hashes, it had before (ADR 0036).

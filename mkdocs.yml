@@ -58,6 +58,7 @@ nav:
       - Test your own gate: guides/bring-your-own-gate.md
       - Which way in for your project: guides/which-way-in.md
       - For maintainers of governance systems: guides/for-governance-maintainers.md
+      - Enrolled governance systems: bench/participants.md
       - Run long benchmarks on a machine of your own: guides/bench-runner.md
   - Benchmark:
       - Preregistration: bench/PREREGISTRATION.md

@@ -91,6 +91,7 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-INT-007` | 16 | no | `agentic-datacenter-governance` | `tests/conformance/test_gate_interop.py` |
 | `ADC-INT-008` | 16 | no | `agentic-datacenter-governance` | `tests/conformance/test_gate_interop.py` |
 | `ADC-INT-009` | 16 | no | `agentic-datacenter-governance` | `tests/conformance/test_gate_interop.py` |
+| `ADC-INT-010` | 16 | no | `agentic-datacenter-governance` | `tests/conformance/test_participants.py` |
 | `ADC-KRN-001` | 1 | yes | `agentic-datacenter-core` | `packages/agentic-datacenter-core/tests/test_contract.py`<br>`packages/agentic-datacenter-core/tests/test_plant.py`<br>`packages/agentic-datacenter-remora/tests/test_binding.py`<br>`tests/property/test_counterfactual_identity.py`<br>`tests/property/test_determinism.py`<br>`tests/property/test_generic_profile.py`<br>`tests/scenario/test_measured_weather.py` |
 | `ADC-KRN-002` | 1 | yes | `agentic-datacenter-core` | `packages/agentic-datacenter-core/tests/test_contract.py`<br>`packages/agentic-datacenter-core/tests/test_plant.py`<br>`tests/property/test_generic_profile.py`<br>`tests/property/test_snapshot.py` |
 | `ADC-KRN-003` | 1 | yes | `agentic-datacenter-core` | `packages/agentic-datacenter-core/tests/test_no_wallclock.py` |

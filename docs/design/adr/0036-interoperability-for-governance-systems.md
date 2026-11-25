@@ -33,7 +33,7 @@ An answer may give `decision_id` and a `receipt` object (at most 16 KiB in canon
 
 ### 2. Kept out of the state
 
-The session names one execution: it differs between two executions of the same run, and between one process and many. `gate_detail` is therefore kept on the record and left out of the control path's state. State hashes, cards and their reference copies do not depend on it (ADC-BEN-006). The evidence bundle's `decisions.jsonl` and the `decisions.jsonl` beside a card carry it.
+The session names one execution: it differs between two executions of the same run, and between one process and many. `gate_detail` is therefore kept on the record and left out of the control path's state. State hashes, cards and their reference copies do not depend on it (ADC-BEN-006). An evidence bundle keeps it apart, in `correlation.jsonl`, which its manifest names as `execution_specific` and does not hash, so the same run gives the same bundle bytes; its `decisions.jsonl` is the records without it. The `decisions.jsonl` beside a card carries it on each line.
 
 ### 3. A fixed time anchor
 
@@ -53,7 +53,7 @@ Every point has `tag`, `value`, `unit`, `quality`, `time_ms` and `observed_at`. 
 
 ### 5. A local check of receipts
 
-`agentic-datacenter gate verify-receipts <bundle or decisions.jsonl> <receipts.jsonl>` reads the receipts a system exported, one JSON object per line, merged by `correlation_id`. For each, every field it gives of `action_ref`, `verdict` (a word of the system's own read as the verdict it means), `outcome` and `decision_id` must be what the record holds. Each record's `action_ref` is made again from the record, so a record changed after the run is found. It reports receipts that match, that do not and why, that name no decision, and decisions without a receipt (`--require-all` fails on those). It checks no signature: that is the system's own verifier's work, and the next step (ADR 0037).
+`agentic-datacenter gate verify-receipts <bundle or decisions.jsonl> <receipts.jsonl>` reads the receipts a system exported, one JSON object per line, merged by `correlation_id`; two lines of one id that disagree on a field are a mismatch. Each receipt must give `action_ref` and `verdict`, and may give `outcome` and `decision_id`; each must be what the record holds, the verdict compared with what the service answered before the binding's own checks (`answered_verdict`). Each record's `action_ref` is made again from the record, so a record whose action was changed is found; for an evidence bundle, the bundle is first checked against its manifest, so a verdict or outcome changed in it is found too. A correlation id on two records is a mismatch. It reports receipts that match, that do not and why, that name no decision, and decisions without a receipt (`--require-all` fails on those). It checks no signature: that is the system's own verifier's work, and the next step (ADR 0037).
 
 The MIT command starter writes such receipts when `ADC_RECEIPTS_FILE` is set, and refuses a step while an interlock is locked out when it is given the context.
 

@@ -719,10 +719,20 @@ def _verify_receipts(
     """Run ``gate verify-receipts`` and return its exit status."""
     from agentic_datacenter.governance.bindings.http_gate import read_verdict
     from agentic_datacenter.governance.interop import verify_receipts
+    from agentic_datacenter.scenarios.evidence import records_with_correlation
 
-    source = decisions / "decisions.jsonl" if decisions.is_dir() else decisions
     try:
-        records = _json_lines(source)
+        if decisions.is_dir():
+            # An evidence bundle: its decisions must be what its manifest says, so a
+            # verdict or outcome changed after the run is found before anything else.
+            broken = verify_bundle(decisions)
+            if broken:
+                for problem in broken:
+                    print(f"{decisions}: {problem}", file=sys.stderr)
+                return 1
+            records = records_with_correlation(decisions)
+        else:
+            records = _json_lines(decisions)
         given = _json_lines(receipts)
     except (OSError, ValueError) as exc:
         print(f"agentic-datacenter gate verify-receipts: {exc}", file=sys.stderr)

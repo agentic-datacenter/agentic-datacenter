@@ -55,7 +55,7 @@ CONTEXT_POINTS: Mapping[str, tuple[str, ...]] = {
 #: What a decision record keeps of a gate's own detail, when the gate gives any of it.
 GATE_DETAIL_KEPT = (
     "served_by", "session", "correlation_id", "action_ref", "issued_at",
-    "service_verdict", "service_decision_id", "service_receipt", "members",
+    "service_verdict", "answered_verdict", "service_decision_id", "service_receipt", "members",
 )  # fmt: skip
 #: The fields of a receipt that are compared with the record, when the receipt gives them.
 RECEIPT_FIELDS = ("action_ref", "verdict", "outcome", "decision_id")
@@ -197,17 +197,25 @@ class ReceiptReport:
         }
 
 
-def merge_receipts(lines: Iterable[Mapping[str, Any]]) -> dict[str, dict[str, Any]]:
-    """Return the receipts by correlation id; later lines for one id add to it.
+def merge_receipts(
+    lines: Iterable[Mapping[str, Any]],
+) -> tuple[dict[str, dict[str, Any]], dict[str, list[str]]]:
+    """Return the receipts by correlation id, and the fields two lines of one id disagree on.
 
     A system may write one line when it decides and another when it is told
-    the outcome.
+    the outcome. A later line adds fields; it never replaces one.
     """
     out: dict[str, dict[str, Any]] = {}
+    conflicts: dict[str, list[str]] = {}
     for line in lines:
         key = str(line.get("correlation_id", ""))
-        out.setdefault(key, {}).update(dict(line))
-    return out
+        merged = out.setdefault(key, {})
+        for field_name, value in line.items():
+            if field_name in merged and merged[field_name] != value:
+                conflicts.setdefault(key, []).append(f"conflicting {field_name}")
+            else:
+                merged[field_name] = value
+    return out, conflicts
 
 
 def _correlated(record: Mapping[str, Any]) -> list[Mapping[str, Any]]:
@@ -229,12 +237,15 @@ def verify_receipts(
 ) -> ReceiptReport:
     """Check receipts against the decision records of a run.
 
-    Each receipt names a ``correlation_id`` and may give ``action_ref``,
+    Each receipt names a ``correlation_id`` and must give ``action_ref`` and
     ``verdict`` (a word of the system's own is read as the verdict it means,
-    with *read_verdict*), ``outcome`` and ``decision_id``. Each that it gives
-    must be what the record holds. Each record's own ``action_ref`` is made
-    again from the record, so a record changed after the run is found too.
-    No signature is checked: that is the system's own verifier's work.
+    with *read_verdict*); it may give ``outcome`` and ``decision_id``. Each
+    must be what the record holds; the verdict is compared with the one the
+    service answered. Each record's own ``action_ref`` is made again from the
+    record, so a record whose action was changed is found. That the verdict
+    and outcome on record are those of the run is for the evidence bundle's
+    manifest to show (``scenario verify``). No signature is checked: that is
+    the system's own verifier's work.
     """
     report = ReceiptReport()
     by_id: dict[str, Mapping[str, Any]] = {}
@@ -242,6 +253,8 @@ def verify_receipts(
     for record in records:
         for detail in _correlated(record):
             cid = str(detail["correlation_id"])
+            if cid in by_id:
+                report.mismatched.setdefault(cid, []).append("correlation_id on two records")
             by_id[cid], details[cid] = record, detail
             again = action_ref(
                 str(detail.get("session", "")), str(record["proposal_id"]),
@@ -250,15 +263,18 @@ def verify_receipts(
             )  # fmt: skip
             if again != detail.get("action_ref"):
                 report.unbound_records.append(cid)
-    merged = merge_receipts(receipts)
+    merged, conflicts = merge_receipts(receipts)
     for cid, receipt in merged.items():
         if cid not in by_id:
             report.unknown.append(cid)
             continue
         record, detail = by_id[cid], details[cid]
-        # A member of a chain is judged on its own verdict; the outcome is the record's.
-        decided = detail.get("verdict", record.get("verdict"))
-        wrong = []
+        # The service is judged on the verdict it answered, a member of a chain on its own.
+        decided = detail.get("answered_verdict", detail.get("verdict", record.get("verdict")))
+        wrong = list(conflicts.get(cid, []))
+        for required in ("action_ref", "verdict"):
+            if required not in receipt:
+                wrong.append(f"no {required}")
         if "action_ref" in receipt and receipt["action_ref"] != detail.get("action_ref"):
             wrong.append("action_ref")
         if "verdict" in receipt:
@@ -274,8 +290,8 @@ def verify_receipts(
         ):
             wrong.append("decision_id")
         if wrong:
-            report.mismatched[cid] = wrong
-        else:
+            report.mismatched.setdefault(cid, []).extend(wrong)
+        elif cid not in report.mismatched:
             report.matched.append(cid)
     report.without_receipt = [cid for cid in by_id if cid not in merged]
     return report

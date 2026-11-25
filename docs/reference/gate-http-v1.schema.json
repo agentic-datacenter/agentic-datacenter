@@ -442,7 +442,7 @@
             "ABSTAIN",
             null
           ],
-          "description": "The verdict Agentic-Datacenter read from the answer. Null for an outcome of a decision this service was not asked about, such as a step blocked by the counterfactual replay."
+          "description": "The verdict of the decision after the binding's own checks: an ALLOW with nothing that can be executed is DENY. Null for an outcome of a decision this service was not asked about, such as a step blocked by the counterfactual replay. gate verify-receipts compares a receipt with the verdict the service answered."
         }
       }
     },
