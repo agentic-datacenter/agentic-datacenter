@@ -1,6 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="280" height="52" viewBox="0 0 280 52" role="img" aria-label="Bring your governance — Test your safety controls">
-  <rect x="0.5" y="0.5" width="279" height="51" rx="8" fill="#162331" stroke="#52647A"/>
-  <g fill="none" stroke="#D2DCE7" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M29 13 L40 17 V25 C40 32 35 37 29 39 C23 37 18 32 18 25 V17 Z"/><path d="M24 26 L28 30 L35 22"/></g>
-  <text x="58" y="21" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="15" font-weight="600" fill="#FFFFFF">Bring your governance</text>
-  <text x="58" y="38" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12" fill="#D2DCE7">Test your safety controls</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="58" viewBox="0 0 280 58">
+  <rect x=".5" y=".5" width="279" height="57" rx="8" fill="#162331" stroke="#52647A"/>
+  <rect x="12.5" y="11.5" width="35" height="35" rx="6" fill="#203548" stroke="#38566B"/>
+  <g transform="translate(18 17)" fill="none" stroke="#8BD8E3" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 20 6v5.2c0 4.5-3.4 7.7-8 10.3-4.6-2.6-8-5.8-8-10.3V6z"/><path d="m8.5 11.7 2.4 2.4 4.6-4.7"/></g>
+  <g font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
+    <text x="59" y="25" fill="#FFF" font-size="15.5" font-weight="650">Bring your governance</text>
+    <text x="59" y="43" fill="#D2DCE7" font-size="12.5">Test your safety controls</text>
+  </g>
+  <path d="M250 29h13m-5-5 5 5-5 5" fill="none" stroke="#8BD8E3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
