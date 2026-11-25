@@ -147,6 +147,7 @@ def test_the_readme_stays_short() -> None:
     assert len(re.findall(r"[A-Za-z][A-Za-z'’-]*", text)) <= 500
 
 
+@pytest.mark.req("ADC-UX-005")
 def test_the_demo_shows_the_result_before_the_report_image() -> None:
     report = (REPO / ROUTES["demo.svg"]).read_text(encoding="utf-8")
     assert report.index("## Result") < report.index("![The result report")
@@ -171,8 +172,8 @@ def test_the_demo_shows_the_result_before_the_report_image() -> None:
         ),
         (
             "agent.svg",
-            "## What exists today",
-            ("planned", "scripted agents", "Demo report", "share what your agent needs"),
+            "## Run a model",
+            ("optional", "scripted agents", "--llm-replay", "planned"),
         ),
         (
             "governance.svg",
@@ -181,6 +182,9 @@ def test_the_demo_shows_the_result_before_the_report_image() -> None:
         ),
     ],
 )
+@pytest.mark.req("ADC-UX-006")
+@pytest.mark.req("ADC-UX-007")
+@pytest.mark.req("ADC-UX-009")
 def test_role_guides_show_the_first_action_and_outcome_before_the_reference(
     button: str, before: str, expected: tuple[str, ...]
 ) -> None:
