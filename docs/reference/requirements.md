@@ -9,7 +9,7 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | Requirement | Stage | Due | Claimed by | Tests citing it |
 | --- | --- | --- | --- | --- |
 | `ADC-AGT-001` | 15 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_llm_agent.py` |
-| `ADC-AGT-002` | 15 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_llm_agent.py` |
+| `ADC-AGT-002` | 15 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_adoption.py`<br>`tests/scenario/test_llm_agent.py` |
 | `ADC-AGT-003` | 15 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_llm_agent.py` |
 | `ADC-AGT-004` | 15 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_llm_agent.py` |
 | `ADC-AGT-005` | 15 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_llm_agent.py` |
