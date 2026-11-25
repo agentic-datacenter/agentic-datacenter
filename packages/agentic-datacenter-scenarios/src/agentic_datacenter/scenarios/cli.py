@@ -438,18 +438,16 @@ def _check(path: Path, gates: Sequence[str], publication: bool = False) -> int:
 
 
 def demo(argv: Sequence[str]) -> int:
-    """Record three scenarios without a gate and with one, and write the dashboard.
+    """Record a demo with a baseline and one or more gates.
 
     Runs ``agentic-datacenter demo`` and returns the exit status.
     The first line is the help text of ``agentic-datacenter --help``.
     """
     parser = argparse.ArgumentParser(
         prog="agentic-datacenter demo",
-        description="Record three scenarios without a gate and with one, and write the dashboard.",
+        description="Record a demo with a baseline and one or more gates.",
     )
-    parser.add_argument(
-        "--gate", help="Gate for the right-hand side; default REMORA governed if installed."
-    )
+    parser.add_argument("--gate", action="append", help="Gate to compare; repeat for several.")
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--seconds", type=int, help="Shorten every scenario to this many seconds.")
     parser.add_argument("--full", action="store_true", help="Play the week of optimization whole.")
@@ -458,14 +456,18 @@ def demo(argv: Sequence[str]) -> int:
         help="Play only this scenario; repeat for several. OP-03 alone takes about a minute.",
     )  # fmt: skip
     parser.add_argument("--profile", type=Path, default=Path("profiles/generic_dc.yaml"))
+    parser.add_argument("--facility", type=Path, help="A facility bundle or profile.")
     parser.add_argument("--contracts", type=Path, default=Path("contracts"))
     parser.add_argument("--out", type=Path, default=Path("build/demo"))
     args = parser.parse_args(argv)
 
     installed = load_gates()
     preferred = [name for name in ("remora_governed", "remora") if name in installed]
-    gate = args.gate or (preferred[0] if preferred else "static_allowlist")
-    missing = [name for name in ("null_gate", gate) if name not in installed]
+    selected = list(dict.fromkeys(args.gate or preferred[:1] or ["static_allowlist"]))
+    if "null_gate" in selected:
+        print("agentic-datacenter demo: null_gate is already the baseline", file=sys.stderr)
+        return 2
+    missing = [name for name in ("null_gate", *selected) if name not in installed]
     if missing:
         print(
             f"agentic-datacenter demo: no such gate: {', '.join(missing)}; installed: "
@@ -473,24 +475,48 @@ def demo(argv: Sequence[str]) -> int:
             file=sys.stderr,
         )
         return 2
-    profile, contracts = load_profile(args.profile), ContractLibrary.load(args.contracts)
+    contracts = ContractLibrary.load(args.contracts)
+    only = args.scenario or [scenario_id for scenario_id, _ in DEMO_SCENARIOS]
+    facility_block = None
+    if args.facility is None:
+        profile = load_profile(args.profile)
+    else:
+        try:
+            own = load_facility(args.facility)
+        except (FacilityError, ProfileError) as exc:
+            print(f"agentic-datacenter demo: {exc}", file=sys.stderr)
+            return 1
+        fit = fit_facility(own.profile, contracts, only)
+        if not fit.runnable:
+            print(
+                "agentic-datacenter demo: no selected scenario fits this facility", file=sys.stderr
+            )
+            for scenario_id, reason in fit.not_run.items():
+                print(f"{scenario_id}: {reason}", file=sys.stderr)
+            return 1
+        profile, contracts, only = own.profile, fit.contracts, fit.runnable
+        facility_block = {**own.summary(), **fit.block()}
     commit = code_commit(Path.cwd())
 
-    def keep(played: Scenario, gate_name: str, result: RunResult) -> None:
+    def keep(played: Scenario, gate_name: str, result: RunResult) -> dict[str, Any]:
         bundle = build_bundle(result, profile, played, contracts, commit)
         write_bundle(bundle, args.out / "evidence" / f"{played.id}.{gate_name}")
+        manifest: dict[str, Any] = json.loads(bundle["manifest.json"])
+        return manifest
 
     recording = build_demo(
         profile,
         contracts,
         installed,
-        gate,
+        selected[0],
         seed=args.seed,
         seconds=args.seconds,
         full=args.full,
         progress=lambda line: print(f"  {line}", file=sys.stderr),
         on_result=keep,
-        only=args.scenario or (),
+        only=only,
+        additional_gates=selected[1:],
+        facility=facility_block,
     )
     write_demo(recording, args.out)
     print(
@@ -629,8 +655,32 @@ def gate(argv: Sequence[str]) -> int:
         "gate", help="Entry-point name, as `agentic-datacenter gate list` prints it."
     )
     check.add_argument("--contracts", type=Path, default=Path("contracts"))
+    receipts = actions.add_parser(
+        "verify-receipts",
+        help="Check a system's exported receipts against the decisions of a run (ADR 0036).",
+    )
+    receipts.add_argument(
+        "decisions", type=Path,
+        help="An evidence bundle directory, or a decisions.jsonl that bench run wrote.",
+    )  # fmt: skip
+    receipts.add_argument(
+        "receipts", type=Path,
+        help="JSON lines, each with a correlation_id and any of action_ref, verdict, "
+        "outcome and decision_id.",
+    )  # fmt: skip
+    receipts.add_argument(
+        "--require-all", action="store_true",
+        help="Also fail when a decision of a gate that gave correlation has no receipt.",
+    )  # fmt: skip
+    receipts.add_argument(
+        "--allow-unknown", action="store_true",
+        help="Do not fail on receipts that name no decision on record, such as the "
+        "counterfactual replays of a bench run, which are judged and not recorded.",
+    )  # fmt: skip
     args = parser.parse_args(argv)
 
+    if args.action == "verify-receipts":
+        return _verify_receipts(args.decisions, args.receipts, args.require_all, args.allow_unknown)
     installed = load_gates()
     if args.action == "list":
         for name in sorted(installed):
@@ -675,6 +725,64 @@ def gate(argv: Sequence[str]) -> int:
         f"{args.gate} --seeds 3 --allow-unfrozen --out build/bench-{args.gate}"
     )
     return 0
+
+
+def _json_lines(path: Path) -> list[dict[str, Any]]:
+    lines = []
+    for number, text in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        if not text.strip():
+            continue
+        value = json.loads(text)
+        if not isinstance(value, dict):
+            raise ValueError(f"{path}:{number}: not a JSON object")
+        lines.append(value)
+    return lines
+
+
+def _verify_receipts(
+    decisions: Path, receipts: Path, require_all: bool, allow_unknown: bool = False
+) -> int:
+    """Run ``gate verify-receipts`` and return its exit status."""
+    from agentic_datacenter.governance.bindings.http_gate import read_verdict
+    from agentic_datacenter.governance.interop import verify_receipts
+    from agentic_datacenter.scenarios.evidence import records_with_correlation
+
+    try:
+        if decisions.is_dir():
+            # An evidence bundle: its decisions must be what its manifest says, so a
+            # verdict or outcome changed after the run is found before anything else.
+            broken = verify_bundle(decisions)
+            if broken:
+                for problem in broken:
+                    print(f"{decisions}: {problem}", file=sys.stderr)
+                return 1
+            records = records_with_correlation(decisions)
+        else:
+            records = _json_lines(decisions)
+        given = _json_lines(receipts)
+    except (OSError, ValueError) as exc:
+        print(f"agentic-datacenter gate verify-receipts: {exc}", file=sys.stderr)
+        return 2
+    report = verify_receipts(records, given, read_verdict)
+    print(json.dumps(report.as_dict(), indent=2, sort_keys=True))
+    correlated = len(report.matched) + len(report.mismatched) + len(report.without_receipt)
+    if not correlated:
+        print(
+            "no decision in it carries a correlation_id: was it made by a served gate "
+            "(http_gate or command_gate)?",
+            file=sys.stderr,
+        )
+        return 1
+    failed = bool(report.mismatched or report.unbound_records)
+    failed = failed or (bool(report.unknown) and not allow_unknown)
+    failed = failed or (require_all and bool(report.without_receipt))
+    print(
+        f"{len(report.matched)} receipt(s) match, {len(report.mismatched)} do not, "
+        f"{len(report.unknown)} name no decision; {len(report.without_receipt)} decision(s) "
+        "without a receipt",
+        file=sys.stderr,
+    )
+    return 1 if failed else 0
 
 
 def facility(argv: Sequence[str]) -> int:

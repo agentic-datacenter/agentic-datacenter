@@ -98,9 +98,7 @@ def test_the_agent_path_says_what_runs_and_what_is_still_planned() -> None:
 
 
 @pytest.mark.req("ADC-UX-010")
-@pytest.mark.parametrize(
-    "document", ["README.md", "docs/guides/bring-your-own-agent.md", "equipment/README.md"]
-)
+@pytest.mark.parametrize("document", ["README.md", *ROUTES.values()])
 def test_every_local_link_and_image_resolves(document: str) -> None:
     source = REPO / document
     for link in _links(source.read_text(encoding="utf-8")):
@@ -147,3 +145,51 @@ def test_the_readme_stays_short() -> None:
     text = re.sub(r"<[^>]+>", " ", text)
     text = re.sub(r"\]\([^)]*\)", "]", text)
     assert len(re.findall(r"[A-Za-z][A-Za-z'’-]*", text)) <= 500
+
+
+@pytest.mark.req("ADC-UX-005")
+def test_the_demo_shows_the_result_before_the_report_image() -> None:
+    report = (REPO / ROUTES["demo.svg"]).read_text(encoding="utf-8")
+    assert report.index("## Result") < report.index("![The result report")
+
+
+@pytest.mark.parametrize(
+    ("button", "before", "expected"),
+    [
+        (
+            "datacenter.svg",
+            "## A bundle",
+            ("facility check examples/byodc", "facility_report.md", "facility init"),
+        ),
+        (
+            "equipment.svg",
+            "## Tiers",
+            (
+                "equipment check",
+                "--source equipment/TEMPLATE.source.yaml",
+                "can enter the registry",
+            ),
+        ),
+        (
+            "agent.svg",
+            "## Run a model",
+            ("optional", "scripted agents", "--llm-replay", "planned"),
+        ),
+        (
+            "governance.svg",
+            "## How a gate is driven",
+            ("gate check http_gate", "bench run", "result_card.json"),
+        ),
+    ],
+)
+@pytest.mark.req("ADC-UX-006")
+@pytest.mark.req("ADC-UX-007")
+@pytest.mark.req("ADC-UX-009")
+def test_role_guides_show_the_first_action_and_outcome_before_the_reference(
+    button: str, before: str, expected: tuple[str, ...]
+) -> None:
+    content = (REPO / ROUTES[button]).read_text(encoding="utf-8")
+    assert before in content
+    start = content.split(before, 1)[0]
+    for fragment in expected:
+        assert fragment in start, (button, fragment)

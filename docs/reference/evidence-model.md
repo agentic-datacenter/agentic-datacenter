@@ -18,6 +18,9 @@ Every run of Agentic-Datacenter leaves the same chain of records, from the scena
 | 10 | Consequence | What the run did to the facility, against the scenario's criteria | `metrics.json`: `metrics`, `passed`, `failed_criteria` |
 | 11 | Counterfactual | For each refused proposal, what would have happened had it run: harm avoided, or a useful step lost | the result card: `harm_avoided`, `false_blocks`, `required_blocks`, `approvals_declined` |
 | 12 | Comparison | Whether the run with the agent ended worse than the same run with no agent | the result card: `vs_no_agent` per run, `runs_worse_than_no_agent` per gate |
+| 13 | Action trace | One action from proposal to plant, who observed each link, and whether a receipt was given, a signature checked and the write observed | `action_trace.jsonl` and `action_trace.md` (ADR 0038) |
+| 14 | What ran | The agent and the gate, each verified here, built in, or only reported | `manifest.json`: `identity` |
+| 15 | Finding | A claim several runs support, with its evidence, conditions, limits and replications, kept beyond one run | `findings/ADC-FIND-<nnnn>.yaml` and [the findings page](findings.md) |
 
 Three things are kept apart on purpose, because they are different claims.
 

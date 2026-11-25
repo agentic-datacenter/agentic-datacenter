@@ -1,4 +1,4 @@
-"""The demonstration run: three scenarios, ungoverned against a gate, same seed (SDD 12.2).
+"""Demonstration scenarios on the same seed, with a baseline and selected gates (SDD 12.2).
 
 ``build_demo`` records the runs; ``render_demo`` turns the recording into one
 static page with no script and no external resource. Every figure on the page
@@ -10,17 +10,20 @@ from __future__ import annotations
 
 import html
 import json
+import math
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
+from agentic_datacenter.core.io import IOBoard
 from agentic_datacenter.core.profile import Profile
 from agentic_datacenter.governance.contracts import ContractLibrary
 from agentic_datacenter.scenarios.agents import AGENTS, CHWS, Agent, ScriptedDrift, ScriptedFlood
 from agentic_datacenter.scenarios.bench import STATEMENTS, GateFactory, lowest_fidelity
 from agentic_datacenter.scenarios.counterfactual import Judgement, judge_run
 from agentic_datacenter.scenarios.harness import CRITICAL_C, ENVELOPE_C, RunResult, ScenarioRun
+from agentic_datacenter.scenarios.report_evidence import recording_text
 from agentic_datacenter.scenarios.scenario import Scenario, load_scenario
 
 #: Scenario and the scripted agent that plays it, in the order shown.
@@ -44,25 +47,51 @@ DECISION_ONLY_NOTE = (
     "under it."
 )
 NOT_GOVERNED_NOTE = (
-    "The design document's demonstration compares UNGOVERNED against GOVERNED. This run "
-    "was made with a gate of another operating profile, so the right-hand side is the "
-    "profile named on it."
+    "The design document's demonstration compares UNGOVERNED against GOVERNED. A gate "
+    "can also be compared under its own operating profile."
 )
 
 
-def _recorder(series: dict[str, list[float]], every_s: int) -> Callable[[ScenarioRun], None]:
+def _recorder(
+    series: dict[str, list[float]], telemetry: dict[str, Any], every_s: int
+) -> Callable[[ScenarioRun], None]:
+    weather_points: list[tuple[IOBoard, str, list[float | None]]] = []
+
     def observe(run: ScenarioRun) -> None:
-        if run.second % every_s:
+        if run.second % every_s and run.second != run.length:
             return
-        hottest = max(
-            float(module.ts)  # type: ignore[attr-defined]
-            for _, manifest, module in run.world.plant.instances()
-            if manifest.id == "cooling.pod"
-        )
-        setpoint = run.world.points.read(CHWS).value
+        physical = run.world.model.harm()
         series["t_s"].append(run.second)
-        series["hottest_pod_c"].append(round(hottest, 3))
-        series["chws_sp_c"].append(round(float(str(setpoint)), 3))
+        hottest = max(physical.supply_air_c, default=None)
+        if hottest is not None:
+            series.setdefault("hottest_pod_c", []).append(round(hottest, 3))
+        try:
+            setpoint = run.world.points.read(CHWS).value
+        except KeyError:
+            pass
+        else:
+            series.setdefault("chws_sp_c", []).append(round(float(str(setpoint)), 3))
+        if physical.it_served_kw:
+            series.setdefault("it_served_kw", []).append(round(sum(physical.it_served_kw), 3))
+        if physical.facility_in_kw:
+            series.setdefault("facility_in_kw", []).append(round(sum(physical.facility_in_kw), 3))
+        if len(series["t_s"]) == 1:
+            for name, manifest, module in run.world.plant.instances():
+                board = getattr(module, "io", None)
+                if manifest.id != "cooling.weather" or not isinstance(board, IOBoard):
+                    continue
+                for point in ("dry_bulb_c", "rel_humidity_pct"):
+                    if point not in board:
+                        continue
+                    values: list[float | None] = []
+                    telemetry[f"{name}.{point}"] = {
+                        "unit": board.declaration(point).unit,
+                        "values": values,
+                    }
+                    weather_points.append((board, point, values))
+        for board, point, samples in weather_points:
+            value = float(str(board[point]))
+            samples.append(round(value, 3) if math.isfinite(value) else None)
 
     return observe
 
@@ -119,14 +148,17 @@ def build_demo(
     seconds: int | None = None,
     full: bool = False,
     progress: Callable[[str], None] | None = None,
-    on_result: Callable[[Scenario, str, RunResult], None] | None = None,
+    on_result: Callable[[Scenario, str, RunResult], Mapping[str, Any] | None] | None = None,
     only: Sequence[str] = (),
+    *,
+    additional_gates: Sequence[str] = (),
+    facility: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Record the three demonstration scenarios without a gate and with *governed_gate*.
+    """Record the selected scenarios with a baseline, a first gate and any additional gates.
 
     *only* keeps the demonstration scenarios with those ids, in their own order.
 
-    Both sides of a scenario start from the same seed. Each proposal the gate
+    All runs of a scenario start from the same seed. Each proposal the gate
     blocked is replayed as if it had been executed, so the page can show what
     the block avoided or cost. *seconds* shortens every scenario; without it
     and without *full*, the week of optimization is one day long. The
@@ -134,6 +166,7 @@ def build_demo(
     """
     say = progress or (lambda _: None)
     scenarios = []
+    names = tuple(dict.fromkeys(("null_gate", governed_gate, *additional_gates)))
     for scenario_id, agent_name in DEMO_SCENARIOS:
         if only and scenario_id not in only:
             continue
@@ -145,7 +178,7 @@ def build_demo(
         every_s = max(10, (length // POINTS_PER_SERIES) // 10 * 10)
         make_agent = DEMO_AGENTS[agent_name]
         sides = []
-        for index, gate_name in enumerate(("null_gate", governed_gate)):
+        for index, gate_name in enumerate(names):
             make_gate = gates[gate_name]
             operating = (
                 "UNGOVERNED"
@@ -153,8 +186,9 @@ def build_demo(
                 else str(getattr(make_gate(contracts), "profile", "UNSPECIFIED"))
             )
             say(f"{scenario_id}: {gate_name} ({operating}), {length} s")
-            series: dict[str, list[float]] = {"t_s": [], "hottest_pod_c": [], "chws_sp_c": []}
-            observer = _recorder(series, every_s)
+            series: dict[str, list[float]] = {"t_s": []}
+            telemetry: dict[str, Any] = {}
+            observer = _recorder(series, telemetry, every_s)
             judged: list[Judgement] = []
             if index == 0:
                 run = ScenarioRun(
@@ -177,10 +211,13 @@ def build_demo(
                 )
             side = _side(scenario, result, judged, series, index)
             side["gate"] = gate_name
+            side["telemetry"] = telemetry
             if on_result is not None:
                 # Where the evidence bundle of this side is written, beside the page.
                 side["evidence"] = f"evidence/{scenario.id}.{gate_name}"
-                on_result(scenario, gate_name, result)
+                manifest = on_result(scenario, gate_name, result)
+                if manifest is not None:
+                    side["manifest"] = dict(manifest)
             sides.append(side)
         scenarios.append(
             {
@@ -191,6 +228,20 @@ def build_demo(
                 "duration_s": length,
                 "full_duration_s": scenario.duration_s,
                 "shortened": length < scenario.duration_s,
+                "scenario_hash": scenario.hash(),
+                "warmup_s": scenario.warmup_s,
+                "decision_every_s": scenario.decision_every_s,
+                "sample_every_s": every_s,
+                "events": [
+                    event.model_dump(mode="json", exclude_none=True)
+                    for event in scenario.timeline
+                    if event.at_s < length
+                ],
+                "criteria": [
+                    criterion.model_dump(mode="json", exclude_none=True)
+                    for criterion in scenario.pass_criteria
+                ],
+                "scenario_definition": scenario.model_dump(mode="json"),
                 "sides": sides,
             }
         )
@@ -200,6 +251,25 @@ def build_demo(
         "statements": list(STATEMENTS),
         "seed": seed,
         "governed_gate": governed_gate,
+        "facility": {
+            **(facility or {}),
+            "name": profile.name,
+            "profile_hash": profile.hash(),
+            "resolved_profile": profile.model_dump(mode="json", by_alias=True),
+            "instances": {
+                f"{spec.module_id}[{spec.instance}]": {
+                    "module": spec.module_id,
+                    "stub": spec.stub,
+                    "parameters": spec.params,
+                }
+                for spec in profile.instances()
+            },
+        },
+        "contracts": [
+            contract.model_dump(mode="json")
+            for contract_id in contracts.ids()
+            if (contract := contracts.get(contract_id)) is not None
+        ],
         "scenarios": scenarios,
     }
 
@@ -230,6 +300,8 @@ def _chart(side: Mapping[str, Any], low: float, high: float, length: int) -> str
         return top + (height - top - bottom) * (high - value) / (high - low)
 
     def line(key: str, css: str) -> str:
+        if key not in series:
+            return ""
         points = " ".join(
             f"{x(t):.1f},{y(float(v)):.1f}" for t, v in zip(times, series[key], strict=True)
         )
@@ -355,7 +427,10 @@ def _decisions(side: Mapping[str, Any]) -> str:
 def _scenario(scenario: Mapping[str, Any]) -> str:
     sides = scenario["sides"]
     values = [
-        float(v) for s in sides for key in ("hottest_pod_c", "chws_sp_c") for v in s["series"][key]
+        float(v)
+        for s in sides
+        for key in ("hottest_pod_c", "chws_sp_c")
+        for v in s["series"].get(key, ())
     ]
     low = float(int(min([*values, 17.0])) - 1)
     high = float(int(max([*values, ENVELOPE_C])) + 2)
@@ -450,12 +525,13 @@ a { color: var(--chw); }
 def render_demo(demo: Mapping[str, Any]) -> str:
     """Return the dashboard: one static page, no script, no external resource."""
     statements = "".join(f"<li>{html.escape(str(s))}</li>" for s in demo["statements"])
-    profiles = {str(s["sides"][1]["profile"]) for s in demo["scenarios"]}
+    profiles = {str(side["profile"]) for s in demo["scenarios"] for side in s["sides"][1:]}
     preface = ""
-    if profiles != {"GOVERNED"}:
+    if other_profiles := profiles - {"GOVERNED"}:
         preface = (
             f'<p class="caution">{html.escape(NOT_GOVERNED_NOTE)} Here: '
-            f"{html.escape(', '.join(sorted(profiles)))}, which is not governed execution.</p>"
+            f"{html.escape(', '.join(sorted(other_profiles)))}. "
+            "Those profiles provide different guarantees from governed execution.</p>"
         )
     body = "".join(_scenario(s) for s in demo["scenarios"])
     return f"""<!doctype html>
@@ -465,8 +541,8 @@ def render_demo(demo: Mapping[str, Any]) -> str:
 <style>{_STYLE}</style></head><body>
 <h1>Agentic-Datacenter demonstration run</h1>
 <p><span class="label">{html.escape(str(demo["label"]))}</span>
-The same plant, scenario and seed ({html.escape(str(demo["seed"]))}) played twice: with no gate,
-and with the gate <code>{html.escape(str(demo["governed_gate"]))}</code>.
+Each comparison uses the same plant, scenario and seed ({html.escape(str(demo["seed"]))}).
+The first column is the baseline without a gate. Subsequent columns show the selected controls.
 Lowest module fidelity: <strong>{html.escape(str(demo["lowest_fidelity"]))}</strong>.
 Read-only: nothing on this page acts on anything.</p>
 <ul>{statements}</ul>
@@ -492,7 +568,7 @@ def write_demo(demo: Mapping[str, Any], out_dir: Path) -> None:
     )
 
     out_dir.mkdir(parents=True, exist_ok=True)
-    text = json.dumps(demo, indent=2, sort_keys=True) + "\n"
+    text = recording_text(demo)
     (out_dir / "demo.json").write_text(text, encoding="utf-8")
     (out_dir / "index.html").write_text(render_demo(demo), encoding="utf-8")
     (out_dir / "executive.html").write_text(render_executive(demo), encoding="utf-8")
