@@ -84,6 +84,22 @@ def test_a_step_without_a_rollback_is_released_only_after_a_person_approves() ->
     assert done["outcome"] == "APPLIED" and world.setpoint() == 17.5
 
 
+@pytest.mark.parametrize("reviewed", [False, True])
+def test_applied_write_exports_a_spent_v3_grant(reviewed: bool) -> None:
+    world = World()
+    if reviewed:
+        pending = world.path.propose(ACTOR, "chw.precool.v1", {"setpoint_c": 17.5, "forecast_peak_c": 35.0})
+        assert world.gate.evidence()["proposals"][-1]["spent_grant"] is None
+        done = world.path.approve(str(pending["proposal_id"]), "operator-ola")
+    else:
+        done = world.move(18.5, approve=False)
+    assert done["outcome"] == "APPLIED"
+    evidence = world.gate.evidence()
+    grant = evidence["proposals"][-1]["spent_grant"]
+    assert grant["format"] == "v3" and grant["kid"]
+    assert len(bytes.fromhex(evidence["grant_verification_key_ed25519"])) == 32
+
+
 def test_a_contract_that_names_an_operator_still_needs_one() -> None:
     world = World()
     record = world.path.propose(ACTOR, "genset.start_test_run.v1", {"train": "A"})
