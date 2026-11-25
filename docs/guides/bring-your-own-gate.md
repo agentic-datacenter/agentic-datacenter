@@ -1,13 +1,28 @@
 # Test your own gate
 
-Agentic-Datacenter is built so that any governance system can be put between an AI operations agent and a simulated data center, and judged on the same scenarios, agents, seeds and oracle as the gates that ship with it. Your gate does not need to be in this repository, written in Python, or known to Agentic-Datacenter's authors.
+A gate is the safety control that decides which actions an agent may take. Compare your gate with a built-in control on the same simulated incident. The result card shows which harmful actions got through, which useful actions were blocked and how often the gate asked for human approval.
 
-What you get:
+## Try the example
 
-- your gate under the scenarios of the library, operational and adversarial (27 in `benchmark-v1.1`, from section 10 of the design document), with a careful and a hostile scripted agent;
-- every blocked proposal judged by counterfactual replay, every run compared with the same scenario and seed without an agent;
-- a result card, with the safety, false block and approval figures beside those of the built-in gates, and the release gate (`agentic-datacenter bench check`) that refuses a card in which harm got through;
-- an evidence bundle per run that anyone can verify.
+After [setup](../index.md#try-it), start the included HTTP gate from the repository root in one terminal:
+
+```sh
+uv run python examples/http-gate/server.py --port 8787
+```
+
+In a second terminal, from the same directory, check the connection and run one simulated chiller trip:
+
+```sh
+export ADC_GATE_URL=http://127.0.0.1:8787
+export ADC_GATE_NAME=example
+uv run agentic-datacenter gate check http_gate
+uv run agentic-datacenter bench run --scenario OP-03 --tier quick --allow-unfrozen \
+    --gate http_gate --gate static_allowlist --out build/first-gate
+```
+
+Open `build/first-gate/report.html` for the comparison or `build/first-gate/result_card.json` for the underlying figures. The interface check confirms the adapter can answer correctly formed requests. The development run shows what its decisions did in this scenario. Each run includes evidence you can verify.
+
+To try your own control, set `ADC_GATE_URL` and `ADC_GATE_NAME` for your service and repeat the two commands. The [HTTP adapter](#path-b-a-service-over-http-in-any-language) and [Python adapter](#path-a-a-python-package) sections cover the request format and other options. See the [public test](../bench/PUBLIC_TEST.md) when you are ready to submit a frozen-benchmark result.
 
 ## How a gate is driven
 
@@ -46,7 +61,7 @@ A binary gate has to decide for itself the cases where another gate would ask a 
 - **Deny them.** Nothing executes without a person. Proposals that were in fact safe count as false blocks.
 - **Allow them when your own checks pass.** These run without a person. The card counts them as executed without the approval the contract asks for, whether or not harm came of it ([fairness rules](../bench/FAIRNESS.md)).
 
-The [example service](https://github.com/darklordVirtual/agentic-datacenter/tree/main/examples/http-gate/server.py) uses all four verdicts. A binary gate can map `ABSTAIN` and `VERIFY` there to `DENY`.
+The [example service](https://github.com/darklordVirtual/agentic-datacenter/blob/main/examples/http-gate/server.py) uses all four verdicts. A binary gate can map `ABSTAIN` and `VERIFY` there to `DENY`.
 
 Three rules keep results comparable:
 
@@ -73,19 +88,14 @@ uv run agentic-datacenter gate check my_gate       # the gate interface suite
 
 ## Path B: a service over HTTP, in any language
 
-Serve two endpoints and let the `http_gate` binding call them. The wire format, `agentic_datacenter.gate.http/1`, is in [gate-http-v1.schema.json](../reference/gate-http-v1.schema.json); a complete service in standard-library Python is in [`examples/http-gate/server.py`](https://github.com/darklordVirtual/agentic-datacenter/tree/main/examples/http-gate/server.py).
+Serve two endpoints and let the `http_gate` binding call them. The wire format, `agentic_datacenter.gate.http/1`, is in [gate-http-v1.schema.json](../reference/gate-http-v1.schema.json); a complete service in standard-library Python is in [`examples/http-gate/server.py`](https://github.com/darklordVirtual/agentic-datacenter/blob/main/examples/http-gate/server.py).
 
 | Request | Body | Answer |
 | --- | --- | --- |
 | `POST /evaluate` | `schema`, `proposal`, `premises`, `actor` | `schema`, `verdict`, `reasons`; optionally `required_approvers`, `escalated`, `decision_id` |
 | `POST /outcome` | `schema`, `decision_ref`, `status`, `detail` | anything; it is not read |
 
-```sh
-python examples/http-gate/server.py --port 8787 &     # or your own service
-export ADC_GATE_URL=http://127.0.0.1:8787
-export ADC_GATE_NAME=my_gate                        # the name on cards and evidence
-uv run agentic-datacenter gate check http_gate
-```
+Follow the [example setup](#try-the-example), using the address of your service and the name you want on cards and evidence.
 
 What the binding does not leave to the service:
 

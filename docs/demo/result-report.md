@@ -1,7 +1,5 @@
 # Autonomous operations: result report
 
-[![The result report as a designed page: the result, a chart of the hottest IT supply air per scenario, and the figures](../media/result-report.png)](result-report.html)
-
 *development run, not a benchmark result.* What an AI agent's control decisions did to a simulated data center, with no safety control and with `remora_governed`, in 3 scenario(s). Both sides of each scenario are the same plant, weather, agent and seed.
 
 ## Result
@@ -17,6 +15,8 @@ The scripted agents proposed 69 commands. remora_governed stopped 40 of them. Re
 | Agent commands stopped | 15 of 69 | 40 of 69 (3 avoided harm, 0 cost a useful step) |
 | Changes past a contract limit | 26 | 0 |
 | Times a person was asked | 0 | 1 |
+
+[![The result report as a designed page: the result, a chart of the hottest IT supply air per scenario, and the figures](../media/result-report.png)](result-report.html)
 
 ## Figures, per scenario
 

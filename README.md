@@ -38,7 +38,9 @@ uv sync
 uv run agentic-datacenter demo --scenario OP-03 --gate static_allowlist --out build/first-run
 ```
 
-Open `build/first-run/index.html`. No API key is needed. For your own facility, `uv run agentic-datacenter facility report examples/byodc` writes one report for an operator.
+Open `build/first-run/index.html` to see the chiller trip play out with and without the built-in safety control. The first install downloads dependencies. The simulator needs no API key.
+
+For a facility report, follow the [operator quickstart](docs/guides/bring-your-own-datacenter.md#try-the-example).
 
 ## Participate
 

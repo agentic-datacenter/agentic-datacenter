@@ -636,7 +636,7 @@ def render_executive_markdown(
 ) -> str:
     """Return the result report as Markdown, with the same figures as the page.
 
-    *screenshot* is the path of a picture of the page, shown at the top if given.
+    *screenshot* is the path of a picture of the page, shown after the result summary if given.
     *page* and *technical* are the paths, from where the Markdown file is kept, of
     the designed page and of the technical page with every decision.
     """
@@ -644,12 +644,6 @@ def render_executive_markdown(
     gate = report["gate"]
     head = f"| | {NO_CONTROL} | `{_cell(gate)}` |\n| --- | ---: | ---: |"
     lines = [f"# {TITLE}", ""]
-    if screenshot:
-        lines += [
-            f"[![The result report as a designed page: the result, a chart of the hottest IT "
-            f"supply air per scenario, and the figures]({screenshot})]({page})",
-            "",
-        ]
     lines += [
         f"*{report['label']}.* {f'`{gate}`'.join(report['lead'])}",
         "",
@@ -664,6 +658,12 @@ def render_executive_markdown(
     for label, without, with_, note, _ in report["summary"]:
         value = f"{with_} ({note})" if note else with_
         lines.append(f"| {label} | {without} | {value} |")
+    if screenshot:
+        lines += [
+            "",
+            f"[![The result report as a designed page: the result, a chart of the hottest IT "
+            f"supply air per scenario, and the figures]({screenshot})]({page})",
+        ]
     lines += ["", "## Figures, per scenario"]
     for sc in report["scenarios"]:
         lines += [
