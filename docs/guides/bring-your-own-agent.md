@@ -33,4 +33,4 @@ This is the first feature after the adoption phase (`CONTRIBUTING.md`). Until it
 
 Tell us what your agent needs, for example the tools, the interface or the scenarios, in an issue: [github.com/darklordVirtual/agentic-datacenter/issues](https://github.com/darklordVirtual/agentic-datacenter/issues). You can test a safety control today, without an agent of your own: see [Bring your own gate](bring-your-own-gate.md).
 
-[Back to the README](../../README.md)
+[Back to the README](https://github.com/darklordVirtual/agentic-datacenter#readme)
