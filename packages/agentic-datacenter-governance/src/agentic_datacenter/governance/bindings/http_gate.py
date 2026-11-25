@@ -369,6 +369,7 @@ class HttpGate:
         """Ask the service for a verdict and bind it to the instance's own writes."""
         body = request_body(proposal, premises, actor, self.session, self.context_epoch)
         verdict, reasons, answer = self._answer(body)
+        answered = verdict
         if verdict is Verdict.ALLOW and not premises.writes:
             verdict, reasons = Verdict.DENY, reasons + ("nothing that can be executed",)
         approvers = answer.get("required_approvers", 1 if verdict is Verdict.VERIFY else 0)
@@ -394,6 +395,9 @@ class HttpGate:
             session=self.session, correlation_id=tie["correlation_id"],
             action_ref=tie["action_ref"], issued_at=tie["issued_at"],
         )  # fmt: skip
+        if answer:
+            # What the service said, before this binding's own checks (ADR 0036).
+            detail["answered_verdict"] = answered.value
         receipt = receipt_kept(answer.get("receipt"))
         if receipt is not None:
             detail["service_receipt"] = receipt

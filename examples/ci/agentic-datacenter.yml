@@ -64,7 +64,7 @@ jobs:
         working-directory: adc
         run: |
           uv run agentic-datacenter scenario run OP-03 --gate command_gate --seconds 1800 \
-            --out ../result/evidence || true
+            --out ../result/evidence || echo "the scenario's own criteria were not met; see the bundle"
           if [ -s "$ADC_RECEIPTS_FILE" ]; then
             uv run agentic-datacenter gate verify-receipts ../result/evidence "$ADC_RECEIPTS_FILE"
             : > "$ADC_RECEIPTS_FILE"

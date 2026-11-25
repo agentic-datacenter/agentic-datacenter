@@ -10,7 +10,8 @@ A signature shows who made a decision. Agentic-Datacenter shows whether the deci
 4. **Failure tests you would rarely write yourself.** A decision used twice, floods of requests, slow drift toward a limit, stale data, a mandate that ended or is narrower than the step, a gate that lets a step through when it fails instead of stopping, a dependence on the wall clock, a gate that answers differently on replay. Every decision comes with its log, so you see why.
 5. **A cyber-physical test site without hardware.** Cooling, power, generators and OT protocols, simulated. With `ADC_GATE_CONTEXT=1` your gate is sent the temperatures, load, interlocks, margins and alarms it would weigh at a site, each with value, unit, quality and time.
 6. **Testing that keeps going as this project grows.** A workflow you copy into your repository ([`examples/ci/agentic-datacenter.yml`](https://github.com/darklordVirtual/agentic-datacenter/blob/main/examples/ci/agentic-datacenter.yml)) tests your gate on every change and every week against the newest scenarios. You get more scenarios, better-calibrated equipment data and more systems to stand beside, without doing anything.
-7. **A pilot with others.** `chain_gate` puts several governance systems in front of the same actions. The strictest verdict decides, and each system's own verdict, reasons and receipts are kept, so a pilot shows what each one adds.
+7. **A place beside the others, once you enrol.** No system is named in this project until its maintainers enrol it themselves and agree to be listed. Then it stands in [the table of enrolled systems](../bench/participants.md), its figures beside the built-in gates' on the same card, and weaknesses a run shows are sent to you first, and described there once you have fixed them or agreed.
+8. **A pilot with others.** `chain_gate` puts several governance systems in front of the same actions. The strictest verdict decides, and each system's own verdict, reasons and receipts are kept, so a pilot shows what each one adds.
 
 ## What it costs, in order
 
@@ -52,4 +53,4 @@ A run against your system published by this project says which relation it has t
 - **Signed mandates, signature checks and conditional permissions** in the next benchmark version, each with its own scenarios: an expired, revoked or over-wide delegation, and a permission that caps a step, judged on the step as carried out (ADR 0037).
 - **More scenarios, data and participants**, which every run of the workflow picks up.
 
-Tell us what your system needs in an issue: a field, a scenario, a kind of verdict. You identify your system when you choose to take part.
+Enrol with the [registration form](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml), and tick the box to be listed by name if you want to be. Tell us what your system needs in an issue: a field, a scenario, a kind of verdict.

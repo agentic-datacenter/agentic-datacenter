@@ -80,7 +80,7 @@ def main() -> int:
             raise ValueError("unsupported request schema")
         endpoint = envelope["endpoint"]
         if endpoint == "/outcome":
-            if "correlation_id" in request:
+            if request.get("correlation_id"):
                 receipt({"correlation_id": request["correlation_id"], "outcome": request["status"]})
             return 0
         if endpoint != "/evaluate":

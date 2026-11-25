@@ -149,7 +149,11 @@ def build_bundle(
         "state_hashes.jsonl": _lines(
             [{"time_ms": ms, "state_hash": digest} for ms, digest in result.state_hashes]
         ),
-        "decisions.jsonl": _lines(result.records),
+        # A served gate's correlation names one execution; it is kept apart, in
+        # correlation.jsonl, so the same run gives the same bytes (ADR 0036).
+        "decisions.jsonl": _lines(
+            [{k: v for k, v in r.items() if k != "gate_detail"} for r in result.records]
+        ),
         "change_log.jsonl": _lines(result.change_log),
         "escalations.jsonl": _lines(result.escalations),
         "metrics.json": json.dumps(
@@ -197,8 +201,42 @@ def build_bundle(
     }
     if measured:
         manifest["measured_inputs"] = measured
+    correlated = [
+        {"proposal_id": r["proposal_id"], **dict(r["gate_detail"])}  # type: ignore[arg-type]
+        for r in result.records
+        if isinstance(r.get("gate_detail"), dict)
+    ]
+    if correlated:
+        # Not hashed in the manifest: it differs between executions of the same run.
+        # gate verify-receipts makes each action_ref again from decisions.jsonl.
+        manifest["execution_specific"] = [CORRELATION_FILE]
     files["manifest.json"] = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
+    if correlated:
+        files[CORRELATION_FILE] = _lines(correlated)
     return files
+
+
+#: The file of a bundle that holds a served gate's correlation, outside the manifest's hashes.
+CORRELATION_FILE = "correlation.jsonl"
+
+
+def records_with_correlation(directory: Path) -> list[dict[str, Any]]:
+    """Return the decision records of a bundle, each with the correlation kept apart for it."""
+    records = [
+        json.loads(t) for t in (directory / "decisions.jsonl").read_text("utf-8").splitlines()
+        if t.strip()
+    ]  # fmt: skip
+    path = directory / CORRELATION_FILE
+    if path.is_file():
+        by_id = {}
+        for text in path.read_text(encoding="utf-8").splitlines():
+            if text.strip():
+                line = json.loads(text)
+                by_id[str(line.pop("proposal_id"))] = line
+        for record in records:
+            if str(record.get("proposal_id")) in by_id:
+                record["gate_detail"] = by_id[str(record["proposal_id"])]
+    return records
 
 
 def write_bundle(bundle: Mapping[str, str], out_dir: Path) -> Path:

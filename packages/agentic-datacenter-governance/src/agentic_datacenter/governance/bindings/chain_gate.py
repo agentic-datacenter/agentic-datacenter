@@ -26,6 +26,7 @@ from __future__ import annotations
 import json
 import os
 from collections.abc import Mapping
+from dataclasses import replace
 from importlib.metadata import entry_points
 from pathlib import Path
 from typing import Any
@@ -119,11 +120,22 @@ class ChainGate:
         self, proposal: Proposal, premises: PremiseSnapshot, actor: AuthenticatedActor
     ) -> Decision:
         """Ask every member; the strictest verdict decides."""
-        decisions = {n: m.evaluate(proposal, premises, actor) for n, m in self.members.items()}
+        decisions = {
+            # A member that did not ask for the plant's context is not sent it.
+            n: m.evaluate(
+                proposal,
+                premises if getattr(m, "wants_context", False) else replace(premises, context=None),
+                actor,
+            )
+            for n, m in self.members.items()
+        }
         verdict = min((d.verdict for d in decisions.values()), key=ORDER.index)
-        reasons = tuple(f"{n}: {r}" for n, d in decisions.items() for r in d.reasons) or (
-            "no member gave a reason",
-        )
+        # A failed service keeps the words its reason starts with, so it is counted as one.
+        reasons = tuple(
+            f"{r} (member {n})" if r.startswith("gate service ") else f"{n}: {r}"
+            for n, d in decisions.items()
+            for r in d.reasons
+        ) or ("no member gave a reason",)
         writes = premises.writes if verdict is Verdict.ALLOW else ()
         if verdict is Verdict.ALLOW and any(
             set(d.bounded_writes) != set(premises.writes) for d in decisions.values()
@@ -134,8 +146,7 @@ class ChainGate:
             (d.required_approvers for d in decisions.values() if d.verdict is Verdict.VERIFY),
             default=0,
         )
-        if verdict is Verdict.VERIFY:
-            approvers = max(approvers, 1)
+        approvers = max(approvers, 1) if verdict is Verdict.VERIFY else 0
         codes: list[str] = []
         for d in decisions.values():
             codes += [c for c in d.reason_codes if c not in codes]
