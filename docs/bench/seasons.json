@@ -4,6 +4,9 @@
   "length_days": 28,
   "listed": 13,
   "versions": [
-    {"from_season": 1, "tag": "benchmark-v1.1"}
+    {
+      "from_season": 1,
+      "tag": "benchmark-v1.2"
+    }
   ]
 }

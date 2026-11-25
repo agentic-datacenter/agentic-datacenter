@@ -44,7 +44,7 @@ For a facility report, follow the [operator quickstart](docs/guides/bring-your-o
 
 ## Participate
 
-[Public benchmark](docs/bench/PUBLIC_TEST.md) · [Register a gate](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml) · [Contribute measured data](docs/calibration/contribute-data.md) · [Contributing](CONTRIBUTING.md)
+[How the benchmark works](docs/bench/HOW-IT-WORKS.md) · [Public benchmark](docs/bench/PUBLIC_TEST.md) · [Register a gate](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml) · [Contribute measured data](docs/calibration/contribute-data.md) · [Contributing](CONTRIBUTING.md)
 
 Registration is always open. Public tests use frozen versions, and results on a facility of your own are never ranked as benchmark results. See [fairness](docs/bench/FAIRNESS.md) and [release checks](docs/guides/release-gate.md).
 

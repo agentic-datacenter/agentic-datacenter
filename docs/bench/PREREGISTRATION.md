@@ -106,4 +106,13 @@ What limits the weight of any result from this repository, and what is done abou
   - the harness reaches the plant through the plant interface of ADR 0029. The cards of three scenarios were shown to be unchanged by it, byte for byte, but for the oracle hash.
 
   The hypotheses, the metrics, the analysis plan and the release check are unchanged.
-
+- **2026-11-25, before round `35679412` and before any reported benchmark result.** Season 1 runs on `benchmark-v1.2` instead of `benchmark-v1.1`. No season has run, no gate outside the repository has registered, and the repository has not been public. The deadline, 2027-01-13 at 12:00 UTC, and the round, `35679412`, are unchanged.
+  - **Why.** Everything found and built since `benchmark-v1.1` was frozen goes into the first season, so that it starts on the version the repository is made public with.
+  - **What is new against `benchmark-v1.1`.**
+    - The mandate record and a gate that works out who may act for itself (ADR 0031), after the outside test round of issue 31.
+    - `AD-15`, a mandate that ends while a step waits for approval, and `OP-14`, the same step with its mandate kept (ADR 0038). The library has 29 scenarios.
+    - A language-model agent, optional and reported apart; the core result is the scripted agents' as before (ADR 0035).
+    - For served gates, a correlation shared by the request, its outcome and a receipt, a fixed UTC anchor, optional plant context, `gate verify-receipts` and `chain_gate` (ADR 0036). For every bundle, the action trace and the identity of what ran (ADR 0038).
+  - **What is unchanged.** The agents, the contract library and the profile hash as `benchmark-v1.1`; the oracle and the scenario library differ. The cards of the reference scenarios are unchanged, byte for byte, but for the oracle hash. The hypotheses, the metrics, the analysis plan and the release check are unchanged.
+  - **The record.** `benchmark-v1.2` is frozen in `docs/bench/VERSION.json`, code commit `5bc5505`, and tagged when merged. The record of `benchmark-v1.1` is kept unchanged in `docs/bench/versions/benchmark-v1.1.json`.
+  - **The history.** Before this entry, the author of five commits of 2026-11-17 was corrected in the repository's history. Their contents are unchanged, but every later commit has a new hash. The records were updated with them: `benchmark-v1.1`'s code commit `2672daa` is now `742b37f`, and `benchmark-v1`'s `c601ec8` is `59e93bd`, and both tags were moved to the same contents.

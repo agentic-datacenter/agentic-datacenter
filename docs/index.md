@@ -20,7 +20,7 @@ Open `build/first-run/index.html` to compare the same chiller trip with and with
 - **[Bring your datacenter](guides/bring-your-own-datacenter.md):** check what fits your facility, and get one report for an operator with `facility report`. Operators also start from the [operator guide](guides/operators.md).
 - **[Bring your equipment](guides/equipment.md):** use and contribute equipment models, each with its source and rights.
 - **[Bring your agent](guides/bring-your-own-agent.md):** a language model as the agent, through Anthropic, OpenAI, Gemini, Grok or any OpenAI-compatible endpoint. Optional; runs use the scripted agents unless you name a model. An agent of your own served over HTTP is planned.
-- **[Bring your governance](guides/bring-your-own-gate.md):** test your own safety control, then enter the [public test](bench/PUBLIC_TEST.md). Maintainers: [what you get](guides/for-governance-maintainers.md), and a workflow that keeps testing your system as this project grows.
+- **[Bring your governance](guides/bring-your-own-gate.md):** test your own safety control, then enter the [public test](bench/PUBLIC_TEST.md) ([how the benchmark works](bench/HOW-IT-WORKS.md)). Maintainers: [what you get](guides/for-governance-maintainers.md), and a workflow that keeps testing your system as this project grows.
 
 Agentic-Datacenter never connects to real equipment, and makes no claim of IEC 62443 certification.
 
