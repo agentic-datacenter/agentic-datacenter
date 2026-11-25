@@ -37,6 +37,7 @@ from agentic_datacenter.governance.gate import (
     Proposal,
     Verdict,
 )
+from agentic_datacenter.governance.interop import EPOCH, GATE_DETAIL_KEPT, plant_context
 from agentic_datacenter.governance.premises import (
     AppliedWrite,
     PremiseReader,
@@ -290,7 +291,14 @@ class GovernedPath:
             record["authorized"] = authorized
             if not authorized:
                 record["authority_detail"] = self._no_mandate(actor.principal, contract_id)
+        if getattr(self.gate, "wants_context", False):
+            # A read-only sample of the plant, for a gate that asks for one (ADR 0036).
+            epoch = str(getattr(self.gate, "context_epoch", EPOCH))
+            context = plant_context(self._points, Overview(self._points, []), now, epoch)
+            shown = replace(shown, context=context)
         decision = self.gate.evaluate(proposal, shown, actor)
+        # What the gate said of its own decision, kept even if it is replaced below.
+        kept = {k: decision.detail[k] for k in GATE_DETAIL_KEPT if k in decision.detail}
         # Whatever a gate returns, an ALLOW authorizes at most the writes of this
         # contract instance, as built here (INV-GOV-2). A gate from another
         # project is not trusted to keep to that; one that names other writes is
@@ -319,6 +327,10 @@ class GovernedPath:
                 proposal.contract_id,
                 reasons=("counterfactual: not executed",),
             )
+        if kept:
+            # Only for a gate that says any of it, so every other gate has the
+            # records, and the state hashes, it had before (ADR 0036).
+            record["gate_detail"] = kept
         if decision.reason_codes:
             # Only when the gate gave any, so a gate that gives none has the
             # records, and the state hashes, it had before. In the list's order,
@@ -731,7 +743,13 @@ class GovernedPath:
 
     def _snapshot(self) -> JsonValue:
         return {
-            "records": copy.deepcopy(self._records),
+            # A served gate's correlation names the session of this execution, which
+            # differs between executions of the same run. It is kept on the record and
+            # out of the state, so the state hash and the card do not depend on it.
+            "records": [
+                {k: copy.deepcopy(v) for k, v in r.items() if k != "gate_detail"}
+                for r in self._records
+            ],
             "notes": list(self.notes),
             "history": [[h.time_ms, h.contract_id, h.tag, h.delta] for h in self._history],
             "watches": [

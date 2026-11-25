@@ -75,7 +75,7 @@ A season fixes three things before any participant can know its held-out scenari
     ```
 
 5. **Check it for publication:** `uv run agentic-datacenter bench check <card> --gate <gate> --publication`. It refuses an incomplete card and one not of the frozen version.
-6. **Report it** with the "Gate result" issue form. It is published as a self-reported result (below).
+6. **Report it** with the "Gate result" issue form. It is published as a self-reported result (below). A registration that consents to be listed by name puts the system in [the table of enrolled systems](participants.md), with its latest figures beside the built-in gates.
 
 **The full-replay check is the maintainers' work, not a participant's.**
 
