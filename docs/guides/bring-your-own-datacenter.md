@@ -1,13 +1,26 @@
 # Bring your own data center
 
-Describe your own facility in a directory of files, check what of the scenarios and contracts fits it, and run gates and agents on it. Everything stays on your machine. Nothing in a bundle is executed, and nothing connects to real equipment (ADR 0033).
+Find which failure scenarios and operating limits apply to your facility model. Start with the included example, then describe your own power, cooling and IT load. Your configuration and reports stay on your machine. The simulator runs entirely on a model.
+
+## Try the example
+
+From the root of the repository after [setup](../index.md#try-it), run:
 
 ```sh
-uv run agentic-datacenter facility check examples/byodc          # what fits, and a five-minute run
-uv run agentic-datacenter bench run --facility examples/byodc --tier quick --gate static_allowlist
+uv run agentic-datacenter facility check examples/byodc
 ```
 
-The example is six PODs of three kinds on the generic electrical and cooling plant. Its values are illustrative.
+Open `build/facility/facility_report.md`. Start with **Scenarios** to see which tests can run and what each skipped test needs. The five-minute simulated run shows IT load served, power draw and the hottest supply air.
+
+For a one-page comparison, run `uv run agentic-datacenter facility report examples/byodc` and open `build/operator-report/operator_report.md`. It runs additional scenarios to compare the built-in safety control with the no-gate baseline on the example facility.
+
+## Describe your facility
+
+1. Run `uv run agentic-datacenter facility init my-dc` to make a starter bundle.
+2. In `my-dc/`, change the example topology, PODs and equipment values. Record a source for each value or mark it as assumed.
+3. Run `uv run agentic-datacenter facility check my-dc` and consult the report before comparing safety controls.
+
+The example models six PODs on the generic electrical and cooling plant. Its values are illustrative:
 
 | PODs | Kind | IT load (kW) |
 | --- | --- | --- |
