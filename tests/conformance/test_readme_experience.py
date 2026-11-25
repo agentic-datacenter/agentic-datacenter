@@ -83,15 +83,18 @@ def test_the_demo_opens_a_markdown_report_with_its_label() -> None:
 
 
 @pytest.mark.req("ADC-UX-008")
-def test_the_agent_path_says_it_is_planned_everywhere_it_is_offered() -> None:
+def test_the_agent_path_says_what_runs_and_what_is_still_planned() -> None:
     svg = (BUTTONS / "agent.svg").read_text(encoding="utf-8")
-    assert "Roadmap" in svg
+    assert "Language models" in svg and "optional" in svg and "Roadmap" not in svg
     alt = re.search(r'buttons/agent.svg" alt="([^"]+)"', README)
-    assert alt and "planned" in alt.group(1)
+    assert alt and "language model" in alt.group(1) and "optional" in alt.group(1)
     guide = (REPO / ROUTES["agent.svg"]).read_text(encoding="utf-8")
     first = guide.split("\n\n")[1]
-    assert "planned" in first and "scripted agents" in first
-    assert "uv run" not in guide.split("## What exists today", 1)[0]
+    assert "optional" in first and "scripted agents" in first and "planned" in first
+    # The first command needs no key: it replays the recorded example.
+    first_command = guide.split("```sh", 1)[1].split("```", 1)[0]
+    assert "--llm-replay examples/llm-agent/OP-03.jsonl" in first_command
+    assert "API_KEY" not in guide.split("## Run a model", 1)[0]
 
 
 @pytest.mark.req("ADC-UX-010")

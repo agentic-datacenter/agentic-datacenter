@@ -168,6 +168,11 @@ def check_card(
         report.violations.append(
             "the card is from a facility of its owner, not a benchmark result (ADR 0033)"
         )
+    if publication and card.get("agent_kind") == "language_model":
+        report.violations.append(
+            "the card is of a language-model agent, reported apart from the scripted agents "
+            "and not a benchmark result (ADR 0035)"
+        )
     if not card.get("counterfactual"):
         report.violations.append(
             "the card was made without the counterfactual replay; harm cannot be ruled out"

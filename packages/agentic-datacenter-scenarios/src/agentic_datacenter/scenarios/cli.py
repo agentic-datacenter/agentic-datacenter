@@ -36,9 +36,99 @@ from agentic_datacenter.scenarios.evidence import (
 from agentic_datacenter.scenarios.facility_fit import fit_facility
 from agentic_datacenter.scenarios.harness import RunResult, run_scenario
 from agentic_datacenter.scenarios.heldout import commitment
+from agentic_datacenter.scenarios.llm_agent import (
+    MAX_CALLS,
+    PROVIDERS,
+    LlmAgentError,
+    LlmAgentFactory,
+    LlmOptions,
+    agent_kind,
+    agent_note,
+    is_llm,
+    parse_name,
+)
 from agentic_datacenter.scenarios.provenance import CARD_NAME, verify_record, write_record
 from agentic_datacenter.scenarios.release_gate import check_card
 from agentic_datacenter.scenarios.scenario import Scenario, library_ids, load_scenario
+
+
+def _agent_name(scripted: Sequence[str]) -> Any:
+    """Return an argparse type: a scripted agent of *scripted*, or ``llm:<provider>/<model>``."""
+
+    def check(value: str) -> str:
+        if value in scripted:
+            return value
+        if is_llm(value):
+            try:
+                parse_name(value)
+            except LlmAgentError as exc:
+                raise argparse.ArgumentTypeError(str(exc)) from exc
+            return value
+        raise argparse.ArgumentTypeError(
+            f"no such agent: {value!r}; choose one of {', '.join(scripted)}, "
+            "or a language model as llm:<provider>/<model> (agentic-datacenter agent list)"
+        )
+
+    return check
+
+
+def _llm_arguments(parser: argparse.ArgumentParser) -> None:
+    """Add the options of a language-model agent (ADR 0035), which are used only with one."""
+    group = parser.add_argument_group(
+        "language-model agent", "Optional; the default agents are scripted (ADR 0035)."
+    )
+    group.add_argument(
+        "--llm-transcripts", type=Path,
+        help="Where each run's transcript of requests and replies is written.",
+    )  # fmt: skip
+    group.add_argument(
+        "--llm-replay", type=Path,
+        help="Replay the runs from the transcripts here, calling no model.",
+    )  # fmt: skip
+    group.add_argument(
+        "--llm-max-calls", type=int, default=MAX_CALLS,
+        help=f"Calls to the model one run may make (default {MAX_CALLS}).",
+    )  # fmt: skip
+    group.add_argument(
+        "--llm-effort", choices=["low", "medium", "high", "xhigh", "max"],
+        help="The effort asked of an Anthropic model; the provider's default if left out.",
+    )  # fmt: skip
+
+
+def _llm_options(args: argparse.Namespace, default_transcripts: Path) -> LlmOptions:
+    replay = args.llm_replay
+    if replay is not None and replay.is_dir() and (replay / "llm_transcript.jsonl").is_file():
+        replay = replay / "llm_transcript.jsonl"  # an evidence bundle of an earlier run
+    return LlmOptions(
+        transcripts=args.llm_transcripts or default_transcripts, replay=replay,
+        max_calls=args.llm_max_calls, effort=args.llm_effort,
+    )  # fmt: skip
+
+
+def agent(argv: Sequence[str]) -> int:
+    """List the agents a run can be given: the scripted ones, and the language-model providers.
+
+    Runs ``agentic-datacenter agent list`` and returns the exit status.
+    The first line is the help text of ``agentic-datacenter --help``.
+    """
+    parser = argparse.ArgumentParser(
+        prog="agentic-datacenter agent", description="The agents a run can be given."
+    )
+    actions = parser.add_subparsers(dest="action", required=True)
+    actions.add_parser("list", help="List the scripted agents and the language-model providers.")
+    parser.parse_args(argv)
+    print("Scripted agents (the default): predefined, simulated calls, no model, no key.")
+    for name, make in sorted(DEMO_AGENTS.items()):
+        doc = (make.__doc__ or "").strip().splitlines()
+        print(f"  {name:22s} {doc[0] if doc else ''}")
+    print()
+    print("Language-model agents (optional: uv sync --group llm), named llm:<provider>/<model>:")
+    for provider, needs in PROVIDERS.items():
+        print(f"  llm:{provider}/<model>  {needs}")
+    print()
+    print("A language-model agent is reported apart from the scripted agents and is never a")
+    print("benchmark result. Every request and reply is kept in a transcript (ADR 0035).")
+    return 0
 
 
 def bench(argv: Sequence[str]) -> int:
@@ -54,8 +144,10 @@ def bench(argv: Sequence[str]) -> int:
     run = actions.add_parser("run", help="Benchmark gates and write a result card.")
     run.add_argument("--gate", action="append", help="Gate entry point; repeat for several.")
     run.add_argument(
-        "--agent", action="append", choices=["scripted_benign", "scripted_adversarial"]
-    )
+        "--agent", action="append", type=_agent_name(sorted(AGENTS)),
+        help="An agent; repeat for several. Default: both scripted agents. A language model "
+        "is named llm:<provider>/<model> and is run apart from the scripted agents.",
+    )  # fmt: skip
     run.add_argument("--scenario", action="append", choices=library_ids())
     run.add_argument("--seeds", type=int, help="Number of seeds (default 1, or the tier's).")
     run.add_argument(
@@ -96,6 +188,7 @@ def bench(argv: Sequence[str]) -> int:
         help="Also run held-out variants (Track D) drawn from the secret in this file.",
     )  # fmt: skip
     run.add_argument("--heldout-variants", type=int, default=3)
+    _llm_arguments(run)
     run.add_argument(
         "--jobs", type=int, default=1,
         help="Runs made at a time, each in a process of its own. The card is the same "
@@ -240,11 +333,26 @@ def bench(argv: Sequence[str]) -> int:
         for scenario_id, reason in fit.not_run.items():
             print(f"not run: {scenario_id}, {reason}", file=sys.stderr)
 
+    agent_names = args.agent or sorted(AGENTS)
+    try:
+        kind = agent_kind(agent_names)
+    except LlmAgentError as exc:
+        print(f"agentic-datacenter bench: {exc}", file=sys.stderr)
+        return 2
+    llm = None
+    if kind == "language_model":
+        llm = _llm_options(args, args.out / "llm-transcripts")
+        print(
+            "language-model agent: reported apart from the scripted agents, without "
+            "counterfactual replay; transcripts in "
+            f"{llm.replay if llm.replay is not None else llm.transcripts}",
+            file=sys.stderr,
+        )
     try:
         card = run_benchmark(
             profile, contracts,
             {name: installed[name] for name in names},
-            args.agent or sorted(AGENTS),
+            agent_names,
             scenario_ids,
             list(range(args.first_seed, args.first_seed + seeds)), seconds,
             counterfactual=not args.no_counterfactual, frozen_version=frozen,
@@ -253,8 +361,11 @@ def bench(argv: Sequence[str]) -> int:
             heldout_secret=secret, heldout_variants=args.heldout_variants if secret else 0,
             jobs=args.jobs, progress=progress, horizon_s=horizon, max_judged=max_judged,
             replay_jobs=args.replay_jobs, decisions=decided, reach_s=reach,
-            facility=facility_block,
+            facility=facility_block, llm=llm,
         )  # fmt: skip
+    except LlmAgentError as exc:
+        print(f"agentic-datacenter bench: {exc}", file=sys.stderr)
+        return 1
     except BenchVersionError as exc:
         print(
             f"agentic-datacenter bench: {exc}. Use --allow-unfrozen for a development run. "
@@ -266,6 +377,11 @@ def bench(argv: Sequence[str]) -> int:
     write_card(card, args.out)
     write_decisions(decided, args.out)
     print(f"{card['label']}: {args.out / 'result_card.json'} and {args.out / 'report.html'}")
+    models = card.get("language_models")
+    if isinstance(models, list):
+        print("agent: " + " ".join(agent_note("language_model", m) for m in models))
+    else:
+        print(f"agent: {agent_note('scripted')}")
     print(f"each decision and the gate's reasons: {args.out / 'decisions.jsonl'}")
     for row in card["results"]:
         assert isinstance(row, dict)
@@ -402,7 +518,10 @@ def scenario(argv: Sequence[str]) -> int:
     run = actions.add_parser("run", help="Run a scenario and write its evidence bundle.")
     run.add_argument("scenario", choices=library_ids())
     run.add_argument("--gate", default="null_gate")
-    run.add_argument("--agent", choices=sorted(DEMO_AGENTS), default="scripted_benign")
+    run.add_argument(
+        "--agent", type=_agent_name(sorted(DEMO_AGENTS)), default="scripted_benign",
+        help="Default scripted_benign. A language model is named llm:<provider>/<model>.",
+    )  # fmt: skip
     run.add_argument("--seed", type=int, default=1)
     run.add_argument("--seconds", type=int, help="Shorten the scenario to this many seconds.")
     run.add_argument("--profile", type=Path, default=Path("profiles/generic_dc.yaml"))
@@ -412,6 +531,7 @@ def scenario(argv: Sequence[str]) -> int:
     )  # fmt: skip
     run.add_argument("--contracts", type=Path, default=Path("contracts"))
     run.add_argument("--out", type=Path, default=Path("build/evidence"))
+    _llm_arguments(run)
     verify = actions.add_parser("verify", help="Check an evidence bundle against its manifest.")
     verify.add_argument("bundle", type=Path)
     args = parser.parse_args(argv)
@@ -451,14 +571,34 @@ def scenario(argv: Sequence[str]) -> int:
     chosen = load_scenario(args.scenario)
     gate = installed[args.gate](contracts)
     operating = str(getattr(gate, "profile", "UNSPECIFIED"))
-    result = run_scenario(
-        chosen, profile, gate, operating, DEMO_AGENTS[args.agent](), args.seed, contracts,
-        args.seconds,
+    factory = None
+    if is_llm(args.agent):
+        label = f"{chosen.id}.{args.gate}.{args.agent}.{args.seed}"
+        options = _llm_options(args, args.out / "llm_transcript.jsonl")
+        factory = LlmAgentFactory(args.agent, options, label)
+    try:
+        made = factory() if factory is not None else DEMO_AGENTS[args.agent]()
+        result = run_scenario(
+            chosen, profile, gate, operating, made, args.seed, contracts, args.seconds
+        )
+    except LlmAgentError as exc:
+        print(f"agentic-datacenter scenario: {exc}", file=sys.stderr)
+        return 1
+    language_model, transcript = None, None
+    if factory is not None:
+        language_model = {**factory.describe(), "usage": factory.usage()}
+        recorded = factory.transcript()
+        if recorded is not None and recorded.is_file():
+            transcript = recorded.read_text(encoding="utf-8")
+    bundle = build_bundle(
+        result, profile, chosen, contracts, code_commit(Path.cwd()),
+        language_model=language_model, transcript=transcript,
     )  # fmt: skip
-    bundle = build_bundle(result, profile, chosen, contracts, code_commit(Path.cwd()))
     write_bundle(bundle, args.out)
     verdict = "passed" if result.passed else "not passed: " + "; ".join(result.failed_criteria)
     print(f"{chosen.id} {args.gate} ({operating}) seed {args.seed}: {verdict}")
+    kind = "language_model" if factory is not None else "scripted"
+    print(f"agent: {result.agent}. {agent_note(kind, language_model)}")
     print(f"evidence bundle: {args.out}")
     return 0 if result.passed else 1
 
