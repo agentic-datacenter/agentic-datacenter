@@ -36,8 +36,9 @@ from agentic_datacenter.scenarios.report_evidence import (
 
 #: What a decision maker is asked to keep in mind, whatever the figures.
 LIMITS = (
-    "The facility is simulated. Review the configured models and their calibration evidence "
-    "before drawing conclusions about a real data center.",
+    "The facility is simulated, and no module is calibrated against measurements from a real "
+    "data center. Review the configured models and any calibration evidence before drawing "
+    "conclusions about one.",
     "The agents are scripted, and some are built to misbehave. They show how a control handles "
     "defined patterns of behaviour, not how a particular AI system behaves.",
     "A figure here shows how a decision plays out in this model. It is not a prediction of "
