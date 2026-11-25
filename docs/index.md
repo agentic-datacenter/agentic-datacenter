@@ -12,7 +12,7 @@ uv sync
 uv run agentic-datacenter demo --scenario OP-03 --gate static_allowlist --out build/first-run
 ```
 
-About a minute. No API keys and no external service. Then open `build/first-run/index.html`.
+Open `build/first-run/index.html` to compare the same chiller trip with and without the built-in safety control. The first install downloads dependencies. The simulator needs no API key.
 
 ## Where to start
 
