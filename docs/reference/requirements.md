@@ -4,7 +4,7 @@
 
 The design document assigns each requirement to a stage of its build plan (section 13). The traceability check requires a passing test and an owner for every requirement up to stage 9; those are marked as due. This page lists which tests cite each requirement; whether they pass is decided by a run of the whole suite, in the `traceability` job of `.github/workflows/pr.yml`.
 
-A requirement of a later stage is not due. That does not mean it is not built: most have tests, listed below, that run with the others. A stage is counted only when every requirement up to it has a passing test and an owner. Requirements of later stages that lack a test or an owner: `ADC-PLT-001` (stage 10: no owner), `ADC-PLT-002` (stage 10: no test and no owner), `ADC-PLT-003` (stage 10: no test and no owner), `ADC-PLT-004` (stage 10: no test and no owner), `ADC-PLT-005` (stage 10: no test and no owner), `ADC-PLT-006` (stage 10: no test and no owner).
+A requirement of a later stage is not due. That does not mean it is not built: most have tests, listed below, that run with the others. A stage is counted only when every requirement up to it has a passing test and an owner. Requirements of later stages that lack a test or an owner: `ADC-HST-005` (stage 11: no test and no owner), `ADC-HST-006` (stage 11: no test and no owner), `ADC-HST-007` (stage 11: no test and no owner), `ADC-HST-008` (stage 11: no test and no owner), `ADC-PLT-001` (stage 10: no owner), `ADC-PLT-002` (stage 10: no test and no owner), `ADC-PLT-003` (stage 10: no test and no owner), `ADC-PLT-004` (stage 10: no test and no owner), `ADC-PLT-005` (stage 10: no test and no owner), `ADC-PLT-006` (stage 10: no test and no owner).
 
 | Requirement | Stage | Due | Claimed by | Tests citing it |
 | --- | --- | --- | --- | --- |
@@ -45,6 +45,14 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-GOV-006` | 8 | yes | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_contract_compile.py` |
 | `ADC-GOV-007` | 8 | yes | `agentic-datacenter-remora` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/scenario/test_op13_ad09_governed.py` |
 | `ADC-GOV-008` | 8 | yes | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_http_gate.py`<br>`tests/conformance/test_gate_check_service.py`<br>`tests/conformance/test_gate_cli.py` |
+| `ADC-HST-001` | 11 | no | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_keepalive.py` |
+| `ADC-HST-002` | 11 | no | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_keepalive.py` |
+| `ADC-HST-003` | 11 | no | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_keepalive.py` |
+| `ADC-HST-004` | 11 | no | `agentic-datacenter-workspace` | `tests/conformance/test_shirudo_pin.py` |
+| `ADC-HST-005` | 11 | no | none | none |
+| `ADC-HST-006` | 11 | no | none | none |
+| `ADC-HST-007` | 11 | no | none | none |
+| `ADC-HST-008` | 11 | no | none | none |
 | `ADC-IEC-001` | 6 | yes | `agentic-datacenter-iec61850` | `packages/agentic-datacenter-iec61850/tests/test_scl.py`<br>`tests/protocol/test_iec61850_model.py` |
 | `ADC-IEC-002` | 6 | yes | `agentic-datacenter-iec61850` | `packages/agentic-datacenter-iec61850/tests/test_library.py`<br>`tests/protocol/test_iec61850_read_report.py` |
 | `ADC-IEC-003` | 6 | yes | `agentic-datacenter-iec61850` | `tests/conformance/test_iec61850_denied_services.py`<br>`tests/scenario/test_iec61850_scenarios.py` |
