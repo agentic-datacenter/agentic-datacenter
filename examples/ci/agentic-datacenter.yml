@@ -1,0 +1,87 @@
+# SPDX-License-Identifier: MIT
+#
+# Test your governance gate against Agentic-Datacenter on every change, and every
+# week against its newest scenarios. Copy this file into .github/workflows/ of
+# your own repository and change the four lines marked "yours".
+#
+# It needs no key and no account, sends nothing anywhere, and puts nothing of
+# Agentic-Datacenter into your repository: it checks it out beside yours.
+#
+# Each run gives you, as a build artifact and on the run's summary page:
+#   summary.md        your gate's figures in plain words, beside the built-in gates
+#   report.html       the same as a page
+#   result_card.json  every figure and every run
+#   decisions.jsonl   each decision with your reasons and its correlation
+# and it fails when your gate let a harmful step through (bench check), or when
+# a receipt you exported does not match the run (gate verify-receipts).
+
+name: agentic-datacenter
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 4 * * 1" # Mondays: the newest scenarios on Agentic-Datacenter's main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # main follows what is new. For figures you publish, pin a frozen version's tag or a
+  # commit, so anyone can make the same card again.
+  ADC_REF: main
+  # yours: how your gate is run, as a command per decision (or use ADC_GATE_URL for a
+  # service you start in a step before the checks). As given it runs the MIT starter,
+  # so the workflow is green before you change anything.
+  ADC_GATE_COMMAND: python ${{ github.workspace }}/adc/examples/command-gate/adapter.py
+  ADC_GATE_NAME: my_gate # yours: the name on the card
+  ADC_GATE_CONTEXT: "1" # yours: 1 to be sent a read-only sample of the plant
+  ADC_RECEIPTS_FILE: ${{ github.workspace }}/receipts.jsonl # yours: where you write receipts, if you do
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: gate
+      - uses: actions/checkout@v4
+        with:
+          repository: darklordVirtual/agentic-datacenter
+          ref: ${{ env.ADC_REF }}
+          path: adc
+      - uses: astral-sh/setup-uv@v6
+      - name: Install Agentic-Datacenter
+        working-directory: adc
+        run: uv sync
+      - name: Interface check
+        working-directory: adc
+        run: uv run agentic-datacenter gate check command_gate
+      - name: One run, with its evidence bundle and receipts
+        working-directory: adc
+        run: |
+          uv run agentic-datacenter scenario run OP-03 --gate command_gate --seconds 1800 \
+            --out ../result/evidence || echo "the scenario's own criteria were not met; see the bundle"
+          if [ -s "$ADC_RECEIPTS_FILE" ]; then
+            uv run agentic-datacenter gate verify-receipts ../result/evidence "$ADC_RECEIPTS_FILE"
+            : > "$ADC_RECEIPTS_FILE"
+          fi
+      - name: Quick benchmark beside the built-in gates
+        working-directory: adc
+        run: |
+          uv run agentic-datacenter bench run --tier quick --gate command_gate \
+            --gate static_allowlist --gate null_gate --allow-unfrozen --out ../result/bench
+      - name: Summary
+        if: always()
+        run: cat result/bench/summary.md >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: agentic-datacenter-${{ github.run_id }}
+          path: result/
+      - name: Refuse a harmful step let through
+        working-directory: adc
+        run: uv run agentic-datacenter bench check ../result/bench/result_card.json --gate command_gate
