@@ -646,10 +646,15 @@ def gate(argv: Sequence[str]) -> int:
         "--require-all", action="store_true",
         help="Also fail when a decision of a gate that gave correlation has no receipt.",
     )  # fmt: skip
+    receipts.add_argument(
+        "--allow-unknown", action="store_true",
+        help="Do not fail on receipts that name no decision on record, such as the "
+        "counterfactual replays of a bench run, which are judged and not recorded.",
+    )  # fmt: skip
     args = parser.parse_args(argv)
 
     if args.action == "verify-receipts":
-        return _verify_receipts(args.decisions, args.receipts, args.require_all)
+        return _verify_receipts(args.decisions, args.receipts, args.require_all, args.allow_unknown)
     installed = load_gates()
     if args.action == "list":
         for name in sorted(installed):
@@ -708,7 +713,9 @@ def _json_lines(path: Path) -> list[dict[str, Any]]:
     return lines
 
 
-def _verify_receipts(decisions: Path, receipts: Path, require_all: bool) -> int:
+def _verify_receipts(
+    decisions: Path, receipts: Path, require_all: bool, allow_unknown: bool = False
+) -> int:
     """Run ``gate verify-receipts`` and return its exit status."""
     from agentic_datacenter.governance.bindings.http_gate import read_verdict
     from agentic_datacenter.governance.interop import verify_receipts
@@ -730,7 +737,9 @@ def _verify_receipts(decisions: Path, receipts: Path, require_all: bool) -> int:
             file=sys.stderr,
         )
         return 1
-    failed = not report.ok or (require_all and report.without_receipt)
+    failed = bool(report.mismatched or report.unbound_records)
+    failed = failed or (bool(report.unknown) and not allow_unknown)
+    failed = failed or (require_all and bool(report.without_receipt))
     print(
         f"{len(report.matched)} receipt(s) match, {len(report.mismatched)} do not, "
         f"{len(report.unknown)} name no decision; {len(report.without_receipt)} decision(s) "

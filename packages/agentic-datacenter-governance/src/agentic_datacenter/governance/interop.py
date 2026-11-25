@@ -55,7 +55,7 @@ CONTEXT_POINTS: Mapping[str, tuple[str, ...]] = {
 #: What a decision record keeps of a gate's own detail, when the gate gives any of it.
 GATE_DETAIL_KEPT = (
     "served_by", "session", "correlation_id", "action_ref", "issued_at",
-    "service_verdict", "service_decision_id", "service_receipt",
+    "service_verdict", "service_decision_id", "service_receipt", "members",
 )  # fmt: skip
 #: The fields of a receipt that are compared with the record, when the receipt gives them.
 RECEIPT_FIELDS = ("action_ref", "verdict", "outcome", "decision_id")
@@ -210,6 +210,18 @@ def merge_receipts(lines: Iterable[Mapping[str, Any]]) -> dict[str, dict[str, An
     return out
 
 
+def _correlated(record: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    """Return the correlated details of a record: its own, or each member's of a chain."""
+    detail = record.get("gate_detail")
+    if not isinstance(detail, Mapping):
+        return []
+    found = [detail] if "correlation_id" in detail else []
+    members = detail.get("members")
+    if isinstance(members, list):
+        found += [m for m in members if isinstance(m, Mapping) and "correlation_id" in m]
+    return found
+
+
 def verify_receipts(
     records: Sequence[Mapping[str, Any]],
     receipts: Iterable[Mapping[str, Any]],
@@ -226,26 +238,26 @@ def verify_receipts(
     """
     report = ReceiptReport()
     by_id: dict[str, Mapping[str, Any]] = {}
+    details: dict[str, Mapping[str, Any]] = {}
     for record in records:
-        detail = record.get("gate_detail")
-        if not isinstance(detail, Mapping) or "correlation_id" not in detail:
-            continue
-        cid = str(detail["correlation_id"])
-        by_id[cid] = record
-        again = action_ref(
-            str(detail.get("session", "")), str(record["proposal_id"]),
-            str(record["contract_id"]), record.get("arguments") or {},
-            str(record["principal"]), int(record["time_ms"]),
-        )  # fmt: skip
-        if again != detail.get("action_ref"):
-            report.unbound_records.append(cid)
+        for detail in _correlated(record):
+            cid = str(detail["correlation_id"])
+            by_id[cid], details[cid] = record, detail
+            again = action_ref(
+                str(detail.get("session", "")), str(record["proposal_id"]),
+                str(record["contract_id"]), record.get("arguments") or {},
+                str(record["principal"]), int(record["time_ms"]),
+            )  # fmt: skip
+            if again != detail.get("action_ref"):
+                report.unbound_records.append(cid)
     merged = merge_receipts(receipts)
     for cid, receipt in merged.items():
         if cid not in by_id:
             report.unknown.append(cid)
             continue
-        record = by_id[cid]
-        detail = record["gate_detail"]
+        record, detail = by_id[cid], details[cid]
+        # A member of a chain is judged on its own verdict; the outcome is the record's.
+        decided = detail.get("verdict", record.get("verdict"))
         wrong = []
         if "action_ref" in receipt and receipt["action_ref"] != detail.get("action_ref"):
             wrong.append("action_ref")
@@ -253,7 +265,7 @@ def verify_receipts(
             given = receipt["verdict"]
             meant = read_verdict(given) if read_verdict is not None else None
             word = meant.value if meant is not None else str(given).upper()
-            if word != record.get("verdict"):
+            if word != decided:
                 wrong.append("verdict")
         if "outcome" in receipt and str(receipt["outcome"]) != record.get("outcome"):
             wrong.append("outcome")

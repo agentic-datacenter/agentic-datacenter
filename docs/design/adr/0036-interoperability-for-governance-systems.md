@@ -57,7 +57,15 @@ Every point has `tag`, `value`, `unit`, `quality`, `time_ms` and `observed_at`. 
 
 The MIT command starter writes such receipts when `ADC_RECEIPTS_FILE` is set, and refuses a step while an interlock is locked out when it is given the context.
 
-### 6. Nothing named
+### 6. Several systems at once
+
+`chain_gate`, configured by `ADC_CHAIN_FILE`, puts several systems in front of the same actions, as a pilot would: commands, services or installed gates. Every member is asked about every proposal, with its own session and correlation. The strictest verdict decides (`DENY`, then `ABSTAIN`, then `VERIFY`, then `ALLOW`); an `ALLOW` stands only when every member allowed the same writes. The record keeps each member's verdict, reasons and correlation, and whether it was decisive. Each member is told the outcome of its own decision. A gate that authorizes execution itself cannot be a member.
+
+### 7. A summary to read, and testing that keeps going
+
+Every card is written with `summary.md` beside it: each gate's figures in plain words, one column per agent, the built-in gates marked, and how to check the result. `examples/ci/agentic-datacenter.yml` (MIT) is a workflow a maintainer copies into their own repository: on every change and every week it checks out a chosen version of this project beside theirs, runs the interface check, one run with its receipts and a quick benchmark beside the built-in gates, puts the summary on the run's page, and fails on a harmful step let through. `docs/guides/for-governance-maintainers.md` says what a maintainer gets, what it costs, what it does not give, and why a benchmark whose owner also owns a gate can be trusted.
+
+### 8. Nothing named
 
 The guides describe capabilities, not projects. A system identifies itself when it chooses to take part.
 
