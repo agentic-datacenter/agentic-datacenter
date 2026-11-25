@@ -5,9 +5,23 @@
 A simulated data center with cooling failures, power disturbances and AI agents that propose control actions. Between the agent and the plant sits a safety control, a *gate*. Agentic-Datacenter shows what each decision does to the plant: what the gate stopped, what got through, and how often a person had to step in.
 
 <p align="center">
+  <a href="docs/demo/result-report.md"><img src="docs/media/buttons/demo.svg" alt="Explore the demo — inspect a simulated result" width="320" height="52"></a>
+</p>
+
+<p align="center">
+  <a href="docs/guides/operators.md"><img src="docs/media/buttons/datacenter.svg" alt="Bring your datacenter — Explore operational risks" width="280" height="58"></a>
+  <a href="docs/calibration/contribute-data.md"><img src="docs/media/buttons/equipment.svg" alt="Bring your equipment — Contribute calibration data" width="280" height="58"></a>
+</p>
+
+<p align="center">
+  <a href="docs/guides/bring-your-own-agent.md"><img src="docs/media/buttons/agent.svg" alt="Bring your agent — Integration roadmap" width="280" height="58"></a>
+  <a href="docs/guides/bring-your-own-gate.md"><img src="docs/media/buttons/governance.svg" alt="Bring your governance — Test your safety controls" width="280" height="58"></a>
+</p>
+
+<p align="center">
   <a href="docs/media/agentic_datacenter_visual.mp4"><img src="docs/media/agentic_datacenter_visual.webp" alt="Fly-over of a rendered modular data center: the site, generator enclosures, air-cooled chillers, thermal storage and the gatehouse" width="100%"></a>
 </p>
-<p align="center"><sub>A rendered, illustrative facility</sub></p>
+<p align="center"><sub>Illustrative facility · <a href="docs/media/agentic_datacenter_visual.mp4">View video</a></sub></p>
 
 <p align="center">
   <a href="#for-data-center-operators"><strong>Operators</strong></a> ·
