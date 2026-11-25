@@ -8,6 +8,13 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 
 | Requirement | Stage | Due | Claimed by | Tests citing it |
 | --- | --- | --- | --- | --- |
+| `ADC-AGT-001` | 15 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_llm_agent.py` |
+| `ADC-AGT-002` | 15 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_adoption.py`<br>`tests/scenario/test_llm_agent.py` |
+| `ADC-AGT-003` | 15 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_llm_agent.py` |
+| `ADC-AGT-004` | 15 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_llm_agent.py` |
+| `ADC-AGT-005` | 15 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_llm_agent.py` |
+| `ADC-AGT-006` | 15 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_llm_agent.py` |
+| `ADC-AGT-007` | 15 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_llm_agent.py` |
 | `ADC-BEN-001` | 9 | yes | `agentic-datacenter-scenarios` | `tests/bench/test_heldout_and_freeze.py`<br>`tests/conformance/test_result_card.py` |
 | `ADC-BEN-002` | 9 | yes | `agentic-datacenter-scenarios` | `tests/scenario/test_op03_op10_ad01_ad03.py` |
 | `ADC-BEN-003` | 9 | yes | `agentic-datacenter-scenarios` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/bench/test_utility_measures.py`<br>`tests/property/test_counterfactual_identity.py` |

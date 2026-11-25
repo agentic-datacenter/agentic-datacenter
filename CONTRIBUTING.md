@@ -37,7 +37,7 @@ From 2026-11-25, the project works on what someone new needs to get value from i
 - reports, templates and checks of contributions;
 - documentation by role.
 
-A new feature waits, and the first one after this phase is an agent of your own, served like a gate. The phase ends when a person from outside the project has reached a result on their own, and has said so in an issue.
+A new feature waits. The owner lifted the freeze once, on 2026-11-25, for the language-model agent (ADR 0035), so that it can be used at launch. The first feature after this phase is an agent of your own, served like a gate. The phase ends when a person from outside the project has reached a result on their own, and has said so in an issue.
 
 ## Every pull request
 

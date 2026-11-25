@@ -19,7 +19,7 @@ Open `build/first-run/index.html` to compare the same chiller trip with and with
 - **[Explore the demo](demo/result-report.md):** a one-page result of three scenarios, with and without a safety control (also as a [designed page](demo/result-report.html) and the [demonstration](demo/three-scenarios.html) behind it).
 - **[Bring your datacenter](guides/bring-your-own-datacenter.md):** check what fits your facility, and get one report for an operator with `facility report`. Operators also start from the [operator guide](guides/operators.md).
 - **[Bring your equipment](guides/equipment.md):** use and contribute equipment models, each with its source and rights.
-- **[Bring your agent](guides/bring-your-own-agent.md):** planned. Runs today use scripted agents; the page says what exists and what is coming.
+- **[Bring your agent](guides/bring-your-own-agent.md):** a language model as the agent, through Anthropic, OpenAI, Gemini, Grok or any OpenAI-compatible endpoint. Optional; runs use the scripted agents unless you name a model. An agent of your own served over HTTP is planned.
 - **[Bring your governance](guides/bring-your-own-gate.md):** test your own safety control, then enter the [public test](bench/PUBLIC_TEST.md).
 
 Agentic-Datacenter never connects to real equipment, and makes no claim of IEC 62443 certification.

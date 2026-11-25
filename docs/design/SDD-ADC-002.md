@@ -49,7 +49,7 @@ The README contains these blocks, in this order:
 | --- | --- | --- |
 | 1 | Hero | H1, a one-sentence purpose, one supporting sentence |
 | 2 | Primary action | Explore the demo → the committed Markdown result report |
-| 3 | Role actions | Datacenter, equipment, agent, governance. The agent is labelled Roadmap until externally supplied agents work |
+| 3 | Role actions | Datacenter, equipment, agent, governance. The agent button offered a language model as an optional agent once one could run (ADR 0035); until then it was labelled Roadmap |
 | 4 | Visual | The existing WebP, linked to the original MP4, with a static caption and an explicit video link |
 | 5 | Evidence | One short result statement, with a link to the report and its limitations. Tables and report imagery are not duplicated |
 | 6 | Try locally | The existing verified commands, and an optional Codespaces link |
@@ -80,10 +80,10 @@ The README contains these blocks, in this order:
   | --- | --- |
   | Bring your datacenter | Check your facility |
   | Bring your equipment | Use and contribute models |
-  | Bring your agent | Roadmap · integration planned |
+  | Bring your agent | Language models · optional |
   | Bring your governance | Test your safety controls |
 
-- **The agent button** says Roadmap, and its alt text says it is planned.
+- **The agent button** says what runs: a language model, as an option. Until ADR 0035 it said Roadmap, and its alt text said planned.
 - **Layout:** two buttons per row in ordinary inline flow, which wraps on narrow screens.
 - **What every SVG must be:** a static picture.
   - It has explicit dimensions and a viewBox.
@@ -118,14 +118,14 @@ Every entry guide follows the same structure:
 | Demo | `docs/demo/result-report.md` | Read the existing development report | Temperature, lost IT energy, decisions and approvals | Exists; not a live hosted demo |
 | Datacenter | `docs/guides/bring-your-own-datacenter.md` | `facility check examples/byodc` | Facility-fit report, missing contracts and scenarios, provenance, baseline | Implemented (ADR 0033) |
 | Equipment | `equipment/README.md` | Use a `registry:<id>` entry in a bundle | Values, source, rights, rated conditions, fit and tier | Implemented (ADR 0034); eight factual chiller entries |
-| Agent | `docs/guides/bring-your-own-agent.md` | Read the scripted agents and the roadmap | Existing example results and the roadmap | Planned |
+| Agent | `docs/guides/bring-your-own-agent.md` | Replay the recorded example, then run a model with one's own key | A run and a card of a model, labelled apart, with its transcript | Implemented as an option (ADR 0035); an agent served over HTTP is planned |
 | Governance | `docs/guides/bring-your-own-gate.md` | `gate check` and a quick run | Result card: harms, useful blocks, approvals | Implemented |
 | Data and research | `docs/calibration/contribute-data.md`, `docs/bench/PUBLIC_TEST.md` | Measured weather, the frozen benchmark | Traceable inputs and results | Weather only; plant calibration is not promised |
 
-**The agent path.** The guide's first paragraph says that external agent adapters are planned and that current runs use scripted agents. It gives no upload, API key or command for an unsupported integration. When an external-agent interface is implemented, the same pull request does all of these:
+**The agent path.** The guide's first paragraph says that a language model can be the agent, that it is optional, that runs use the scripted agents otherwise, and that an agent served over HTTP is planned. Its first command replays a recorded example and needs no key. It gives no command for an integration that is not built. When an external-agent interface was implemented (ADR 0035), the same pull request did all of these:
 
-- adds a verified example, its output and a conformance test;
-- removes the Roadmap label.
+- added a verified example, its output and a conformance test (`examples/llm-agent/`, `tests/scenario/test_llm_agent.py`);
+- removed the Roadmap label.
 
 **The governance path.** REMORA and shirudo are described by their implemented scope. A simulated keepalive with a software key is not TPM attestation or production protection.
 
@@ -164,7 +164,7 @@ Publication waits for the maintainer. The repository's visibility is never chang
 ## 9. Definition of done
 
 - Every requirement with a test passes. The manual ones are recorded, or listed as open.
-- The README has five truthful, working entry actions, and the agent is labelled Roadmap.
+- The README has five truthful, working entry actions, and the agent button says what runs.
 - The animation, the video and the integrity of the evidence are unchanged.
 - No frozen benchmark input is altered, and no production-safety claim is made.
 - Two independent first-time users have found their path.

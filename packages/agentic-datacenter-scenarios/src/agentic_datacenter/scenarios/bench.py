@@ -39,6 +39,14 @@ from agentic_datacenter.scenarios.agents import AGENTS, Agent
 from agentic_datacenter.scenarios.counterfactual import Judgement, worse
 from agentic_datacenter.scenarios.harness import Metrics, RunResult, ScenarioRun
 from agentic_datacenter.scenarios.heldout import SCHEME, commitment, unchanged, variants
+from agentic_datacenter.scenarios.llm_agent import (
+    LLM_LABEL,
+    LlmAgentFactory,
+    LlmOptions,
+    agent_kind,
+    agent_note,
+    is_llm,
+)
 from agentic_datacenter.scenarios.parallel_replay import judge_run_parallel
 from agentic_datacenter.scenarios.scenario import Scenario, load_scenario
 
@@ -558,10 +566,22 @@ def _gated_run(
     horizon_s: int | None = None,
     max_judged: int | None = None,
     replay_jobs: int = 1,
+    llm: LlmOptions | None = None,
 ) -> dict[str, Any]:
-    """Run one scenario under one gate with one agent and return its row of the card."""
+    """Run one scenario under one gate with one agent and return its row of the card.
+
+    A language-model agent (ADR 0035) is made for this run alone, with its own
+    transcript, and its row says what it spent.
+    """
     operating = str(getattr(make_gate(contracts), "profile", "UNSPECIFIED"))
-    make_agent: Callable[[], Agent] = AGENTS[agent_name]
+    factory = None
+    make_agent: Callable[[], Agent]
+    if is_llm(agent_name):
+        label = f"{_name(scenario.id, variant_number)}.{gate_name}.{agent_name}.{seed}"
+        factory = LlmAgentFactory(agent_name, llm or LlmOptions(), label)
+        make_agent = factory
+    else:
+        make_agent = AGENTS[agent_name]
     judged: Sequence[Judgement]
     if counterfactual:
         horizon_s, max_judged = scenario.judging(horizon_s, max_judged)
@@ -582,6 +602,9 @@ def _gated_run(
     name = _name(result.scenario_id, variant_number)
     row["run_id"] = f"{name}.{gate_name}.{result.agent}.{result.seed}"
     row["track"], row["variant"] = scenario.track, variant_number
+    if factory is not None:
+        row["agent_kind"] = "language_model"
+        row["agent_usage"] = factory.usage()
     # Taken off the row before the card is made (run_benchmark).
     row["decisions"] = [{"run_id": row["run_id"], **line} for line in _decisions(result, known)]
     return row
@@ -709,8 +732,15 @@ def run_benchmark(
     decisions: list[dict[str, Any]] | None = None,
     reach_s: int | None = None,
     facility: Mapping[str, Any] | None = None,
+    llm: LlmOptions | None = None,
 ) -> dict[str, Any]:
     """Run every gate against every agent, scenario and seed, and return the result card.
+
+    The agents are the scripted ones, or language-model agents named as
+    ``llm:<provider>/<model>`` served as *llm* says (ADR 0035), never both on
+    one card. A card with a language-model agent is labelled as reported apart
+    and not a benchmark result, carries ``agent_kind`` and the models, and has
+    no counterfactual replay: each replay would ask the model again.
 
     With *facility*, the card is from a facility of its owner's (ADR 0033): it
     carries *facility* as its ``facility`` block, is never of the frozen
@@ -752,6 +782,9 @@ def run_benchmark(
         raise ValueError("jobs must be at least 1")
     if replay_jobs < 1:
         raise ValueError("replay_jobs must be at least 1")
+    kind = agent_kind(agent_names)
+    if kind == "language_model":
+        counterfactual = False
     version = benchmark_version(profile, contracts, scenario_ids)
     frozen = facility is None and frozen_version is not None and dict(frozen_version) == version
     if facility is None and not frozen and not allow_unfrozen:
@@ -780,7 +813,7 @@ def run_benchmark(
                 for agent_name in agent_names:
                     arguments = (
                         *where, gate_name, make_gate, agent_name, seed, length, counterfactual,
-                        horizon_s, max_judged, replay_jobs,
+                        horizon_s, max_judged, replay_jobs, llm,
                     )  # fmt: skip
                     label = f"{name}.{gate_name}.{agent_name}.{seed}"
                     calls.append((label, _gated_run, arguments))
@@ -812,8 +845,19 @@ def run_benchmark(
     label = "benchmark result" if frozen else "development run, not a benchmark result"
     if facility is not None:
         label = FACILITY_LABEL
+    language_models = None
+    if kind == "language_model":
+        label = f"{FACILITY_LABEL}; {LLM_LABEL}" if facility is not None else LLM_LABEL
+        options = llm or LlmOptions()
+        language_models = [LlmAgentFactory(name, options, "").describe() for name in agent_names]
     head: dict[str, Any] = {
         **({"facility": dict(facility)} if facility is not None else {}),
+        # Only on a card with a language-model agent, so every other card is the card it was.
+        **(
+            {"agent_kind": kind, "language_models": language_models}
+            if language_models is not None
+            else {}
+        ),
         "heldout": card_heldout,
         "schema_version": CARD_SCHEMA_VERSION,
         "benchmark_version": {**version, "frozen": frozen},
@@ -862,6 +906,16 @@ def _card(
                 }
                 if held_out:
                     row["heldout"] = _aggregate(held_out, f"{gate_name}.{agent_name}.heldout")
+                spent = [r["agent_usage"] for r in both if isinstance(r.get("agent_usage"), dict)]
+                if spent:
+                    row["agent_usage"] = {
+                        key: sum(int(u.get(key) or 0) for u in spent)
+                        for key in ("calls", "input_tokens", "output_tokens", "proposals",
+                                    "refusals")
+                    }  # fmt: skip
+                    row["agent_usage"]["runs_out_of_budget"] = sum(
+                        1 for u in spent if u.get("budget_exhausted")
+                    )
                 results.append(row)
     return {
         **head,
@@ -924,7 +978,8 @@ def _differences(
 
 #: What must be the same on cards that are merged into one.
 MERGE_KEYS = (
-    "facility", "schema_version", "benchmark_version", "label", "lowest_fidelity", "statements",
+    "facility", "agent_kind", "language_models", "schema_version", "benchmark_version", "label",
+    "lowest_fidelity", "statements",
     "counterfactual", "judging", "agents", "scenarios", "duration_override_s",
     "duration_reach_s", "heldout",
 )  # fmt: skip
@@ -1029,6 +1084,18 @@ def _facility_note(card: Mapping[str, Any]) -> str:
     )
 
 
+def _agent_note(card: Mapping[str, Any]) -> str:
+    """The line of a report that says whether its agents were scripted or a language model."""
+    models = card.get("language_models")
+    if card.get("agent_kind") != "language_model" or not isinstance(models, list):
+        return f"<p><strong>Agent:</strong> {html.escape(agent_note('scripted'))}</p>"
+    notes = " ".join(html.escape(agent_note("language_model", m)) for m in models)
+    return (
+        f"<p><strong>Agent:</strong> {notes} Counterfactual replay was not run: each replay "
+        "would ask the model again.</p>"
+    )
+
+
 def render_report(card: Mapping[str, Any]) -> str:
     """Return the single-page report: chart, table, false blocks and harms avoided."""
     results = [r for r in card["results"] if isinstance(r, dict)]
@@ -1116,6 +1183,7 @@ code {{ font-size: 12px; }}
 Lowest module fidelity: <strong>{html.escape(str(card["lowest_fidelity"]))}</strong>.
 Scenarios: {html.escape(", ".join(str(s) for s in card["scenarios"]))}.
 Seeds: {html.escape(", ".join(str(s) for s in card["seeds"]))}.</p>
+{_agent_note(card)}
 {_facility_note(card)}
 <ul>{statements}</ul>
 <h2>Safety and utility</h2>

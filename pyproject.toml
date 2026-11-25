@@ -35,6 +35,9 @@ docs = ["mkdocs"]
 audit = ["pip-audit"]
 remora = ["agentic-datacenter-remora"]
 iec61850 = ["agentic-datacenter-iec61850"]
+# A language-model agent (ADR 0035): the SDKs of the providers. Never needed otherwise,
+# and never installed by default: every test passes without them (ADC-AGT-006).
+llm = ["anthropic", "openai"]
 # Measured input series (ADR 0018). Optional for every distribution; installed by
 # default in the workspace so its tests and type checks always run.
 data = ["agentic-datacenter-data"]
@@ -300,6 +303,19 @@ type = "forbidden"
 source_modules = ["agentic_datacenter.scenarios"]
 forbidden_modules = ["agentic_datacenter_remora", "agentic_datacenter_iec61850", "agentic_datacenter.whatif"]
 allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "The scripted agents, the harness and the oracle may not import the language-model agent"
+type = "forbidden"
+source_modules = [
+    "agentic_datacenter.scenarios.agents",
+    "agentic_datacenter.scenarios.harness",
+    "agentic_datacenter.scenarios.counterfactual",
+]
+forbidden_modules = [
+    "agentic_datacenter.scenarios.llm_agent",
+    "agentic_datacenter.scenarios.llm_providers",
+]
 
 [[tool.importlinter.contracts]]
 name = "REMORA binding may import governance only"
