@@ -3,6 +3,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from agentic_datacenter.core.profile import load_profile
 from agentic_datacenter.governance.contracts import ContractLibrary
 from agentic_datacenter.scenarios.cli import load_gates
@@ -12,6 +14,7 @@ from agentic_datacenter.scenarios.executive import render_executive, render_exec
 ROOT = Path(__file__).resolve().parents[2]
 
 
+@pytest.mark.req("ADC-UX-011")
 def test_recording_compares_every_selected_gate_and_records_the_model() -> None:
     profile = load_profile(ROOT / "profiles/generic_dc.yaml")
     library = ContractLibrary.load(ROOT / "contracts")
@@ -44,6 +47,7 @@ def test_recording_compares_every_selected_gate_and_records_the_model() -> None:
         assert "Run inputs and evidence" in page
 
 
+@pytest.mark.req("ADC-UX-011")
 def test_historical_report_keeps_unknown_weather_and_inputs_explicit() -> None:
     recording = json.loads((ROOT / "docs/demo/demo.json").read_text(encoding="utf-8"))
     report = render_executive_markdown(recording)
