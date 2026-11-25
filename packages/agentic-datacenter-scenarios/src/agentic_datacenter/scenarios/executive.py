@@ -1,4 +1,4 @@
-"""The result report: one page for a decision maker, from a demonstration run.
+"""A decision summary and evidence review from a demonstration run.
 
 It answers, per scenario and in plain terms, what happened to the plant with
 no safety control and with the one under test: whether a temperature limit
@@ -14,7 +14,7 @@ have is left out, never filled in.
 
 There are two renditions of the same figures. ``render_executive`` returns
 one static page: styles and charts are inside it, it loads nothing, has no
-script and prints on one sheet. ``render_executive_markdown`` returns the same
+script and can be printed. ``render_executive_markdown`` returns the same
 report as Markdown, for places that show a Markdown file as a page and an
 HTML file as source.
 """
@@ -27,11 +27,17 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from agentic_datacenter.scenarios.harness import CRITICAL_C
+from agentic_datacenter.scenarios.report_evidence import (
+    evidence_html,
+    evidence_markdown,
+    overview_html,
+    overview_markdown,
+)
 
 #: What a decision maker is asked to keep in mind, whatever the figures.
 LIMITS = (
-    "The facility is generic and simulated. Its plant models behave plausibly but are not "
-    "calibrated against measurements from a real data center.",
+    "The facility is simulated. Review the configured models and their calibration evidence "
+    "before drawing conclusions about a real data center.",
     "The agents are scripted, and some are built to misbehave. They show how a control handles "
     "defined patterns of behaviour, not how a particular AI system behaves.",
     "A figure here shows how a decision plays out in this model. It is not a prediction of "
@@ -578,7 +584,7 @@ table { border-collapse: collapse; width: 100%; }
 
 
 def render_executive(demo: Mapping[str, Any]) -> str:
-    """Return the one-page result report of a demonstration run."""
+    """Return the HTML result report and evidence review of a demonstration run."""
     esc = html.escape
     report = _report(demo)
     gate = report["gate"]
@@ -594,23 +600,36 @@ def render_executive(demo: Mapping[str, Any]) -> str:
     lead = f"<code>{esc(gate)}</code>".join(esc(part) for part in report["lead"])
     charts = "Hottest IT supply air, per scenario" if scale else "Scenarios"
     limits = "".join(f"<li>{esc(line)}</li>" for line in LIMITS)
-    return f"""<!doctype html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Autonomous operations result report</title>
-<style>{_STYLE}</style></head><body><main class="sheet">
-<header><p class="doc"><strong>Agentic-Datacenter</strong>
-<span>{esc(report["label"])}</span></p>
-<h1>{esc(TITLE)}</h1>
-<p class="lead">{lead}</p></header>
-<section><h2>Result</h2>
+    if any(len(sc["sides"]) > 2 for sc in demo["scenarios"]):
+        lead = (
+            "Selected controls and a baseline without a gate, compared within each scenario "
+            "with the same facility, inputs, agent and seed."
+        )
+        overview = f"<section><h2>Result</h2>{overview_html(demo)}</section>"
+    else:
+        overview = f"""<section><h2>Result</h2>
 <p class="headline">{esc(report["headline"])}</p>
 <p class="account">{esc(report["account"])}</p>
 {_tiles(report)}</section>
 <section><h2>{charts}</h2>
 {legend}<div class="cards">{cards}</div></section>
 <section><h2>Figures, per scenario</h2>
-{_table(report)}</section>
+{_table(report)}</section>"""
+    return f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Autonomous operations result report</title>
+<style>{_STYLE}
+.evidence-table {{ overflow-x: auto; overflow-wrap: anywhere; }}
+.evidence-table td {{ vertical-align: top; }}
+figure svg {{ width: min(100%, 540px); height: auto; }}
+</style></head><body><main class="sheet">
+<header><p class="doc"><strong>Agentic-Datacenter</strong>
+<span>{esc(report["label"])}</span></p>
+<h1>{esc(TITLE)}</h1>
+<p class="lead">{lead}</p></header>
+{overview}
+{evidence_html(demo)}
 <section class="limits"><h2>What this report does not show</h2><ul>{limits}</ul></section>
 <p class="provenance">{esc(report["label"])}. Seed {esc(report["seed"])};
 lowest module fidelity {esc(report["fidelity"])}. Every figure is read from
@@ -633,59 +652,89 @@ def render_executive_markdown(
     screenshot: str = "",
     page: str = "executive.html",
     technical: str = "index.html",
+    archive: str = "",
+    comparison: str = "",
 ) -> str:
     """Return the result report as Markdown, with the same figures as the page.
 
     *screenshot* is the path of a picture of the page, shown after the result summary if given.
     *page* and *technical* are the paths, from where the Markdown file is kept, of
-    the designed page and of the technical page with every decision.
+    the designed page and of the technical page with every decision. *archive*
+    names a downloadable evidence bundle. *comparison* links a newer capture.
     """
     report = _report(demo)
     gate = report["gate"]
     head = f"| | {NO_CONTROL} | `{_cell(gate)}` |\n| --- | ---: | ---: |"
     lines = [f"# {TITLE}", ""]
-    lines += [
-        f"*{report['label']}.* {f'`{gate}`'.join(report['lead'])}",
-        "",
-        "## Result",
-        "",
-        f"**{report['headline']}**",
-        "",
-        report["account"],
-        "",
-        head,
-    ]
-    for label, without, with_, note, _ in report["summary"]:
-        value = f"{with_} ({note})" if note else with_
-        lines.append(f"| {label} | {without} | {value} |")
-    if screenshot:
+    if any(len(sc["sides"]) > 2 for sc in demo["scenarios"]):
+        lines.extend(
+            (
+                f"*{report['label']}.* Selected controls and a baseline without a gate use the "
+                "same facility, inputs, agent and seed within each scenario.",
+                "",
+                "## Result",
+                "",
+                overview_markdown(demo),
+            )
+        )
+    else:
         lines += [
+            f"*{report['label']}.* {f'`{gate}`'.join(report['lead'])}",
             "",
-            f"[![The result report as a designed page: the result, a chart of the hottest IT "
-            f"supply air per scenario, and the figures]({screenshot})]({page})",
-        ]
-    lines += ["", "## Figures, per scenario"]
-    for sc in report["scenarios"]:
-        lines += [
+            "## Result",
             "",
-            f"### {sc['id']}: {sc['title']}",
+            f"**{report['headline']}**",
             "",
-            f"{sc['span']}, agent `{sc['agent']}`. **{sc['verdict']}**",
+            report["account"],
             "",
             head,
         ]
-        for label, sub, without, with_ in sc["rows"]:
-            name = f"&nbsp;&nbsp;&nbsp;{label}" if sub else label
-            lines.append(f"| {name} | {_cell(without)} | {_cell(with_)} |")
-    lines += ["", "## What this report does not show", ""]
+        for label, without, with_, note, _ in report["summary"]:
+            value = f"{with_} ({note})" if note else with_
+            lines.append(f"| {label} | {without} | {value} |")
+        if screenshot:
+            lines += [
+                "",
+                f"[![The result report as a designed page: the result, a chart of the hottest IT "
+                f"supply air per scenario, and the figures]({screenshot})]({page})",
+            ]
+        if comparison:
+            lines.extend(
+                (
+                    "",
+                    f"[See the replayable comparison across three controls]({comparison}) for "
+                    "a separate facility example with sampled weather, equipment and evidence.",
+                )
+            )
+        lines += ["", "## Figures, per scenario"]
+        for sc in report["scenarios"]:
+            lines += [
+                "",
+                f"### {sc['id']}: {sc['title']}",
+                "",
+                f"{sc['span']}, agent `{sc['agent']}`. **{sc['verdict']}**",
+                "",
+                head,
+            ]
+            for label, sub, without, with_ in sc["rows"]:
+                name = f"&nbsp;&nbsp;&nbsp;{label}" if sub else label
+                lines.append(f"| {name} | {_cell(without)} | {_cell(with_)} |")
+    lines += ["", evidence_markdown(demo), "## What this report does not show", ""]
     lines += [f"- {line}" for line in LIMITS]
-    lines += [
-        "",
-        f"{report['label']}. Seed {report['seed']}; lowest module fidelity {report['fidelity']}. "
-        "Every figure is read from `demo.json`, the recording of the run. The same report as a "
-        f"designed page, with a chart per scenario, is [{page.rsplit('/', 1)[-1]}]({page}): "
-        "download it and open it in a browser. The decisions behind the figures, each with its "
-        f"record, are on [{technical.rsplit('/', 1)[-1]}]({technical}).",
-        "",
-    ]
+    lines.append("")
+    if archive:
+        lines.append(
+            f"[Download the run archive]({archive}) and extract it. It contains "
+            "`demo.json`, the technical dashboard `index.html` and the per-run evidence "
+            "directories. Run the verification commands above from the extracted directory. "
+            "Verification checks file integrity against the manifest. Repeating the run also "
+            "requires the same simulator, controls, scenario and inputs."
+        )
+    else:
+        lines.append(
+            "Figures come from [demo.json](demo.json), the run recording. "
+            f"The [designed report]({page}) can be downloaded and opened in a browser. "
+            f"The [technical dashboard]({technical}) has every recorded decision."
+        )
+    lines.append("")
     return "\n".join(lines)
