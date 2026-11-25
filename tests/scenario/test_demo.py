@@ -386,5 +386,6 @@ def test_the_markdown_report_can_show_a_picture_and_link_the_pages(demo: dict[st
     shown = render_executive_markdown(
         demo, screenshot="../media/p.png", page="report.html", technical="all.html"
     )
-    assert shown.splitlines()[2].startswith("[![") and "](../media/p.png)](report.html)" in shown
+    assert shown.index("## Result") < shown.index("[![")
+    assert "](../media/p.png)](report.html)" in shown
     assert "](all.html)" in shown and "executive.html" not in shown
