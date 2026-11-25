@@ -5,16 +5,16 @@
 Simulate infrastructure. Evaluate decisions. Measure consequences.
 
 <p align="center">
-  <a href="docs/demo/result-report.md"><img src="docs/media/buttons/demo.svg" alt="Explore the demo: view a simulated result" width="320" height="44"></a>
+  <a href="docs/demo/result-report.md"><img src="docs/media/buttons/demo.svg" alt="Explore the demo: view a simulated result" width="320" height="52"></a>
 </p>
 
 <p align="center">
-  <a href="docs/guides/bring-your-own-datacenter.md"><img src="docs/media/buttons/datacenter.svg" alt="Bring your datacenter: check your facility" width="280" height="52"></a>
-  <a href="equipment/README.md"><img src="docs/media/buttons/equipment.svg" alt="Bring your equipment: use and contribute models" width="280" height="52"></a>
+  <a href="docs/guides/bring-your-own-datacenter.md"><img src="docs/media/buttons/datacenter.svg" alt="Bring your datacenter: check your facility" width="280" height="58"></a>
+  <a href="equipment/README.md"><img src="docs/media/buttons/equipment.svg" alt="Bring your equipment: use and contribute models" width="280" height="58"></a>
 </p>
 <p align="center">
-  <a href="docs/guides/bring-your-own-agent.md"><img src="docs/media/buttons/agent.svg" alt="Bring your agent: integration roadmap, planned" width="280" height="52"></a>
-  <a href="docs/guides/bring-your-own-gate.md"><img src="docs/media/buttons/governance.svg" alt="Bring your governance: test your safety controls" width="280" height="52"></a>
+  <a href="docs/guides/bring-your-own-agent.md"><img src="docs/media/buttons/agent.svg" alt="Bring your agent: integration roadmap, planned" width="280" height="58"></a>
+  <a href="docs/guides/bring-your-own-gate.md"><img src="docs/media/buttons/governance.svg" alt="Bring your governance: test your safety controls" width="280" height="58"></a>
 </p>
 
 <p align="center">
