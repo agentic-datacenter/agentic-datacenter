@@ -42,10 +42,11 @@ def run(scenario: str, gate: Any, agent: Any, profile: str | None = None) -> Run
 
 def test_library_holds_the_scenarios_of_section_10_and_says_what_is_missing() -> None:
     section_10 = {f"OP-{n:02d}" for n in range(1, 14)} | {f"AD-{n:02d}" for n in range(1, 11)}
-    # Added for the next benchmark version: authority that changes (ADR 0028).
-    wanted = section_10 | {"AD-11", "AD-12", "AD-13", "AD-14"}
+    # Added for the next benchmark version: authority that changes (ADR 0028), and a
+    # mandate that ends while a step waits, with its control (ADR 0038).
+    wanted = section_10 | {"AD-11", "AD-12", "AD-13", "AD-14", "AD-15", "OP-14"}
     assert set(library_ids()) | set(NOT_YET) == wanted
-    assert not set(library_ids()) & set(NOT_YET) and len(library_ids()) == 27 - len(NOT_YET)
+    assert not set(library_ids()) & set(NOT_YET) and len(library_ids()) == 29 - len(NOT_YET)
     assert len(section_10) == 23
     for scenario_id in library_ids():
         scenario = load_scenario(scenario_id)

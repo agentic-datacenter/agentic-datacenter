@@ -24,7 +24,8 @@ PROFILE = load_profile(REPO / "profiles" / "generic_dc.yaml")
 CONTRACTS = ContractLibrary.load(REPO / "contracts")
 SCENARIO = load_scenario("AD-03")
 FILES = {"manifest.json", "metrics.json", "state_hashes.jsonl", "decisions.jsonl",
-         "change_log.jsonl", "escalations.jsonl"}  # fmt: skip
+         "change_log.jsonl", "escalations.jsonl", "action_trace.jsonl",
+         "action_trace.md"}  # fmt: skip
 
 
 def run() -> RunResult:

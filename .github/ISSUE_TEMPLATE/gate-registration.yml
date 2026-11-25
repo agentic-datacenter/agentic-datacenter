@@ -80,6 +80,14 @@ body:
       render: text
 
   - type: checkboxes
+    id: listing
+    attributes:
+      label: Listed by name (optional)
+      description: "Without this, your system is counted but never named. With it, it is listed in the table of enrolled systems with its results beside the others, and findings are described there once you have fixed them or agreed. A finding is always sent to you first. Untick it to be taken off."
+      options:
+        - label: "List this system by name in docs/bench/participants.md, with its results and findings."
+
+  - type: checkboxes
     id: authors
     attributes:
       label: Independent gate (optional)
