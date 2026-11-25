@@ -888,7 +888,7 @@ Each requirement below maps to at least one named test; a requirement without a 
 | ADC-UX-005 | The demo action opens a Markdown report with its development label, not raw HTML or a live service. | conformance/test\_readme\_experience |
 | ADC-UX-006 | The datacenter path gives the facility reports and lists what does not fit. | scenario/test\_facility\_fit, scenario/test\_adoption |
 | ADC-UX-007 | The equipment path shows an entry's provenance, rights, tier and fit, with a runnable check. | conformance/test\_equipment\_registry, scenario/test\_adoption |
-| ADC-UX-008 | The agent path is labelled planned on its button, its alt text and its guide until an external agent runs. | conformance/test\_readme\_experience |
+| ADC-UX-008 | The agent path says what runs today, a language model as an optional agent, on its button, its alt text and its guide, whose first command needs no key; an agent served over HTTP is labelled planned. | conformance/test\_readme\_experience |
 | ADC-UX-009 | The governance path gives an inspectable card from the existing gate interface. | conformance/test\_gate\_check\_service |
 | ADC-UX-010 | Every local link and image of the README and the role guides resolves. | conformance/test\_readme\_experience |
 | ADC-UX-011 | The README's result is the one the report records, with its development label. | conformance/test\_readme\_experience |
@@ -896,6 +896,18 @@ Each requirement below maps to at least one named test; a requirement without a 
 | ADC-UX-013 | The first run needs no credentials, no API key, no privileged access and no OT connection. | tools/first\_run |
 | ADC-UX-014 | The hero names no date, season or library count that goes stale. | conformance/test\_readme\_experience |
 | ADC-UX-015 | Two independent first-time users reach their role's result without the maintainer. | manual, not done |
+
+**Language-model agent (12.1, ADR 0035)**
+
+| ID | Requirement | Verified by |
+| --- | --- | --- |
+| ADC-AGT-001 | Without `--agent`, every run, card and report uses the scripted agents. A language-model agent runs only when named as `llm:<provider>/<model>`, and the benchmark version does not hash it. | scenario/test\_llm\_agent |
+| ADC-AGT-002 | Every report of a run says whether its agent was scripted, with predefined, simulated calls, or a language model, and which provider and model: the report page of a card, the manifest of an evidence bundle, and what `scenario run` and `bench run` print. | scenario/test\_llm\_agent |
+| ADC-AGT-003 | A language-model agent is given the tools of 9.3 and nothing else, and every proposal it makes goes through the gate. | scenario/test\_llm\_agent |
+| ADC-AGT-004 | A card with a language-model agent holds no scripted agent, is labelled as reported apart and not a benchmark result, and is refused for publication. | scenario/test\_llm\_agent |
+| ADC-AGT-005 | Every request and reply of a language-model agent is kept in a transcript with the model asked for and the model that answered. A run replayed from it calls no model and gives the same records and state hashes. | scenario/test\_llm\_agent |
+| ADC-AGT-006 | The providers' SDKs are optional: without them everything installs and passes. An API key is read from the environment and written to no card, bundle or transcript. | scenario/test\_llm\_agent |
+| ADC-AGT-007 | A language-model agent makes at most the calls its budget allows, and a refusal or a spent budget is counted. | scenario/test\_llm\_agent |
 
 **What-if (10.4)**
 
@@ -1128,6 +1140,7 @@ This section is build history. The simulator was built in the stages below, in t
 | 12 | Bring your own data center (ADR 0033): facility bundles, equipment models, values per instance, `facility check`, runs and cards on one's own facility, the number of chillers | FAC-001 to 010 | `facility check` and a `bench run --facility` of the example bundle end to end |
 | 13 | The equipment registry (ADR 0034): entries from open sources with their rights recorded, the registry's gate, `registry:` entries in bundles | EQP-001 to 004 | A bundle that names a registry chiller runs, and the gate refuses an entry without its rights |
 | 14 | The front door and onboarding (SDD-ADC-002): buttons, role guides, `facility init` and `report`, a maker's own entries | FAC-011 to 012, EQP-005, UX-001 to 015 | Two independent first-time users reach their role's result without help |
+| 15 | A language-model agent (ADR 0035): `llm:<provider>/<model>` on `scenario run` and `bench run`, five providers through two adapters, transcripts and replay, cards apart | AGT-001 to 007 | A run of a model replayed from its transcript with no network gives the same run |
 
 **Milestone M1.** After Stage 4, thin versions of the supervisory command path, the gate interface, the two scripted agents, counterfactual replay and the result card were built first, on four scenarios: `OP-03`, `OP-10`, `AD-01` and `AD-03`. They ran under the operating profile `DECISION_ONLY`: REMORA decides through `evaluate_policy`, and allowed proposals are applied by the command service with the hash of the decision as reference. There is no execution token, no cumulative-limit enforcement on the REMORA side and no audit chain in this profile. Its results MUST be labelled as such and MUST NOT be described as governed execution. `AD-04` and `AD-05` cannot be claimed as passed under it, since replay and cumulative limits are enforced only on the governed path.
 
@@ -1148,7 +1161,7 @@ The reference specification does not contain single-line diagrams, P&IDs, point 
 **Where the code differs from this document**
 
 - `compose` mode is not built. There is no `deploy/` directory, no conduit container and no REMORA service in a container. Everything runs, and is tested, in `inproc` mode (ADR 0010, ADR 0016, ADR 0017). `ADC-NET-001` asks for the zone matrix in both run modes and is tested in `inproc` only. Every sentence above about `compose` mode describes a design.
-- No language-model agent (`llm_agent`, 12.1) is implemented. The benchmark and the demonstration use scripted agents.
+- The language-model agent of 12.1 is built as an option (ADR 0035, `ADC-AGT-001` to `-007`). The benchmark, the demonstration and the facility report use the scripted agents. A card of a model has no counterfactual replay, and no result of a model has been published; 12.1 asks for two models before one is.
 - Of ADR 0033, facility bundles, equipment models, values per instance and the refusal of a parameter no module reads are built, and so are `facility check` and runs and cards on one's own facility and so is the number of chillers (`ADC-FAC-001` to `-010`). The pump station keeps three pumps.
 - Of ADR 0032, only the keepalive format and `SHIRUDO_PIN` are built (`ADC-HST-001` to `-004`). No simulated host sends a keepalive yet, no proposal carries a `host_attested` premise, and no scenario uses one.
 - The binding surface in 5.2 and 9.2 differs from REMORA in four places (`remora_binding.md`, section 1).
@@ -1165,7 +1178,7 @@ The reference specification does not contain single-line diagrams, P&IDs, point 
 - Values derived from the reference specification are not in the repository; they may live only in the git-ignored `profiles/restricted_ref.yaml` (ADC-PRV-003).
 - Whether values derived from the reference specification may appear in a public repository was the one question left open before publication. The answer, recorded on 2026-11-20, is that none does: `profiles/restricted_ref.yaml` has never been committed, and the values of `profiles/generic_dc.yaml` are round values chosen without it. The repository says what the specification was used for (section 2) and nothing more.
 - IEC 61850 MMS for the MV protection relays, and the licence position for the GPLv3 protocol library: decided (8.5, ADR 0004, ADR 0017).
-- Which agent runtime drives the demonstration: the scripted agents. A language-model agent, and a second harness, are still open.
+- Which agent runtime drives the demonstration: the scripted agents. A language-model agent is built as an option (ADR 0035). An agent served over HTTP, and a second harness, are still open.
 - An operator-facing HMI: none is built. The demonstration writes static HTML pages.
 - Access to licensed copies of IEC 62443-3-2 and 3-3 for the verification step in 4.4: still open. The check has not been made.
 

@@ -24,6 +24,7 @@ from agentic_datacenter.core.profile import Profile
 from agentic_datacenter.governance.contracts import ContractLibrary
 from agentic_datacenter.scenarios.bench import STATEMENTS, lowest_fidelity
 from agentic_datacenter.scenarios.harness import RunResult
+from agentic_datacenter.scenarios.llm_agent import agent_kind, agent_note
 from agentic_datacenter.scenarios.scenario import Scenario
 
 BUNDLE_SCHEMA_VERSION = 1
@@ -122,8 +123,15 @@ def build_bundle(
     commit: str,
     gate_commit: str | None = None,
     gate_evidence: Mapping[str, Any] | None = None,
+    language_model: Mapping[str, Any] | None = None,
+    transcript: str | None = None,
 ) -> dict[str, str]:
     """Return the files of the bundle of one run, by name.
+
+    The manifest says whether the agent was scripted or a language model
+    (ADC-AGT-002). For a language-model agent, *language_model* is its
+    provider, model, mode and usage, and *transcript* the text of its
+    transcript, kept in the bundle as ``llm_transcript.jsonl``.
 
     *gate_commit* is the commit of the gate under test when it comes from
     another repository (for REMORA, the installed commit), else None.
@@ -155,12 +163,15 @@ def build_bundle(
         )
         + "\n",
     }
+    if transcript is not None:
+        files["llm_transcript.jsonl"] = transcript
     gate_commit = gate_commit or result.gate_commit
+    kind = "none" if result.agent == "none" else agent_kind([result.agent])
     measured = measured_inputs(profile, scenario.warmup_s, result.duration_s)
     gate_evidence = gate_evidence if gate_evidence is not None else result.gate_evidence
     if gate_evidence is not None:
         files["gate_evidence.json"] = json.dumps(gate_evidence, indent=2, sort_keys=True) + "\n"
-    manifest = {
+    manifest: dict[str, Any] = {
         "schema_version": BUNDLE_SCHEMA_VERSION,
         "scenario": result.scenario_id,
         "scenario_hash": scenario.hash(),
@@ -173,6 +184,9 @@ def build_bundle(
         "gate": result.gate,
         "gate_commit": gate_commit,
         "agent": result.agent,
+        "agent_kind": kind,
+        "agent_note": "No agent." if kind == "none" else agent_note(kind, language_model),
+        **({"language_model": dict(language_model)} if language_model is not None else {}),
         "code_commit": commit,
         "lowest_fidelity": lowest_fidelity(profile),
         "final_state_hash": result.state_hashes[-1][1] if result.state_hashes else "",
