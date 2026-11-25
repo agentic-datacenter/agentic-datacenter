@@ -99,17 +99,17 @@ The check reads what the code does, so there is no list to keep in step with it.
 3. Writes a report, as JSON and Markdown, of what applies to this facility:
    - each contract of the library, as loaded, or as not loaded with the first tag it lacks;
    - each scenario, as runnable, or as not runnable with what it needs;
-   - the resolved parameters, counted by provenance (`source`, `measured`, `assumed`).
+   - the resolved parameters, counted as sourced or assumed, and the parameters the modules read that the facility left to their defaults.
 
 `agentic-datacenter facility compile <bundle> --out <file>` writes the lowered profile, so it can be read and diffed.
 
 ### 5. On a facility of one's own, what does not fit is listed, not refused
 
-The commands that run scenarios, `scenario run`, `bench run`, `demo` and `whatif run`, take `--facility <bundle or profile>` beside `--profile`.
+`scenario run` and `bench run` take `--facility <bundle or profile>` beside `--profile`. `demo` and `whatif run` read a schema-1 profile through `--profile` and do not take `--facility` yet.
 
 - **Contracts.** Under `--facility`, a contract that does not fit the plant is not loaded. It is listed with its reason, and the others are loaded. Under `--profile`, the library is checked as a whole, as before, so a broken contract still fails loudly in the benchmark.
-- **Scenarios.** Under `--facility`, a scenario that names an instance, a key or a zone the facility lacks is not run. It is listed as "not run: needs …" and counted in the card's denominator, never skipped silently.
-- **Agents.** A scripted agent that proposes through a contract that is not loaded is refused for an unknown contract. The card counts such proposals.
+- **Scenarios.** Under `--facility`, a scenario is not run when it names something the facility lacks: an instance of any module, a key, a zone, a relay, a point or a contract, or a point the scripted agents read. It is listed as "not run: needs …" in the card's `facility` block, and the card's report says how many of all the scenarios ran. It is never skipped silently.
+- **Agents.** A scripted agent that proposes through a contract that is not loaded is refused for an unknown contract, and the refusal is in `decisions.jsonl` with that reason. It is not counted apart on the card.
 
 This is the same rule as the plant map of ADR 0029 (`ADC-PLT-004`), on the built-in plant. The code that decides it serves both.
 

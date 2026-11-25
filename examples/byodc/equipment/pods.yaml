@@ -1,0 +1,166 @@
+# SPDX-License-Identifier: MIT
+# Equipment models of the three kinds of POD.
+# Illustrative values chosen for this example, not taken from any site or datasheet.
+equipment:
+  it_ai:
+    module: electrical.it_load
+    maker: Example
+    model: AI training rows
+    evidence: illustrative values, assumed
+    params:
+      design_kw:
+        value: 300.0
+        unit: kW
+        assumed: true
+      airflow_kg_s:
+        value: 24.0
+        unit: kg/s
+        assumed: true
+      shutdown_inlet_c: &id001
+        value: 40.0
+        unit: degC
+        assumed: true
+      shutdown_hold_s: &id002
+        value: 60.0
+        unit: s
+        assumed: true
+      restart_inlet_c: &id003
+        value: 32.0
+        unit: degC
+        assumed: true
+      restart_hold_s: &id004
+        value: 300.0
+        unit: s
+        assumed: true
+  it_enterprise:
+    module: electrical.it_load
+    maker: Example
+    model: Enterprise rows
+    evidence: illustrative values, assumed
+    params:
+      design_kw:
+        value: 150.0
+        unit: kW
+        assumed: true
+      airflow_kg_s:
+        value: 12.0
+        unit: kg/s
+        assumed: true
+      shutdown_inlet_c: *id001
+      shutdown_hold_s: *id002
+      restart_inlet_c: *id003
+      restart_hold_s: *id004
+  it_storage:
+    module: electrical.it_load
+    maker: Example
+    model: Storage rows
+    evidence: illustrative values, assumed
+    params:
+      design_kw:
+        value: 80.0
+        unit: kW
+        assumed: true
+      airflow_kg_s:
+        value: 6.5
+        unit: kg/s
+        assumed: true
+      shutdown_inlet_c: *id001
+      shutdown_hold_s: *id002
+      restart_inlet_c: *id003
+      restart_hold_s: *id004
+  pod_ai:
+    module: cooling.pod
+    maker: Example
+    model: AI air handling
+    evidence: illustrative values, assumed
+    params:
+      design_it_kw:
+        value: 300.0
+        unit: kW
+        assumed: true
+      design_airflow_kg_s:
+        value: 24.0
+        unit: kg/s
+        assumed: true
+      thermal_mass_kj_per_k:
+        value: 7000.0
+        unit: kJ/K
+        assumed: true
+      fan_kw:
+        value: 12.0
+        unit: kW
+        assumed: true
+      critical_c: &id005
+        value: 32.0
+        unit: degC
+        assumed: true
+      ahu_count:
+        value: 6
+        unit: '-'
+        assumed: true
+      ahu_needed:
+        value: 5
+        unit: '-'
+        assumed: true
+  pod_enterprise:
+    module: cooling.pod
+    maker: Example
+    model: Enterprise air handling
+    evidence: illustrative values, assumed
+    params:
+      design_it_kw:
+        value: 150.0
+        unit: kW
+        assumed: true
+      design_airflow_kg_s:
+        value: 12.0
+        unit: kg/s
+        assumed: true
+      thermal_mass_kj_per_k:
+        value: 4500.0
+        unit: kJ/K
+        assumed: true
+      fan_kw:
+        value: 6.0
+        unit: kW
+        assumed: true
+      critical_c: *id005
+      ahu_count:
+        value: 4
+        unit: '-'
+        assumed: true
+      ahu_needed:
+        value: 3
+        unit: '-'
+        assumed: true
+  pod_storage:
+    module: cooling.pod
+    maker: Example
+    model: Storage air handling
+    evidence: illustrative values, assumed
+    params:
+      design_it_kw:
+        value: 80.0
+        unit: kW
+        assumed: true
+      design_airflow_kg_s:
+        value: 6.5
+        unit: kg/s
+        assumed: true
+      thermal_mass_kj_per_k:
+        value: 3000.0
+        unit: kJ/K
+        assumed: true
+      fan_kw:
+        value: 3.5
+        unit: kW
+        assumed: true
+      critical_c: *id005
+      ahu_count:
+        value: 3
+        unit: '-'
+        assumed: true
+      ahu_needed:
+        value: 2
+        unit: '-'
+        assumed: true
