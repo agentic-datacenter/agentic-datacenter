@@ -629,8 +629,27 @@ def gate(argv: Sequence[str]) -> int:
         "gate", help="Entry-point name, as `agentic-datacenter gate list` prints it."
     )
     check.add_argument("--contracts", type=Path, default=Path("contracts"))
+    receipts = actions.add_parser(
+        "verify-receipts",
+        help="Check a system's exported receipts against the decisions of a run (ADR 0036).",
+    )
+    receipts.add_argument(
+        "decisions", type=Path,
+        help="An evidence bundle directory, or a decisions.jsonl that bench run wrote.",
+    )  # fmt: skip
+    receipts.add_argument(
+        "receipts", type=Path,
+        help="JSON lines, each with a correlation_id and any of action_ref, verdict, "
+        "outcome and decision_id.",
+    )  # fmt: skip
+    receipts.add_argument(
+        "--require-all", action="store_true",
+        help="Also fail when a decision of a gate that gave correlation has no receipt.",
+    )  # fmt: skip
     args = parser.parse_args(argv)
 
+    if args.action == "verify-receipts":
+        return _verify_receipts(args.decisions, args.receipts, args.require_all)
     installed = load_gates()
     if args.action == "list":
         for name in sorted(installed):
@@ -675,6 +694,50 @@ def gate(argv: Sequence[str]) -> int:
         f"{args.gate} --seeds 3 --allow-unfrozen --out build/bench-{args.gate}"
     )
     return 0
+
+
+def _json_lines(path: Path) -> list[dict[str, Any]]:
+    lines = []
+    for number, text in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        if not text.strip():
+            continue
+        value = json.loads(text)
+        if not isinstance(value, dict):
+            raise ValueError(f"{path}:{number}: not a JSON object")
+        lines.append(value)
+    return lines
+
+
+def _verify_receipts(decisions: Path, receipts: Path, require_all: bool) -> int:
+    """Run ``gate verify-receipts`` and return its exit status."""
+    from agentic_datacenter.governance.bindings.http_gate import read_verdict
+    from agentic_datacenter.governance.interop import verify_receipts
+
+    source = decisions / "decisions.jsonl" if decisions.is_dir() else decisions
+    try:
+        records = _json_lines(source)
+        given = _json_lines(receipts)
+    except (OSError, ValueError) as exc:
+        print(f"agentic-datacenter gate verify-receipts: {exc}", file=sys.stderr)
+        return 2
+    report = verify_receipts(records, given, read_verdict)
+    print(json.dumps(report.as_dict(), indent=2, sort_keys=True))
+    correlated = len(report.matched) + len(report.mismatched) + len(report.without_receipt)
+    if not correlated:
+        print(
+            "no decision in it carries a correlation_id: was it made by a served gate "
+            "(http_gate or command_gate)?",
+            file=sys.stderr,
+        )
+        return 1
+    failed = not report.ok or (require_all and report.without_receipt)
+    print(
+        f"{len(report.matched)} receipt(s) match, {len(report.mismatched)} do not, "
+        f"{len(report.unknown)} name no decision; {len(report.without_receipt)} decision(s) "
+        "without a receipt",
+        file=sys.stderr,
+    )
+    return 1 if failed else 0
 
 
 def facility(argv: Sequence[str]) -> int:

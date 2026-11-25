@@ -82,6 +82,12 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-IEC-003` | 6 | yes | `agentic-datacenter-iec61850` | `tests/conformance/test_iec61850_denied_services.py`<br>`tests/scenario/test_iec61850_scenarios.py` |
 | `ADC-IEC-004` | 2 | yes | `electrical.mv_switchgear` | `packages/agentic-datacenter-plant/tests/electrical/test_mv_protection_curves.py` |
 | `ADC-IEC-005` | 6 | yes | `agentic-datacenter-iec61850` | `tests/conformance/test_iec61850_isolation.py` |
+| `ADC-INT-001` | 16 | no | `agentic-datacenter-governance` | `tests/conformance/test_gate_interop.py` |
+| `ADC-INT-002` | 16 | no | `agentic-datacenter-governance` | `tests/conformance/test_gate_interop.py` |
+| `ADC-INT-003` | 16 | no | `agentic-datacenter-governance` | `tests/conformance/test_gate_interop.py` |
+| `ADC-INT-004` | 16 | no | `agentic-datacenter-governance` | `tests/conformance/test_gate_interop.py` |
+| `ADC-INT-005` | 16 | no | `agentic-datacenter-governance` | `tests/conformance/test_gate_interop.py` |
+| `ADC-INT-006` | 16 | no | `agentic-datacenter-governance` | `tests/conformance/test_gate_interop.py` |
 | `ADC-KRN-001` | 1 | yes | `agentic-datacenter-core` | `packages/agentic-datacenter-core/tests/test_contract.py`<br>`packages/agentic-datacenter-core/tests/test_plant.py`<br>`packages/agentic-datacenter-remora/tests/test_binding.py`<br>`tests/property/test_counterfactual_identity.py`<br>`tests/property/test_determinism.py`<br>`tests/property/test_generic_profile.py`<br>`tests/scenario/test_measured_weather.py` |
 | `ADC-KRN-002` | 1 | yes | `agentic-datacenter-core` | `packages/agentic-datacenter-core/tests/test_contract.py`<br>`packages/agentic-datacenter-core/tests/test_plant.py`<br>`tests/property/test_generic_profile.py`<br>`tests/property/test_snapshot.py` |
 | `ADC-KRN-003` | 1 | yes | `agentic-datacenter-core` | `packages/agentic-datacenter-core/tests/test_no_wallclock.py` |

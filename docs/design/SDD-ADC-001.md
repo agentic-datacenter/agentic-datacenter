@@ -909,6 +909,17 @@ Each requirement below maps to at least one named test; a requirement without a 
 | ADC-AGT-006 | The providers' SDKs are optional: without them everything installs and passes. An API key is read from the environment and written to no card, bundle or transcript. | scenario/test\_llm\_agent |
 | ADC-AGT-007 | A language-model agent makes at most the calls its budget allows, and a refusal or a spent budget is counted. | scenario/test\_llm\_agent |
 
+**Governance systems from elsewhere (ADR 0036)**
+
+| ID | Requirement | Verified by |
+| --- | --- | --- |
+| ADC-INT-001 | Every `evaluate` request of a served gate carries a correlation (`correlation_id`, `action_ref`, `issued_at`, `time_anchor`), and its `outcome` message the same `correlation_id` and `action_ref`. A service's `decision_id` and `receipt` are kept on the decision record. | conformance/test\_gate\_interop |
+| ADC-INT-002 | The `action_ref` of a decision is made again from its record, and `gate verify-receipts` checks exported receipts against the action, verdict, outcome and `decision_id` on record. | conformance/test\_gate\_interop |
+| ADC-INT-003 | Simulated time is given as UTC from a fixed epoch, `2026-01-01T00:00:00Z` or `ADC_GATE_EPOCH`, never from the wall clock. | conformance/test\_gate\_interop |
+| ADC-INT-004 | With `ADC_GATE_CONTEXT=1`, and only then, a request carries a read-only sample of temperatures, load, interlocks, margins and alarms, each point with value, unit, quality, simulated time and `observed_at`, and says that work permits are not modelled. | conformance/test\_gate\_interop |
+| ADC-INT-005 | The correlation is kept out of the state: state hashes and cards do not depend on the session, and the records of built-in gates are unchanged. | conformance/test\_gate\_interop |
+| ADC-INT-006 | The MIT command starter writes receipts that `gate verify-receipts` accepts, and a changed receipt is refused. | conformance/test\_gate\_interop |
+
 **What-if (10.4)**
 
 | ID | Requirement | Verified by |
@@ -1141,6 +1152,7 @@ This section is build history. The simulator was built in the stages below, in t
 | 13 | The equipment registry (ADR 0034): entries from open sources with their rights recorded, the registry's gate, `registry:` entries in bundles | EQP-001 to 004 | A bundle that names a registry chiller runs, and the gate refuses an entry without its rights |
 | 14 | The front door and onboarding (SDD-ADC-002): buttons, role guides, `facility init` and `report`, a maker's own entries | FAC-011 to 012, EQP-005, UX-001 to 015 | Two independent first-time users reach their role's result without help |
 | 15 | A language-model agent (ADR 0035): `llm:<provider>/<model>` on `scenario run` and `bench run`, five providers through two adapters, transcripts and replay, cards apart | AGT-001 to 007 | A run of a model replayed from its transcript with no network gives the same run |
+| 16 | Governance systems from elsewhere (ADR 0036): one correlation for request, outcome and receipt, a fixed UTC anchor, read-only plant context, `gate verify-receipts` | INT-001 to 006 | The command starter's receipts of a run verify, and a changed one is refused |
 
 **Milestone M1.** After Stage 4, thin versions of the supervisory command path, the gate interface, the two scripted agents, counterfactual replay and the result card were built first, on four scenarios: `OP-03`, `OP-10`, `AD-01` and `AD-03`. They ran under the operating profile `DECISION_ONLY`: REMORA decides through `evaluate_policy`, and allowed proposals are applied by the command service with the hash of the decision as reference. There is no execution token, no cumulative-limit enforcement on the REMORA side and no audit chain in this profile. Its results MUST be labelled as such and MUST NOT be described as governed execution. `AD-04` and `AD-05` cannot be claimed as passed under it, since replay and cumulative limits are enforced only on the governed path.
 

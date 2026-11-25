@@ -1,9 +1,18 @@
 # SPDX-License-Identifier: MIT
-"""A stateless, standard-library starter for the command gate interface."""
+"""A stateless, standard-library starter for the command gate interface.
+
+With ``ADC_RECEIPTS_FILE`` set it also writes a receipt line per decision and
+per outcome, keyed by the ``correlation_id`` both messages carry, as a system
+that issues receipts would. ``agentic-datacenter gate verify-receipts`` checks
+them against the run. With ``ADC_GATE_CONTEXT=1`` the request carries a
+read-only sample of the plant, and the starter refuses a step while an
+interlock is locked out.
+"""
 
 from __future__ import annotations
 
 import json
+import os
 import sys
 from typing import Any
 
@@ -13,6 +22,14 @@ APPROVERS = {"one_operator": 1, "two_person": 2}
 
 def decide(request: dict[str, Any]) -> dict[str, Any]:
     """Translate the supplied simulated premises into a decision."""
+    context = request.get("context")
+    if isinstance(context, dict):
+        locked = [
+            p["tag"] for p in context.get("interlocks", [])
+            if p["tag"].endswith(".alarm_lockout") and p["value"] is True
+        ]  # fmt: skip
+        if locked:
+            return answer("DENY", [f"interlock locked out: {locked[0]}"], "premise")
     premises = request["premises"]
     for field, code in (
         ("schema_errors", "malformed"),
@@ -46,6 +63,14 @@ def answer(verdict: str, reasons: list[str], code: str) -> dict[str, Any]:
     return {"schema": SCHEMA, "verdict": verdict, "reasons": reasons, "reason_codes": [code]}
 
 
+def receipt(line: dict[str, Any]) -> None:
+    """Append one receipt line to ``ADC_RECEIPTS_FILE``, if it is set."""
+    path = os.environ.get("ADC_RECEIPTS_FILE")
+    if path:
+        with open(path, "a", encoding="utf-8") as out:
+            out.write(json.dumps(line, sort_keys=True) + "\n")
+
+
 def main() -> int:
     """Read one request and return one JSON decision on standard output."""
     try:
@@ -55,10 +80,20 @@ def main() -> int:
             raise ValueError("unsupported request schema")
         endpoint = envelope["endpoint"]
         if endpoint == "/outcome":
+            if "correlation_id" in request:
+                receipt({"correlation_id": request["correlation_id"], "outcome": request["status"]})
             return 0
         if endpoint != "/evaluate":
             raise ValueError("unsupported endpoint")
-        print(json.dumps(decide(request), sort_keys=True))
+        decision = decide(request)
+        tie = request.get("correlation") or {}
+        if tie:
+            decision["decision_id"] = "example-" + tie["action_ref"][7:19]
+            receipt({
+                "correlation_id": tie["correlation_id"], "action_ref": tie["action_ref"],
+                "verdict": decision["verdict"], "decision_id": decision["decision_id"],
+            })  # fmt: skip
+        print(json.dumps(decision, sort_keys=True))
     except (AttributeError, KeyError, TypeError, ValueError) as error:
         print(f"adapter request error: {error}", file=sys.stderr)
         return 1
