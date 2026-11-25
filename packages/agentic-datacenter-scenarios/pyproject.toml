@@ -55,4 +55,5 @@ requirements = [
     "ADC-FAC-006", "ADC-FAC-007", "ADC-FAC-008", "ADC-FAC-009",
     "ADC-AGT-001", "ADC-AGT-002", "ADC-AGT-003", "ADC-AGT-004", "ADC-AGT-005",
     "ADC-AGT-006", "ADC-AGT-007",
+    "ADC-AUT-001", "ADC-AUT-002", "ADC-AUT-003",
 ]

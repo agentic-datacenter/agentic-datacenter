@@ -115,6 +115,10 @@ def test_request_carries_what_the_binding_established_and_outcomes_are_reported(
     assert outcome == {
         "path": "/outcome", "schema": SCHEMA, "session": gate.session,
         "decision_ref": decision.decision_ref, "status": "APPLIED", "detail": "read back",
+        # The same correlation as the request (ADR 0036).
+        "correlation_id": evaluate["correlation"]["correlation_id"],
+        "action_ref": evaluate["correlation"]["action_ref"],
+        "proposal_id": PROPOSAL.proposal_id, "verdict": "ALLOW",
     }  # fmt: skip
     assert evaluate["session"] == gate.session
     assert evaluate["tool_call"] == {
