@@ -48,6 +48,7 @@ nav:
       - 0035 A language-model agent: design/adr/0035-language-model-agent.md
       - 0036 Interoperability for governance systems: design/adr/0036-interoperability-for-governance-systems.md
       - 0037 Signed mandates and conditional permissions (proposed): design/adr/0037-signed-mandates-and-conditional-permissions.md
+      - 0038 Authority in time and the action trace: design/adr/0038-authority-in-time-and-the-action-trace.md
   - Guides:
       - For data center operators: guides/operators.md
       - Bring your own data center: guides/bring-your-own-datacenter.md
