@@ -81,6 +81,39 @@ class BoundedWrite:
 
 
 @dataclass(frozen=True)
+class MandateChange:
+    """One change to a principal's mandate, as the control path's register holds it.
+
+    Attributes:
+        time_ms: When the change was made, on the control path's clock.
+        contracts: Every contract the principal may propose from then on, sorted.
+            Empty: none, the mandate has ended.
+        by: Who made the change, if the register was told.
+        reason: Why, in the words it was given with.
+    """
+
+    time_ms: int
+    contracts: tuple[str, ...]
+    by: str = ""
+    reason: str = ""
+
+
+@dataclass(frozen=True)
+class Mandate:
+    """The register's record of one principal's mandate: every change, oldest first.
+
+    The last change is in force. It is what the premise
+    ``authority(<principal>, <contract>)`` was established from, so a gate that
+    works out for itself who may act has what the control path had. Nothing in
+    it comes from the agent. Signed, delegated or expired credentials are not
+    modelled: it is a register's entries, in order.
+    """
+
+    principal: str
+    changes: tuple[MandateChange, ...]
+
+
+@dataclass(frozen=True)
 class PremiseSnapshot:
     """Everything the binding established about a proposal before the gate decides.
 
@@ -102,6 +135,8 @@ class PremiseSnapshot:
             before the agent's standing writes, in the contract's safe
             direction, and no further. Rate and cumulative limits do not
             apply to such a step (INV-GOV-8).
+        mandate: The record of the proposer's mandate, once one was set for it;
+            None when nothing was said about its authority (ADR 0031).
     """
 
     time_ms: int
@@ -115,6 +150,7 @@ class PremiseSnapshot:
     premises: tuple[PremiseResult, ...] = ()
     rollback_available: bool = False
     restore: bool = False
+    mandate: Mandate | None = None
 
 
 @dataclass(frozen=True)
@@ -135,6 +171,23 @@ class Decision:
     #: gate does not say. A step can be wrong in several ways at once, so there
     #: may be several. The reasons in words are kept as well.
     reason_codes: tuple[str, ...] = ()
+    #: With ``authority`` among the reason codes, which of the two it was: one of
+    #: :data:`AUTHORITY_DETAILS`; empty if the gate does not say.
+    authority_detail: str = ""
+    #: The gate's own finding of whether the proposer holds a mandate for this
+    #: contract; None if it does not say. Whatever its verdict: a gate may find
+    #: that a mandate holds and refuse for something else. Where a mandate was
+    #: set for the proposer it is compared with the premise (ADR 0031).
+    authority_holds: bool | None = None
+
+
+#: What a refusal for want of a mandate can say more (ADR 0031). The evidence
+#: differs: for ``ended`` it is the change that ended the mandate, when it was
+#: made and by whom; for ``never_held`` there is no such change.
+#:
+#: - ``never_held``: the proposer never held a mandate for this contract.
+#: - ``ended``: it held one, and that has ended or been narrowed.
+AUTHORITY_DETAILS = ("never_held", "ended")
 
 
 #: Why a gate did not allow a proposal, in a word. A gate may give one or more
@@ -191,6 +244,11 @@ class GovernanceGate(Protocol):
 #
 #   enforces_limits: bool
 #       True when rate and cumulative limits are the gate's to enforce.
+#   derives_authority: bool
+#       True for a gate that works out for itself who may act. It is given the
+#       mandate record and not the premise ``authority(<principal>, <contract>)``.
+#       The record of the proposal still carries that premise, and the run is
+#       judged by it (ADR 0031).
 #   approve(decision_ref, approver, now_ms) -> None
 #       One person's approval. Raises GateRefusal when it is not taken.
 #   reject(decision_ref, approver, reason, now_ms) -> None

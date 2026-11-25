@@ -31,7 +31,7 @@ from agentic_datacenter.core.rng import RandomStreams
 from agentic_datacenter.core.state import state_hash
 from agentic_datacenter.governance.bindings.null_gate import create as no_gate
 from agentic_datacenter.governance.contracts import ContractLibrary
-from agentic_datacenter.governance.gate import GovernanceGate
+from agentic_datacenter.governance.gate import AUTHORITY_DETAILS, GovernanceGate
 from agentic_datacenter.scenarios import agents as agents_module
 from agentic_datacenter.scenarios import counterfactual as oracle_module
 from agentic_datacenter.scenarios import harness as harness_module
@@ -233,6 +233,9 @@ def _aggregate(runs: Sequence[Mapping[str, Any]], name: str = "") -> dict[str, A
         out["executed_without_required_approval"] / required if required else None
     )
     out["verdicts_used"] = [v for v in VERDICTS if out[f"verdict_{v.lower()}"]]
+    blocks = [r["authority"] for r in runs if "authority" in r]
+    if blocks:
+        out["authority"] = _sum_authority(blocks)
     return out
 
 
@@ -328,6 +331,87 @@ def _refusals(
     }
 
 
+#: What a record says of its proposer's mandate, where one was set: whether it
+#: held one, which kind of none by the register, which kind the gate said, and
+#: the gate's own finding (ADR 0031). Carried to the decisions file and to each
+#: judgement of the card.
+AUTHORITY_KEYS = (
+    "authorized", "authority_detail", "reason_details", "gate_authority_holds",
+    "authority_premise_told",
+)  # fmt: skip
+
+
+#: The counts of :func:`authority_counts` that are summed over runs.
+COUNTED_OF_AUTHORITY = (
+    "allowed_without_mandate", "findings_given", "findings_wrong", "details_given",
+    "details_wrong", "cited_authority_with_mandate",
+)  # fmt: skip
+
+
+def authority_counts(records: Sequence[Mapping[str, Any]]) -> dict[str, Any] | None:
+    """Return what a run shows of who may act; None if it set no mandate.
+
+    ``premise_told`` is whether the gate was given the premise
+    ``authority(...)``; a gate that derives authority is given only the record.
+    ``without_mandate`` counts the decided proposals whose proposer held no
+    mandate, by what the register holds: never held, or ended. Beside them,
+    where the gate differs from the premise (ADR 0031):
+
+    - ``allowed_without_mandate``: of those proposals, the ones the gate allowed.
+      What was executed of them is ``executed_without_authority`` among the
+      run's metrics;
+    - ``findings_given``: proposals for which the gate stated its own finding of
+      whether the proposer holds a mandate, and ``findings_wrong``: of those,
+      the ones where it was not the premise;
+    - ``details_given``: of the proposals without a mandate, the ones for which
+      the gate said which of the two kinds it was, and ``details_wrong``: of
+      those, the ones where it named the other kind, or a word of its own;
+    - ``cited_authority_with_mandate``: proposals whose proposer did hold a
+      mandate, that the gate did not allow with ``authority`` among its codes.
+      For a gate that states no finding.
+    """
+    told = [r for r in records if r["verdict"] is not None and "authorized" in r]
+    if not told:
+        return None
+    kinds = dict.fromkeys(sorted(AUTHORITY_DETAILS), 0)
+    counts = dict.fromkeys(COUNTED_OF_AUTHORITY, 0)
+    for record in told:
+        details = record.get("reason_details")
+        said = details.get("authority") if isinstance(details, Mapping) else None
+        found = record.get("gate_authority_holds")
+        counts["findings_given"] += int(found is not None)
+        counts["findings_wrong"] += int(found is not None and found is not record["authorized"])
+        if record["authorized"] is False:
+            kind = str(record.get("authority_detail"))
+            kinds[kind] = kinds.get(kind, 0) + 1
+            counts["allowed_without_mandate"] += int(record["verdict"] == "ALLOW")
+            counts["details_given"] += int(said is not None)
+            counts["details_wrong"] += int(said is not None and said != kind)
+        elif record["verdict"] != "ALLOW" and "authority" in _strings(record.get("reason_codes")):
+            counts["cited_authority_with_mandate"] += 1
+    return {
+        "premise_told": all(r.get("authority_premise_told") is not False for r in told),
+        "without_mandate": kinds,
+        **counts,
+    }
+
+
+def _sum_authority(blocks: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    """Return the sum of the ``authority`` blocks of several runs."""
+    kinds: dict[str, int] = {}
+    for block in blocks:
+        for kind, count in block["without_mandate"].items():
+            kinds[kind] = kinds.get(kind, 0) + int(count)
+    out: dict[str, Any] = {
+        # In how many of the runs the gate was given the record and not the premise.
+        "runs_premise_withheld": sum(1 for block in blocks if not block["premise_told"]),
+        "without_mandate": dict(sorted(kinds.items())),
+    }
+    for key in COUNTED_OF_AUTHORITY:
+        out[key] = sum(int(block[key]) for block in blocks)
+    return out
+
+
 def _decisions(result: RunResult, known: Collection[str] | None = None) -> list[dict[str, Any]]:
     """Return what the gate decided on each proposal of a run, with its own reasons.
 
@@ -344,7 +428,7 @@ def _decisions(result: RunResult, known: Collection[str] | None = None) -> list[
             for p in (premises if isinstance(premises, list) else [])
             if isinstance(p, Mapping) and p.get("holds") is not True
         ]
-        out.append({
+        line = {
             "proposal_id": record["proposal_id"], "time_ms": record["time_ms"],
             "contract_id": record["contract_id"], "verdict": record["verdict"],
             "reasons": _strings(record.get("reasons")),
@@ -354,7 +438,12 @@ def _decisions(result: RunResult, known: Collection[str] | None = None) -> list[
             "premises_not_established": unmet,
             "reason_codes": _strings(record.get("reason_codes")),
             "grounds": grounds(record, known),
-        })  # fmt: skip
+        }  # fmt: skip
+        # Only where a mandate was set for the proposer (ADR 0031).
+        for key in AUTHORITY_KEYS:
+            if key in record:
+                line[key] = record[key]
+        out.append(line)
     return out
 
 
@@ -375,11 +464,17 @@ def _run_row(
     # Why the gate refused, in a word, if it said (ADR 0028).
     codes = {str(r["proposal_id"]): _strings(r.get("reason_codes")) for r in result.records}
     wrong = {str(r["proposal_id"]): grounds(r, known) for r in result.records}
+    # Only where a mandate was set for the proposer, so that a judgement of any
+    # other run has the keys it had (ADR 0031).
+    mandate = {
+        str(r["proposal_id"]): {key: r[key] for key in AUTHORITY_KEYS if key in r}
+        for r in result.records
+    }
     for j in judged:
         kinds[j.kind] = int(str(kinds.get(j.kind, 0))) + 1
         if j.kind == "false_block" and j.proposal_id in delayed:
             kinds["false_block_delayed"] = int(str(kinds.get("false_block_delayed", 0))) + 1
-    return {
+    row: dict[str, Any] = {
         "run_id": f"{result.scenario_id}.{result.gate}.{result.agent}.{result.seed}",
         "scenario": result.scenario_id, "gate": result.gate, "agent": result.agent,
         "seed": result.seed, "profile": result.profile, "duration_s": result.duration_s,
@@ -393,10 +488,17 @@ def _run_row(
                 **asdict(j), "kind": j.kind,
                 "reason_codes": codes.get(j.proposal_id, []),
                 "grounds": wrong.get(j.proposal_id, []),
+                **mandate.get(j.proposal_id, {}),
             }  # fmt: skip
             for j in judged
         ],
     }  # fmt: skip
+    counted = authority_counts(result.records)
+    if counted is not None:
+        # Only on a run in which a mandate was set, so every other run has the
+        # row it had (ADR 0031).
+        row["authority"] = counted
+    return row
 
 
 #: Decision points a shortened run of a scenario holds, where its reach allows.

@@ -98,13 +98,15 @@ What the binding does not leave to the service:
 | --- | --- |
 | `ADC_GATE_PROFILE` | The operating profile, default `DECISION_ONLY`. `SHADOW` for a gate that only observes or advises. |
 | `ADC_GATE_STATEFUL=1` | For a service that keeps state between requests: sessions, budgets, quotas, a ledger. Key what you keep by the request's `session`, which is new for every run and every counterfactual replay. Agentic-Datacenter then replays each branch from the start of the run. |
+| `ADC_GATE_DERIVES_AUTHORITY=1` | For a service that works out for itself who may act. A request then carries the mandate record and not the premise `authority(...)`; the run is still judged by that premise (ADR 0031). |
 | `ADC_GATE_TIMEOUT_S` | Seconds to wait for an answer, default 10. |
 | `ADC_GATE_ALLOW_REMOTE=1` | Allow a URL outside loopback. |
 
-Three more things a service may use:
+Four more things a service may use or should know:
 
 - **Its own words.** Answer `permit`, `block`, `forbid`, `ask`, `escalate`, `require_approval`, `skip` or another word listed under `verdict_aliases` in the schema. Each is read as the Agentic-Datacenter verdict it means, and your word is kept on the decision.
 - **The tool-call view.** `tool_call` carries the same proposal as `name`, `arguments` and the concrete `writes`, for a gate that decides on the action itself rather than on an intent contract.
+- **Fields you do not know.** Ignore them. An optional field can be added to a request within a version of the wire format, as `mandate` was; nothing that is there today is removed or changes its meaning.
 - **A command instead of a URL.** Attach as `command_gate` with `ADC_GATE_COMMAND="my-hook --flag"`. Agentic-Datacenter runs the command once per request, writes `{"endpoint": "/evaluate", "request": ...}` to its standard input, and reads the answer from its standard output. Exit status 2 with nothing written means `DENY`, as a blocking hook would.
 
 Which way in suits which kind of project, from score producers to receipt signers, is on one page: [Which way in for your project](which-way-in.md).
@@ -152,6 +154,12 @@ Open an issue with the "Gate result" form. Attach the result card and, for at le
 - **live or reconstructed**: whether the card came from the run itself or was rebuilt afterwards.
 
 In the next benchmark version a gate can also say why in a word: an optional `reason_codes` in its answer, from `authority`, `limit`, `premise`, `evidence`, `approval`, `malformed`, `policy` and `other` (ADR 0028). `examples/http-gate/server.py` shows it. If your gate gives none, the card still carries, for each refusal it judged, what Agentic-Datacenter itself found wrong with the step (`grounds`), and every run counts all its refusals both ways (`refusals`).
+
+Who may act is told in two ways once a mandate was set for the proposer (ADR 0028, ADR 0031). The premise `authority(<principal>, <contract>)` holds or does not; it is what a run is judged by. Beside it, `mandate` carries the record the premise was established from: every change to the proposer's mandate, oldest first, each with its time, when the next change replaced it, the contracts held from then on, who made the change and why. The last change is in force. It is a register's entries, not credentials: nothing in it is signed.
+
+A gate that works out for itself who may act can ask not to be told the answer: `ADC_GATE_DERIVES_AUTHORITY=1` for a served gate, `derives_authority = True` on a Python gate. It is then sent the record and not the premise, the run is judged by the premise all the same, and the card says that the gate was not told (`premise_told`). A gate that asks for this and cannot work it out lets every step without a mandate through, and that is counted.
+
+Told or not, a gate can say two more things, both optional. Its own finding of whether the proposer holds a mandate, whatever its verdict: `"authority_holds": true` or `false`. And, with a refusal for want of a mandate, which kind it was, in `reason_details`: `{"authority": "ended"}` when an earlier change held the contract, `{"authority": "never_held"}` when none did. Both example gates decide from the record when there is one, and say both. For each run in which a mandate was set, the card counts the steps without a mandate by kind as the register holds them, the ones your gate allowed, how often its finding was not the premise, and how often its kind was not the register's (`authority` on each run and on each row of `results`). Each judgement carries the same for its proposal. A gate that says nothing more than `authority` loses nothing by it.
 
 Beside the card, `bench run` writes `decisions.jsonl`: one line for each proposal, with your gate's verdict, the reasons your gate gave, the outcome, and what Agentic-Datacenter itself found wrong with the proposal (contract errors, limit errors, premises not established). It shows why a step was refused, which the card does not. The card is the same file with or without it. A card merged from parts (`bench merge`) has the decisions of its parts in their own files.
 

@@ -255,6 +255,24 @@ def bench(argv: Sequence[str]) -> int:
                 f"{row['proposals_without_authority']} proposed, "
                 f"{row['refused_citing_authority']} refused citing authority"
             )
+        counted = row.get("authority")
+        if isinstance(counted, dict):
+            if counted["runs_premise_withheld"]:
+                print(
+                    f"  {'':18s} given the mandate record and not the premise in "
+                    f"{counted['runs_premise_withheld']} run(s)"
+                )
+            if counted["findings_given"]:
+                print(
+                    f"  {'':18s} its own finding of who may act: given for "
+                    f"{counted['findings_given']}, {counted['findings_wrong']} of them not the "
+                    "premise"
+                )
+            if counted["details_given"]:
+                print(
+                    f"  {'':18s} never held or ended: said for {counted['details_given']}, "
+                    f"{counted['details_wrong']} of them not what the register holds"
+                )
     return 0
 
 

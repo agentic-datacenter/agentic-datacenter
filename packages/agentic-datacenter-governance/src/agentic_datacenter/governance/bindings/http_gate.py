@@ -28,6 +28,11 @@ configures every process the same way:
 ``ADC_GATE_ALLOW_REMOTE``
     Set to ``1`` to allow a URL outside loopback. Simulation state is then
     sent to that host.
+``ADC_GATE_DERIVES_AUTHORITY``
+    Set to ``1`` for a service that works out for itself who may act. A request
+    then carries the mandate record and not the premise
+    ``authority(<principal>, <contract>)``; the run is still judged by that
+    premise (ADR 0031).
 ``ADC_GATE_STATEFUL``
     Set to ``1`` for a service that remembers earlier requests (a session,
     a budget, a ledger). It keys what it keeps by the request's ``session``;
@@ -150,8 +155,10 @@ def request_body(
 
     ``tool_call`` is the same proposal seen as a tool call, for a gate that
     decides on the action itself rather than on an intent contract.
+    ``mandate`` is there only when a mandate was set for the proposer: the
+    register's record of it, every change oldest first (ADR 0031).
     """
-    return {
+    body: dict[str, JsonValue] = {
         "schema": SCHEMA,
         "session": session,
         "tool_call": {
@@ -186,6 +193,23 @@ def request_body(
         },
         "actor": {"principal": actor.principal, "credential": actor.credential},
     }
+    if premises.mandate is not None:
+        changes = premises.mandate.changes
+        body["mandate"] = {
+            "principal": premises.mandate.principal,
+            "changes": [
+                {
+                    "time_ms": change.time_ms,
+                    # When the next change replaced it; null for the one in force.
+                    "until_ms": later.time_ms if later is not None else None,
+                    "contracts": list(change.contracts),
+                    "by": change.by,
+                    "reason": change.reason,
+                }
+                for change, later in zip(changes, [*changes[1:], None], strict=True)
+            ],
+        }
+    return body
 
 
 def _text(value: Any) -> str:
@@ -203,9 +227,10 @@ class HttpGate:
         timeout_s: float = 10.0,
         allow_remote: bool = False,
         stateful: bool = False,
+        derives_authority: bool = False,
     ) -> None:
         """Create the binding. Nothing is sent until the first decision."""
-        self._setup(name, profile, timeout_s, stateful)
+        self._setup(name, profile, timeout_s, stateful, derives_authority)
         if not url:
             raise HttpGateConfigError("ADC_GATE_URL is not set")
         if urllib.parse.urlsplit(url).scheme not in ("http", "https"):
@@ -216,7 +241,9 @@ class HttpGate:
             )
         self.url = url.rstrip("/")
 
-    def _setup(self, name: str, profile: str, timeout_s: float, stateful: bool) -> None:
+    def _setup(
+        self, name: str, profile: str, timeout_s: float, stateful: bool, derives_authority: bool
+    ) -> None:
         if profile not in SERVED_PROFILES:
             raise HttpGateConfigError(f"profile {profile} is not one of {SERVED_PROFILES}")
         self.url = ""
@@ -225,6 +252,8 @@ class HttpGate:
         self.timeout_s = timeout_s
         #: A service that keeps state cannot be put back to an earlier instant.
         self.restorable = not stateful
+        #: A service that works out for itself who may act is not sent the premise.
+        self.derives_authority = derives_authority
         #: One per gate, and Agentic-Datacenter builds a gate per run and per replay.
         self.session = f"{name}-{os.getpid()}-{next(_SESSIONS)}"
         self.outcomes: dict[str, Outcome] = {}
@@ -291,6 +320,9 @@ class HttpGate:
         service_ref = answer.get("decision_id")
         given = answer.get("reason_codes")
         codes = given if isinstance(given, list) else []
+        details = answer.get("reason_details")
+        said = details.get("authority") if isinstance(details, dict) else None
+        finding = answer.get("authority_holds")
         detail: dict[str, JsonValue] = {"served_by": self.url}
         native = answer.get("verdict")
         if native is not None and str(native) != verdict.value:
@@ -319,6 +351,8 @@ class HttpGate:
             escalated=bool(answer.get("escalated", False)),
             detail=detail,
             reason_codes=tuple(_text(c) for c in codes[:_MAX_REASONS] if isinstance(c, str) and c),
+            authority_detail=_text(said) if isinstance(said, str) else "",
+            authority_holds=finding if isinstance(finding, bool) else None,
         )
 
     def record_outcome(self, decision_ref: str, outcome: Outcome) -> None:
@@ -352,11 +386,12 @@ class CommandGate(HttpGate):
         profile: str = "DECISION_ONLY",
         timeout_s: float = 10.0,
         stateful: bool = False,
+        derives_authority: bool = False,
     ) -> None:
         """Create the binding. The command is not run until the first decision."""
         if not command.strip():
             raise HttpGateConfigError("ADC_GATE_COMMAND is not set")
-        self._setup(name, profile, timeout_s, stateful)
+        self._setup(name, profile, timeout_s, stateful, derives_authority)
         self.command = shlex.split(command)
         self.url = "command:" + self.command[0]
 
@@ -383,6 +418,7 @@ def _common(env: Mapping[str, str], default_name: str) -> dict[str, Any]:
         "profile": env.get("ADC_GATE_PROFILE", "DECISION_ONLY"),
         "timeout_s": float(env.get("ADC_GATE_TIMEOUT_S", "10")),
         "stateful": env.get("ADC_GATE_STATEFUL", "") == "1",
+        "derives_authority": env.get("ADC_GATE_DERIVES_AUTHORITY", "") == "1",
     }
 
 
