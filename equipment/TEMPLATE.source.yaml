@@ -1,0 +1,9 @@
+# The source of a maker's entries, to add to sources.yaml under its own id.
+vendor-example:
+  kind: vendor
+  name: Example Maker, datasheet rev A
+  submitted_by: Example Maker AS, product management
+  date: "2026-11-25"
+  licence: CC-BY-4.0
+  licence_file: equipment/licences/CC-BY-4.0.txt
+  attribution: "Example Maker AS, datasheet rev A, under CC BY 4.0"

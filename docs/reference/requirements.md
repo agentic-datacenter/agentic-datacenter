@@ -4,7 +4,7 @@
 
 The design document assigns each requirement to a stage of its build plan (section 13). The traceability check requires a passing test and an owner for every requirement up to stage 9; those are marked as due. This page lists which tests cite each requirement; whether they pass is decided by a run of the whole suite, in the `traceability` job of `.github/workflows/pr.yml`.
 
-A requirement of a later stage is not due. That does not mean it is not built: most have tests, listed below, that run with the others. A stage is counted only when every requirement up to it has a passing test and an owner. Requirements of later stages that lack a test or an owner: `ADC-HST-005` (stage 11: no test and no owner), `ADC-HST-006` (stage 11: no test and no owner), `ADC-HST-007` (stage 11: no test and no owner), `ADC-HST-008` (stage 11: no test and no owner), `ADC-PLT-001` (stage 10: no owner), `ADC-PLT-002` (stage 10: no test and no owner), `ADC-PLT-003` (stage 10: no test and no owner), `ADC-PLT-004` (stage 10: no test and no owner), `ADC-PLT-005` (stage 10: no test and no owner), `ADC-PLT-006` (stage 10: no test and no owner).
+A requirement of a later stage is not due. That does not mean it is not built: most have tests, listed below, that run with the others. A stage is counted only when every requirement up to it has a passing test and an owner. Requirements of later stages that lack a test or an owner: `ADC-EQP-005` (stage 14: no owner), `ADC-FAC-011` (stage 14: no owner), `ADC-FAC-012` (stage 14: no owner), `ADC-HST-005` (stage 11: no test and no owner), `ADC-HST-006` (stage 11: no test and no owner), `ADC-HST-007` (stage 11: no test and no owner), `ADC-HST-008` (stage 11: no test and no owner), `ADC-PLT-001` (stage 10: no owner), `ADC-PLT-002` (stage 10: no test and no owner), `ADC-PLT-003` (stage 10: no test and no owner), `ADC-PLT-004` (stage 10: no test and no owner), `ADC-PLT-005` (stage 10: no test and no owner), `ADC-PLT-006` (stage 10: no test and no owner), `ADC-UX-001` (stage 14: no owner), `ADC-UX-002` (stage 14: no owner), `ADC-UX-003` (stage 14: no owner), `ADC-UX-004` (stage 14: no test and no owner), `ADC-UX-005` (stage 14: no owner), `ADC-UX-006` (stage 14: no test and no owner), `ADC-UX-007` (stage 14: no test and no owner), `ADC-UX-008` (stage 14: no owner), `ADC-UX-009` (stage 14: no test and no owner), `ADC-UX-010` (stage 14: no owner), `ADC-UX-011` (stage 14: no owner), `ADC-UX-012` (stage 14: no owner), `ADC-UX-013` (stage 14: no test and no owner), `ADC-UX-014` (stage 14: no owner), `ADC-UX-015` (stage 14: no test and no owner).
 
 | Requirement | Stage | Due | Claimed by | Tests citing it |
 | --- | --- | --- | --- | --- |
@@ -35,6 +35,7 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-EQP-002` | 13 | no | `agentic-datacenter-workspace` | `tests/conformance/test_equipment_registry.py` |
 | `ADC-EQP-003` | 13 | no | `agentic-datacenter-workspace` | `tests/conformance/test_equipment_registry.py` |
 | `ADC-EQP-004` | 13 | no | `agentic-datacenter-workspace` | `tests/conformance/test_equipment_registry.py` |
+| `ADC-EQP-005` | 14 | no | none | `tests/scenario/test_adoption.py` |
 | `ADC-EVD-001` | 9 | yes | `agentic-datacenter-scenarios` | `tests/conformance/test_evidence_bundle.py`<br>`tests/scenario/test_measured_weather.py` |
 | `ADC-EVD-002` | 9 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_matrix_generation.py` |
 | `ADC-FAC-001` | 12 | no | `agentic-datacenter-core` | `packages/agentic-datacenter-core/tests/test_facility.py` |
@@ -47,6 +48,8 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-FAC-008` | 12 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_facility_fit.py` |
 | `ADC-FAC-009` | 12 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_facility_fit.py` |
 | `ADC-FAC-010` | 12 | no | `cooling.chw_plant` | `tests/scenario/test_chiller_count.py` |
+| `ADC-FAC-011` | 14 | no | none | `tests/scenario/test_adoption.py` |
+| `ADC-FAC-012` | 14 | no | none | `tests/scenario/test_adoption.py` |
 | `ADC-FID-001` | 4 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_module_manifests.py` |
 | `ADC-FID-002` | 4 | yes | `agentic-datacenter-workspace` | `tests/bench/test_sensitivity.py` |
 | `ADC-FID-003` | 4 | yes | `electrical.it_load` | `packages/agentic-datacenter-plant/tests/test_module_behaviour.py` |
@@ -117,6 +120,21 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-SUP-003` | 5 | yes | `agentic-datacenter-supervisory` | `packages/agentic-datacenter-supervisory/tests/test_command_service.py`<br>`packages/agentic-datacenter-supervisory/tests/test_read_api.py` |
 | `ADC-SUP-004` | 5 | yes | `agentic-datacenter-supervisory` | `packages/agentic-datacenter-supervisory/tests/test_read_api.py`<br>`packages/agentic-datacenter-supervisory/tests/test_session_timeout.py` |
 | `ADC-SUP-005` | 5 | yes | `agentic-datacenter-supervisory` | `packages/agentic-datacenter-supervisory/tests/test_command_service.py`<br>`packages/agentic-datacenter-supervisory/tests/test_read_api.py` |
+| `ADC-UX-001` | 14 | no | none | `tests/conformance/test_readme_experience.py` |
+| `ADC-UX-002` | 14 | no | none | `tests/conformance/test_readme_experience.py` |
+| `ADC-UX-003` | 14 | no | none | `tests/conformance/test_readme_experience.py` |
+| `ADC-UX-004` | 14 | no | none | none |
+| `ADC-UX-005` | 14 | no | none | `tests/conformance/test_readme_experience.py` |
+| `ADC-UX-006` | 14 | no | none | none |
+| `ADC-UX-007` | 14 | no | none | none |
+| `ADC-UX-008` | 14 | no | none | `tests/conformance/test_readme_experience.py` |
+| `ADC-UX-009` | 14 | no | none | none |
+| `ADC-UX-010` | 14 | no | none | `tests/conformance/test_readme_experience.py` |
+| `ADC-UX-011` | 14 | no | none | `tests/conformance/test_readme_experience.py` |
+| `ADC-UX-012` | 14 | no | none | `tests/conformance/test_readme_experience.py` |
+| `ADC-UX-013` | 14 | no | none | none |
+| `ADC-UX-014` | 14 | no | none | `tests/conformance/test_readme_experience.py` |
+| `ADC-UX-015` | 14 | no | none | none |
 | `ADC-WIF-001` | 9 | yes | `agentic-datacenter-whatif` | `packages/agentic-datacenter-whatif/tests/test_whatif_runner.py` |
 | `ADC-WIF-002` | 9 | yes | `agentic-datacenter-whatif` | `packages/agentic-datacenter-whatif/tests/test_whatif_agent.py`<br>`tests/scenario/test_whatif_governed.py` |
 | `ADC-WIF-003` | 9 | yes | `agentic-datacenter-whatif` | `packages/agentic-datacenter-whatif/tests/test_whatif_metrics.py` |

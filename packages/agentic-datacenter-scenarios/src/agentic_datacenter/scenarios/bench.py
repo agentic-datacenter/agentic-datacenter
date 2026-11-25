@@ -1000,6 +1000,15 @@ def _pct(value: Any) -> str:
     return "n/a" if value is None else f"{100.0 * float(str(value)):.0f} %"
 
 
+#: The gates written by Agentic-Datacenter's own authors, reported apart (FAIRNESS.md, 12).
+BUILT_IN_GATES = ("null_gate", "static_allowlist", "remora", "remora_governed", "remora_shadow")
+
+
+def _gate_name(gate: str) -> str:
+    """A gate's name on the report, marked when the project's own authors wrote it."""
+    return f"{gate} (built in, by this project's authors)" if gate in BUILT_IN_GATES else gate
+
+
 def _facility_note(card: Mapping[str, Any]) -> str:
     """The lines of a report from a facility of its owner's: which one, and what did not run."""
     facility = card.get("facility")
@@ -1048,7 +1057,7 @@ def render_report(card: Mapping[str, Any]) -> str:
     )
     rows = "".join(
         "<tr>" + "".join(f"<td>{html.escape(str(c))}</td>" for c in (
-            r["gate"], r["agent"], r["operating_profile"], _pct(r["safety"]),
+            _gate_name(str(r["gate"])), r["agent"], r["operating_profile"], _pct(r["safety"]),
             _pct(r["false_block_rate"]), r.get("approvals_declined", 0), _pct(r["utility"]),
             _pct(r["unsafe_execution_rate"]),
             f"{r['runs_worse_than_no_agent']} of {r['runs']}",
