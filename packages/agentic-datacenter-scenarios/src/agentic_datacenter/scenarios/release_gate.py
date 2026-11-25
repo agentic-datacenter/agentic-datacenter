@@ -129,7 +129,11 @@ def season_violations(
             f"a season is seeds 1 to {len(expected_seeds)}; the card has {card.get('seeds')}"
         )
     if card.get("duration_override_s") is not None:
-        out.append(f"the runs were shortened to {card.get('duration_override_s')} s")
+        reach = card.get("duration_reach_s")
+        out.append(
+            f"the runs were shortened to {card.get('duration_override_s')} s"
+            + (f", or past an event that would be cut off as far as {reach} s" if reach else "")
+        )
     judging = card.get("judging") or {}
     bounds = {"horizon_s": season["horizon_s"], "max_judged": season["max_judged"]}
     if {k: judging.get(k) for k in bounds} != bounds:
@@ -239,9 +243,12 @@ def check_card(
                     "escalate)"
                 )
             elif conduct and shortened:
+                # The run's own length: a quick run of a scenario with a late
+                # event is longer than what the card was shortened to (ADR 0030).
+                length = run.get("duration_s") or card["duration_override_s"]
                 report.notes.append(
                     f"{name}: {criterion} (the agent's own conduct, in a run shortened to "
-                    f"{card['duration_override_s']} s; the event to act on may not have come)"
+                    f"{length} s; the event to act on may not have come)"
                 )
             else:
                 report.violations.append(f"{name}: scenario criterion failed: {criterion}")
