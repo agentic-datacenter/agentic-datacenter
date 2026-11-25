@@ -45,6 +45,10 @@ and `stopped_by` says what stopped a step that was not carried out. The trace is
 
 The manifest's `identity` names the agent and the gate, each with `known_by`: `verified_here` for a digest made on the machine that ran it (the scripted agents' definition, a gate's installed commit), `built_in` for a gate that is part of `code_commit`, and `reported` for a name another party gave (a served gate's name, a model a provider said served the request).
 
+### 6. A registry of operational findings
+
+What one run showed should not be lost when the next is made, and a change to a model should show which knowledge it touches. `findings/ADC-FIND-<nnnn>.yaml` holds one claim each: its status (`hypothesis`, `supported`, `replicated`, `contradicted`, `superseded`), its evidence with SHA-256, the hash of every scenario, equipment entry and profile it depends on, the conditions it holds under, its limits, independent replications, what it supersedes and who is credited. `tools/findings.py` checks them, makes `docs/reference/findings.md` and searches them by scenario, gate, equipment and facility class. A supported or replicated finding whose inputs have changed fails the check until it is looked at again. Only public findings are in the repository; a private one is kept by its owner with the same schema and checked with `--dir`. The first, `ADC-FIND-0001`, is the demonstration's: in `OP-03` a hostile agent with no gate does harm, and with a gate it does none, at more energy.
+
 ## Next, in this order
 
 - **Authority through the whole chain.** Operator, agent, tool and equipment, with a mandate for one POD and one action, and a report of who acted for whom, what each link was given, and where a request outside it was stopped. With the signed mandates of ADR 0037.
