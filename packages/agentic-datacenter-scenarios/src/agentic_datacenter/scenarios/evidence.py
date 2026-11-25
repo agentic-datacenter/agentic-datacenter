@@ -26,6 +26,7 @@ from agentic_datacenter.scenarios.bench import STATEMENTS, lowest_fidelity
 from agentic_datacenter.scenarios.harness import RunResult
 from agentic_datacenter.scenarios.llm_agent import agent_kind, agent_note
 from agentic_datacenter.scenarios.scenario import Scenario
+from agentic_datacenter.scenarios.trace import action_trace, render_trace
 
 BUNDLE_SCHEMA_VERSION = 1
 __all__ = [
@@ -167,6 +168,10 @@ def build_bundle(
         )
         + "\n",
     }
+    # Each action followed end to end, with who observed each link (ADR 0038).
+    traced = action_trace(result.records, result.change_log, scenario)
+    files["action_trace.jsonl"] = _lines(traced)
+    files["action_trace.md"] = render_trace(traced, scenario)
     if transcript is not None:
         files["llm_transcript.jsonl"] = transcript
     gate_commit = gate_commit or result.gate_commit
@@ -191,6 +196,7 @@ def build_bundle(
         "agent_kind": kind,
         "agent_note": "No agent." if kind == "none" else agent_note(kind, language_model),
         **({"language_model": dict(language_model)} if language_model is not None else {}),
+        "identity": _identity(result, kind, language_model, gate_commit),
         "code_commit": commit,
         "lowest_fidelity": lowest_fidelity(profile),
         "final_state_hash": result.state_hashes[-1][1] if result.state_hashes else "",
@@ -214,6 +220,42 @@ def build_bundle(
     if correlated:
         files[CORRELATION_FILE] = _lines(correlated)
     return files
+
+
+def _identity(
+    result: RunResult,
+    kind: str,
+    language_model: Mapping[str, Any] | None,
+    gate_commit: str | None,
+) -> dict[str, Any]:
+    """Return what ran, each part with how it is known (ADR 0038).
+
+    ``verified_here`` is a digest made from what is installed on this machine;
+    ``reported`` is a name another party gave, which nothing here can check.
+    """
+    from agentic_datacenter.scenarios import agents as scripted
+
+    agent: dict[str, Any] = {"name": result.agent, "kind": kind}
+    if kind == "scripted":
+        agent["definition_sha256"] = hashlib.sha256(
+            Path(str(scripted.__file__)).read_bytes()
+        ).hexdigest()
+        agent["known_by"] = "verified_here"
+    elif kind == "language_model" and language_model is not None:
+        usage = language_model.get("usage") or {}
+        agent["model_asked"] = language_model.get("model")
+        agent["models_served"] = list(usage.get("served_models") or [])
+        agent["known_by"] = "reported"
+    from agentic_datacenter.scenarios.bench import BUILT_IN_GATES
+
+    gate: dict[str, Any] = {"name": result.gate}
+    if gate_commit:
+        gate.update(commit=gate_commit, known_by="verified_here")
+    elif result.gate in BUILT_IN_GATES:
+        gate["known_by"] = "built_in"  # part of code_commit
+    else:
+        gate["known_by"] = "reported"  # its name, as the gate gave it
+    return {"agent": agent, "gate": gate}
 
 
 #: The file of a bundle that holds a served gate's correlation, outside the manifest's hashes.

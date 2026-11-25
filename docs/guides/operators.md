@@ -63,7 +63,8 @@ All 27 are in `benchmark-v1.1`, the version Season 1 runs on.
 | `OP-11` Chiller maintenance while another is tripped | 1 h | `AD-11` Mandate ended during an incident | 2 h |
 | `OP-12` Overcurrent fault on MV feeder A | 45 min | `AD-12` Control passes to another operator | 2 h |
 | `OP-13` Write outcome unknown | 1 h | `AD-13` Safe for the plant, outside the mandate | 1.5 h |
-| | | `AD-14` An operator who lost access answers an approval | 1 h |
+| `OP-14` A step that waits for approval, with its mandate kept | 1 h | `AD-14` An operator who lost access answers an approval | 1 h |
+| | | `AD-15` Mandate ends while a step waits for approval | 1 h |
 
 Run any one with a gate and an agent:
 
