@@ -46,7 +46,7 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-EQP-003` | 13 | no | `agentic-datacenter-workspace` | `tests/conformance/test_equipment_registry.py` |
 | `ADC-EQP-004` | 13 | no | `agentic-datacenter-workspace` | `tests/conformance/test_equipment_registry.py` |
 | `ADC-EQP-005` | 14 | no | none | `tests/scenario/test_adoption.py` |
-| `ADC-EVD-001` | 9 | yes | `agentic-datacenter-scenarios` | `tests/conformance/test_evidence_bundle.py`<br>`tests/scenario/test_measured_weather.py` |
+| `ADC-EVD-001` | 9 | yes | `agentic-datacenter-scenarios` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/conformance/test_evidence_bundle.py`<br>`tests/scenario/test_measured_weather.py` |
 | `ADC-EVD-002` | 9 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_matrix_generation.py` |
 | `ADC-FAC-001` | 12 | no | `agentic-datacenter-core` | `packages/agentic-datacenter-core/tests/test_facility.py` |
 | `ADC-FAC-002` | 12 | no | `agentic-datacenter-core` | `packages/agentic-datacenter-core/tests/test_facility.py`<br>`tests/conformance/test_facility_generic.py` |
