@@ -33,6 +33,14 @@ configures every process the same way:
     then carries the mandate record and not the premise
     ``authority(<principal>, <contract>)``; the run is still judged by that
     premise (ADR 0031).
+``ADC_GATE_CONTEXT``
+    Set to ``1`` for a service that wants a read-only sample of the plant with
+    each request: temperatures, load, interlocks, margins and alarms, each with
+    value, unit, quality and simulated time (``context``, ADR 0036).
+``ADC_GATE_EPOCH``
+    The UTC instant simulated time 0 is given as in ``issued_at`` and
+    ``observed_at``. Default ``2026-01-01T00:00:00Z``. Fixed, never the wall
+    clock, so a run is the same run.
 ``ADC_GATE_STATEFUL``
     Set to ``1`` for a service that remembers earlier requests (a session,
     a budget, a ledger). It keys what it keeps by the request's ``session``;
@@ -74,6 +82,14 @@ from agentic_datacenter.governance.gate import (
     Proposal,
     Verdict,
 )
+from agentic_datacenter.governance.interop import (
+    EPOCH,
+    action_ref,
+    correlation_id,
+    parse_epoch,
+    receipt_kept,
+    utc,
+)
 
 #: The wire format. A service answers with the same value or is not believed.
 SCHEMA = "agentic_datacenter.gate.http/1"
@@ -105,6 +121,8 @@ VERDICT_ALIASES: dict[str, Verdict] = {
     )},
 }  # fmt: skip
 _SESSIONS = itertools.count(1)
+#: What an outcome message carries of the evaluate request it answers (ADR 0036).
+OUTCOME_CORRELATION = ("correlation_id", "action_ref", "proposal_id", "verdict")
 #: The most of an answer that is read. A longer one is a failure of the service.
 MAX_ANSWER_BYTES = 1 << 20
 
@@ -150,8 +168,14 @@ def request_body(
     premises: PremiseSnapshot,
     actor: AuthenticatedActor,
     session: str = "",
+    epoch: str = EPOCH,
 ) -> dict[str, JsonValue]:
     """Return the JSON body of an ``evaluate`` request.
+
+    ``correlation`` is the same in the ``outcome`` message of this proposal:
+    its ``correlation_id``, the content address of the proposed action
+    (``action_ref``), and the instant as UTC from a fixed epoch (``issued_at``).
+    ``context`` is there only for a gate that asked for it (ADR 0036).
 
     ``tool_call`` is the same proposal seen as a tool call, for a gate that
     decides on the action itself rather than on an intent contract.
@@ -192,7 +216,10 @@ def request_body(
             "restore": premises.restore,
         },
         "actor": {"principal": actor.principal, "credential": actor.credential},
+        "correlation": correlation(proposal, premises.time_ms, actor, session, epoch),
     }
+    if premises.context is not None:
+        body["context"] = dict(premises.context)
     if premises.mandate is not None:
         changes = premises.mandate.changes
         body["mandate"] = {
@@ -212,6 +239,21 @@ def request_body(
     return body
 
 
+def correlation(
+    proposal: Proposal, time_ms: int, actor: AuthenticatedActor, session: str, epoch: str = EPOCH
+) -> dict[str, JsonValue]:
+    """Return what ties an ``evaluate`` request, its ``outcome`` and a receipt together."""
+    return {
+        "correlation_id": correlation_id(session, proposal.proposal_id),
+        "action_ref": action_ref(
+            session, proposal.proposal_id, proposal.contract_id, proposal.arguments,
+            actor.principal, time_ms,
+        ),
+        "issued_at": utc(time_ms, epoch),
+        "time_anchor": epoch,
+    }  # fmt: skip
+
+
 def _text(value: Any) -> str:
     return str(value)[:_MAX_TEXT]
 
@@ -228,9 +270,11 @@ class HttpGate:
         allow_remote: bool = False,
         stateful: bool = False,
         derives_authority: bool = False,
+        wants_context: bool = False,
+        epoch: str = EPOCH,
     ) -> None:
         """Create the binding. Nothing is sent until the first decision."""
-        self._setup(name, profile, timeout_s, stateful, derives_authority)
+        self._setup(name, profile, timeout_s, stateful, derives_authority, wants_context, epoch)
         if not url:
             raise HttpGateConfigError("ADC_GATE_URL is not set")
         if urllib.parse.urlsplit(url).scheme not in ("http", "https"):
@@ -242,10 +286,26 @@ class HttpGate:
         self.url = url.rstrip("/")
 
     def _setup(
-        self, name: str, profile: str, timeout_s: float, stateful: bool, derives_authority: bool
+        self,
+        name: str,
+        profile: str,
+        timeout_s: float,
+        stateful: bool,
+        derives_authority: bool,
+        wants_context: bool = False,
+        epoch: str = EPOCH,
     ) -> None:
         if profile not in SERVED_PROFILES:
             raise HttpGateConfigError(f"profile {profile} is not one of {SERVED_PROFILES}")
+        try:
+            parse_epoch(epoch)
+        except ValueError as exc:
+            raise HttpGateConfigError(f"ADC_GATE_EPOCH: {exc}") from exc
+        #: The control path sends a sample of the plant to a gate that wants one.
+        self.wants_context = wants_context
+        self.context_epoch = epoch
+        #: What ties each decision reference to its request, for the outcome message.
+        self._correlated: dict[str, dict[str, JsonValue]] = {}
         self.url = ""
         self.name = name
         self.profile = profile
@@ -307,9 +367,9 @@ class HttpGate:
         self, proposal: Proposal, premises: PremiseSnapshot, actor: AuthenticatedActor
     ) -> Decision:
         """Ask the service for a verdict and bind it to the instance's own writes."""
-        verdict, reasons, answer = self._answer(
-            request_body(proposal, premises, actor, self.session)
-        )
+        body = request_body(proposal, premises, actor, self.session, self.context_epoch)
+        verdict, reasons, answer = self._answer(body)
+        answered = verdict
         if verdict is Verdict.ALLOW and not premises.writes:
             verdict, reasons = Verdict.DENY, reasons + ("nothing that can be executed",)
         approvers = answer.get("required_approvers", 1 if verdict is Verdict.VERIFY else 0)
@@ -329,6 +389,18 @@ class HttpGate:
             detail["service_verdict"] = _text(native)
         if service_ref is not None:
             detail["service_decision_id"] = _text(service_ref)
+        tie = body["correlation"]
+        assert isinstance(tie, dict)
+        detail.update(
+            session=self.session, correlation_id=tie["correlation_id"],
+            action_ref=tie["action_ref"], issued_at=tie["issued_at"],
+        )  # fmt: skip
+        if answer:
+            # What the service said, before this binding's own checks (ADR 0036).
+            detail["answered_verdict"] = answered.value
+        receipt = receipt_kept(answer.get("receipt"))
+        if receipt is not None:
+            detail["service_receipt"] = receipt
         writes = premises.writes if verdict is Verdict.ALLOW else ()
         ref = decision_ref(
             self.name,
@@ -339,6 +411,10 @@ class HttpGate:
             list(reasons),
             premises.time_ms,
         )
+        self._correlated[ref] = {
+            "correlation_id": tie["correlation_id"], "action_ref": tie["action_ref"],
+            "proposal_id": proposal.proposal_id, "verdict": verdict.value,
+        }  # fmt: skip
         return Decision(
             verdict,
             ref,
@@ -364,6 +440,9 @@ class HttpGate:
             "decision_ref": decision_ref,
             "status": outcome.status if outcome.status in OUTCOMES else "UNKNOWN",
             "detail": outcome.detail,
+            # The same correlation_id and action_ref as the evaluate request (ADR 0036);
+            # null for an outcome of a decision this service was not asked about.
+            **self._correlated.get(decision_ref, dict.fromkeys(OUTCOME_CORRELATION)),
         }
         try:
             self._post("/outcome", body)
@@ -387,11 +466,13 @@ class CommandGate(HttpGate):
         timeout_s: float = 10.0,
         stateful: bool = False,
         derives_authority: bool = False,
+        wants_context: bool = False,
+        epoch: str = EPOCH,
     ) -> None:
         """Create the binding. The command is not run until the first decision."""
         if not command.strip():
             raise HttpGateConfigError("ADC_GATE_COMMAND is not set")
-        self._setup(name, profile, timeout_s, stateful, derives_authority)
+        self._setup(name, profile, timeout_s, stateful, derives_authority, wants_context, epoch)
         self.command = shlex.split(command)
         self.url = "command:" + self.command[0]
 
@@ -419,6 +500,8 @@ def _common(env: Mapping[str, str], default_name: str) -> dict[str, Any]:
         "timeout_s": float(env.get("ADC_GATE_TIMEOUT_S", "10")),
         "stateful": env.get("ADC_GATE_STATEFUL", "") == "1",
         "derives_authority": env.get("ADC_GATE_DERIVES_AUTHORITY", "") == "1",
+        "wants_context": env.get("ADC_GATE_CONTEXT", "") == "1",
+        "epoch": env.get("ADC_GATE_EPOCH", EPOCH),
     }
 
 

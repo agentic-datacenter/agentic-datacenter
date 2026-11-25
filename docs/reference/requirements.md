@@ -15,6 +15,9 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-AGT-005` | 15 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_llm_agent.py` |
 | `ADC-AGT-006` | 15 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_llm_agent.py` |
 | `ADC-AGT-007` | 15 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_llm_agent.py` |
+| `ADC-AUT-001` | 17 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_authority_in_time.py` |
+| `ADC-AUT-002` | 17 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_authority_in_time.py` |
+| `ADC-AUT-003` | 17 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_authority_in_time.py` |
 | `ADC-BEN-001` | 9 | yes | `agentic-datacenter-scenarios` | `tests/bench/test_heldout_and_freeze.py`<br>`tests/conformance/test_result_card.py` |
 | `ADC-BEN-002` | 9 | yes | `agentic-datacenter-scenarios` | `tests/scenario/test_op03_op10_ad01_ad03.py` |
 | `ADC-BEN-003` | 9 | yes | `agentic-datacenter-scenarios` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/bench/test_utility_measures.py`<br>`tests/property/test_counterfactual_identity.py` |
@@ -43,7 +46,7 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-EQP-003` | 13 | no | `agentic-datacenter-workspace` | `tests/conformance/test_equipment_registry.py` |
 | `ADC-EQP-004` | 13 | no | `agentic-datacenter-workspace` | `tests/conformance/test_equipment_registry.py` |
 | `ADC-EQP-005` | 14 | no | none | `tests/scenario/test_adoption.py` |
-| `ADC-EVD-001` | 9 | yes | `agentic-datacenter-scenarios` | `tests/conformance/test_evidence_bundle.py`<br>`tests/scenario/test_measured_weather.py` |
+| `ADC-EVD-001` | 9 | yes | `agentic-datacenter-scenarios` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/conformance/test_evidence_bundle.py`<br>`tests/scenario/test_measured_weather.py` |
 | `ADC-EVD-002` | 9 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_matrix_generation.py` |
 | `ADC-FAC-001` | 12 | no | `agentic-datacenter-core` | `packages/agentic-datacenter-core/tests/test_facility.py` |
 | `ADC-FAC-002` | 12 | no | `agentic-datacenter-core` | `packages/agentic-datacenter-core/tests/test_facility.py`<br>`tests/conformance/test_facility_generic.py` |
@@ -61,6 +64,9 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-FID-002` | 4 | yes | `agentic-datacenter-workspace` | `tests/bench/test_sensitivity.py` |
 | `ADC-FID-003` | 4 | yes | `electrical.it_load` | `packages/agentic-datacenter-plant/tests/test_module_behaviour.py` |
 | `ADC-FID-004` | 4 | yes | `agentic-datacenter-scenarios` | `tests/bench/test_sensitivity.py` |
+| `ADC-FND-001` | 17 | no | `agentic-datacenter-workspace` | `tests/conformance/test_findings.py` |
+| `ADC-FND-002` | 17 | no | `agentic-datacenter-workspace` | `tests/conformance/test_findings.py` |
+| `ADC-FND-003` | 17 | no | `agentic-datacenter-workspace` | `tests/conformance/test_findings.py` |
 | `ADC-GOV-001` | 8 | yes | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-governance/tests/test_safe_posture.py`<br>`packages/agentic-datacenter-remora/tests/test_binding.py`<br>`packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/bench/test_release_gate.py`<br>`tests/scenario/test_op13_ad09_governed.py`<br>`tests/scenario/test_safe_posture_scenarios.py` |
 | `ADC-GOV-002` | 8 | yes | `agentic-datacenter-supervisory` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-remora/tests/test_governed.py`<br>`packages/agentic-datacenter-supervisory/tests/test_command_service.py`<br>`tests/scenario/test_op13_ad09_governed.py`<br>`tests/scenario/test_scenario_library.py` |
 | `ADC-GOV-003` | 8 | yes | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-remora/tests/test_binding.py` |
@@ -82,6 +88,16 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-IEC-003` | 6 | yes | `agentic-datacenter-iec61850` | `tests/conformance/test_iec61850_denied_services.py`<br>`tests/scenario/test_iec61850_scenarios.py` |
 | `ADC-IEC-004` | 2 | yes | `electrical.mv_switchgear` | `packages/agentic-datacenter-plant/tests/electrical/test_mv_protection_curves.py` |
 | `ADC-IEC-005` | 6 | yes | `agentic-datacenter-iec61850` | `tests/conformance/test_iec61850_isolation.py` |
+| `ADC-INT-001` | 16 | no | `agentic-datacenter-governance` | `tests/conformance/test_gate_interop.py` |
+| `ADC-INT-002` | 16 | no | `agentic-datacenter-governance` | `tests/conformance/test_gate_interop.py` |
+| `ADC-INT-003` | 16 | no | `agentic-datacenter-governance` | `tests/conformance/test_gate_interop.py` |
+| `ADC-INT-004` | 16 | no | `agentic-datacenter-governance` | `tests/conformance/test_gate_interop.py` |
+| `ADC-INT-005` | 16 | no | `agentic-datacenter-governance` | `tests/conformance/test_gate_interop.py` |
+| `ADC-INT-006` | 16 | no | `agentic-datacenter-governance` | `tests/conformance/test_gate_interop.py` |
+| `ADC-INT-007` | 16 | no | `agentic-datacenter-governance` | `tests/conformance/test_gate_interop.py` |
+| `ADC-INT-008` | 16 | no | `agentic-datacenter-governance` | `tests/conformance/test_gate_interop.py` |
+| `ADC-INT-009` | 16 | no | `agentic-datacenter-governance` | `tests/conformance/test_gate_interop.py` |
+| `ADC-INT-010` | 16 | no | `agentic-datacenter-governance` | `tests/conformance/test_participants.py` |
 | `ADC-KRN-001` | 1 | yes | `agentic-datacenter-core` | `packages/agentic-datacenter-core/tests/test_contract.py`<br>`packages/agentic-datacenter-core/tests/test_plant.py`<br>`packages/agentic-datacenter-remora/tests/test_binding.py`<br>`tests/property/test_counterfactual_identity.py`<br>`tests/property/test_determinism.py`<br>`tests/property/test_generic_profile.py`<br>`tests/scenario/test_measured_weather.py` |
 | `ADC-KRN-002` | 1 | yes | `agentic-datacenter-core` | `packages/agentic-datacenter-core/tests/test_contract.py`<br>`packages/agentic-datacenter-core/tests/test_plant.py`<br>`tests/property/test_generic_profile.py`<br>`tests/property/test_snapshot.py` |
 | `ADC-KRN-003` | 1 | yes | `agentic-datacenter-core` | `packages/agentic-datacenter-core/tests/test_no_wallclock.py` |

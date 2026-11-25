@@ -212,6 +212,7 @@ version = "0.0.0"
 source = { editable = "packages/agentic-datacenter-remora" }
 dependencies = [
     { name = "agentic-datacenter-governance" },
+    { name = "cryptography" },
     { name = "remora-assurance", extra = ["api", "sdk", "security"] },
 ]
 
@@ -224,6 +225,7 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "agentic-datacenter-governance", editable = "packages/agentic-datacenter-governance" },
+    { name = "cryptography", specifier = ">=43" },
     { name = "remora-assurance", extras = ["security", "sdk", "api"], git = "https://github.com/darklordVirtual/REMORA-research?rev=06e7a02b49563b4cbbfec1e573cde026462c3240" },
 ]
 

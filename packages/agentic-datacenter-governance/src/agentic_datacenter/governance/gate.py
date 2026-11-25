@@ -137,6 +137,8 @@ class PremiseSnapshot:
             apply to such a step (INV-GOV-8).
         mandate: The record of the proposer's mandate, once one was set for it;
             None when nothing was said about its authority (ADR 0031).
+        context: A read-only sample of the plant, for a gate that asks for one
+            (``wants_context``); None otherwise (ADR 0036).
     """
 
     time_ms: int
@@ -151,6 +153,7 @@ class PremiseSnapshot:
     rollback_available: bool = False
     restore: bool = False
     mandate: Mandate | None = None
+    context: Mapping[str, JsonValue] | None = None
 
 
 @dataclass(frozen=True)

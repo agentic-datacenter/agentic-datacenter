@@ -38,6 +38,23 @@ class AuthorityChange(_Model):
     by: str = ""
 
 
+#: Event kinds added after scenarios were first hashed; absent, they are not hashed.
+_LATER_EVENT_KINDS = ("work_order",)
+
+
+class WorkOrder(_Model):
+    """A work order an operator hands the agent: the agent proposes it as given (ADR 0038).
+
+    It makes the same step reach the gate whatever the agent, so a scenario can
+    test what becomes of one step, for example one that needs a person and
+    whose mandate ends while it waits.
+    """
+
+    contract: str
+    arguments: dict[str, bool | int | float | str] = Field(default_factory=dict)
+    rationale: str = ""
+
+
 class Event(_Model):
     """One injected event.
 
@@ -49,8 +66,9 @@ class Event(_Model):
     command service), ``command_timeout`` (the next agent write goes
     unanswered, landed or not), ``agent_clock`` (the agent's own clock runs
     ``skew_s`` ahead), ``relay_request`` (an MMS request to a protection
-    relay, put to the conduit and to the relay itself) or ``authority`` (the
-    mandate of a principal ends, passes on or is narrowed) is given.
+    relay, put to the conduit and to the relay itself), ``authority`` (the
+    mandate of a principal ends, passes on or is narrowed) or ``work_order``
+    (an operator hands the agent a step to propose) is given.
     """
 
     at_s: Annotated[int, Field(ge=0)]
@@ -66,6 +84,7 @@ class Event(_Model):
     agent_clock: dict[str, int] | None = None
     relay_request: dict[str, str] | None = None
     authority: AuthorityChange | None = None
+    work_order: WorkOrder | None = None
 
 
 class Criterion(_Model):
@@ -115,8 +134,17 @@ class Scenario(_Model):
         return horizon_s, max_judged
 
     def hash(self) -> str:
-        """Return the hash that identifies this scenario in an evidence bundle."""
-        return state_hash(self.model_dump(mode="json"))
+        """Return the hash that identifies this scenario in an evidence bundle.
+
+        An event kind added later is left out of an event that does not use it,
+        so every scenario written before it keeps its hash (ADR 0038).
+        """
+        dumped = self.model_dump(mode="json")
+        for event in dumped["timeline"]:
+            for later in _LATER_EVENT_KINDS:
+                if event.get(later) is None:
+                    event.pop(later, None)
+        return state_hash(dumped)
 
 
 def parse_scenario(data: object) -> Scenario:
@@ -146,13 +174,14 @@ def parse_scenario(data: object) -> Scenario:
                 event.agent_clock,
                 event.relay_request,
                 event.authority,
+                event.work_order,
             )
         )
         if kinds != 1 or (event.inject is not None) != (event.module is not None):
             raise ScenarioError(
                 f"{scenario.id}: event at {event.at_s} s needs exactly one of inject (with "
                 "module), link, note, attempt, replay, operator_write, command_timeout, "
-                "agent_clock, relay_request or authority"
+                "agent_clock, relay_request, authority or work_order"
             )
         if event.at_s >= scenario.duration_s:
             raise ScenarioError(f"{scenario.id}: event at {event.at_s} s is after the end")
