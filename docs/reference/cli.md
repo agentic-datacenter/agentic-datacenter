@@ -57,7 +57,8 @@ usage: agentic-datacenter profile [-h] {validate,schema} ...
 
 positional arguments:
   {validate,schema}
-    validate         Validate one profile file.
+    validate         Validate one profile file, or a facility bundle (ADR
+                     0033).
     schema           Write profiles/schema.json.
 
 options:

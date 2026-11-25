@@ -13,7 +13,8 @@ from pathlib import Path
 import yaml
 
 from agentic_datacenter.core.clock import wall_seconds
-from agentic_datacenter.core.profile import Profile, ProfileError, build_plant, load_profile
+from agentic_datacenter.core.facility import load_facility
+from agentic_datacenter.core.profile import Profile, ProfileError, build_plant
 from agentic_datacenter.core.registry import ModuleRegistry
 from agentic_datacenter.core.scheduler import Kernel
 
@@ -38,7 +39,7 @@ def _modules_list(registry: ModuleRegistry) -> int:
 
 
 def _wiring(registry: ModuleRegistry, profile_path: Path) -> int:
-    plant = build_plant(load_profile(profile_path), Kernel(seed=0), registry)
+    plant = build_plant(load_facility(profile_path).profile, Kernel(seed=0), registry)
     for consumer, provider, port_type in plant.wiring():
         print(f"{consumer}  <-  {provider}  ({port_type})")
     return 0
@@ -62,18 +63,25 @@ def _profile_schema(path: Path, check: bool) -> int:
 
 
 def _profile_validate(path: Path) -> int:
-    profile = load_profile(path)
+    facility = load_facility(path)
+    profile = facility.profile
     print(
         f"{profile.name}: {len(profile.instances())} instances, "
         f"{len(profile.connections())} connections, hash {profile.hash()}"
     )
+    if len(facility.files) > 1 or facility.equipment:
+        values = facility.values
+        print(
+            f"  bundle of {len(facility.files)} files, {len(facility.equipment)} equipment "
+            f"models, {values.get('sourced', 0)} values sourced, {values.get('assumed', 0)} assumed"
+        )
     return 0
 
 
 def _run(
     registry: ModuleRegistry, profile_path: Path, seed: int, seconds: int, quantized: bool
 ) -> int:
-    profile = load_profile(profile_path)
+    profile = load_facility(profile_path).profile
     kernel = Kernel(seed=seed)
     build_plant(profile, kernel, registry)
     start = wall_seconds()
@@ -142,7 +150,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     lock.add_argument("--path", type=Path, default=Path(LOCK_FILE))
     profile = commands.add_parser("profile", help="Check facility profiles.")
     profile_actions = profile.add_subparsers(dest="action", required=True)
-    validate = profile_actions.add_parser("validate", help="Validate one profile file.")
+    validate = profile_actions.add_parser(
+        "validate", help="Validate one profile file, or a facility bundle (ADR 0033)."
+    )
     validate.add_argument("path", type=Path)
     schema = profile_actions.add_parser("schema", help="Write profiles/schema.json.")
     schema.add_argument("--check", action="store_true", help="Fail if the file is stale.")
