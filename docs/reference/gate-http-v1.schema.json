@@ -69,7 +69,8 @@
         "tool_call",
         "proposal",
         "premises",
-        "actor"
+        "actor",
+        "correlation"
       ],
       "properties": {
         "schema": {
@@ -295,6 +296,12 @@
               }
             }
           }
+        },
+        "correlation": {
+          "$ref": "#/$defs/correlation"
+        },
+        "context": {
+          "$ref": "#/$defs/context"
         }
       }
     },
@@ -333,7 +340,7 @@
         },
         "decision_id": {
           "type": "string",
-          "description": "The service's own reference, kept on the decision for cross-checking."
+          "description": "The service's own reference, kept on the decision record (gate_detail.service_decision_id) and compared by gate verify-receipts."
         },
         "reason_codes": {
           "type": "array",
@@ -358,6 +365,10 @@
         "authority_holds": {
           "type": "boolean",
           "description": "Optional. The service's own finding of whether the proposer holds a mandate for this contract, whatever its verdict. Where a mandate was set it is kept on the decision and compared with the premise; the card counts where they differ."
+        },
+        "receipt": {
+          "type": "object",
+          "description": "Optional. The service's own receipt for this decision, kept as given on the decision record when it is at most 16 KiB in canonical JSON. Agentic-Datacenter checks no signature in it."
         }
       }
     },
@@ -369,7 +380,11 @@
         "session",
         "decision_ref",
         "status",
-        "detail"
+        "detail",
+        "correlation_id",
+        "action_ref",
+        "proposal_id",
+        "verdict"
       ],
       "properties": {
         "schema": {
@@ -392,6 +407,42 @@
         },
         "detail": {
           "type": "string"
+        },
+        "correlation_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The correlation_id of the evaluate request of this decision. Null for an outcome of a decision this service was not asked about, such as a step blocked by the counterfactual replay."
+        },
+        "action_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "description": "The action_ref of that request. Null for an outcome of a decision this service was not asked about, such as a step blocked by the counterfactual replay."
+        },
+        "proposal_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Null for an outcome of a decision this service was not asked about, such as a step blocked by the counterfactual replay."
+        },
+        "verdict": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "ALLOW",
+            "DENY",
+            "VERIFY",
+            "ABSTAIN",
+            null
+          ],
+          "description": "The verdict of the decision after the binding's own checks: an ALLOW with nothing that can be executed is DENY. Null for an outcome of a decision this service was not asked about, such as a step blocked by the counterfactual replay. gate verify-receipts compares a receipt with the verdict the service answered."
         }
       }
     },
@@ -437,6 +488,140 @@
         "skipped": "ABSTAIN",
         "unknown": "ABSTAIN",
         "verify": "VERIFY"
+      }
+    },
+    "context_point": {
+      "type": "object",
+      "required": [
+        "tag",
+        "value",
+        "unit",
+        "quality",
+        "time_ms",
+        "observed_at"
+      ],
+      "properties": {
+        "tag": {
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/scalar"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "quality": {
+          "type": "string"
+        },
+        "time_ms": {
+          "type": "integer"
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "correlation": {
+      "type": "object",
+      "description": "What ties an evaluate request, its outcome message and a receipt together (ADR 0036). The same correlation_id and action_ref come back in the outcome message.",
+      "required": [
+        "correlation_id",
+        "action_ref",
+        "issued_at",
+        "time_anchor"
+      ],
+      "properties": {
+        "correlation_id": {
+          "type": "string",
+          "description": "<session>/<proposal_id>. It names the session of this execution, so it differs between two executions of the same run."
+        },
+        "action_ref": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "description": "SHA-256 of the canonical JSON (keys sorted, no whitespace, UTF-8) of {session, proposal_id, contract_id, arguments, principal, time_ms}. Anyone with the decision record can make it again."
+        },
+        "issued_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "premises.time_ms as UTC from time_anchor, to the millisecond. Simulated time, never the wall clock."
+        },
+        "time_anchor": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The UTC instant simulated time 0 is given as: 2026-01-01T00:00:00Z unless ADC_GATE_EPOCH says another."
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "description": "Optional. Sent only to a service started with ADC_GATE_CONTEXT=1: a read-only sample of the plant at the decision, from the simulator's point database, not attested by any sensor (ADR 0036).",
+      "required": [
+        "schema",
+        "read_only",
+        "resolution_source",
+        "time_ms",
+        "observed_at",
+        "time_anchor",
+        "temperatures",
+        "load",
+        "interlocks",
+        "redundancy",
+        "alarms",
+        "permits"
+      ],
+      "properties": {
+        "schema": {
+          "const": "agentic_datacenter.context/1"
+        },
+        "read_only": {
+          "const": true
+        },
+        "resolution_source": {
+          "const": "simulated_point_database"
+        },
+        "time_ms": {
+          "type": "integer"
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "time_anchor": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "temperatures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/context_point"
+          }
+        },
+        "load": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/context_point"
+          }
+        },
+        "interlocks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/context_point"
+          }
+        },
+        "redundancy": {
+          "type": "object"
+        },
+        "alarms": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "permits": {
+          "type": "object",
+          "description": "Work permits are not modelled as points in this version: {\"modelled\": false, \"items\": []}."
+        }
       }
     }
   }
