@@ -8,13 +8,13 @@ Each command added by a package has its own `--help`. The list below is what the
 
 ```text
 usage: agentic-datacenter [-h]
-                          {modules,profile,run,bench,data,demo,facility,gate,scenario,whatif}
+                          {modules,profile,run,bench,data,demo,equipment,facility,gate,scenario,whatif}
                           ...
 
 Data center OT simulator.
 
 positional arguments:
-  {modules,profile,run,bench,data,demo,facility,gate,scenario,whatif}
+  {modules,profile,run,bench,data,demo,equipment,facility,gate,scenario,whatif}
     modules             Inspect the installed plant modules.
     profile             Check facility profiles.
     run                 Run a profile for a number of simulated seconds.
@@ -24,6 +24,8 @@ positional arguments:
                         series.
     demo                Record three scenarios without a gate and with one,
                         and write the dashboard.
+    equipment           Check an equipment registry entry before it is
+                        submitted (ADR 0034).
     facility            Compile a facility of your own and check what of the
                         libraries fits it.
     gate                List the installed gates, or run the gate interface

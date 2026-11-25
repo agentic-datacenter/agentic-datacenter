@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="52" viewBox="0 0 280 52" role="img" aria-label="Bring your datacenter — Check your facility">
+  <rect x="0.5" y="0.5" width="279" height="51" rx="8" fill="#162331" stroke="#52647A"/>
+  <g fill="none" stroke="#D2DCE7" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="18" y="14" width="22" height="24" rx="2"/><path d="M18 22 H40 M18 30 H40"/><circle cx="23" cy="18" r="0.8"/><circle cx="23" cy="26" r="0.8"/><circle cx="23" cy="34" r="0.8"/></g>
+  <text x="58" y="21" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="15" font-weight="600" fill="#FFFFFF">Bring your datacenter</text>
+  <text x="58" y="38" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12" fill="#D2DCE7">Check your facility</text>
+</svg>
