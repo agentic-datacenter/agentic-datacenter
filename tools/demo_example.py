@@ -8,7 +8,7 @@ installed (``uv sync --all-groups``).
 
 The recording and the two pages are copied as the run wrote them, under the
 names the documentation links to. The Markdown report is written from the
-copied recording, with the picture of the page at its top and links to the
+copied recording, with the preview after the summary and links to the
 copies beside it. ``--check`` writes nothing and says whether the committed
 reports are what the generator makes from the committed recording.
 
@@ -27,6 +27,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from zipfile import ZipFile
 
 from agentic_datacenter.scenarios.executive import render_executive, render_executive_markdown
 
@@ -34,7 +35,6 @@ from agentic_datacenter.scenarios.executive import render_executive, render_exec
 COPIES = {
     "demo.json": "demo.json",
     "three-scenarios.html": "index.html",
-    "result-report.html": "executive.html",
 }
 SCREENSHOT = "../media/result-report.png"
 
@@ -42,15 +42,25 @@ SCREENSHOT = "../media/result-report.png"
 def reports(recording: Path) -> dict[str, str]:
     """Return the two reports of the example, by file name, from its *recording*."""
     demo = json.loads(recording.read_text(encoding="utf-8"))
-    return {
+    comparison = recording.parent / "comparison" / "recording.zip"
+    rendered = {
         "result-report.html": render_executive(demo),
         "result-report.md": render_executive_markdown(
             demo,
             screenshot=SCREENSHOT,
             page="result-report.html",
             technical="three-scenarios.html",
+            comparison="comparison/result-report.md" if comparison.is_file() else "",
         ),
     }
+    if comparison.is_file():
+        with ZipFile(comparison) as archive:
+            other = json.loads(archive.read("demo.json"))
+        rendered["comparison/result-report.html"] = render_executive(other)
+        rendered["comparison/result-report.md"] = render_executive_markdown(
+            other, page="result-report.html", archive="recording.zip"
+        )
+    return rendered
 
 
 def stale(example: Path) -> list[str]:
@@ -80,8 +90,9 @@ def main() -> int:
     for name, source in COPIES.items():
         (args.example / name).write_bytes((args.run / source).read_bytes())
     for name, text in reports(args.example / "demo.json").items():
-        if name.endswith(".md"):
-            (args.example / name).write_text(text, encoding="utf-8")
+        path = args.example / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
     print(f"example written to {args.example}")
     return 0 if not stale(args.example) else 1
 

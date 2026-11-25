@@ -84,6 +84,46 @@ def test_a_step_without_a_rollback_is_released_only_after_a_person_approves() ->
     assert done["outcome"] == "APPLIED" and world.setpoint() == 17.5
 
 
+@pytest.mark.req("ADC-GOV-002")
+@pytest.mark.req("ADC-EVD-001")
+@pytest.mark.parametrize("reviewed", [False, True])
+def test_applied_write_exports_a_spent_v3_grant(reviewed: bool) -> None:
+    world = World()
+    if reviewed:
+        arguments = {"setpoint_c": 17.5, "forecast_peak_c": 35.0}
+        pending = world.path.propose(ACTOR, "chw.precool.v1", arguments)
+        assert world.gate.evidence()["proposals"][-1]["spent_grant"] is None
+        done = world.path.approve(str(pending["proposal_id"]), "operator-ola")
+    else:
+        done = world.move(18.5, approve=False)
+    assert done["outcome"] == "APPLIED"
+    evidence = world.gate.evidence()
+    grant = evidence["proposals"][-1]["spent_grant"]
+    assert grant["format"] == "v3" and grant["kid"]
+    assert len(bytes.fromhex(evidence["grant_verification_key_ed25519"])) == 32
+
+
+@pytest.mark.req("ADC-GOV-007")
+@pytest.mark.req("ADC-EVD-001")
+def test_a_grant_spent_on_an_unanswered_write_is_exported_too() -> None:
+    world = World()
+    pumps = world.plant.module("cooling.pump_station", "PHPS")
+    world.service.fail_next(applied=False)
+    dp = float(pumps.io["dp_sp_kpa"]) + 5.0
+    record = world.path.propose(ACTOR, "pumps.set_dp_setpoint.v1", {"dp_kpa": dp})
+    assert record["outcome"] == "UNKNOWN"
+    grant = world.gate.evidence()["proposals"][-1]["spent_grant"]
+    assert grant is not None and grant["format"] == "v3", "the grant was consumed at dispatch"
+    world.kernel.run_for(31_000)  # resolved from the plant, so REMORA holds nothing unknown
+    assert world.path.record(str(record["proposal_id"]))["outcome"] == "REJECTED"
+
+
+@pytest.mark.req("ADC-EVD-001")
+def test_the_grant_key_is_the_same_for_the_same_library() -> None:
+    first = World().gate.evidence()["grant_verification_key_ed25519"]
+    assert World().gate.evidence()["grant_verification_key_ed25519"] == first
+
+
 def test_a_contract_that_names_an_operator_still_needs_one() -> None:
     world = World()
     record = world.path.propose(ACTOR, "genset.start_test_run.v1", {"train": "A"})

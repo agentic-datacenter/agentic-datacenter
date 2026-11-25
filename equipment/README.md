@@ -1,6 +1,20 @@
-# The equipment registry
+# Bring your equipment
 
-Named equipment with the values it gives a module of the simulator. Each entry records where every value came from and the right to use it. A facility bundle uses an entry by naming it (ADR 0033, ADR 0034):
+Use a named equipment model in your simulated facility, or contribute values for equipment you make. Reports record which model was used and how its values were checked, so readers can see what the result depends on.
+
+## Try the example
+
+After [setup](../README.md#try-it-locally), run this from the repository root:
+
+```sh
+uv run agentic-datacenter equipment check equipment/TEMPLATE.vendor.yaml --source equipment/TEMPLATE.source.yaml
+```
+
+The example prints `can enter the registry` after checking the entry and building a generic simulated plant with its values. Use that same check on your own entry. It checks the values and required metadata. Field calibration and manufacturer verification have their own evidence requirements.
+
+## Use a model in your facility
+
+Start with a [sample registry entry](cooling.chw_plant/modelica.trane_rthb_531kw_4_83cop_valve.yaml). Check its rated conditions and fit notes, then add it to a [facility bundle](../docs/guides/bring-your-own-datacenter.md). Reference the entry in the module that uses it (ADR 0033, ADR 0034):
 
 ```yaml
 modules:
@@ -38,9 +52,9 @@ A tier says how far an entry has been checked. It never changes a ranking.
 
 ## Submit your own equipment, as a maker
 
-1. Copy `TEMPLATE.vendor.yaml` to `equipment/<module>/<id>.yaml` and `TEMPLATE.source.yaml` into `sources.yaml`, and fill them in from your own data.
-2. Run `uv run agentic-datacenter equipment check equipment/<module>/<id>.yaml`. It runs the registry's gate on your entry, and tries it in the generic facility.
-3. Open a pull request.
+1. Copy the [entry template](TEMPLATE.vendor.yaml) to `equipment/<module>/<id>.yaml`. Copy the [source template](TEMPLATE.source.yaml) to a separate YAML file. Fill both in with data you can publish and use the same source ID in both.
+2. Run `uv run agentic-datacenter equipment check equipment/<module>/<id>.yaml --source your-source.yaml`. Use the output to fix any field the simulator cannot use or any missing source detail.
+3. Add the source entry to [`sources.yaml`](sources.yaml) and open a pull request with the entry and source. Public entries need CC BY 4.0 and their named attribution. For measured data you need to keep private, start with the [calibration guide](../docs/calibration/contribute-data.md).
 
 An entry from a maker is under CC-BY-4.0 (`licences/CC-BY-4.0.txt`), with the attribution its source names. It is not under the contribution terms of `CONTRIBUTING.md`, so you grant no right to relicense it. You get your equipment in every facility that names it, with the entry's tier on every card that uses it.
 

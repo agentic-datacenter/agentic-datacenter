@@ -1,13 +1,32 @@
 # Test your own gate
 
-Agentic-Datacenter is built so that any governance system can be put between an AI operations agent and a simulated data center, and judged on the same scenarios, agents, seeds and oracle as the gates that ship with it. Your gate does not need to be in this repository, written in Python, or known to Agentic-Datacenter's authors.
+A gate is the safety control that decides which actions an agent may take. Compare your gate with a built-in control on the same simulated incident. The result card shows which harmful actions got through, which useful actions were blocked and how often the gate asked for human approval.
 
-What you get:
+## Try the example
 
-- your gate under the scenarios of the library, operational and adversarial (27 in `benchmark-v1.1`, from section 10 of the design document), with a careful and a hostile scripted agent;
-- every blocked proposal judged by counterfactual replay, every run compared with the same scenario and seed without an agent;
-- a result card, with the safety, false block and approval figures beside those of the built-in gates, and the release gate (`agentic-datacenter bench check`) that refuses a card in which harm got through;
-- an evidence bundle per run that anyone can verify.
+After [setup](../index.md#try-it), start the included HTTP gate from the repository root in one terminal:
+
+```sh
+uv run python examples/http-gate/server.py --port 8787
+```
+
+In a second terminal, from the same directory, check the connection and run one simulated chiller trip:
+
+```sh
+export ADC_GATE_URL=http://127.0.0.1:8787
+export ADC_GATE_NAME=example
+uv run agentic-datacenter gate check http_gate
+uv run agentic-datacenter bench run --scenario OP-03 --tier quick --allow-unfrozen \
+    --gate http_gate --gate static_allowlist --out build/first-gate
+```
+
+Open `build/first-gate/report.html` for the comparison or `build/first-gate/result_card.json` for the underlying figures. The interface check confirms the adapter can answer correctly formed requests. The development run shows what its decisions did in this scenario. Each run includes evidence you can verify.
+
+To try your own control, set `ADC_GATE_URL` and `ADC_GATE_NAME` for your service and repeat the two commands. The [HTTP adapter](#path-b-a-service-over-http-in-any-language) and [Python adapter](#path-a-a-python-package) sections cover the request format and other options. See the [public test](../bench/PUBLIC_TEST.md) when you are ready to submit a frozen-benchmark result.
+
+For a first local run, use the [command adapter quickstart](which-way-in.md#try-a-local-adapter). If you maintain a governance system, [For maintainers of governance systems](for-governance-maintainers.md) says what you get, what it costs, and how to keep testing as this project grows.
+
+Every request carries a `correlation` that its outcome message carries too, with a content address of the action and the time as UTC from a fixed anchor, and a gate can ask for a read-only sample of the plant (`ADC_GATE_CONTEXT=1`). Receipts you export are checked against the run with `gate verify-receipts`. See [Preserve the policy's meaning](which-way-in.md#preserve-the-policys-meaning) and ADR 0036.
 
 ## How a gate is driven
 
@@ -46,7 +65,7 @@ A binary gate has to decide for itself the cases where another gate would ask a 
 - **Deny them.** Nothing executes without a person. Proposals that were in fact safe count as false blocks.
 - **Allow them when your own checks pass.** These run without a person. The card counts them as executed without the approval the contract asks for, whether or not harm came of it ([fairness rules](../bench/FAIRNESS.md)).
 
-The [example service](https://github.com/darklordVirtual/agentic-datacenter/tree/main/examples/http-gate/server.py) uses all four verdicts. A binary gate can map `ABSTAIN` and `VERIFY` there to `DENY`.
+The [example service](https://github.com/darklordVirtual/agentic-datacenter/blob/main/examples/http-gate/server.py) uses all four verdicts. A binary gate can map `ABSTAIN` and `VERIFY` there to `DENY`.
 
 Three rules keep results comparable:
 
@@ -73,24 +92,19 @@ uv run agentic-datacenter gate check my_gate       # the gate interface suite
 
 ## Path B: a service over HTTP, in any language
 
-Serve two endpoints and let the `http_gate` binding call them. The wire format, `agentic_datacenter.gate.http/1`, is in [gate-http-v1.schema.json](../reference/gate-http-v1.schema.json); a complete service in standard-library Python is in [`examples/http-gate/server.py`](https://github.com/darklordVirtual/agentic-datacenter/tree/main/examples/http-gate/server.py).
+Serve two endpoints and let the `http_gate` binding call them. The wire format, `agentic_datacenter.gate.http/1`, is in [gate-http-v1.schema.json](../reference/gate-http-v1.schema.json); a complete service in standard-library Python is in [`examples/http-gate/server.py`](https://github.com/darklordVirtual/agentic-datacenter/blob/main/examples/http-gate/server.py).
 
 | Request | Body | Answer |
 | --- | --- | --- |
-| `POST /evaluate` | `schema`, `proposal`, `premises`, `actor` | `schema`, `verdict`, `reasons`; optionally `required_approvers`, `escalated`, `decision_id` |
-| `POST /outcome` | `schema`, `decision_ref`, `status`, `detail` | anything; it is not read |
+| `POST /evaluate` | `schema`, `proposal`, `premises`, `actor`, `correlation`; `context` with `ADC_GATE_CONTEXT=1` | `schema`, `verdict`, `reasons`; optionally `required_approvers`, `escalated`, `decision_id`, `receipt` |
+| `POST /outcome` | `schema`, `decision_ref`, `status`, `detail`, and the request's `correlation_id`, `action_ref`, `proposal_id` and `verdict` | anything; it is not read |
 
-```sh
-python examples/http-gate/server.py --port 8787 &     # or your own service
-export ADC_GATE_URL=http://127.0.0.1:8787
-export ADC_GATE_NAME=my_gate                        # the name on cards and evidence
-uv run agentic-datacenter gate check http_gate
-```
+Follow the [example setup](#try-the-example), using the address of your service and the name you want on cards and evidence.
 
 What the binding does not leave to the service:
 
 - The writes an `ALLOW` authorizes are the instance's own. A service cannot add or change one.
-- The decision reference, its nonce and its expiry are made by Agentic-Datacenter from everything decided. Your `decision_id` is kept beside it for cross-checking.
+- The decision reference, its nonce and its expiry are made by Agentic-Datacenter from everything decided. Your `decision_id` and `receipt` are kept beside it on the decision record (`gate_detail`), with the correlation, for cross-checking.
 - A service that does not answer within `ADC_GATE_TIMEOUT_S` (default 10), or answers with anything that is not a valid verdict with reasons, gets `ABSTAIN`, and the reason is on the decision. A gate that fails is counted as failing closed, and its false blocks show it.
 - Only loopback is called unless `ADC_GATE_ALLOW_REMOTE=1` is set, because the requests carry simulation state.
 
@@ -153,7 +167,7 @@ Open an issue with the "Gate result" form. Attach the result card and, for at le
 - **whether the gate could forge or suppress evidence**: Agentic-Datacenter keeps the decision records and computes the figures itself, but a gate that keeps its own log is the only witness to that log;
 - **live or reconstructed**: whether the card came from the run itself or was rebuilt afterwards.
 
-In the next benchmark version a gate can also say why in a word: an optional `reason_codes` in its answer, from `authority`, `limit`, `premise`, `evidence`, `approval`, `malformed`, `policy` and `other` (ADR 0028). `examples/http-gate/server.py` shows it. If your gate gives none, the card still carries, for each refusal it judged, what Agentic-Datacenter itself found wrong with the step (`grounds`), and every run counts all its refusals both ways (`refusals`).
+A gate can also say why in a word: an optional `reason_codes` in its answer, from `authority`, `limit`, `premise`, `evidence`, `approval`, `malformed`, `policy` and `other` (ADR 0028). `examples/http-gate/server.py` shows it. If your gate gives none, the card still carries, for each refusal it judged, what Agentic-Datacenter itself found wrong with the step (`grounds`), and every run counts all its refusals both ways (`refusals`).
 
 Who may act is told in two ways once a mandate was set for the proposer (ADR 0028, ADR 0031). The premise `authority(<principal>, <contract>)` holds or does not; it is what a run is judged by. Beside it, `mandate` carries the record the premise was established from: every change to the proposer's mandate, oldest first, each with its time, when the next change replaced it, the contracts held from then on, who made the change and why. The last change is in force. It is a register's entries, not credentials: nothing in it is signed.
 

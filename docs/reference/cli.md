@@ -24,8 +24,7 @@ positional arguments:
                         freeze and check results.
     data                Write and check the manifest of a measured input
                         series.
-    demo                Record three scenarios without a gate and with one,
-                        and write the dashboard.
+    demo                Record a demo with a baseline and one or more gates.
     equipment           Check an equipment registry entry before it is
                         submitted (ADR 0034).
     facility            Compile a facility of your own and check what of the
