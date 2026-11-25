@@ -15,9 +15,8 @@ configuration when its application module is imported. Runs in one process
 therefore share one tenant and keep their limit counters apart by naming
 each resource after the run.
 
-At the pinned commit REMORA never accepts a write without a person
-(REMORA issue 1233). Under ``GOVERNED`` every write is therefore approved by
-at least one operator, including contracts that need none on their own terms.
+Bounded reversible writes may be accepted automatically. The integrated service
+holds the decision key. Separate-process redemption is tested upstream.
 """
 
 from __future__ import annotations
@@ -35,6 +34,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, ClassVar
 
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from remora.sdk import (
     DecisionAction,
     RemoraClient,
@@ -141,6 +141,12 @@ class GovernedService:
         }
         state, config = self.root / "state", self.root / "config"
         state.mkdir()
+        # Simulator-only, like the other keys: the same library gives the same key,
+        # so the evidence of a run is the same bytes every time (ADR 0016, revision 2026-11-25).
+        grant_key = Ed25519PrivateKey.from_private_bytes(
+            bytes.fromhex(derived_secret(library, "pdp ed25519 key"))
+        )
+        self.grant_public_key = grant_key.public_key().public_bytes_raw().hex()
         for name in [n for n in os.environ if n.startswith("REMORA_")]:
             del os.environ[name]
         os.environ.update({
@@ -157,7 +163,9 @@ class GovernedService:
             "REMORA_BOUNDED_WRITE_REQUIRE_INTENT": "0",
             # REMORA's own rate limiter counts on the wall clock; rates are in the limit policy.
             "REMORA_EXECUTION_RATE_LIMIT_PER_MIN": "0",
-            "REMORA_PDP_SIGNING_KEY": derived_secret(library, "pdp key"),
+            "REMORA_PDP_SIGNING_KEY_ED25519_PRIVATE": grant_key.private_bytes_raw().hex(),
+            "REMORA_PDP_VERIFY_KEYS_ED25519": self.grant_public_key,
+            "REMORA_PDP_ACCEPT_HMAC": "0",
             "REMORA_LEASE_SIGNING_KEY": derived_secret(library, "lease key"),
             "REMORA_AUDIT_SIGNING_KEY": derived_secret(library, "audit key"),
             "REMORA_ENVELOPE_SIGNING_KEY": derived_secret(library, "envelope key"),
@@ -231,6 +239,7 @@ class _Pending:
     approvers: tuple[str, ...] = ()
     operation: str = ""
     effect: str = ""
+    spent_grant: dict[str, Any] | None = None
 
 
 class GovernedRemoraGate:
@@ -466,6 +475,10 @@ class GovernedRemoraGate:
         finally:
             host_registry.DISPATCH = None
             self._readers.pop(pending.target, None)
+        if getattr(result, "execution_grant", None):
+            # Kept whenever REMORA consumed the grant: applied, refused after dispatch, or
+            # unanswered. Those last two are where a reviewer needs it most.
+            pending.spent_grant = dict(result.execution_grant)
         execution = getattr(result, "tool_execution", None)
         if execution is None and str(result.outcome) != "execute":
             return Outcome("REJECTED", f"remora:{result.outcome}")
@@ -613,6 +626,7 @@ class GovernedRemoraGate:
         return {
             "profile": self.profile,
             "remora_commit": self.remora_commit,
+            "grant_verification_key_ed25519": self._service.grant_public_key,
             "artifacts": self._service.compiled.manifest,
             "audit_chain": {
                 "valid": chain.valid,
@@ -626,6 +640,7 @@ class GovernedRemoraGate:
                     "tool_call_hash": p.tool_call_hash,
                     "approved_by": list(p.approvers),
                     "effect": p.effect,
+                    "spent_grant": dict(p.spent_grant) if p.spent_grant else None,
                     "outcome": self.outcomes[ref].status if ref in self.outcomes else "",
                 }
                 for ref, p in self._pending.items()

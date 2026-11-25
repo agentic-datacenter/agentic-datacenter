@@ -12,6 +12,8 @@ requires-python = ">=3.12"
 dependencies = [
     "agentic-datacenter-governance",
     "remora-assurance[security,sdk,api]",
+    # The decision grant key (ADR 0016, decision 6).
+    "cryptography>=43",
 ]
 
 [tool.uv.sources]
