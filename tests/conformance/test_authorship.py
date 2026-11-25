@@ -36,9 +36,5 @@ def _history() -> list[tuple[str, str]]:
 
 
 def test_no_commit_names_an_ai_tool_as_author_committer_or_co_author() -> None:
-    offending = [
-        f"{sha}: {names}"
-        for sha, names in _history()
-        if AI_TOOL.search(names)
-    ]
+    offending = [f"{sha}: {names}" for sha, names in _history() if AI_TOOL.search(names)]
     assert not offending, "\n".join(offending)
