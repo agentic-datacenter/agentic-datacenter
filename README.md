@@ -13,7 +13,7 @@ Simulate infrastructure. Evaluate decisions. Measure consequences.
   <a href="equipment/README.md"><img src="docs/media/buttons/equipment.svg" alt="Bring your equipment: use and contribute models" width="280" height="58"></a>
 </p>
 <p align="center">
-  <a href="docs/guides/bring-your-own-agent.md"><img src="docs/media/buttons/agent.svg" alt="Bring your agent: integration roadmap, planned" width="280" height="58"></a>
+  <a href="docs/guides/bring-your-own-agent.md"><img src="docs/media/buttons/agent.svg" alt="Bring your agent: a language model as the agent, optional" width="280" height="58"></a>
   <a href="docs/guides/bring-your-own-gate.md"><img src="docs/media/buttons/governance.svg" alt="Bring your governance: test your safety controls" width="280" height="58"></a>
 </p>
 
@@ -22,7 +22,7 @@ Simulate infrastructure. Evaluate decisions. Measure consequences.
 </p>
 <p align="center"><sub>Illustrative facility · <a href="docs/media/agentic_datacenter_visual.mp4">View video</a></sub></p>
 
-Text links: [Explore the demo](docs/demo/result-report.md) · [Bring your datacenter](docs/guides/bring-your-own-datacenter.md) · [Bring your equipment](equipment/README.md) · [Bring your agent (planned)](docs/guides/bring-your-own-agent.md) · [Bring your governance](docs/guides/bring-your-own-gate.md)
+Text links: [Explore the demo](docs/demo/result-report.md) · [Bring your datacenter](docs/guides/bring-your-own-datacenter.md) · [Bring your equipment](equipment/README.md) · [Bring your agent](docs/guides/bring-your-own-agent.md) · [Bring your governance](docs/guides/bring-your-own-gate.md)
 
 ## What you can discover
 

@@ -24,6 +24,7 @@ from agentic_datacenter.core.facility import Facility
 from agentic_datacenter.core.scheduler import Kernel
 from agentic_datacenter.governance.contracts import ContractLibrary
 from agentic_datacenter.scenarios.facility_fit import fit_facility
+from agentic_datacenter.scenarios.llm_agent import SCRIPTED_NOTE
 from agentic_datacenter.scenarios.plant import BuiltinPlant
 from agentic_datacenter.scenarios.scenario import library_ids
 
@@ -163,6 +164,8 @@ def write_operator_report(report: dict[str, Any], out: Path) -> None:
         f"# What autonomous operation would do at {facility['name']}",
         "",
         f"*{card['label']}.* {check['statement']}",
+        "",
+        f"**Agent:** {SCRIPTED_NOTE}",
         "",
         "## Your facility",
         "",

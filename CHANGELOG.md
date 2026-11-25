@@ -50,7 +50,7 @@ Tooling
 ### What it cannot do yet
 
 - `compose` mode is not built. Everything runs in one process (`inproc`).
-- There is no language-model agent. The agents are scripted.
+- A language-model agent is an option, not the default, and no result of a model has been published. An agent of one's own served over HTTP is not built.
 - No benchmark result has been reported. Season 1 runs on the frozen version `benchmark-v1`; its hidden track is drawn on 2026-12-02.
 - No result has been reproduced on a second machine.
 - The other differences from the design document are in its section 14.
@@ -59,14 +59,15 @@ Tooling
 
 Added
 
+- A language-model agent, optional (ADR 0035). `--agent llm:<provider>/<model>` on `scenario run` and `bench run` lets a model be the agent, through Anthropic, OpenAI, Gemini, Grok or any OpenAI-compatible endpoint, with the user's own key. The SDKs are the optional group `llm` (`uv sync --group llm`). The model gets the tools of an agent and nothing else, and every proposal goes through the gate. Every request and reply is kept in a transcript, and `--llm-replay` replays a run from it with no model. The scripted agents stay the default, and every report says which kind of agent it had. A card of a model holds no scripted agent, has no counterfactual replay, is labelled "result with a language-model agent, reported apart from the scripted agents, not a benchmark result", and `bench check --publication` refuses it. `agentic-datacenter agent list` lists the agents. `examples/llm-agent/` holds a recorded run that replays with no key. The frozen benchmark version is unchanged. CONTRIBUTING: the owner lifted the adoption-phase freeze for this feature.
 - A front door (SDD-ADC-002). The README now holds:
   - the purpose;
-  - one demo button and four role buttons: datacenter, equipment, agent (planned) and governance;
+  - one demo button and four role buttons: datacenter, equipment, agent and governance;
   - the illustrative animation, unchanged;
   - one result statement, taken from the demo report and checked against it by a test;
   - links to everything else.
 
-  What is free and what is under a commercial agreement is in `COMMERCIAL_LICENSING.md`. `docs/guides/bring-your-own-agent.md` says plainly that agents of one's own are planned. `tests/conformance/test_readme_experience.py` holds the order, the buttons, the links and the labels.
+  What is free and what is under a commercial agreement is in `COMMERCIAL_LICENSING.md`. `docs/guides/bring-your-own-agent.md` says what runs today and that an agent served over HTTP is planned. `tests/conformance/test_readme_experience.py` holds the order, the buttons, the links and the labels.
 - `facility init <dir>` starts a bundle of your own from the example. `facility report <bundle>` writes one report for an operator: what fits, and what each gate did with both scripted agents at the quick tier.
 - A maker can submit its own equipment entry under CC-BY-4.0, from `equipment/TEMPLATE.vendor.yaml`. `agentic-datacenter equipment check` runs the registry's gate on it and tries it in the generic facility.
 - `tools/first_run.py` times the first run of every role from a fresh clone.
