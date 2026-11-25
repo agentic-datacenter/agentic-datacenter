@@ -8,6 +8,9 @@ updates:
       interval: "weekly"
     ignore:
       - dependency-name: "remora*"
+      # ADR 0013 keeps bacpypes3 below 0.1 until a check of a newer release and an ADR.
+      - dependency-name: "bacpypes3"
+        versions: [">=0.1"]
     groups:
       python:
         patterns: ["*"]

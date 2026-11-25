@@ -110,7 +110,7 @@ jobs:
       - run: uv sync --frozen --group audit
       - run: uv lock --check
       - name: Known vulnerabilities
-        run: uv export --frozen --no-emit-workspace --no-hashes --format requirements-txt > build-requirements.txt && uv run pip-audit -r build-requirements.txt
+        run: uv export --frozen --no-emit-workspace --format requirements-txt > build-requirements.txt && uv run pip-audit -r build-requirements.txt --require-hashes --disable-pip
       - name: Provenance terms and committed secrets
         run: uv run pytest tests/conformance/test_ci.py -k "forbidden_term or notices"
       - name: Every wheel and source distribution holds its licence text
