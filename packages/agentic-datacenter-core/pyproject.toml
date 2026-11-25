@@ -36,4 +36,5 @@ requirements = [
     "ADC-MOD-005",
     "ADC-PRV-003",
     "ADC-PRV-004",
+    "ADC-FAC-001", "ADC-FAC-002", "ADC-FAC-003", "ADC-FAC-004", "ADC-FAC-005",
 ]
