@@ -874,6 +874,10 @@ Each requirement below maps to at least one named test; a requirement without a 
 | ADC-FAC-008 | Under `--facility`, a scenario that names an instance, key, zone, relay, point or contract the facility lacks, or needs a point the scripted agents read, is not run; it is listed on the card and the report says how many of all ran. | scenario/test\_facility\_fit |
 | ADC-FAC-009 | A card under `--facility` carries the `facility` block, is never a benchmark result and is refused for publication; a card without it is unchanged. | scenario/test\_facility\_fit |
 | ADC-FAC-010 | Chillers are counted by a parameter, 1 to 9; at three every tag, port and state hash is unchanged, and the overview counts the chillers from the plant's points. | scenario/test\_chiller\_count |
+| ADC-EQP-001 | Every equipment registry entry validates, lies at `equipment/<module>/<id>.yaml`, names a source pinned in `equipment/sources.yaml`, and each value cites that source's file and commit. | conformance/test\_equipment\_registry |
+| ADC-EQP-002 | Every entry in the repository may be used commercially and redistributed, and no entry claims a tier beyond what it shows. | conformance/test\_equipment\_registry |
+| ADC-EQP-003 | A bundle names an entry as `registry:<id>`; every value of every entry is read by its module, and an unknown entry is refused. | conformance/test\_equipment\_registry |
+| ADC-EQP-004 | `THIRD_PARTY_NOTICES.md` names every registry source's repository, commit and licence file. | conformance/test\_equipment\_registry |
 
 **What-if (10.4)**
 
@@ -1104,6 +1108,7 @@ This section is build history. The simulator was built in the stages below, in t
 | 10 | Plants from other projects (ADR 0029): the plant interface, `http_plant`, `plant check`, an example plant | PLT-001 to 006 | A card on the example plant from one scenario end to end |
 | 11 | Evidence about hosts (ADR 0032): keepalives in shirudo's format, `SHIRUDO_PIN`, the host register and premise, host scenarios | HST-001 to 008 | A host scenario refused from a keepalive before the cross-check alarms, under a gate that reads host evidence |
 | 12 | Bring your own data center (ADR 0033): facility bundles, equipment models, values per instance, `facility check`, runs and cards on one's own facility, the number of chillers | FAC-001 to 010 | `facility check` and a `bench run --facility` of the example bundle end to end |
+| 13 | The equipment registry (ADR 0034): entries from open sources with their rights recorded, the registry's gate, `registry:` entries in bundles | EQP-001 to 004 | A bundle that names a registry chiller runs, and the gate refuses an entry without its rights |
 
 **Milestone M1.** After Stage 4, thin versions of the supervisory command path, the gate interface, the two scripted agents, counterfactual replay and the result card were built first, on four scenarios: `OP-03`, `OP-10`, `AD-01` and `AD-03`. They ran under the operating profile `DECISION_ONLY`: REMORA decides through `evaluate_policy`, and allowed proposals are applied by the command service with the hash of the decision as reference. There is no execution token, no cumulative-limit enforcement on the REMORA side and no audit chain in this profile. Its results MUST be labelled as such and MUST NOT be described as governed execution. `AD-04` and `AD-05` cannot be claimed as passed under it, since replay and cumulative limits are enforced only on the governed path.
 

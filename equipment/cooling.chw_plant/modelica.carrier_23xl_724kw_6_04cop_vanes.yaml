@@ -1,0 +1,47 @@
+# Made by tools/equipment_modelica.py; do not edit by hand.
+id: modelica.carrier_23xl_724kw_6_04cop_vanes
+module: cooling.chw_plant
+maker: Carrier
+model: 23XL
+variant: 724kW_6_04COP_Vanes
+tier: factual
+params:
+  chiller_kw:
+    value: 724.4
+    unit: kW
+    source: modelica-buildings Buildings/Fluid/Chillers/Data/ElectricEIR.mo:216 QEva_flow_nominal (commit
+      e79800b7eb2f)
+  cop:
+    value: 6.04
+    unit: '-'
+    source: modelica-buildings Buildings/Fluid/Chillers/Data/ElectricEIR.mo:217 COP_nominal (commit e79800b7eb2f)
+rated_conditions:
+  chilled_water_leaving_c: 5.56
+  condenser_entering_c: 21.11
+  part_load_ratio_min: 0.19
+fit: 'The record describes a water-cooled chiller at the rated conditions above. cooling.chw_plant models
+  an air-cooled plant of identical chillers: only the rated capacity and COP are taken, and the module''s
+  own curves apply to them. The COP was rated with condenser water entering at 21.11 degC; the module
+  applies it at its design ambient air temperature, so the plant''s efficiency is likely higher than an
+  air-cooled chiller of the same capacity reaches.'
+provenance:
+  source: modelica-buildings
+  record: ElectricEIRChiller_Carrier_23XL_724kW_6_04COP_Vanes
+  description: ElectricEIRChiller Carrier 23XL 724kW/6.04COP/Vanes
+  lines:
+  - 214
+  - 233
+  data_type: factual_specification
+  redistributes_source_document: false
+  derived_from: the EnergyPlus Chiller:Electric:EIR object embedded in the record, which the record names
+    as its origin
+simulation:
+  model_origin: independently_developed
+  manufacturer_validated: false
+  calibration: uncalibrated
+rights:
+  commercial_use: allowed
+  redistribution: allowed
+  basis: facts stated in a file under the BSD-3-Clause-style licence of the Modelica Buildings Library,
+    kept with attribution (equipment/licences/modelica-buildings.txt)
+  reviewed: '2026-11-24'

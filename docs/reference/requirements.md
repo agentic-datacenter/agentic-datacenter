@@ -31,6 +31,10 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-DOC-001` | 1 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_docs.py` |
 | `ADC-DOC-002` | 1 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_module_manifests.py` |
 | `ADC-DOC-003` | 1 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_ci.py` |
+| `ADC-EQP-001` | 13 | no | `agentic-datacenter-workspace` | `tests/conformance/test_equipment_registry.py` |
+| `ADC-EQP-002` | 13 | no | `agentic-datacenter-workspace` | `tests/conformance/test_equipment_registry.py` |
+| `ADC-EQP-003` | 13 | no | `agentic-datacenter-workspace` | `tests/conformance/test_equipment_registry.py` |
+| `ADC-EQP-004` | 13 | no | `agentic-datacenter-workspace` | `tests/conformance/test_equipment_registry.py` |
 | `ADC-EVD-001` | 9 | yes | `agentic-datacenter-scenarios` | `tests/conformance/test_evidence_bundle.py`<br>`tests/scenario/test_measured_weather.py` |
 | `ADC-EVD-002` | 9 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_matrix_generation.py` |
 | `ADC-FAC-001` | 12 | no | `agentic-datacenter-core` | `packages/agentic-datacenter-core/tests/test_facility.py` |

@@ -1,0 +1,47 @@
+# Made by tools/equipment_modelica.py; do not edit by hand.
+id: modelica.york_yt_563kw_10_61cop_vanes
+module: cooling.chw_plant
+maker: York
+model: YT
+variant: 563kW_10_61COP_Vanes
+tier: factual
+params:
+  chiller_kw:
+    value: 562.6
+    unit: kW
+    source: modelica-buildings Buildings/Fluid/Chillers/Data/ElectricEIR.mo:106 QEva_flow_nominal (commit
+      e79800b7eb2f)
+  cop:
+    value: 10.61
+    unit: '-'
+    source: modelica-buildings Buildings/Fluid/Chillers/Data/ElectricEIR.mo:107 COP_nominal (commit e79800b7eb2f)
+rated_conditions:
+  chilled_water_leaving_c: 6.11
+  condenser_entering_c: 12.78
+  part_load_ratio_min: 0.09
+fit: 'The record describes a water-cooled chiller at the rated conditions above. cooling.chw_plant models
+  an air-cooled plant of identical chillers: only the rated capacity and COP are taken, and the module''s
+  own curves apply to them. The COP was rated with condenser water entering at 12.78 degC; the module
+  applies it at its design ambient air temperature, so the plant''s efficiency is likely higher than an
+  air-cooled chiller of the same capacity reaches.'
+provenance:
+  source: modelica-buildings
+  record: ElectricEIRChiller_York_YT_563kW_10_61COP_Vanes
+  description: ElectricEIRChiller York YT 563kW/10.61COP/Vanes
+  lines:
+  - 104
+  - 123
+  data_type: factual_specification
+  redistributes_source_document: false
+  derived_from: the EnergyPlus Chiller:Electric:EIR object embedded in the record, which the record names
+    as its origin
+simulation:
+  model_origin: independently_developed
+  manufacturer_validated: false
+  calibration: uncalibrated
+rights:
+  commercial_use: allowed
+  redistribution: allowed
+  basis: facts stated in a file under the BSD-3-Clause-style licence of the Modelica Buildings Library,
+    kept with attribution (equipment/licences/modelica-buildings.txt)
+  reviewed: '2026-11-24'
