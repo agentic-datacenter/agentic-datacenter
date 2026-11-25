@@ -148,7 +148,7 @@ class Overview:
                 )
         for record in self._points.find("cooling.chw_plant", "ch1_state"):
             base = record.tag.rsplit(".", 1)[0]
-            for n in (1, 2, 3):
+            for n in self._chillers(base):
                 state = self._points.read(f"{base}.ch{n}_state")
                 if state.value in ("TRIPPED", "LOCKED_OUT"):
                     alarms.append(
@@ -162,14 +162,30 @@ class Overview:
         ]
         return sorted(alarms, key=lambda a: (-a.priority, a.tag))
 
+    def _chillers(self, base: str) -> list[int]:
+        """The chillers of the plant *base*, as many as it has points for (ADR 0033).
+
+        The tags of a plant are fixed once it is built, so the answer is kept.
+        """
+        cache: dict[str, list[int]] = self.__dict__.setdefault("_chiller_cache", {})
+        if base in cache:
+            return cache[base]
+        prefix = f"{base}.ch"
+        cache[base] = sorted(
+            int(tag[len(prefix)])
+            for tag in self._points.tags()
+            if tag.startswith(prefix) and tag.endswith("_state") and tag[len(prefix)].isdigit()
+        )
+        return cache[base]
+
     def redundancy(self) -> dict[str, Redundancy]:
         """Return the redundancy of chillers, pumps and power trains."""
         out: dict[str, Redundancy] = {}
         read = self._points.read
         for load in self._points.find("cooling.chw_plant", "load_kw"):
             base = load.tag.rsplit(".", 1)[0]
-            states = [read(f"{base}.ch{n}_state") for n in (1, 2, 3)]
-            enabled = [read(f"{base}.ch{n}_enable") for n in (1, 2, 3)]
+            states = [read(f"{base}.ch{n}_state") for n in self._chillers(base)]
+            enabled = [read(f"{base}.ch{n}_enable") for n in self._chillers(base)]
             usable = sum(
                 1 for s, e in zip(states, enabled, strict=True)
                 if e.value is True and s.value not in ("TRIPPED", "LOCKED_OUT")

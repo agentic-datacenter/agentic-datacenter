@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping
 from pathlib import Path
 
-from agentic_datacenter.core.io import IOBoard, load_points
+from agentic_datacenter.core.io import IOBoard, PointDecl, load_points
 from agentic_datacenter.core.module import (
     Inputs,
     LazyIntegral,
@@ -26,8 +27,43 @@ from agentic_datacenter.core.state import JsonValue
 from .faults import FAULTS
 
 POINTS = load_points(Path(__file__).parent / "points.yaml")
+#: The chillers of the default plant, and the number of power feeds the module has.
 CHILLERS = (1, 2, 3)
+FEEDS = 3
+MAX_CHILLERS = 9
 UNAVAILABLE = frozenset({"TRIPPED", "LOCKED_OUT"})
+_CHILLER_POINT = re.compile(r"^ch\d_")
+_CHILLER_3 = re.compile(r"([Cc]hiller) 3")
+
+
+def plant_points(count: int) -> tuple[PointDecl, ...]:
+    """Return the points of a plant of *count* chillers (ADR 0033, decision 7).
+
+    With three, they are the points of ``points.yaml``. A fourth or later chiller
+    gets points made after those of chiller 3, which starts in standby; a plant
+    of fewer has no points for the chillers it lacks.
+    """
+    if not 1 <= count <= MAX_CHILLERS:
+        raise ValueError(f"chillers must be 1 to {MAX_CHILLERS}, got {count}")
+    out: list[PointDecl] = []
+    for decl in POINTS:
+        if decl.name.startswith("ch3_"):
+            out.append(decl)
+            for n in range(4, count + 1):
+                out.append(
+                    decl.model_copy(
+                        update={
+                            "name": decl.name.replace("ch3_", f"ch{n}_", 1),
+                            "description": _CHILLER_3.sub(rf"\g<1> {n}", decl.description),
+                        }
+                    )
+                )
+        elif decl.name == "lead_chiller":
+            lead = tuple(str(n) for n in range(1, count + 1))
+            out.append(decl.model_copy(update={"values": lead}))
+        else:
+            out.append(decl)
+    return tuple(d for d in out if not _CHILLER_POINT.match(d.name) or int(d.name[2]) <= count)
 
 
 class ChwPlant(SimModule):
@@ -45,9 +81,19 @@ class ChwPlant(SimModule):
     """
 
     def __init__(self, ctx: ModuleContext, params: Mapping[str, JsonValue]) -> None:
-        """Create a plant with two chillers running and one in standby."""
+        """Create a plant with two chillers running and the others in standby.
+
+        ``chillers`` (default 3) is the number of chillers. Chiller *n* is fed
+        from ``power_<((n - 1) mod 3) + 1>``, so a fourth shares the first feed.
+        """
         super().__init__(ctx, params)
-        self.io = IOBoard(POINTS)
+        given = param_number(params, "chillers", float(len(CHILLERS)))
+        if given != int(given):
+            raise ValueError(f"chillers is a whole number, got {given}")
+        count = int(given)
+        self.io = IOBoard(plant_points(count))
+        self.chillers = tuple(range(1, count + 1))
+        self.feed_of = {n: (n - 1) % FEEDS + 1 for n in self.chillers}
         self.rated_kw = param_number(params, "chiller_kw", 1600.0)
         self.cop = param_number(params, "cop", 4.5)
         self.design_ambient_c = param_number(params, "design_ambient_c", 35.0)
@@ -63,10 +109,10 @@ class ChwPlant(SimModule):
         self.up_after_s = param_number(params, "stage_up_after_s", 300.0)
         self.down_after_s = param_number(params, "stage_down_after_s", 900.0)
         self.temp = self.io.number("chws_sp_c")
-        self.wanted = 2
-        self.until_ms = dict.fromkeys(CHILLERS, -1)
+        self.wanted = min(2, count)
+        self.until_ms = dict.fromkeys(self.chillers, -1)
         self.above_s = self.below_s = 0.0
-        self.share_kw = dict.fromkeys(CHILLERS, 0.0)
+        self.share_kw = dict.fromkeys(self.chillers, 0.0)
         self._heat_in, self._heat_out = LazyIntegral(), LazyIntegral()
         self._settled = False
 
@@ -81,7 +127,7 @@ class ChwPlant(SimModule):
     def _sequence(self, powered: Mapping[int, bool]) -> None:
         """Lockout after a power interruption, then start and stop to the wanted count."""
         now, io = self.ctx.now_ms, self.io
-        for n in CHILLERS:
+        for n in self.chillers:
             state = self._state(n)
             if not powered[n] and state != "TRIPPED":
                 self._set(n, "LOCKED_OUT")
@@ -98,7 +144,8 @@ class ChwPlant(SimModule):
         if not self.ctx.controller_running():
             return  # the plant controller is down: each chiller carries on by itself
         lead = int(str(io["lead_chiller"]))
-        order = [CHILLERS[(lead - 1 + k) % 3] for k in range(3)]
+        count = len(self.chillers)
+        order = [self.chillers[(lead - 1 + k) % count] for k in range(count)]
         candidates = [
             n for n in order if io.flag(f"ch{n}_enable") and self._state(n) not in UNAVAILABLE
         ]
@@ -108,7 +155,7 @@ class ChwPlant(SimModule):
                 self._set(n, "STARTING")
                 self.until_ms[n] = now + round(self.start_s * 1000)
         all_running = all(self._state(n) == "RUNNING" for n in desired)
-        for n in CHILLERS:
+        for n in self.chillers:
             surplus = n not in desired and self._state(n) in ("RUNNING", "STARTING")
             if surplus and (all_running or not io.flag(f"ch{n}_enable")):
                 self._set(n, "OFF")
@@ -118,13 +165,13 @@ class ChwPlant(SimModule):
         ambient, load = inputs.forward["ambient"], inputs.reverse["chws"]
         assert isinstance(ambient, Weather) and isinstance(load, HydronicReturn)
         powered = {}
-        for n in CHILLERS:
-            feed = inputs.forward[f"power_{n}"]
+        for n in self.chillers:
+            feed = inputs.forward[f"power_{self.feed_of[n]}"]
             assert isinstance(feed, ElectricalSupply)
             powered[n] = feed.energized
         self._sequence(powered)
         io = self.io
-        running = [n for n in CHILLERS if self._state(n) == "RUNNING"]
+        running = [n for n in self.chillers if self._state(n) == "RUNNING"]
         excess_k = ambient.dry_bulb_c - self.design_ambient_c
         each = self.rated_kw * min(1.3, max(0.5, 1.0 - self.capacity_slope * excess_k))
         cop = self.cop * min(1.6, max(0.5, 1.0 - self.cop_slope * excess_k))
@@ -138,18 +185,18 @@ class ChwPlant(SimModule):
         self.temp += change
         plr = cooling / capacity if capacity > 0.0 else 0.0
         power_each = each / cop * (0.15 + 0.85 * plr) if running else 0.0
-        self.share_kw = {n: power_each if n in running else 0.0 for n in CHILLERS}
+        self.share_kw = {n: power_each if n in running else 0.0 for n in self.chillers}
         self._heat_in.set_rate(load.heat_kw, self.ctx.now_ms)
         self._heat_out.set_rate(cooling, self.ctx.now_ms)
 
         # A threshold only counts while there is a chiller left to start or stop.
         up = self.ctx.controller_running()
-        can_add, can_drop = up and self.wanted < len(CHILLERS), up and self.wanted > 1
+        can_add, can_drop = up and self.wanted < len(self.chillers), up and self.wanted > 1
         high = can_add and bool(running) and 100.0 * plr > io.number("stage_up_pct")
         low = can_drop and bool(running) and 100.0 * plr < io.number("stage_down_pct")
         self.above_s = self.above_s + 1.0 if high else 0.0
         self.below_s = self.below_s + 1.0 if low else 0.0
-        if self.above_s >= self.up_after_s and self.wanted < len(CHILLERS):
+        if self.above_s >= self.up_after_s and self.wanted < len(self.chillers):
             self.wanted, self.above_s = self.wanted + 1, 0.0
         elif self.below_s >= self.down_after_s and self.wanted > 1:
             self.wanted, self.below_s = self.wanted - 1, 0.0
@@ -157,7 +204,7 @@ class ChwPlant(SimModule):
         io["power_kw"], io["plr_pct"] = power_each * len(running), 100.0 * plr
         io["capacity_kw"] = capacity
         io["load_kw"], io["unit_capacity_kw"] = max(load.heat_kw, 0.0), each
-        in_transition = any(self._state(n) in ("STARTING", "LOCKED_OUT") for n in CHILLERS)
+        in_transition = any(self._state(n) in ("STARTING", "LOCKED_OUT") for n in self.chillers)
         self._settled = abs(change) < 1e-9 and not (high or low or in_transition)
 
     def step(self, inputs: Inputs) -> None:
@@ -187,7 +234,10 @@ class ChwPlant(SimModule):
 
     def reverse_outputs(self) -> Mapping[str, object]:
         """Return the power each chiller draws from its feed."""
-        return {f"power_{n}": ElectricalDemand(kw=settled(self.share_kw[n])) for n in CHILLERS}
+        demand = dict.fromkeys(range(1, FEEDS + 1), 0.0)
+        for n in self.chillers:
+            demand[self.feed_of[n]] += self.share_kw[n]
+        return {f"power_{f}": ElectricalDemand(kw=settled(kw)) for f, kw in demand.items()}
 
     def heat_balance(self) -> dict[str, float]:
         """Cumulative heat returned and removed, and the heat held in the loop water, in kWh."""
@@ -213,8 +263,8 @@ class ChwPlant(SimModule):
             "loop": [self.temp, self.above_s, self.below_s],
             "energy": [self._heat_in.snapshot(), self._heat_out.snapshot(), self._settled],
             "wanted": self.wanted,
-            "until_ms": [self.until_ms[n] for n in CHILLERS],
-            "share_kw": [self.share_kw[n] for n in CHILLERS],
+            "until_ms": [self.until_ms[n] for n in self.chillers],
+            "share_kw": [self.share_kw[n] for n in self.chillers],
         }
 
     def restore(self, state: JsonValue) -> None:
@@ -232,5 +282,5 @@ class ChwPlant(SimModule):
         self._heat_out.restore(energy[1])
         self._settled = bool(energy[2])
         self.wanted = int(str(state["wanted"]))
-        self.until_ms = {n: int(str(v)) for n, v in zip(CHILLERS, until, strict=True)}
-        self.share_kw = {n: float(str(v)) for n, v in zip(CHILLERS, share, strict=True)}
+        self.until_ms = {n: int(str(v)) for n, v in zip(self.chillers, until, strict=True)}
+        self.share_kw = {n: float(str(v)) for n, v in zip(self.chillers, share, strict=True)}
