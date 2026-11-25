@@ -86,6 +86,10 @@ As installed from `uv.lock` on 2026-11-13, with the licence each project declare
 | `cryptography` | 50.0.2 | Apache-2.0 or BSD-3-Clause | `agentic-datacenter-governance`, for the host keys and quotes of ADR 0032; also installed with `asyncua` above |
 | REMORA (`remora-assurance`) | 0.12.0 at the commit in `REMORA_PIN` | BUSL-1.1, with a separate commercial licence, as declared by that project | `agentic-datacenter-remora` only |
 | `pyiec61850-ng`, carrying `libiec61850` 1.6.1 and Mbed TLS | 1.6.1.10 | GPLv3; Mbed TLS Apache-2.0 | `agentic-datacenter-iec61850` only, on Linux only (ADR 0017). That distribution is GPL-3.0-or-later; its licence text is `packages/agentic-datacenter-iec61850/LICENSE` |
+| `anthropic` (with `httpx2`, `httpcore2`, `jiter`, `docstring-parser`, `sniffio`, `truststore`, and `httpx2-jsfetch` on Emscripten only) | 2.14.0 | Apache-2.0; `httpx2`, `httpcore2` and `httpx2-jsfetch` BSD-3-Clause; `jiter`, `docstring-parser` and `truststore` MIT; `sniffio` MIT or Apache-2.0 | the optional group `llm` only, for a language-model agent (ADR 0035); never installed by default |
+| `openai` (with the packages of `anthropic` above) | 3.59.0 | Apache-2.0 | the optional group `llm` only, for a language-model agent (ADR 0035); never installed by default |
+
+The two SDKs of the `llm` group call the API of a model provider over the network, under that provider's own terms of use, with the user's own key. Nothing of a provider is in this repository, and a run replayed from its transcript calls no provider.
 
 `asyncua` is under the GNU Lesser General Public License, version 3 or later. Agentic-Datacenter uses it as an unmodified package installed separately from PyPI; it is not copied into this repository and not changed (ADR 0015). If Agentic-Datacenter is ever distributed, the distribution must say that it uses `asyncua` under the LGPL, include the texts of the GPL-3.0 and the LGPL-3.0, and leave the recipient able to replace the library with a modified version, which rules out freezing it into a single executable.
 
