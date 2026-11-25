@@ -447,6 +447,12 @@ def _decisions(result: RunResult, known: Collection[str] | None = None) -> list[
             "reason_codes": _strings(record.get("reason_codes")),
             "grounds": grounds(record, known),
         }  # fmt: skip
+        if "gate_detail" in record:
+            # Only for a served gate, with what a receipt is checked against (ADR 0036).
+            line.update(
+                gate_detail=record["gate_detail"], arguments=record["arguments"],
+                principal=record["principal"],
+            )  # fmt: skip
         # Only where a mandate was set for the proposer (ADR 0031).
         for key in AUTHORITY_KEYS:
             if key in record:

@@ -11,6 +11,8 @@ What you get:
 
 For a first local run, use the [command adapter quickstart](which-way-in.md#try-a-local-adapter).
 
+Every request carries a `correlation` that its outcome message carries too, with a content address of the action and the time as UTC from a fixed anchor, and a gate can ask for a read-only sample of the plant (`ADC_GATE_CONTEXT=1`). Receipts you export are checked against the run with `gate verify-receipts`. See [Preserve the policy's meaning](which-way-in.md#preserve-the-policys-meaning) and ADR 0036.
+
 ## How a gate is driven
 
 The agent can read and propose; only a gate can authorize; only the simulated command service can write. For each proposal Agentic-Datacenter establishes the facts itself, from the plant, and hands them to your gate:
@@ -79,8 +81,8 @@ Serve two endpoints and let the `http_gate` binding call them. The wire format, 
 
 | Request | Body | Answer |
 | --- | --- | --- |
-| `POST /evaluate` | `schema`, `proposal`, `premises`, `actor` | `schema`, `verdict`, `reasons`; optionally `required_approvers`, `escalated`, `decision_id` |
-| `POST /outcome` | `schema`, `decision_ref`, `status`, `detail` | anything; it is not read |
+| `POST /evaluate` | `schema`, `proposal`, `premises`, `actor`, `correlation`; `context` with `ADC_GATE_CONTEXT=1` | `schema`, `verdict`, `reasons`; optionally `required_approvers`, `escalated`, `decision_id`, `receipt` |
+| `POST /outcome` | `schema`, `decision_ref`, `status`, `detail`, and the request's `correlation_id`, `action_ref`, `proposal_id` and `verdict` | anything; it is not read |
 
 ```sh
 python examples/http-gate/server.py --port 8787 &     # or your own service
@@ -92,7 +94,7 @@ uv run agentic-datacenter gate check http_gate
 What the binding does not leave to the service:
 
 - The writes an `ALLOW` authorizes are the instance's own. A service cannot add or change one.
-- The decision reference, its nonce and its expiry are made by Agentic-Datacenter from everything decided. Your `decision_id` is kept beside it for cross-checking.
+- The decision reference, its nonce and its expiry are made by Agentic-Datacenter from everything decided. Your `decision_id` and `receipt` are kept beside it on the decision record (`gate_detail`), with the correlation, for cross-checking.
 - A service that does not answer within `ADC_GATE_TIMEOUT_S` (default 10), or answers with anything that is not a valid verdict with reasons, gets `ABSTAIN`, and the reason is on the decision. A gate that fails is counted as failing closed, and its false blocks show it.
 - Only loopback is called unless `ADC_GATE_ALLOW_REMOTE=1` is set, because the requests carry simulation state.
 

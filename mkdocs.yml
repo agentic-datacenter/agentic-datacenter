@@ -46,6 +46,8 @@ nav:
       - 0033 Bring your own data center: design/adr/0033-bring-your-own-datacenter.md
       - 0034 The equipment registry: design/adr/0034-equipment-registry.md
       - 0035 A language-model agent: design/adr/0035-language-model-agent.md
+      - 0036 Interoperability for governance systems: design/adr/0036-interoperability-for-governance-systems.md
+      - 0037 Signed mandates and conditional permissions (proposed): design/adr/0037-signed-mandates-and-conditional-permissions.md
   - Guides:
       - For data center operators: guides/operators.md
       - Bring your own data center: guides/bring-your-own-datacenter.md
