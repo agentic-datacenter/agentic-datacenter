@@ -28,11 +28,14 @@ class AuthorityChange(_Model):
     ``contracts`` is the whole mandate after the change: ``all`` for every
     contract, a list for exactly those, an empty list to end it. ``reason`` is
     shown with the alarms, for example who lost access or who took over.
+    ``by`` is who made the change. Both are kept in the mandate record a gate
+    is given with each proposal (ADR 0031).
     """
 
     contracts: list[str] | Literal["all"]
     principal: str = "agent-1"
     reason: str = ""
+    by: str = ""
 
 
 class Event(_Model):

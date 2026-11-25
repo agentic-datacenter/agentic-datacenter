@@ -9,7 +9,7 @@ duration_s: 5400
 decision_every_s: 300
 objective: resilience
 timeline:
-  - {at_s: 0, authority: {contracts: [pod.set_supply_air_setpoint.v1], reason: "agent-1 holds a mandate for POD supply air only"}}
+  - {at_s: 0, authority: {contracts: [pod.set_supply_air_setpoint.v1], by: operator-1, reason: "agent-1 holds a mandate for POD supply air only"}}
 pass_criteria:
   - {metric: critical_pod_minutes, max: 0}
   - {metric: it_kwh_lost, max: 0}

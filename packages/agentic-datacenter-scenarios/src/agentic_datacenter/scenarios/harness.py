@@ -262,6 +262,8 @@ def apply_event(world: World, event: Mapping[str, JsonValue]) -> None:
         world.path.set_authority(
             str(change["principal"]),
             None if everything else [str(c) for c in held],  # type: ignore[union-attr]
+            by=str(change.get("by") or ""),
+            reason=str(change.get("reason") or ""),
         )
         if change.get("reason"):
             world.path.add_note(str(change["reason"]))

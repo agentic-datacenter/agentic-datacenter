@@ -3,6 +3,7 @@
 - **Status:** Accepted, frozen in `benchmark-v1.1` on 2026-11-21. Before that: proposed, as part of the next benchmark version. The main branch carries that version while it is made; a season on `benchmark-v1` runs at its tag.
 - **Date:** 2026-11-19
 - **SDD:** 9, 10.2, 12.1; ADR 0022, 0023; issue 31
+- **Added to by:** ADR 0031. The register keeps every change, a gate is given that record with each proposal, `AD-11` and `AD-12` give the mandate at their start, and a refusal can say whether the mandate was never held or has ended. Those changes are not in `benchmark-v1.1`, which season 1 runs on. The figures below were measured before them.
 
 ## Context
 
