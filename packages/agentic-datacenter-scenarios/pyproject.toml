@@ -20,6 +20,8 @@ dependencies = [
 [project.optional-dependencies]
 # Evidence for runs on a measured input series (ADR 0018).
 measured = ["agentic-datacenter-data"]
+# A language-model agent (ADR 0035): the SDKs of the providers, never needed otherwise.
+llm = ["anthropic", "openai"]
 
 [tool.uv.sources]
 agentic-datacenter-core = { workspace = true }
@@ -36,6 +38,7 @@ scenario = "agentic_datacenter.scenarios.cli:scenario"
 gate = "agentic_datacenter.scenarios.cli:gate"
 facility = "agentic_datacenter.scenarios.cli:facility"
 equipment = "agentic_datacenter.scenarios.cli:equipment"
+agent = "agentic_datacenter.scenarios.cli:agent"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/agentic_datacenter"]
@@ -50,4 +53,6 @@ requirements = [
     "ADC-BEN-006", "ADC-BEN-007", "ADC-BEN-008", "ADC-BEN-009",
     "ADC-EVD-001",
     "ADC-FAC-006", "ADC-FAC-007", "ADC-FAC-008", "ADC-FAC-009",
+    "ADC-AGT-001", "ADC-AGT-002", "ADC-AGT-003", "ADC-AGT-004", "ADC-AGT-005",
+    "ADC-AGT-006", "ADC-AGT-007",
 ]
