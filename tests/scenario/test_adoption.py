@@ -23,6 +23,7 @@ def test_facility_init_starts_a_bundle_from_the_example(tmp_path: Path) -> None:
 
 
 @pytest.mark.req("ADC-FAC-012")
+@pytest.mark.req("ADC-AGT-002")
 def test_facility_report_gives_an_operator_one_page(tmp_path: Path) -> None:
     out = tmp_path / "report"
     status = facility_cli(
@@ -32,6 +33,7 @@ def test_facility_report_gives_an_operator_one_page(tmp_path: Path) -> None:
     page = (out / "operator_report.md").read_text(encoding="utf-8")
     assert "result on a facility of its owner, not a benchmark result" in page
     assert "| `static_allowlist` | scripted_adversarial |" in page
+    assert "**Agent:** Scripted agents: predefined, simulated calls (the default)." in page
     card = json.loads((out / "result_card.json").read_text(encoding="utf-8"))
     assert card["facility"]["name"] == "example_mixed_pods"
     assert (out / "facility_report.md").is_file() and (out / "report.html").is_file()
