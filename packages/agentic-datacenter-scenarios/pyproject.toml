@@ -35,6 +35,7 @@ demo = "agentic_datacenter.scenarios.cli:demo"
 scenario = "agentic_datacenter.scenarios.cli:scenario"
 gate = "agentic_datacenter.scenarios.cli:gate"
 facility = "agentic_datacenter.scenarios.cli:facility"
+equipment = "agentic_datacenter.scenarios.cli:equipment"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/agentic_datacenter"]
