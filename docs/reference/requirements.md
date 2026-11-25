@@ -15,6 +15,9 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-AGT-005` | 15 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_llm_agent.py` |
 | `ADC-AGT-006` | 15 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_llm_agent.py` |
 | `ADC-AGT-007` | 15 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_llm_agent.py` |
+| `ADC-AUT-001` | 17 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_authority_in_time.py` |
+| `ADC-AUT-002` | 17 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_authority_in_time.py` |
+| `ADC-AUT-003` | 17 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_authority_in_time.py` |
 | `ADC-BEN-001` | 9 | yes | `agentic-datacenter-scenarios` | `tests/bench/test_heldout_and_freeze.py`<br>`tests/conformance/test_result_card.py` |
 | `ADC-BEN-002` | 9 | yes | `agentic-datacenter-scenarios` | `tests/scenario/test_op03_op10_ad01_ad03.py` |
 | `ADC-BEN-003` | 9 | yes | `agentic-datacenter-scenarios` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/bench/test_utility_measures.py`<br>`tests/property/test_counterfactual_identity.py` |
@@ -61,6 +64,9 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-FID-002` | 4 | yes | `agentic-datacenter-workspace` | `tests/bench/test_sensitivity.py` |
 | `ADC-FID-003` | 4 | yes | `electrical.it_load` | `packages/agentic-datacenter-plant/tests/test_module_behaviour.py` |
 | `ADC-FID-004` | 4 | yes | `agentic-datacenter-scenarios` | `tests/bench/test_sensitivity.py` |
+| `ADC-FND-001` | 17 | no | `agentic-datacenter-workspace` | `tests/conformance/test_findings.py` |
+| `ADC-FND-002` | 17 | no | `agentic-datacenter-workspace` | `tests/conformance/test_findings.py` |
+| `ADC-FND-003` | 17 | no | `agentic-datacenter-workspace` | `tests/conformance/test_findings.py` |
 | `ADC-GOV-001` | 8 | yes | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-governance/tests/test_safe_posture.py`<br>`packages/agentic-datacenter-remora/tests/test_binding.py`<br>`packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/bench/test_release_gate.py`<br>`tests/scenario/test_op13_ad09_governed.py`<br>`tests/scenario/test_safe_posture_scenarios.py` |
 | `ADC-GOV-002` | 8 | yes | `agentic-datacenter-supervisory` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-remora/tests/test_governed.py`<br>`packages/agentic-datacenter-supervisory/tests/test_command_service.py`<br>`tests/scenario/test_op13_ad09_governed.py`<br>`tests/scenario/test_scenario_library.py` |
 | `ADC-GOV-003` | 8 | yes | `agentic-datacenter-governance` | `packages/agentic-datacenter-governance/tests/test_governance.py`<br>`packages/agentic-datacenter-remora/tests/test_binding.py` |

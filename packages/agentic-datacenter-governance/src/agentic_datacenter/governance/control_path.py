@@ -63,6 +63,19 @@ PROFILES = {
 ROLLBACK_PROFILES = frozenset({"GOVERNED", "DECISION_ONLY", "SHADOW"})
 #: What the record says when an approval came from someone without standing.
 NO_STANDING = "holds no standing to approve this contract"
+#: Keys of a record kept for evidence and left out of the state (ADR 0036, ADR 0038).
+UNHASHED_RECORD_KEYS = ("gate_detail", "trace")
+
+
+def _trace(record: dict[str, JsonValue], key: str, entry: dict[str, JsonValue]) -> None:
+    """Add *entry* to the list *key* of a record's approval trace."""
+    trace = record.setdefault("trace", {})
+    assert isinstance(trace, dict)
+    listed = trace.setdefault(key, [])
+    assert isinstance(listed, list)
+    listed.append(entry)
+
+
 _ROLLBACK_ACTOR = Actor("rollback-monitor", "operator")
 #: How long an unanswered write is left before the plant is read to see what became of it.
 UNKNOWN_RESOLVE_MS = 30_000
@@ -400,6 +413,7 @@ class GovernedPath:
                 refused = record["approval_refusals"]
                 assert isinstance(refused, list)
                 refused.append(f"{approver}: {NO_STANDING}")
+                _trace(record, "refusals", {"by": approver, "at_ms": now, "why": NO_STANDING})
                 return copy.deepcopy(record)
             hook = getattr(self.gate, "approve", None)
             if hook is not None:
@@ -409,8 +423,10 @@ class GovernedPath:
                     refused = record["approval_refusals"]
                     assert isinstance(refused, list)
                     refused.append(f"{approver}: {exc}")
+                    _trace(record, "refusals", {"by": approver, "at_ms": now, "why": str(exc)})
                     return copy.deepcopy(record)
             approvers.append(approver)
+            _trace(record, "approvals", {"by": approver, "at_ms": now})
         if len(approvers) < int(str(record["required_approvers"])):
             return copy.deepcopy(record)
         if not PROFILES[self.profile]:
@@ -430,6 +446,12 @@ class GovernedPath:
         )
         failed = [p.expr for p in snapshot.premises if p.holds is not True]
         proposer, contract_id = str(record["principal"]), str(record["contract_id"])
+        # The check made when the last approval came in, before anything is written:
+        # when, and whether the proposer still held a mandate then (ADR 0038).
+        trace = record.setdefault("trace", {})
+        assert isinstance(trace, dict)
+        trace["checked_at_ms"] = now
+        trace["mandate_at_check"] = self.authorized(proposer, contract_id)
         if self.authorized(proposer, contract_id) is False:
             # Asked for while the proposer held a mandate, answered after it ended.
             failed.append(f"authority({proposer}, {contract_id})")
@@ -454,6 +476,9 @@ class GovernedPath:
                 hook(str(record["decision_ref"]), approver, reason, self._kernel.clock.now_ms)
             except GateRefusal as exc:
                 reason = f"{reason} (gate: {exc})"
+        _trace(record, "rejections", {
+            "by": approver, "at_ms": self._kernel.clock.now_ms, "why": reason,
+        })  # fmt: skip
         self._finish(record, "REJECTED", f"{REJECTED_BY}{approver}: {reason}")
         return copy.deepcopy(record)
 
@@ -635,6 +660,9 @@ class GovernedPath:
 
     def _finish(self, record: dict[str, JsonValue], status: str, detail: str) -> None:
         record["outcome"], record["outcome_detail"] = status, detail
+        trace = record.get("trace")
+        if isinstance(trace, dict):
+            trace["finished_at_ms"] = self._kernel.clock.now_ms
         self._kernel.state.touch("governance.path")
         if record["decision_ref"] is not None:
             self.gate.record_outcome(str(record["decision_ref"]), Outcome(status, detail))
@@ -744,10 +772,12 @@ class GovernedPath:
     def _snapshot(self) -> JsonValue:
         return {
             # A served gate's correlation names the session of this execution, which
-            # differs between executions of the same run. It is kept on the record and
-            # out of the state, so the state hash and the card do not depend on it.
+            # differs between executions of the same run, and the trace of an approval
+            # is bookkeeping for evidence that nothing in the run reads. Both are kept on
+            # the record and out of the state, so the state hash and the card do not
+            # depend on them (ADR 0036, ADR 0038).
             "records": [
-                {k: copy.deepcopy(v) for k, v in r.items() if k != "gate_detail"}
+                {k: copy.deepcopy(v) for k, v in r.items() if k not in UNHASHED_RECORD_KEYS}
                 for r in self._records
             ],
             "notes": list(self.notes),

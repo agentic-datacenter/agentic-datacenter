@@ -267,6 +267,16 @@ def apply_event(world: World, event: Mapping[str, JsonValue]) -> None:
         )
         if change.get("reason"):
             world.path.add_note(str(change["reason"]))
+    elif event.get("work_order") is not None:
+        # Proposed as the agent, through the agent's own tools: whatever the agent,
+        # the same step reaches the gate (ADR 0038).
+        order = event["work_order"]
+        assert isinstance(order, Mapping)
+        arguments = order.get("arguments") or {}
+        assert isinstance(arguments, Mapping)
+        world.tools.propose_action(
+            str(order["contract"]), dict(arguments), rationale=str(order.get("rationale") or "")
+        )
     elif event.get("operator_write") is not None:
         fields = event["operator_write"]
         assert isinstance(fields, Mapping)

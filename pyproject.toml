@@ -74,6 +74,7 @@ requirements = [
     "ADC-FID-001", "ADC-FID-002",
     "ADC-PIN-004", "ADC-EVD-002", "ADC-HST-004",
     "ADC-EQP-001", "ADC-EQP-002", "ADC-EQP-003", "ADC-EQP-004",
+    "ADC-FND-001", "ADC-FND-002", "ADC-FND-003",
 ]
 
 [tool.ruff]
