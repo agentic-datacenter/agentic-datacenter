@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="44" viewBox="0 0 320 44" role="img" aria-label="Explore the demo">
+  <rect width="320" height="44" rx="8" fill="#176B65"/>
+  <path d="M26 15 L26 29 L38 22 Z" fill="#FFFFFF"/>
+  <text x="174" y="22" dominant-baseline="middle" text-anchor="middle" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="15" font-weight="600" fill="#FFFFFF">Explore the demo</text>
+</svg>

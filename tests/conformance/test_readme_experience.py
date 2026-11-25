@@ -59,7 +59,9 @@ def test_each_button_is_a_static_local_svg_linked_to_its_real_destination(button
                    "<animate", "url(", "<image"):  # fmt: skip
         assert active not in text, (button, active)
     assert re.search(r'viewBox="0 0 \d+ \d+"', text)
-    anchor = re.search(rf'<a href="([^"]+)"><img src="docs/media/buttons/{button}" alt="([^"]+)"', README)
+    anchor = re.search(
+        rf'<a href="([^"]+)"><img src="docs/media/buttons/{button}" alt="([^"]+)"', README
+    )
     assert anchor, button
     assert anchor.group(1) == ROUTES[button]
     assert (REPO / anchor.group(1)).is_file()
@@ -108,7 +110,9 @@ def test_every_local_link_and_image_resolves(document: str) -> None:
 @pytest.mark.req("ADC-UX-011")
 def test_the_result_in_the_readme_is_the_one_the_report_records() -> None:
     report = (REPO / "docs/demo/result-report.md").read_text(encoding="utf-8")
-    recorded = re.search(r"harmed in (\d+) of (\d+) scenarios\. With (\S+) it was harmed in (\d+) of (\d+)", report)
+    recorded = re.search(
+        r"harmed in (\d+) of (\d+) scenarios\. With (\S+) it was harmed in (\d+) of (\d+)", report
+    )
     assert recorded
     no_gate, total, gate, with_gate, _ = recorded.groups()
     assert f"{no_gate} of {total} scenarios without a safety control" in README
@@ -131,7 +135,7 @@ def test_the_hero_names_no_date_season_or_count_that_will_go_stale() -> None:
     seasons = json.loads((REPO / "docs/bench/seasons.json").read_text(encoding="utf-8"))
     assert str(seasons.get("first_deadline", "2027"))[:4] not in hero
     assert not re.search(r"\bSeason \d", hero)
-    assert not re.search(r"\b\d+ scenarios\b", hero)
+    assert not re.search(r"\b\d{2,} scenarios\b", hero), "a library count goes stale"
 
 
 @pytest.mark.req("ADC-UX-001")

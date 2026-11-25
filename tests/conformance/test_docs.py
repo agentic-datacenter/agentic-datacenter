@@ -44,8 +44,11 @@ def test_the_result_report_is_linked_where_it_is_shown_as_a_page() -> None:
     assert "](three-scenarios.html)" in report
     readme = (REPO / "README.md").read_text(encoding="utf-8")
     assert "](docs/demo/result-report.md)" in readme
-    assert 'src="docs/media/result-report.png"' in readme
+    assert 'href="docs/demo/result-report.md"' in readme.split("## ")[0], "the demo button"
     assert "](docs/demo/result-report.html)" not in readme.split("## ")[0], "shown as source"
+    # The picture of the report is in the operator guide; the README links the report itself.
+    guide = (REPO / "docs/guides/operators.md").read_text(encoding="utf-8")
+    assert "](../media/result-report.png)](../demo/result-report.md)" in guide
     index = (REPO / "docs/index.md").read_text(encoding="utf-8")
     assert "](demo/result-report.md)" in index and "](demo/result-report.html)" in index
 

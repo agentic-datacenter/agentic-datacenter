@@ -6,6 +6,7 @@ nav:
   - Home: index.md
   - Design:
       - Design document: design/SDD-ADC-001.md
+      - Front door and onboarding: design/SDD-ADC-002.md
       - Zone and conduit model: design/zone_model.md
       - Threat model: design/threat_model.md
       - REMORA binding: design/remora_binding.md
@@ -47,6 +48,8 @@ nav:
   - Guides:
       - For data center operators: guides/operators.md
       - Bring your own data center: guides/bring-your-own-datacenter.md
+      - Bring your equipment: guides/equipment.md
+      - Bring your agent (planned): guides/bring-your-own-agent.md
       - Run a scenario on measured weather: guides/measured-weather.md
       - Check a result card before release: guides/release-gate.md
       - Test your own gate: guides/bring-your-own-gate.md

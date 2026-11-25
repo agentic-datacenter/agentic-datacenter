@@ -59,6 +59,19 @@ Tooling
 
 Added
 
+- A front door (SDD-ADC-002). The README now holds:
+  - the purpose;
+  - one demo button and four role buttons: datacenter, equipment, agent (planned) and governance;
+  - the illustrative animation, unchanged;
+  - one result statement, taken from the demo report and checked against it by a test;
+  - links to everything else.
+
+  What is free and what is under a commercial agreement is in `COMMERCIAL_LICENSING.md`. `docs/guides/bring-your-own-agent.md` says plainly that agents of one's own are planned. `tests/conformance/test_readme_experience.py` holds the order, the buttons, the links and the labels.
+- `facility init <dir>` starts a bundle of your own from the example. `facility report <bundle>` writes one report for an operator: what fits, and what each gate did with both scripted agents at the quick tier.
+- A maker can submit its own equipment entry under CC-BY-4.0, from `equipment/TEMPLATE.vendor.yaml`. `agentic-datacenter equipment check` runs the registry's gate on it and tries it in the generic facility.
+- `tools/first_run.py` times the first run of every role from a fresh clone.
+- The report of a result card marks the gates written by this project's authors.
+- CONTRIBUTING: the adoption phase. No new feature is taken until a person from outside the project has reached a result on their own.
 - An equipment registry (ADR 0034). `equipment/` holds entries that give a module the values of a named make and model. Each entry records the source and line of every value, its rated conditions, how the module takes them, its tier (`factual`, `calibrated` or `vendor_verified`) and the rights to use and redistribute it. A gate in the tests refuses an entry without a pinned source, a licence text and both rights allowed. The first eight entries are chillers of the Modelica Buildings Library, made by `tools/equipment_modelica.py`. A bundle uses an entry as `registry:<id>`. The README is now organised by what each kind of contributor brings and gets back.
 - The number of chillers is a parameter of `cooling.chw_plant` 0.3.0, `chillers`, 1 to 9 (ADR 0033). With three, every tag, port and state is as before. A fourth or later chiller gets points of its own and shares one of the three power feeds; a plant of fewer has no points for the chillers it lacks, so the contracts that name them do not fit it. The supervisory overview and the chiller alarms count the chillers from the plant.
 - Bring your own data center, part 2 (ADR 0033). `agentic-datacenter facility check <bundle>` runs the plant for five minutes and reports which contracts load and which scenarios fit, each one that does not with what it lacks, as JSON and Markdown. `facility compile` writes the profile a bundle compiles to. `bench run --facility` and `scenario run --facility` run what fits. The card names the facility in a `facility` block, is labelled "result on a facility of its owner, not a benchmark result", and `bench check --publication` refuses it. `examples/byodc/` has six PODs of three kinds. The guide is `docs/guides/bring-your-own-datacenter.md`.

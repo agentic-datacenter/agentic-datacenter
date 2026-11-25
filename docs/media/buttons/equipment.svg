@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="52" viewBox="0 0 280 52" role="img" aria-label="Bring your equipment — Use and contribute models">
+  <rect x="0.5" y="0.5" width="279" height="51" rx="8" fill="#162331" stroke="#52647A"/>
+  <g fill="none" stroke="#D2DCE7" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="29" cy="26" r="6"/><path d="M29 14 V18 M29 34 V38 M17 26 H21 M37 26 H41 M20.5 17.5 L23.3 20.3 M34.7 31.7 L37.5 34.5 M20.5 34.5 L23.3 31.7 M34.7 20.3 L37.5 17.5"/></g>
+  <text x="58" y="21" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="15" font-weight="600" fill="#FFFFFF">Bring your equipment</text>
+  <text x="58" y="38" font-family="system-ui, -apple-system, Segoe UI, sans-serif" font-size="12" fill="#D2DCE7">Use and contribute models</text>
+</svg>
