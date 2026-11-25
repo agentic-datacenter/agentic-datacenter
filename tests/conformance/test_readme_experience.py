@@ -95,9 +95,7 @@ def test_the_agent_path_says_it_is_planned_everywhere_it_is_offered() -> None:
 
 
 @pytest.mark.req("ADC-UX-010")
-@pytest.mark.parametrize(
-    "document", ["README.md", "docs/guides/bring-your-own-agent.md", "equipment/README.md"]
-)
+@pytest.mark.parametrize("document", ["README.md", *ROUTES.values()])
 def test_every_local_link_and_image_resolves(document: str) -> None:
     source = REPO / document
     for link in _links(source.read_text(encoding="utf-8")):
@@ -144,3 +142,47 @@ def test_the_readme_stays_short() -> None:
     text = re.sub(r"<[^>]+>", " ", text)
     text = re.sub(r"\]\([^)]*\)", "]", text)
     assert len(re.findall(r"[A-Za-z][A-Za-z'’-]*", text)) <= 500
+
+
+def test_the_demo_shows_the_result_before_the_report_image() -> None:
+    report = (REPO / ROUTES["demo.svg"]).read_text(encoding="utf-8")
+    assert report.index("## Result") < report.index("![The result report")
+
+
+@pytest.mark.parametrize(
+    ("button", "before", "expected"),
+    [
+        (
+            "datacenter.svg",
+            "## A bundle",
+            ("facility check examples/byodc", "facility_report.md", "facility init"),
+        ),
+        (
+            "equipment.svg",
+            "## Tiers",
+            (
+                "equipment check",
+                "--source equipment/TEMPLATE.source.yaml",
+                "can enter the registry",
+            ),
+        ),
+        (
+            "agent.svg",
+            "## What exists today",
+            ("planned", "scripted agents", "Demo report", "share what your agent needs"),
+        ),
+        (
+            "governance.svg",
+            "## How a gate is driven",
+            ("gate check http_gate", "bench run", "result_card.json"),
+        ),
+    ],
+)
+def test_role_guides_show_the_first_action_and_outcome_before_the_reference(
+    button: str, before: str, expected: tuple[str, ...]
+) -> None:
+    content = (REPO / ROUTES[button]).read_text(encoding="utf-8")
+    assert before in content
+    start = content.split(before, 1)[0]
+    for fragment in expected:
+        assert fragment in start, (button, fragment)
