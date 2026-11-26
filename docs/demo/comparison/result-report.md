@@ -15,7 +15,7 @@
 
 ## Run inputs and evidence
 
-Recording SHA-256 (demo.json): 2d960bcf21393f74b27e39e7dfbf036c1f45482417ccc12ef675829176b6f01a
+Recording SHA-256 (demo.json): d43bc38db0e9a2b340fbaa6c34f6289ec00ab88c084e1c2b9f7798e9f0a9ef48
 
 Seed: 1. Lowest module fidelity: F1.
 
@@ -172,9 +172,9 @@ Weather samples are model inputs. A measured source is identified only when it i
 
 | Gate | Simulator commit | Gate commit | Scenario hash | Contracts hash | Final state hash | Verify from the report directory |
 | --- | --- | --- | --- | --- | --- | --- |
-| null_gate | unknown | Not recorded | 8c70ed13185a6b9674c76adce93678d21c78db3d8333ab816dde89712d36ec12 | a1fd94f7c6b3fb2905955d94126666aaa3b0a41c26b380943f51d1bd84592c28 | 4ba77bd8ba47595a88233315361610bd2af72c97c119fd0b8e0be3ea378aef25 | agentic-datacenter scenario verify evidence/OP-03.null_gate |
-| static_allowlist | unknown | Not recorded | 8c70ed13185a6b9674c76adce93678d21c78db3d8333ab816dde89712d36ec12 | a1fd94f7c6b3fb2905955d94126666aaa3b0a41c26b380943f51d1bd84592c28 | f7b1ee0218dc9d9a56ccde79c007a6efd95c34b4b9c3120d25f930f700413d72 | agentic-datacenter scenario verify evidence/OP-03.static_allowlist |
-| http_gate | unknown | Not recorded | 8c70ed13185a6b9674c76adce93678d21c78db3d8333ab816dde89712d36ec12 | a1fd94f7c6b3fb2905955d94126666aaa3b0a41c26b380943f51d1bd84592c28 | fde5fb224dad52c68dacf963a6ccd0723e8e6d381f06492baa3ea2828589b80d | agentic-datacenter scenario verify evidence/OP-03.http_gate |
+| null_gate | bc73ff36c3634b932a4654958ea9836dc5535450 | Not recorded | 8c70ed13185a6b9674c76adce93678d21c78db3d8333ab816dde89712d36ec12 | a1fd94f7c6b3fb2905955d94126666aaa3b0a41c26b380943f51d1bd84592c28 | 4ba77bd8ba47595a88233315361610bd2af72c97c119fd0b8e0be3ea378aef25 | agentic-datacenter scenario verify evidence/OP-03.null_gate |
+| static_allowlist | bc73ff36c3634b932a4654958ea9836dc5535450 | Not recorded | 8c70ed13185a6b9674c76adce93678d21c78db3d8333ab816dde89712d36ec12 | a1fd94f7c6b3fb2905955d94126666aaa3b0a41c26b380943f51d1bd84592c28 | f7b1ee0218dc9d9a56ccde79c007a6efd95c34b4b9c3120d25f930f700413d72 | agentic-datacenter scenario verify evidence/OP-03.static_allowlist |
+| http_gate | bc73ff36c3634b932a4654958ea9836dc5535450 | Not recorded | 8c70ed13185a6b9674c76adce93678d21c78db3d8333ab816dde89712d36ec12 | a1fd94f7c6b3fb2905955d94126666aaa3b0a41c26b380943f51d1bd84592c28 | fde5fb224dad52c68dacf963a6ccd0723e8e6d381f06492baa3ea2828589b80d | agentic-datacenter scenario verify evidence/OP-03.http_gate |
 
 ## What this report does not show
 

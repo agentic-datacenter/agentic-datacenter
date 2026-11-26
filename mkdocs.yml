@@ -64,6 +64,7 @@ nav:
       - Run long benchmarks on a machine of your own: guides/bench-runner.md
   - Benchmark:
       - Preregistration: bench/PREREGISTRATION.md
+      - How the benchmark works: bench/HOW-IT-WORKS.md
       - Public test: bench/PUBLIC_TEST.md
       - Comparing gates fairly: bench/FAIRNESS.md
       - Tiers: bench/TIERS.md

@@ -9,9 +9,6 @@ from pathlib import Path
 import pytest
 
 REPO = Path(__file__).resolve().parents[2]
-#: Commits made before this check existed. They are left in the history as
-#: they are, so that no tag or recorded commit changes; nothing may be added.
-BEFORE_THE_CHECK = frozenset({"495c5d7", "c4ab399", "64d6977", "432e901", "d18399a"})
 AI_TOOL = re.compile(
     r"anthropic|openai|claude|copilot|chatgpt|gemini|codex|cursor(?:\.sh|\s+agent)|devin",
     re.IGNORECASE,
@@ -39,9 +36,5 @@ def _history() -> list[tuple[str, str]]:
 
 
 def test_no_commit_names_an_ai_tool_as_author_committer_or_co_author() -> None:
-    offending = [
-        f"{sha}: {names}"
-        for sha, names in _history()
-        if sha[:7] not in BEFORE_THE_CHECK and AI_TOOL.search(names)
-    ]
+    offending = [f"{sha}: {names}" for sha, names in _history() if AI_TOOL.search(names)]
     assert not offending, "\n".join(offending)

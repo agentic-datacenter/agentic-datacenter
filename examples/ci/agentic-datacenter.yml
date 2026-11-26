@@ -63,6 +63,7 @@ jobs:
       - name: One run, with its evidence bundle and receipts
         working-directory: adc
         run: |
+          : > "$ADC_RECEIPTS_FILE"  # only this run's receipts, not the interface check's
           uv run agentic-datacenter scenario run OP-03 --gate command_gate --seconds 1800 \
             --out ../result/evidence || echo "the scenario's own criteria were not met; see the bundle"
           if [ -s "$ADC_RECEIPTS_FILE" ]; then

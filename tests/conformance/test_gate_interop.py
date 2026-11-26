@@ -359,6 +359,10 @@ def test_the_maintainers_workflow_runs_commands_that_exist() -> None:
         ("bench", "run"),
         ("bench", "check"),
     }
+    # The interface check writes receipts too; the file is emptied before the run they
+    # are checked against, or its decisions would be reported as naming none of the run's.
+    run_at = next(i for i, c in enumerate(commands) if "scenario run" in c)
+    assert commands[run_at - 1].startswith(': > "$ADC_RECEIPTS_FILE"')
     # As given it runs the starter, so a copy is green before anything is changed.
     assert "adc/examples/command-gate/adapter.py" in flow["env"]["ADC_GATE_COMMAND"]
     assert (REPO / "examples/command-gate/adapter.py").is_file()
