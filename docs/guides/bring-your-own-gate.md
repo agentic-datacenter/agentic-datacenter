@@ -92,7 +92,7 @@ A binary gate has to decide for itself the cases where another gate would ask a 
 - **Deny them.** Nothing executes without a person. Proposals that were in fact safe count as false blocks.
 - **Allow them when your own checks pass.** These run without a person. The card counts them as executed without the approval the contract asks for, whether or not harm came of it ([fairness rules](../bench/FAIRNESS.md)).
 
-The [example service](https://github.com/darklordVirtual/agentic-datacenter/blob/main/examples/http-gate/server.py) uses all four verdicts. A binary gate can map `ABSTAIN` and `VERIFY` there to `DENY`.
+The [example service](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/examples/http-gate/server.py) uses all four verdicts. A binary gate can map `ABSTAIN` and `VERIFY` there to `DENY`.
 
 Three rules keep results comparable:
 
@@ -102,7 +102,7 @@ Three rules keep results comparable:
 
 ## Path A: a Python package
 
-Copy [`examples/python-gate`](https://github.com/darklordVirtual/agentic-datacenter/tree/main/examples/python-gate), rename it, and put your system behind `evaluate`. Agentic-Datacenter finds the gate through an entry point; no Agentic-Datacenter code changes:
+Copy [`examples/python-gate`](https://github.com/agentic-datacenter/agentic-datacenter/tree/main/examples/python-gate), rename it, and put your system behind `evaluate`. Agentic-Datacenter finds the gate through an entry point; no Agentic-Datacenter code changes:
 
 ```toml
 [project.entry-points."agentic_datacenter.gates"]
@@ -110,7 +110,7 @@ my_gate = "my_gate:create"
 ```
 
 ```sh
-git clone https://github.com/darklordVirtual/agentic-datacenter && cd agentic-datacenter
+git clone https://github.com/agentic-datacenter/agentic-datacenter && cd agentic-datacenter
 uv sync
 uv pip install -e ../my-gate
 uv run agentic-datacenter gate list                # my_gate is among them
@@ -119,7 +119,7 @@ uv run agentic-datacenter gate check my_gate       # the gate interface suite
 
 ## Path B: a service over HTTP, in any language
 
-Serve two endpoints and let the `http_gate` binding call them. The wire format, `agentic_datacenter.gate.http/1`, is in [gate-http-v1.schema.json](../reference/gate-http-v1.schema.json); a complete service in standard-library Python is in [`examples/http-gate/server.py`](https://github.com/darklordVirtual/agentic-datacenter/blob/main/examples/http-gate/server.py).
+Serve two endpoints and let the `http_gate` binding call them. The wire format, `agentic_datacenter.gate.http/1`, is in [gate-http-v1.schema.json](../reference/gate-http-v1.schema.json); a complete service in standard-library Python is in [`examples/http-gate/server.py`](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/examples/http-gate/server.py).
 
 | Request | Body | Answer |
 | --- | --- | --- |
@@ -201,7 +201,7 @@ Who may act is told in two ways once a mandate was set for the proposer (ADR 002
 
 A gate that works out for itself who may act can ask not to be told the answer: `ADC_GATE_DERIVES_AUTHORITY=1` for a served gate, `derives_authority = True` on a Python gate. It is then sent the record and not the premise, the run is judged by the premise all the same, and the card says that the gate was not told (`premise_told`). A gate that asks for this and cannot work it out lets every step without a mandate through, and that is counted.
 
-A gate that authenticates mandates can go one step further: `ADC_GATE_VERIFIES_MANDATES=1` for a served gate, `verifies_mandates = True` on a Python gate. It is then sent `mandate_statements` and nothing else about who may act: each change as a statement signed with Ed25519 that names the one it supersedes, the statements of everyone the mandate was passed on from, whatever else was presented for the proposer, which may be forged, and every key of each issuer the site knows, with when it was valid. One rule says which statements count and who holds what after a replacement, a withdrawal, an expiry, a delegation, a key rotation or the end of an issuer's standing. It is on one page, [Signed mandate statements](../reference/mandate-statements.md), with [test vectors](../reference/mandate-vectors.json) and a reference in a hundred lines to copy or port ([`examples/mandate-verifier/verify.py`](https://github.com/darklordVirtual/agentic-datacenter/blob/main/examples/mandate-verifier/verify.py), MIT). The card says that the gate was given statements alone (`record_told`). `AD-16` to `AD-19`, `OP-15` and `OP-16` test it, and `examples/http-gate/server.py` verifies whenever it is sent statements and no record (it then needs the `cryptography` package, which `uv sync` installs). Set the variable where `bench run` is started.
+A gate that authenticates mandates can go one step further: `ADC_GATE_VERIFIES_MANDATES=1` for a served gate, `verifies_mandates = True` on a Python gate. It is then sent `mandate_statements` and nothing else about who may act: each change as a statement signed with Ed25519 that names the one it supersedes, the statements of everyone the mandate was passed on from, whatever else was presented for the proposer, which may be forged, and every key of each issuer the site knows, with when it was valid. One rule says which statements count and who holds what after a replacement, a withdrawal, an expiry, a delegation, a key rotation or the end of an issuer's standing. It is on one page, [Signed mandate statements](../reference/mandate-statements.md), with [test vectors](../reference/mandate-vectors.json) and a reference in a hundred lines to copy or port ([`examples/mandate-verifier/verify.py`](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/examples/mandate-verifier/verify.py), MIT). The card says that the gate was given statements alone (`record_told`). `AD-16` to `AD-19`, `OP-15` and `OP-16` test it, and `examples/http-gate/server.py` verifies whenever it is sent statements and no record (it then needs the `cryptography` package, which `uv sync` installs). Set the variable where `bench run` is started.
 
 Told or not, a gate can say two more things, both optional. Its own finding of whether the proposer holds a mandate, whatever its verdict: `"authority_holds": true` or `false`. And, with a refusal for want of a mandate, which kind it was, in `reason_details`: `{"authority": "ended"}` when an earlier change held the contract, `{"authority": "never_held"}` when none did. Both example gates decide from the record when there is one, and say both. For each run in which a mandate was set, the card counts the steps without a mandate by kind as the register holds them, the ones your gate allowed, how often its finding was not the premise, and how often its kind was not the register's (`authority` on each run and on each row of `results`). Each judgement carries the same for its proposal. A gate that says nothing more than `authority` loses nothing by it.
 
@@ -214,8 +214,8 @@ A result card is a simulation result. It is not a claim about a facility, and no
 Whose a gate is, and what you may do with what is here. This is how the licences are meant; it is not legal advice.
 
 - **A gate you wrote yourself is yours.** A service that answers over HTTP, or a command run per decision, contains nothing of Agentic-Datacenter. It is under whatever licence you choose, and the licence of this repository does not reach it. Anyone may implement the wire format.
-- **The examples are under the MIT licence** ([`examples/LICENSE`](https://github.com/darklordVirtual/agentic-datacenter/blob/main/examples/LICENSE)). Copy `examples/http-gate` or `examples/python-gate`, change it, and keep the result under your own licence. Keep the MIT notice with what you copied.
-- **Agentic-Datacenter itself is under the Business Source License 1.1** (`LICENSE`). Running it to develop, test, evaluate or benchmark your gate is not production use, and needs no licence from anyone. Any other use needs a [commercial licence](https://github.com/darklordVirtual/agentic-datacenter/blob/main/COMMERCIAL_LICENSING.md).
+- **The examples are under the MIT licence** ([`examples/LICENSE`](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/examples/LICENSE)). Copy `examples/http-gate` or `examples/python-gate`, change it, and keep the result under your own licence. Keep the MIT notice with what you copied.
+- **Agentic-Datacenter itself is under the Business Source License 1.1** (`LICENSE`). Running it to develop, test, evaluate or benchmark your gate is not production use, and needs no licence from anyone. Any other use needs a [commercial licence](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/COMMERCIAL_LICENSING.md).
 - **A Python gate imports a little of Agentic-Datacenter**, the types its `evaluate` takes and returns. Keep that in a thin adapter and your own logic behind it. Your product then runs without Agentic-Datacenter, and only the adapter is tied to it.
 - **The contribution terms in `CONTRIBUTING.md` apply only to a change you ask to have merged into this repository.** They do not apply to your gate, to a registration, to a result you report, or to an issue like the one that asked for this section.
 

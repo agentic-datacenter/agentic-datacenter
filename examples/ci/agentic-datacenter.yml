@@ -50,7 +50,7 @@ jobs:
           path: gate
       - uses: actions/checkout@v4
         with:
-          repository: darklordVirtual/agentic-datacenter
+          repository: agentic-datacenter/agentic-datacenter
           ref: ${{ env.ADC_REF }}
           path: adc
       - uses: astral-sh/setup-uv@v6

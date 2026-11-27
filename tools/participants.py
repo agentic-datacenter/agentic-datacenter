@@ -31,7 +31,7 @@ import yaml
 REPO = Path(__file__).resolve().parents[1]
 ENTRIES = REPO / "docs/bench/participants"
 PAGE = REPO / "docs/bench/participants.md"
-ISSUE = re.compile(r"https://github\.com/darklordVirtual/agentic-datacenter/issues/\d+")
+ISSUE = re.compile(r"https://github\.com/agentic-datacenter/agentic-datacenter/issues/\d+")
 RELATIONS = ("independent", "benchmark_authors")
 CONNECTIONS = ("http_gate", "command_gate", "package", "chain_gate member")
 KINDS = ("verified", "self_reported")
@@ -104,7 +104,7 @@ def render(entries: Sequence[Mapping[str, Any]], repo: Path = REPO) -> str:
         "# Enrolled governance systems",
         "",
         "A system is listed here only after its maintainers enrolled it themselves, with the "
-        "[registration form](https://github.com/darklordVirtual/agentic-datacenter/issues/new"
+        "[registration form](https://github.com/agentic-datacenter/agentic-datacenter/issues/new"
         "?template=gate-registration.yml), and agreed to be listed by name. Each row links that "
         "registration. The figures are from the system's latest card, beside the built-in gates "
         "that ran on the same card: the same scenarios, agents, seeds and judge.",

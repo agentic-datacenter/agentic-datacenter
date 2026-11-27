@@ -16,7 +16,7 @@ uv run agentic-datacenter bench run --tier quick --scenario OP-03 \
 
 Open `build/first-command/report.html` for the comparison, `result_card.json` for the figures, and `decisions.jsonl` for the proposal, verdict and recorded reasons. The adapter runs locally with the Python standard library. The quick run is a development result. Use the [public-test instructions](../bench/PUBLIC_TEST.md) for a frozen benchmark.
 
-Copy the [MIT starter](https://github.com/darklordVirtual/agentic-datacenter/blob/main/examples/command-gate/adapter.py) and replace `decide()` with your adapter. The command receives one `{"endpoint": "/evaluate", "request": {...}}` envelope on standard input and emits one answer on standard output. Keep diagnostics on standard error. Use exit 1 for an adapter error. Exit 2 with empty standard output is an intentional refusal under the current hook convention. `gate check` verifies the interface. Use the scenario run to check that the adapter actually exercises your intended policy.
+Copy the [MIT starter](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/examples/command-gate/adapter.py) and replace `decide()` with your adapter. The command receives one `{"endpoint": "/evaluate", "request": {...}}` envelope on standard input and emits one answer on standard output. Keep diagnostics on standard error. Use exit 1 for an adapter error. Exit 2 with empty standard output is an intentional refusal under the current hook convention. `gate check` verifies the interface. Use the scenario run to check that the adapter actually exercises your intended policy.
 
 ## Choose by capability
 

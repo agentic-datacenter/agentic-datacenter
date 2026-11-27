@@ -59,6 +59,10 @@ Tooling
 
 Entries are newest first. Where an older entry names a benchmark version, a deadline or a number of scenarios, the newest entry is the one that holds.
 
+Changed
+
+- The repository moved to an organization of its own on 2026-11-27, the day it became public: `github.com/agentic-datacenter/agentic-datacenter`, with the documentation at `agentic-datacenter.github.io/agentic-datacenter`. The old address redirects. The project is its own home, and no governance system's owner is in its address.
+
 Fixed
 
 - After a review of the code on the day the repository became public (ADR 0041, "Corrected after review"). A held-out variant could move the events of `AD-20` and `OP-17` to the other side of the 300 seconds a step is in progress, so that every gate would have failed those variants; a variant now keeps what a scenario is about, and the scheme of the variants is 3. With two proposers on one point, a step in progress is now judged by its own proposer's mandate. An issuer can no longer lose its standing at the instant it makes a change. Neither verifier of mandate statements fails on a statement made to break it. A release tag must carry its own name. Season 1 runs on `benchmark-v1.5`, which has the same scenarios, contracts, agents, profile and judge as `benchmark-v1.4`.

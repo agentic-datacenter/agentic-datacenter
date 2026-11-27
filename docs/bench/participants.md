@@ -2,7 +2,7 @@
 
 # Enrolled governance systems
 
-A system is listed here only after its maintainers enrolled it themselves, with the [registration form](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml), and agreed to be listed by name. Each row links that registration. The figures are from the system's latest card, beside the built-in gates that ran on the same card: the same scenarios, agents, seeds and judge.
+A system is listed here only after its maintainers enrolled it themselves, with the [registration form](https://github.com/agentic-datacenter/agentic-datacenter/issues/new?template=gate-registration.yml), and agreed to be listed by name. Each row links that registration. The figures are from the system's latest card, beside the built-in gates that ran on the same card: the same scenarios, agents, seeds and judge.
 
 No system has enrolled yet.
 

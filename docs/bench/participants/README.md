@@ -10,7 +10,7 @@ version: 40-character commit SHA, package hash or image digest
 connection: http_gate            # http_gate, command_gate, package or chain_gate member
 relation: independent            # or benchmark_authors
 enrolled:
-  issue: https://github.com/darklordVirtual/agentic-datacenter/issues/<n>
+  issue: https://github.com/agentic-datacenter/agentic-datacenter/issues/<n>
   date: 2026-12-01
   listing_consent: true          # ticked in the issue; no consent, no name
 project_url: https://example.org # optional

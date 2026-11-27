@@ -35,7 +35,7 @@ def _entry(**changes: Any) -> dict[str, Any]:
     entry: dict[str, Any] = {
         "id": "their-gate", "name": "Their Gate", "gate": "their_gate", "version": "a" * 40,
         "connection": "command_gate", "relation": "independent",
-        "enrolled": {"issue": "https://github.com/darklordVirtual/agentic-datacenter/issues/77",
+        "enrolled": {"issue": "https://github.com/agentic-datacenter/agentic-datacenter/issues/77",
                      "date": "2026-12-01", "listing_consent": True},
         "results": [{"card": "card.json", "agentic_datacenter": "benchmark-v1.1",
                      "kind": "verified"}],
@@ -74,7 +74,7 @@ def test_the_page_is_up_to_date_and_names_no_one_who_has_not_enrolled() -> None:
     ("changes", "problem"),
     [
         ({"enrolled": {"issue": "https://example.org/1", "listing_consent": True}}, "issue"),
-        ({"enrolled": {"issue": "https://github.com/darklordVirtual/agentic-datacenter/issues/9",
+        ({"enrolled": {"issue": "https://github.com/agentic-datacenter/agentic-datacenter/issues/9",
                        "listing_consent": False}}, "no consent, no name"),
         ({"relation": "friend"}, "relation"),
         ({"results": [{"card": "missing.json", "agentic_datacenter": "x", "kind": "verified"}]},
@@ -98,7 +98,7 @@ def test_results_stand_beside_the_built_in_gates_and_private_findings_are_only_c
     found, problems = participants.load(entries, repo)
     assert not problems
     page = participants.render(found, repo)
-    assert "[Their Gate](https://github.com/darklordVirtual/agentic-datacenter/issues/77)" in page
+    assert "[Their Gate](https://github.com/agentic-datacenter/agentic-datacenter/issues/77)" in page
     assert "| `scripted_adversarial` | 0 % | 25 % | 100 % | 3.0 |" in page
     assert "beside it: `static_allowlist` (built in, by this project's authors)" in page
     assert "A decision reference was accepted twice." in page

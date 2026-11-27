@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         ### Register once. Test when ready.
-        **Registration is always open.** Seasons follow one another, four weeks each. Your gate takes part in the season that is open now, and in every season after it while this issue stays open. [Calendar and deadlines](https://github.com/darklordVirtual/agentic-datacenter/blob/main/docs/bench/PUBLIC_TEST.md#seasons)
+        **Registration is always open.** Seasons follow one another, four weeks each. Your gate takes part in the season that is open now, and in every season after it while this issue stays open. [Calendar and deadlines](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/docs/bench/PUBLIC_TEST.md#seasons)
 
         | 1 · Register | 2 · Connect | 3 · Benchmark |
         | :-- | :-- | :-- |
@@ -17,7 +17,7 @@ body:
 
         Only the exact version this issue names **at a season's deadline** is eligible for that season's hidden Track D. You may update the version at any time; a change counts from the next deadline. Close the issue to leave.
 
-        [How the public test works](https://github.com/darklordVirtual/agentic-datacenter/blob/main/docs/bench/PUBLIC_TEST.md) · [Integration guide](https://github.com/darklordVirtual/agentic-datacenter/blob/main/docs/guides/bring-your-own-gate.md)
+        [How the public test works](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/docs/bench/PUBLIC_TEST.md) · [Integration guide](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/docs/guides/bring-your-own-gate.md)
 
   - type: markdown
     attributes:

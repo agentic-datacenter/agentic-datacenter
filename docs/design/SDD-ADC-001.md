@@ -258,7 +258,7 @@ Every public class and function has a docstring; module specs and guides are par
 **Repository layout**
 
 ```text
-agentic-datacenter/                           github.com/darklordVirtual/agentic-datacenter
+agentic-datacenter/                           github.com/agentic-datacenter/agentic-datacenter
   pyproject.toml  uv.lock        uv workspace root; lock file committed
   REMORA_PIN                     repo URL, commit SHA, tag, date, reason for last bump
   modules.lock.yaml              generated registry: module, version, fidelity, requirement coverage

@@ -50,7 +50,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-REPOSITORY = "darklordVirtual/agentic-datacenter"
+REPOSITORY = "agentic-datacenter/agentic-datacenter"
 LABEL = "gate-registration"
 #: The form's headings (.github/ISSUE_TEMPLATE/gate-registration.yml), by field.
 FIELDS = {

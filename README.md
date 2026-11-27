@@ -30,10 +30,10 @@ See how an AI agent's decisions affect temperatures, IT load, energy and human a
 
 ## Try it locally
 
-Requires Git and [uv](https://docs.astral.sh/uv/) with Python 3.12 or later. Or [open it in GitHub Codespaces](https://codespaces.new/darklordVirtual/agentic-datacenter).
+Requires Git and [uv](https://docs.astral.sh/uv/) with Python 3.12 or later. Or [open it in GitHub Codespaces](https://codespaces.new/agentic-datacenter/agentic-datacenter).
 
 ```sh
-git clone https://github.com/darklordVirtual/agentic-datacenter && cd agentic-datacenter
+git clone https://github.com/agentic-datacenter/agentic-datacenter && cd agentic-datacenter
 uv sync
 uv run agentic-datacenter demo --scenario OP-03 --gate static_allowlist --out build/first-run
 ```
@@ -44,7 +44,7 @@ For a facility report, follow the [operator quickstart](docs/guides/bring-your-o
 
 ## Participate
 
-[How the benchmark works](docs/bench/HOW-IT-WORKS.md) · [Public benchmark](docs/bench/PUBLIC_TEST.md) · [Register a gate](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml) · [Contribute measured data](docs/calibration/contribute-data.md) · [Contributing](CONTRIBUTING.md)
+[How the benchmark works](docs/bench/HOW-IT-WORKS.md) · [Public benchmark](docs/bench/PUBLIC_TEST.md) · [Register a gate](https://github.com/agentic-datacenter/agentic-datacenter/issues/new?template=gate-registration.yml) · [Contribute measured data](docs/calibration/contribute-data.md) · [Contributing](CONTRIBUTING.md)
 
 Registration is always open. Public tests use frozen versions, and results on a facility of your own are never ranked as benchmark results. See [fairness](docs/bench/FAIRNESS.md) and [release checks](docs/guides/release-gate.md).
 

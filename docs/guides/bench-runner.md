@@ -5,9 +5,9 @@ A `standard` run of one gate took 59 minutes on a machine with 16 threads, and n
 ## Start a run
 
 ```sh
-gh workflow run bench-runner.yml -R darklordVirtual/agentic-datacenter -f tier=standard -f gates=remora_governed
-gh run watch -R darklordVirtual/agentic-datacenter                       # follow it
-gh run download -R darklordVirtual/agentic-datacenter <run-id>           # the card, report and check
+gh workflow run bench-runner.yml -R agentic-datacenter/agentic-datacenter -f tier=standard -f gates=remora_governed
+gh run watch -R agentic-datacenter/agentic-datacenter                       # follow it
+gh run download -R agentic-datacenter/agentic-datacenter <run-id>           # the card, report and check
 ```
 
 | Input | Meaning |
@@ -27,10 +27,10 @@ Any of Linux, macOS or Windows can be used. On Windows, use WSL2 with Ubuntu, so
 
 1. Install `git`, the GitHub CLI (`gh`) and [uv](https://docs.astral.sh/uv/). uv fetches Python 3.12 itself when it is missing.
 2. Sign in with `gh auth login`, as an account with admin access to the repository.
-3. Register the runner with the label `bench`, from <https://github.com/darklordVirtual/agentic-datacenter/settings/actions/runners/new>, or with a token from `gh api -X POST repos/darklordVirtual/agentic-datacenter/actions/runners/registration-token --jq .token`. Then run:
+3. Register the runner with the label `bench`, from <https://github.com/agentic-datacenter/agentic-datacenter/settings/actions/runners/new>, or with a token from `gh api -X POST repos/agentic-datacenter/agentic-datacenter/actions/runners/registration-token --jq .token`. Then run:
 
    ```sh
-   ./config.sh --url https://github.com/darklordVirtual/agentic-datacenter --token <token> --labels bench --unattended
+   ./config.sh --url https://github.com/agentic-datacenter/agentic-datacenter --token <token> --labels bench --unattended
    ```
 
 4. Run it as a service (`./svc.sh install` and `./svc.sh start` on Linux and macOS), so it survives a restart.
@@ -60,7 +60,7 @@ After the release check the job writes `provenance.json` beside the card: the co
 Someone who has downloaded the result checks it in two steps:
 
 ```sh
-gh attestation verify provenance.json --repo darklordVirtual/agentic-datacenter   # who made the record
+gh attestation verify provenance.json --repo agentic-datacenter/agentic-datacenter   # who made the record
 uv run agentic-datacenter bench verify .                                           # the files are the ones it lists
 ```
 
@@ -75,7 +75,7 @@ A self-hosted runner executes whatever a workflow asks of it. On a public reposi
 - The repository is public, and **Fork pull request workflows from outside collaborators** is set to *Require approval for all external contributors* (set on 2026-11-27, when it was made public). To check it, or to set it again:
 
   ```sh
-  gh api -X PUT repos/darklordVirtual/agentic-datacenter/actions/permissions/fork-pr-contributor-approval -f approval_policy=all_external_contributors
+  gh api -X PUT repos/agentic-datacenter/agentic-datacenter/actions/permissions/fork-pr-contributor-approval -f approval_policy=all_external_contributors
   ```
 
   Do not approve a run of a pull request that touches `.github/workflows/`.
@@ -84,10 +84,10 @@ A self-hosted runner executes whatever a workflow asks of it. On a public reposi
 
   ```sh
   for f in main main-review tags benchmark-tags; do
-    gh api -X POST repos/darklordVirtual/agentic-datacenter/rulesets --input .github/rulesets/$f.json
+    gh api -X POST repos/agentic-datacenter/agentic-datacenter/rulesets --input .github/rulesets/$f.json
   done
   ```
 
-  A ruleset that already exists is changed with `gh api -X PUT repos/darklordVirtual/agentic-datacenter/rulesets/<id> --input <file>`; `gh api repos/darklordVirtual/agentic-datacenter/rulesets` lists the ids.
+  A ruleset that already exists is changed with `gh api -X PUT repos/agentic-datacenter/agentic-datacenter/rulesets/<id> --input <file>`; `gh api repos/agentic-datacenter/agentic-datacenter/rulesets` lists the ids.
 
 `tests/conformance/test_ci.py` (`test_the_benchmark_runner_is_started_by_hand_only`) enforces the second point in part. It fails when `bench-runner.yml` has a trigger other than `workflow_dispatch`, or when any other workflow file names a self-hosted runner. It reads the workflow files only. It cannot see the repository's settings, so the first point is not checked by anything in this repository.
