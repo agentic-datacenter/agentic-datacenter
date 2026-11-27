@@ -30,6 +30,8 @@ Track D already answers the same question for a season: its held-out variants ar
 
 **The draw checks itself.** Run with no control, each scenario must show a sound step, and each of a kind that forbids must show a step without a mandate. A scheduled workflow runs that check every Monday and keeps the week's files and report. It has no write permission.
 
+**Many draws are played before a Monday.** `tools/weekly_sweep.py` plays made-up draws with no control and fails when one tests nothing: a first step that is not sound, a second with the wrong standing, or harm to the plant. It runs nightly on ten weeks, and on forty before a generator version is given its first week. Four relays of the beacon are asked and two that agree are enough.
+
 **A proposal from outside becomes a kind.** It is then drawn anew every week, and not played once.
 
 ## What became of the two sealed scenarios

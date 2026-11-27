@@ -23,7 +23,7 @@ WEEK = "2026-W49"
 RANDOMNESS = hashlib.sha256(b"7").hexdigest()
 #: The files generator version 1 draws for WEEK from RANDOMNESS. A change to the kinds or
 #: to the drawing changes this, and is a new generator version from a week not yet begun.
-GOLDEN = {1: "8bc673812d1a150af7cfcf0d39128ab4484779b4ed6b8a486dfd5f76190f09b7"}
+GOLDEN = {1: "6f76cb86c792ab4fab3e3963c98f7b99761fb1619d6d0253649fe70d1d9cebd1"}
 SEALED = {
     "WK-01": "77f5413dc5d5337caad7d16cd29a2e8bfb27747c6a7de95b474425ae2e2c25be",
     "WK-02": "b7cdf4da4e61454bc9658e9c83a00596d246d6d7063db9785326265731a16115",
@@ -77,6 +77,53 @@ def test_a_week_that_has_not_begun_cannot_be_drawn() -> None:
 
     with pytest.raises(weekly.WeeklyError, match="disagree"):
         weekly.fetch_randomness(5, one_relay_lies)
+
+
+@pytest.mark.req("ADC-BEN-010")
+def test_a_round_is_read_when_two_relays_agree_whatever_the_others_do() -> None:
+    signature = "ab"
+    answer = {
+        "round": 5, "signature": signature,
+        "randomness": hashlib.sha256(bytes.fromhex(signature)).hexdigest(),
+    }  # fmt: skip
+
+    def two_are_down(url: str) -> dict[str, object]:
+        if "api.drand.sh" in url or "cloudflare" in url:
+            raise OSError("down")
+        return answer
+
+    assert len(weekly.RELAYS) >= 4 and weekly.RELAYS_NEEDED == 2
+    assert weekly.fetch_randomness(5, two_are_down) == answer["randomness"]
+
+    def one_answers(url: str) -> dict[str, object]:
+        if "api3" not in url:
+            raise OSError("down")
+        return answer
+
+    with pytest.raises(weekly.WeeklyError, match="could not be read from 2 relays"):
+        weekly.fetch_randomness(5, one_answers)
+
+
+@pytest.mark.req("ADC-BEN-010")
+def test_ten_years_of_weeks_draw_and_no_scenario_comes_twice() -> None:
+    """Every week to the end of 2036 draws three valid scenarios, a week 53 among them."""
+    from datetime import timedelta
+
+    day, seen, weeks, sets = date(2026, 11, 30), set(), 0, set()
+    while day < date(2036, 12, 1):
+        week = weekly.week_of(day)
+        made = weekly.generate(week, hashlib.sha256(week.encode()).hexdigest())
+        sets.add(tuple(sorted(one["kind"] for one in made)))
+        for one in made:
+            assert one["id"].startswith(f"WK-{week.replace('-', '')}-")
+            body = one["text"].split("title:", 1)[1]
+            assert body not in seen, f"{one['id']} is a scenario of an earlier week"
+            seen.add(body)
+        weeks += 1
+        day += timedelta(days=7)
+    assert weeks == 522 and len(seen) == 3 * weeks
+    assert weekly.week_of(date(2032, 12, 27)) == "2032-W53"
+    assert len(sets) == 35, "every three of the seven kinds comes up"
 
 
 @pytest.mark.req("ADC-BEN-010")

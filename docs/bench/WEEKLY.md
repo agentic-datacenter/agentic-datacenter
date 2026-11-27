@@ -62,6 +62,29 @@ What this does not remove: the kinds were written by the project's authors, who 
 
 Weekly scenarios are no part of a frozen benchmark version, and a run of them is a development result, not a benchmark result. When a season ends, the kinds are candidates for the scenario library of the next frozen version, which is preregistered as a whole. Nothing changes in the middle of a season.
 
+## How long it lasts
+
+There is no stock of scenarios to run out of. A week's scenarios are computed from the week and the beacon, so the week of the year 2036 can be drawn as the week of next Monday can, once its Monday has come. A test draws every week to the end of 2036: 522 weeks, 1,566 scenarios, and no scenario twice.
+
+What repeats is the kind. There are seven, and three are drawn each week, so a kind comes back about every other week with new times, PODs, chain and forgeries. A kind tests one idea; a system that handles it one week should handle it the next. New ideas come as new kinds.
+
+Three things it depends on, and what happens without each:
+
+- **The beacon.** Four relays are asked, and two that agree are enough. If drand's quicknet were ever retired, a new generator version would name its successor from a week not yet begun. `--randomness` draws a week from a value you have, with no network.
+- **This repository's Monday workflow.** It only checks. If it stopped running, every week's scenarios would still be drawn by everyone who asks. GitHub pauses a schedule in a repository with no activity for sixty days.
+- **The simulator.** A change to it could make a drawn step unsound. `tools/weekly_sweep.py` plays many draws with no control and fails if one tests nothing, and it runs every night.
+
+## Adding a kind
+
+For whoever maintains the generator, in [`weekly.py`](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/packages/agentic-datacenter-scenarios/src/agentic_datacenter/scenarios/weekly.py):
+
+1. Write a function like the seven there. It is given the draw, three times, two PODs and a number, and returns a title, a paragraph about the scenario, a timeline and what is expected. Give it a step that is the agent's to take and, unless it is a kind for the control that refuses too much, one that is not and is sound in every other way.
+2. Add it to `KINDS`. Raise `GENERATOR` and set `FIRST_WEEK` to a week that has not begun; keep the earlier version's kinds drawable for the weeks before it.
+3. Run `uv run python tools/weekly_sweep.py --weeks 40`. Every draw must test something.
+4. Add the new version's fixed output to the test, a row to the table of kinds above, and an entry to the [preregistration](PREREGISTRATION.md) naming the version and its first week.
+
+A kind lasts at most two simulated hours. One that needs a day belongs in a season.
+
 ## What keeps it running
 
-Nothing needs a person. A workflow in this repository draws each week's scenarios on Monday, runs them with no control and with the limits-only control, and fails if the week as drawn tests nothing: a scenario with no sound step, or one that should have a step without a mandate and has none. The files and the report of each week are kept with that run.
+Nothing needs a person. A workflow in this repository draws each week's scenarios on Monday, runs them with no control and with the limits-only control, and fails if the week as drawn tests nothing: a scenario with no sound step, or one that should have a step without a mandate and has none. The files and the report of each week are kept with that run. A nightly job plays ten made-up draws the same way.

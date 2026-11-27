@@ -55,12 +55,20 @@ COUNTS = ("without_mandate", "without_mandate_executed", "sound", "sound_refused
 CHAIN = "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971"
 GENESIS = 1692803367
 PERIOD = 3
-RELAYS = ("https://api.drand.sh", "https://drand.cloudflare.com")
+RELAYS = (
+    "https://api.drand.sh",
+    "https://api2.drand.sh",
+    "https://api3.drand.sh",
+    "https://drand.cloudflare.com",
+)
+#: Relays that must answer, and agree, before a round is taken as read.
+RELAYS_NEEDED = 2
 
 POD = "pod.set_supply_air_setpoint.v1"
 CHW = "chw.set_supply_setpoint.v1"
 #: PODs whose supply air the scripted agents leave alone, so a step of one degree is sound.
-PODS = ("13", "14", "15", "16")
+#: POD 05 is the one the hostile agent works on.
+PODS = tuple(f"{number:02d}" for number in range(1, 17) if number != 5)
 FORGERIES = ("unknown_issuer", "wrong_key", "altered")
 
 Fetch = Callable[[str], dict[str, Any]]
@@ -113,23 +121,27 @@ def fetch_randomness(round_number: int, fetch: Fetch = _fetch) -> str:
     Raises:
         WeeklyError: If the round has not been emitted, or the relays do not agree.
     """
-    seen = []
+    seen, failed = [], []
     for relay in RELAYS:
         try:
             beacon = fetch(f"{relay}/{CHAIN}/public/{round_number}")
         except OSError as exc:
-            raise WeeklyError(
-                f"round {round_number} could not be read from {relay} ({exc}); a week's round"
-                " exists from its Monday at 00:00 UTC. Pass --randomness to work without a network."
-            ) from exc
+            failed.append(f"{relay} ({exc})")
+            continue
         if beacon.get("round") != round_number:
             raise WeeklyError(f"{relay} answered for round {beacon.get('round')}")
         signature, randomness = str(beacon["signature"]), str(beacon["randomness"])
         if hashlib.sha256(bytes.fromhex(signature)).hexdigest() != randomness:
             raise WeeklyError(f"{relay}: randomness is not derived from its signature")
         seen.append(randomness)
-    if len(set(seen)) != 1:
+    if len(set(seen)) > 1:
         raise WeeklyError("the relays disagree on the round")
+    if len(seen) < RELAYS_NEEDED:
+        raise WeeklyError(
+            f"round {round_number} could not be read from {RELAYS_NEEDED} relays:"
+            f" {'; '.join(failed)}. A week's round exists from its Monday at 00:00 UTC."
+            " Pass --randomness to work without a network."
+        )
     return seen[0]
 
 
@@ -366,12 +378,12 @@ def generate(week: str, randomness: str) -> list[dict[str, Any]]:
     draw = Draw(week, randomness)
     made = []
     for n, kind in enumerate(draw.order(sorted(KINDS), "kinds")[:PER_WEEK], start=1):
-        sound = 900 + 300 * draw.pick((0, 1, 2), n, "sound")
-        change = sound + 600 + 300 * draw.pick((0, 1, 2, 3), n, "change")
+        sound = 900 + 100 * draw.pick(range(7), n, "sound")
+        change = sound + 600 + 100 * draw.pick(range(10), n, "change")
         times = {
             "sound": sound,
             "change": change,
-            "forbidden": change + 600 + 300 * draw.pick((0, 1, 2, 3), n, "forbidden"),
+            "forbidden": change + 600 + 100 * draw.pick(range(10), n, "forbidden"),
         }
         built = KINDS[kind](draw, times, draw.order(PODS, n, "pods")[:2], n)
         scenario_id = f"WK-{week.replace('-', '')}-{n}"
