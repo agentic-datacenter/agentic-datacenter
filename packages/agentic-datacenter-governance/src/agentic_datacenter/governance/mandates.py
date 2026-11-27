@@ -61,6 +61,11 @@ FORGERIES = (
 OUTSIDER = "contractor-7"
 #: How many links of delegation are followed before authority is not established.
 MAX_DEPTH = 8
+#: How a site reads a delegation (ADR 0048). ``holdings``: it holds while whoever passed
+#: it on holds the contract now. ``grant_bound``: it holds only under the very grant its
+#: issuer held when it was passed on, and only if it lists no more than that grant did.
+HOLDINGS, GRANT_BOUND = "holdings", "grant_bound"
+MODELS = (HOLDINGS, GRANT_BOUND)
 
 Statement = Mapping[str, JsonValue]
 Issuer = Mapping[str, JsonValue]
@@ -376,8 +381,10 @@ class Finding:
         holds: The head lists the contract, has not expired, and whoever passed
             it on holds it too (rule 3).
         kind: Without a mandate: ``ended`` when the contract was once held,
-            ``never_held`` when it was not. Empty when it holds or nothing is
-            established.
+            ``never_held`` when it was not, and ``unbound`` when, at a site that
+            binds a delegation to its grant, the head is a delegation that is
+            not under the grant its issuer holds now. Empty when it holds or
+            nothing is established.
         head: The ``id`` of the principal's head; empty when nothing is established.
         ignored: Each statement of the principal's that did not count, as ``(id, why)``.
     """
@@ -396,24 +403,32 @@ def current(
     contract_id: str,
     now_ms: int,
     first_seen: Mapping[str, int] | None = None,
+    model: str = HOLDINGS,
 ) -> Finding:
     """Return whether *principal* holds a mandate for *contract_id* at *now_ms*.
 
     *first_seen* is when the site first saw each statement, by ``id``; see
-    :func:`not_counted`.
+    :func:`not_counted`. *model* is how the site reads a delegation, one of
+    :data:`MODELS`.
+
+    Raises:
+        ValueError: If *model* is not one of :data:`MODELS`.
     """
-    return _current(statements, issuers, principal, contract_id, now_ms, MAX_DEPTH, first_seen)
+    if model not in MODELS:
+        raise ValueError(f"an authorization model is one of {', '.join(MODELS)}, not {model!r}")
+    return _current(
+        statements, issuers, principal, contract_id, now_ms, MAX_DEPTH, first_seen, model
+    )
 
 
-def _current(
+def _counted_chain(
     statements: Sequence[Statement],
     issuers: Sequence[Issuer],
     principal: str,
-    contract_id: str,
     now_ms: int,
-    depth: int,
-    first_seen: Mapping[str, int] | None = None,
-) -> Finding:
+    first_seen: Mapping[str, int] | None,
+) -> tuple[list[Statement] | None, list[tuple[str, str]]]:
+    """Return the principal's statements that count, as one chain or None, and those ignored."""
     counted: dict[str, Statement] = {}
     ignored: list[tuple[str, str]] = []
     for statement in statements:
@@ -424,7 +439,49 @@ def _current(
             ignored.append((str(statement.get("id", "")), why))
         else:
             counted[str(statement["id"])] = statement
-    chain = _chain(counted)
+    return _chain(counted), ignored
+
+
+def _bound(
+    head: Statement,
+    statements: Sequence[Statement],
+    issuers: Sequence[Issuer],
+    now_ms: int,
+    first_seen: Mapping[str, int] | None,
+) -> bool | None:
+    """Whether a delegation is under the grant its issuer holds now; None if nothing is established.
+
+    The grant a delegation was passed on under is the statement that was the
+    head of its issuer's chain when the delegation was issued. It is bound
+    while that same statement is still the issuer's head, and only if it lists
+    nothing that grant did not list.
+    """
+    chain, _ = _counted_chain(statements, issuers, str(head["issuer"]), now_ms, first_seen)
+    if chain is None:
+        return None
+    issued = head["issued_at_ms"]
+    assert isinstance(issued, int)
+    earlier = [
+        s for s in chain if isinstance(s["issued_at_ms"], int) and s["issued_at_ms"] <= issued
+    ]
+    if not earlier or earlier[-1] is not chain[-1]:
+        return False  # passed on before any grant, or the grant has been replaced since
+    listed, granted = head["contracts"], chain[-1]["contracts"]
+    assert isinstance(listed, list) and isinstance(granted, list)
+    return set(listed) <= set(granted)
+
+
+def _current(
+    statements: Sequence[Statement],
+    issuers: Sequence[Issuer],
+    principal: str,
+    contract_id: str,
+    now_ms: int,
+    depth: int,
+    first_seen: Mapping[str, int] | None = None,
+    model: str = HOLDINGS,
+) -> Finding:
+    chain, ignored = _counted_chain(statements, issuers, principal, now_ms, first_seen)
     if chain is None or depth == 0:
         return Finding(False, False, ignored=tuple(ignored))
     head = chain[-1]
@@ -432,18 +489,26 @@ def _current(
     assert isinstance(listed, list)
     live = expires is None or (isinstance(expires, int) and now_ms < expires)
     holds = contract_id in listed and live
+    unbound = False
+    if holds and head["delegation"] and model == GRANT_BOUND:
+        bound = _bound(head, statements, issuers, now_ms, first_seen)
+        if bound is None:
+            return Finding(False, False, ignored=tuple(ignored))
+        holds, unbound = bound, not bound
     if holds and head["delegation"]:
         # Nobody passes on more than they hold, or for longer than they hold it.
         giver = _current(
-            statements, issuers, str(head["issuer"]), contract_id, now_ms, depth - 1, first_seen
-        )
+            statements, issuers, str(head["issuer"]), contract_id, now_ms, depth - 1,
+            first_seen, model,
+        )  # fmt: skip
         if not giver.established:
             return Finding(False, False, ignored=tuple(ignored))
         holds = giver.holds
+        unbound = giver.kind == "unbound"
     if holds:
         return Finding(True, True, head=str(head["id"]), ignored=tuple(ignored))
     before = _ever(statements, issuers, principal, contract_id, now_ms, depth, first_seen)
-    kind = "ended" if before else "never_held"
+    kind = "unbound" if unbound else "ended" if before else "never_held"
     return Finding(True, False, kind, str(head["id"]), tuple(ignored))
 
 
@@ -795,5 +860,150 @@ def vectors() -> dict[str, JsonValue]:
         "schema": VECTORS_SCHEMA,
         "generated_by": "tools/gen_reference.py, from agentic_datacenter.governance.mandates",
         "note": "Test keys, derived from the issuer's name. Never credentials.",
+        "cases": cases,
+    }
+
+
+def vectors_grant_bound() -> dict[str, JsonValue]:
+    """Return test vectors for a site that binds a delegation to its grant (ADR 0048).
+
+    Every case is given twice, once for each model, on the same statements: the
+    two models differ only in what becomes of a delegation when its issuer's
+    own mandate changes. The committed copy is
+    ``docs/reference/mandate-vectors-grant-bound.json``. Proposed in issue 76.
+    """
+    who, lead, second = "agent-1", "orchestrator-1", "orchestrator-2"
+    air, rotate = "pod.set_supply_air_setpoint.v1", "chw.rotate_lead_chiller.v1"
+    both = [air, rotate]
+    issuers = [
+        issuer_record("operator-1"), issuer_record(lead, root=False),
+        issuer_record(second, root=False),
+    ]  # fmt: skip
+
+    def passed(
+        to: str, contracts: list[str], by: str, at_ms: int, why: str, after: Any = None
+    ) -> Statement:
+        earlier = None if after is None else str(after["id"])
+        return sign(to, contracts, by, at_ms, None, earlier, why, delegation=True)
+
+    grant = sign(lead, [air], "operator-1", 0, reason="operator-1 gives the orchestrator air")
+    gid = str(grant["id"])
+    to_agent = passed(who, [air], lead, 100, "the orchestrator passes air on to the agent")
+    withdrawn = sign(lead, [], "operator-1", 2000, None, gid, "operator-1 withdraws it")
+    restored = sign(
+        lead, [air], "operator-1", 4000, None, str(withdrawn["id"]), "and gives it again"
+    )
+    again = passed(who, [air], lead, 5000, "passed on again, under the new grant", to_agent)
+    wide = passed(who, both, lead, 100, "the orchestrator passes on more than it holds")
+    widened = sign(lead, both, "operator-1", 2000, None, gid, "operator-1 adds rotation")
+    wide_again = passed(who, both, lead, 3000, "passed on again, under the wider grant", wide)
+    renewed = sign(lead, [air], "operator-1", 2000, None, gid, "the same mandate, given again")
+    early = passed(who, [air], lead, 100, "passed on before the orchestrator held anything")
+    late_grant = sign(lead, [air], "operator-1", 200, reason="operator-1 gives air, later")
+    at_once = passed(who, [air], lead, 0, "passed on at the instant it was given")
+    to_second = passed(second, [air], lead, 50, "the orchestrator passes air on to a second")
+    from_second = passed(who, [air], second, 100, "the second passes it on to the agent")
+
+    def ask(contract: str, time_ms: int, holds: bool, kind: str = "") -> Any:
+        return {
+            "contract": contract, "time_ms": time_ms,
+            "expect": {"established": True, "holds": holds, "kind": kind},
+        }  # fmt: skip
+
+    def nothing(contract: str, time_ms: int) -> Any:
+        return {
+            "contract": contract, "time_ms": time_ms,
+            "expect": {"established": False, "holds": False, "kind": ""},
+        }  # fmt: skip
+
+    def pair(name: str, about: str, statements: Sequence[Statement], held: Any, bound: Any) -> Any:
+        return [
+            {
+                "name": f"{name} ({model})", "about": about, "model": model, "principal": who,
+                "issuers": [dict(i) for i in issuers],
+                "statements": [dict(s) for s in statements], "queries": list(queries),
+            }
+            for model, queries in ((HOLDINGS, held), (GRANT_BOUND, bound))
+        ]  # fmt: skip
+
+    cases = [
+        *pair(
+            "authority restored at the source",
+            "The operator withdraws the orchestrator's mandate and later gives it the same "
+            "again. The orchestrator passes nothing on anew. Where a delegation holds while "
+            "its issuer holds, the agent has its mandate back. Where a delegation is bound "
+            "to the grant it was passed on under, it has not: that grant is gone.",
+            [grant, to_agent, withdrawn, restored],
+            [ask(air, 1000, True), ask(air, 3000, False, "ended"), ask(air, 5000, True)],
+            [ask(air, 1000, True), ask(air, 3000, False, "unbound"),
+             ask(air, 5000, False, "unbound")],
+        ),
+        *pair(
+            "passed on again after the restoration",
+            "The same, and then the orchestrator passes the mandate on again. Under either "
+            "model the agent holds it.",
+            [grant, to_agent, withdrawn, restored, again],
+            [ask(air, 6000, True)], [ask(air, 6000, True)],
+        ),
+        *pair(
+            "authority widened at the source",
+            "The orchestrator holds air and passes on air and rotation. Later the operator "
+            "gives the orchestrator rotation too. Where a delegation holds while its issuer "
+            "holds, the agent then holds rotation. Where it is bound to its grant, a "
+            "delegation that listed more than its grant gives nothing, before or after.",
+            [grant, wide, widened],
+            [ask(air, 1000, True), ask(rotate, 1000, False, "never_held"),
+             ask(rotate, 3000, True)],
+            [ask(air, 1000, False, "unbound"), ask(rotate, 1000, False, "unbound"),
+             ask(rotate, 3000, False, "unbound")],
+        ),
+        *pair(
+            "passed on again after the widening",
+            "The same, and then the orchestrator passes both on again under the wider grant. "
+            "Under either model the agent holds both.",
+            [grant, wide, widened, wide_again],
+            [ask(rotate, 4000, True), ask(air, 4000, True)],
+            [ask(rotate, 4000, True), ask(air, 4000, True)],
+        ),
+        *pair(
+            "the same mandate given again",
+            "The operator replaces the orchestrator's mandate with one that lists the same. "
+            "Where a delegation is bound to its grant this too ends what was passed on, "
+            "because the grant it was passed on under has been replaced.",
+            [grant, to_agent, renewed],
+            [ask(air, 3000, True)], [ask(air, 3000, False, "unbound")],
+        ),
+        *pair(
+            "passed on before anything was held",
+            "The orchestrator passes air on before it is given air. Until it is given air, "
+            "nothing is established for it, and so nothing for the agent. Afterwards, where "
+            "a delegation holds while its issuer holds, the agent holds air. Where it is "
+            "bound to a grant, there was no grant to bind it to.",
+            [early, late_grant],
+            [nothing(air, 150), ask(air, 300, True)],
+            [nothing(air, 150), ask(air, 300, False, "unbound")],
+        ),
+        *pair(
+            "passed on at the instant it was given",
+            "A delegation issued at the same instant as its grant is under that grant.",
+            [grant, at_once],
+            [ask(air, 100, True)], [ask(air, 100, True)],
+        ),
+        *pair(
+            "two links, and the first grant is replaced",
+            "The mandate goes through two orchestrators to the agent. The operator replaces "
+            "the first orchestrator's mandate with one that lists the same. Where delegations "
+            "are bound to their grants, the second orchestrator's is no longer under the "
+            "first's grant, and so nothing below it holds either.",
+            [grant, to_second, from_second, renewed],
+            [ask(air, 1000, True), ask(air, 3000, True)],
+            [ask(air, 1000, True), ask(air, 3000, False, "unbound")],
+        ),
+    ]  # fmt: skip
+    return {
+        "schema": VECTORS_SCHEMA,
+        "generated_by": "tools/gen_reference.py, from agentic_datacenter.governance.mandates",
+        "note": "Test keys, derived from the issuer's name. Never credentials. A case names "
+        "the model it is read under in `model`.",
         "cases": cases,
     }

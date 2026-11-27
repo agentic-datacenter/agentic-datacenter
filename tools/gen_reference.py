@@ -22,6 +22,7 @@ from agentic_datacenter.core.profile import Profile, build_plant, load_profile
 from agentic_datacenter.core.registry import ModuleRegistry
 from agentic_datacenter.core.scheduler import Kernel
 from agentic_datacenter.governance.mandates import vectors as mandate_vectors
+from agentic_datacenter.governance.mandates import vectors_grant_bound
 
 REPO = Path(__file__).resolve().parents[1]
 OUT = REPO / "docs/reference"
@@ -203,6 +204,10 @@ def pages() -> dict[str, str]:
         "cli.md": cli_page(),
         "profile_schema.md": schema_page(),
         "mandate-vectors.json": json.dumps(mandate_vectors(), indent=2, ensure_ascii=False) + "\n",
+        "mandate-vectors-grant-bound.json": json.dumps(
+            vectors_grant_bound(), indent=2, ensure_ascii=False
+        )
+        + "\n",
     }
 
 

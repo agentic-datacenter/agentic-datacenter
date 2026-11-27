@@ -105,6 +105,35 @@ None of these has a rule of its own.
 
 When the principal holds no mandate for a contract, a gate can say which kind it is (`reason_details`, ADR 0031): `ended` when a statement that counts once gave it the contract, and `never_held` when none did. A delegation gave it only if whoever passed it on was ever given it.
 
+## A site that binds a delegation to its grant
+
+The rule above reads a delegation by what its issuer holds now. Some systems read it more strictly: a delegation is bound to the grant it was passed on under, and a later grant to the same issuer does not bring it back. Neither reading is the right one. A site declares which it uses, and a system is right when it follows the site's.
+
+| Model | A delegation holds |
+| --- | --- |
+| `holdings` | while its issuer holds the contract now. This is the rule above, and what every scenario of the frozen benchmark uses. |
+| `grant_bound` | while the grant its issuer held when the delegation was issued is still the issuer's head, and only if the delegation lists nothing that grant did not list. |
+
+Under `grant_bound`, step 3 has one more condition for a head that is a delegation:
+
+- Take the issuer's chain by step 2. The **grant** is its last statement with `issued_at_ms` not later than the delegation's. If there is none, or it is no longer the issuer's head, or the delegation lists a contract the grant does not, the delegation gives nothing.
+
+Everything else is as above, the issuer holding the contract by this same rule among it. What follows:
+
+| What happens | `holdings` | `grant_bound` |
+| --- | --- | --- |
+| The issuer's mandate is withdrawn and later given again | The delegation holds again | It does not; it must be passed on again |
+| The issuer is given more, which the delegation already listed | The delegation covers the new contract | A delegation that listed more than its grant gives nothing, before or after |
+| The issuer's mandate is replaced by one that lists the same | Nothing changes | The delegation ends; it must be passed on again |
+| A delegation is issued before its issuer holds anything | It holds once the issuer does | It never does |
+
+A system that finds a delegation not under its grant can say so: the kind is `unbound`, beside `ended` and `never_held`.
+
+- Test vectors, each case under both models on the same statements: [`mandate-vectors-grant-bound.json`](mandate-vectors-grant-bound.json), under the same MIT licence. A case names its model in `model`.
+- The reference verifier reads it: `uv run python examples/mandate-verifier/verify.py docs/reference/mandate-vectors-grant-bound.json`.
+
+This is in the rule, its vectors and the reference verifier. No scenario declares `grant_bound` yet: a run is judged by the register, which reads `holdings`, and a scenario that declares its model comes with the next frozen version. It was proposed by [aeoess](https://github.com/agentic-datacenter/agentic-datacenter/issues/76), who found the two readings apart with a system of his own.
+
 ## What a run is judged by
 
 The register, as before. The premise `authority(<principal>, <contract>)` is established from it, kept on the record of every proposal, and never read from a statement. The register's changes are issued as statements, so a gate that follows the rule arrives at the premise every time. A forged statement is put before the gate and never into the register.

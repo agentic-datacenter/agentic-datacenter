@@ -1,4 +1,4 @@
-This licence applies to three files of this directory, and to nothing else in
+This licence applies to four files of this directory, and to nothing else in
 the repository: the interface between Agentic-Datacenter and a system from
 elsewhere, so that anyone may implement it, copy it into their own tests and
 ship it with their own work.
@@ -6,6 +6,7 @@ ship it with their own work.
   gate-http-v1.schema.json     the wire format
   mandate-statements.md        the rule for signed mandate statements
   mandate-vectors.json         its test vectors
+  mandate-vectors-grant-bound.json   and those for a site that binds a delegation to its grant
 
 Every other file of this directory is under the licence of the repository.
 

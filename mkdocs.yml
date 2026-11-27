@@ -60,6 +60,7 @@ nav:
       - 0045 A control held to the grid: design/adr/0045-a-control-held-to-the-grid.md
       - 0046 A scenario every week: design/adr/0046-a-scenario-every-week.md
       - 0047 Drawn from a beacon: design/adr/0047-drawn-from-a-beacon.md
+      - 0048 A declared authorization model: design/adr/0048-a-declared-authorization-model.md
   - Guides:
       - Your first half hour, for a governance system: guides/first-half-hour.md
       - Propose a scenario: guides/propose-a-scenario.md
@@ -79,6 +80,7 @@ nav:
   - Benchmark:
       - Preregistration: bench/PREREGISTRATION.md
       - New scenarios every week: bench/WEEKLY.md
+      - The weeks drawn so far: bench/weekly-drawn.md
       - How the benchmark works: bench/HOW-IT-WORKS.md
       - Public test: bench/PUBLIC_TEST.md
       - Comparing gates fairly: bench/FAIRNESS.md

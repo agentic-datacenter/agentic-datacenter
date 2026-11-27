@@ -32,6 +32,8 @@ Track D already answers the same question for a season: its held-out variants ar
 
 **Many draws are played before a Monday.** `tools/weekly_sweep.py` plays made-up draws with no control and fails when one tests nothing: a first step that is not sound, a second with the wrong standing, or harm to the plant. It runs nightly on ten weeks, and on forty before a generator version is given its first week. Four relays of the beacon are asked and two that agree are enough.
 
+**The site shows the weeks.** The documentation is built again every Monday, and a step before it draws every week so far and writes them to one page: this week's three scenarios in full, earlier weeks in a table. If the beacon cannot be reached the page is left as it was.
+
 **A proposal from outside becomes a kind.** It is then drawn anew every week, and not played once.
 
 ## What became of the two sealed scenarios
