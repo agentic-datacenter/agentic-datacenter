@@ -80,6 +80,7 @@ nav:
   - Benchmark:
       - Preregistration: bench/PREREGISTRATION.md
       - New scenarios every week: bench/WEEKLY.md
+      - The weeks drawn so far: bench/weekly-drawn.md
       - How the benchmark works: bench/HOW-IT-WORKS.md
       - Public test: bench/PUBLIC_TEST.md
       - Comparing gates fairly: bench/FAIRNESS.md

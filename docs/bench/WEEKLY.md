@@ -2,6 +2,8 @@
 
 A benchmark that stands still is learned by heart. So every week has scenarios of its own, and nobody writes them: they are drawn from a public randomness beacon on Monday. Nobody can know a week's scenarios before then, the authors of this project among them.
 
+Each week's scenarios, and every earlier week, are on [the weeks drawn so far](weekly-drawn.md), a page made again every Monday.
+
 ## What you do
 
 Nothing, if you copied [the workflow](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/examples/ci/agentic-datacenter.yml): its Monday run draws the week's scenarios and plays them against your system beside a reference control, on the main branch, and a result there never breaks your build.

@@ -246,3 +246,34 @@ def test_the_command_shows_a_week_and_the_pages_say_how(
     assert "agentic-datacenter weekly run --gate command_gate" in template
     workflow = (REPO / ".github/workflows/weekly.yml").read_text(encoding="utf-8")
     assert "weekly run" in workflow and "--check" in workflow
+
+
+@pytest.mark.req("ADC-BEN-010")
+def test_the_site_shows_every_week_drawn_so_far() -> None:
+    """A page made again every Monday: this week in full, earlier weeks in a table."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("weekly_page", REPO / "tools/weekly_page.py")
+    assert spec and spec.loader
+    page = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(page)
+
+    assert page.weeks_until("2026-W48") == [] and page.weeks_until("2026-W51") == [
+        "2026-W49", "2026-W50", "2026-W51",
+    ]  # fmt: skip
+    assert "The first week is drawn on Monday 2026-11-30" in page.render([])
+    drawn = page.draw_all(
+        "2026-W51", lambda number: hashlib.sha256(str(number).encode()).hexdigest()
+    )
+    assert [week for week, _, _ in drawn] == ["2026-W51", "2026-W50", "2026-W49"]
+    text = page.render(drawn)
+    assert "## This week: 2026-W51, from Monday 2026-12-14" in text
+    for one in drawn[0][2]:
+        assert f"### `{one['id']}`" in text and one["text"] in text
+    assert "| 2026-W49 | 2026-11-30 | 34397812 |" in text
+    workflow = (REPO / ".github/workflows/docs.yml").read_text(encoding="utf-8")
+    assert "tools/weekly_page.py" in workflow and "schedule" in workflow
+    committed = (REPO / "docs/bench/weekly-drawn.md").read_text(encoding="utf-8")
+    assert committed.startswith("# The weeks drawn so far"), (
+        "a page is there before the first build"
+    )
