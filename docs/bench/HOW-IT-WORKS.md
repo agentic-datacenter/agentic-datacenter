@@ -45,7 +45,7 @@ uv run agentic-datacenter bench check build/mine/result_card.json --gate command
 | `standard` | hours on one machine | a result of your own, three seeds |
 | `season` | longer; split it over machines | what a season reports, thirty seeds |
 
-`standard` and `season` run on a frozen version; on a branch that has moved past it, add `--allow-unfrozen`, and the card is labelled a development run. A run on a frozen version's tag, with its seeds, is the benchmark; anyone who makes it again gets the same card, byte for byte. To keep testing as this project grows, copy [the workflow for maintainers](https://github.com/darklordVirtual/agentic-datacenter/blob/main/examples/ci/agentic-datacenter.yml) into your repository.
+`standard` and `season` run on a frozen version; on a branch that has moved past it, add `--allow-unfrozen`, and the card is labelled a development run. A run on a frozen version's tag, with its seeds, is the benchmark; anyone who makes it again gets the same card, byte for byte. To keep testing as this project grows, copy [the workflow for maintainers](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/examples/ci/agentic-datacenter.yml) into your repository.
 
 ## What a season adds
 

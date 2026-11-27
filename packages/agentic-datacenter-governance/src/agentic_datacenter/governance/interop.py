@@ -276,6 +276,7 @@ def verify_receipts(
     receipts: Iterable[Mapping[str, Any]],
     read_verdict: Any = None,
     public_keys: Sequence[str] = (),
+    verifier: Any = None,
 ) -> ReceiptReport:
     """Check receipts against the decision records of a run.
 
@@ -293,12 +294,23 @@ def verify_receipts(
     as canonical JSON (ADR 0041). A line whose signature does not verify fails
     the check; one without a signature is listed. Without keys no signature is
     checked.
+
+    *verifier* is the system's own check of a receipt, for a signature scheme
+    or a canonical form other than that: a function that takes one receipt
+    line and returns whether it verifies. Every line is then put to it, and
+    one it refuses fails the check.
     """
     from agentic_datacenter.governance import attest  # noqa: PLC0415 - attest imports this module
 
     report = ReceiptReport()
     receipts = list(receipts)
-    if public_keys:
+    if verifier is not None:
+        report.signatures_checked = True
+        refused = [str(line.get("correlation_id", "")) for line in receipts if not verifier(line)]
+        every = {str(line.get("correlation_id", "")) for line in receipts}
+        report.bad_signature = sorted(set(refused))
+        report.signed = sorted(every - set(refused))
+    elif public_keys:
         report.signatures_checked = True
         found: dict[str, set[str]] = {}
         for line in receipts:

@@ -260,6 +260,9 @@ def _identity(
 
 #: The file of a bundle that holds a served gate's correlation, outside the manifest's hashes.
 CORRELATION_FILE = "correlation.jsonl"
+#: The record of one execution: the hash of what the manifest leaves out, and of the manifest.
+EXECUTION_FILE = "execution.json"
+EXECUTION_SCHEMA = "adc-execution/v1"
 
 
 def records_with_correlation(directory: Path) -> list[dict[str, Any]]:
@@ -286,7 +289,22 @@ def write_bundle(bundle: Mapping[str, str], out_dir: Path) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     for name, text in bundle.items():
         (out_dir / name).write_text(text, encoding="utf-8")
+    if CORRELATION_FILE in bundle and "manifest.json" in bundle:
+        # What differs between two executions of a run is outside the manifest, so
+        # that the manifest is the same bytes each time. This record ties it to the
+        # manifest of this execution, so a changed line is found (ADR 0036, ADR 0041).
+        record = {
+            "schema": EXECUTION_SCHEMA,
+            "manifest_sha256": _sha256(bundle["manifest.json"]),
+            "files": {CORRELATION_FILE: _sha256(bundle[CORRELATION_FILE])},
+        }
+        text = json.dumps(record, indent=2, sort_keys=True) + "\n"
+        (out_dir / EXECUTION_FILE).write_text(text, encoding="utf-8")
     return out_dir
+
+
+def _sha256(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def verify_bundle(directory: Path) -> list[str]:
@@ -303,4 +321,24 @@ def verify_bundle(directory: Path) -> list[str]:
             problems.append(f"{name} is missing")
         elif hashlib.sha256(path.read_bytes()).hexdigest() != expected:
             problems.append(f"{name} does not match the hash in the manifest")
+    return problems + _execution_problems(directory)
+
+
+def _execution_problems(directory: Path) -> list[str]:
+    """Return what is wrong with the files of one execution, which the manifest leaves out."""
+    if not (directory / CORRELATION_FILE).is_file():
+        return []
+    try:
+        record = json.loads((directory / EXECUTION_FILE).read_text(encoding="utf-8"))
+        files = dict(record["files"])
+        manifest = str(record["manifest_sha256"])
+    except (OSError, ValueError, KeyError, TypeError):
+        return [f"{CORRELATION_FILE} is there and {EXECUTION_FILE}, which holds its hash, is not"]
+    problems = []
+    if hashlib.sha256((directory / "manifest.json").read_bytes()).hexdigest() != manifest:
+        problems.append(f"{EXECUTION_FILE} is of another manifest")
+    for name, expected in sorted(files.items()):
+        path = directory / name
+        if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+            problems.append(f"{name} does not match the hash in {EXECUTION_FILE}")
     return problems

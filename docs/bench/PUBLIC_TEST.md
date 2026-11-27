@@ -1,6 +1,6 @@
 # Public test
 
-**Registration is always open.** Seasons follow one another, four weeks each, on a frozen benchmark. [Register your gate](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml) with three fields; installation and the interface check can follow. The [calendar](#seasons) says when the open season closes.
+**Registration is always open.** Seasons follow one another, four weeks each, on a frozen benchmark. [Register your gate](https://github.com/agentic-datacenter/agentic-datacenter/issues/new?template=gate-registration.yml) with three fields; installation and the interface check can follow. The [calendar](#seasons) says when the open season closes.
 
 New here? [How the benchmark works](HOW-IT-WORKS.md) explains it on one page, and how to run it at any time without a season.
 
@@ -54,7 +54,7 @@ A season fixes three things before any participant can know its held-out scenari
 
 ## Taking part
 
-1. **Register a fixed version first.** Use the [gate registration form](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml). Only three fields are required: project name, exact immutable version (full commit SHA, package hash or image digest), and intended connection method (choose "not sure" if needed). You do **not** need to install anything or paste test output to register. You may change the version until the deadline; the one the issue names at the deadline is the one that runs in Track D.
+1. **Register a fixed version first.** Use the [gate registration form](https://github.com/agentic-datacenter/agentic-datacenter/issues/new?template=gate-registration.yml). Only three fields are required: project name, exact immutable version (full commit SHA, package hash or image digest), and intended connection method (choose "not sure" if needed). You do **not** need to install anything or paste test output to register. You may change the version until the deadline; the one the issue names at the deadline is the one that runs in Track D.
 2. **Connect and check your gate later.** Run `agentic-datacenter gate check <gate>` (see [Test your own gate](../guides/bring-your-own-gate.md)), and add the output and operating profile to your issue before submitting a result. A registration alone is not a passing check or a benchmark result. If integration changes the version you registered, update it **before** the deadline to remain eligible for Track D.
 3. **Run the public tracks at any time** on the frozen version, at its tag. The main branch carries the next version while it is being made, and a season's run made there is refused.
 

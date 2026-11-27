@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
   - name: Report a security problem privately
-    url: https://github.com/darklordVirtual/agentic-datacenter/security/advisories/new
+    url: https://github.com/agentic-datacenter/agentic-datacenter/security/advisories/new
     about: A way out of the simulator's networks, restricted material, or a committed secret. Never in a public issue (SECURITY.md).
   - name: Offer calibration data privately
-    url: https://github.com/darklordVirtual/agentic-datacenter/blob/main/docs/calibration/contribute-data.md#how-to-share
+    url: https://github.com/agentic-datacenter/agentic-datacenter/blob/main/docs/calibration/contribute-data.md#how-to-share
     about: First contact is by e-mail, so that nobody can see who holds data.
   - name: Documentation
-    url: https://github.com/darklordVirtual/agentic-datacenter/tree/main/docs
+    url: https://github.com/agentic-datacenter/agentic-datacenter/tree/main/docs
     about: Guides, the benchmark rules and the reference pages.

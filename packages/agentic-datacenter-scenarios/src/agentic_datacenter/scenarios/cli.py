@@ -6,7 +6,7 @@ import argparse
 import json
 import os
 import sys
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -223,6 +223,12 @@ def bench(argv: Sequence[str]) -> int:
         "--publication", action="store_true",
         help="Also require the frozen benchmark version: the check for a reported result.",
     )  # fmt: skip
+    compare = actions.add_parser(
+        "compare", help="Say where a gate did worse on a new card than on an earlier one."
+    )
+    compare.add_argument("earlier", type=Path, help="The result_card.json of an earlier run.")
+    compare.add_argument("card", type=Path, help="The result_card.json of this run.")
+    compare.add_argument("--gate", action="append", help="Gate to compare; repeat for several.")
     record = actions.add_parser(
         "record", help="Write the commit and the hash of every file beside a result card."
     )
@@ -234,7 +240,9 @@ def bench(argv: Sequence[str]) -> int:
     args = parser.parse_args(argv)
 
     if args.action == "check":
-        return _check(args.card, args.gate or ["remora_governed"], args.publication)
+        return _check(args.card, args.gate or _own_gates(args.card), args.publication)
+    if args.action == "compare":
+        return _compare(args.earlier, args.card, args.gate)
     if args.action == "record":
         if not (args.directory / CARD_NAME).is_file():
             print(f"agentic-datacenter bench: no {CARD_NAME} in {args.directory}", file=sys.stderr)
@@ -386,9 +394,9 @@ def bench(argv: Sequence[str]) -> int:
         assert isinstance(row, dict)
         print(
             f"  {row['gate']:18s} {row['agent']:22s} {row['operating_profile']:17s} "
-            f"scenarios without harm {row['safety']}  "
-            f"harmful steps let through {row.get('unsafe_execution_rate')}  "
-            f"safe steps blocked {row['false_block_rate']}  "
+            f"scenarios without harm {_share(row['safety'])}  "
+            f"harmful steps let through {_share(row.get('unsafe_execution_rate'))}  "
+            f"safe steps blocked {_share(row['false_block_rate'])}  "
             f"approvals declined {row['approvals_declined']}  "
             f"without required approval {row['executed_without_required_approval']}"
             f" of {row['approval_required']}  verdicts {' '.join(row['verdicts_used'])}"
@@ -424,6 +432,86 @@ def bench(argv: Sequence[str]) -> int:
                     f"{counted['details_wrong']} of them not what the register holds"
                 )
     return 0
+
+
+#: The two reference controls every card may hold: no control, and limits only.
+REFERENCE_CONTROLS = ("null_gate", "static_allowlist")
+#: What `bench compare` reads of a card's rows, with whether more of it is worse.
+COMPARED = (
+    ("unsafe_execution_rate", "harmful steps let through", True),
+    ("executed_without_authority", "steps executed without a mandate", True),
+    ("executed_without_required_approval", "steps executed without the person asked for", True),
+    ("runs_worse_than_no_agent", "runs worse than with no agent", True),
+    ("false_block_rate", "safe steps blocked", True),
+    ("safety", "scenarios without harm", False),
+)
+
+
+def _own_gates(path: Path) -> list[str]:
+    """Return every gate on a card but the two reference controls: the ones it is about."""
+    card = json.loads(path.read_text(encoding="utf-8"))
+    gates = list(dict.fromkeys(str(row["gate"]) for row in card.get("results", [])))
+    return [g for g in gates if g not in REFERENCE_CONTROLS] or gates
+
+
+def compare_cards(
+    earlier: Mapping[str, Any], card: Mapping[str, Any], gates: Sequence[str] | None = None
+) -> tuple[list[str], list[str]]:
+    """Return (worse, notes): where a gate did worse on *card* than on *earlier*, and the rest.
+
+    A row is one gate with one agent. A figure is worse when more of it is
+    worse and it rose, or less of it is worse and it fell. A difference between
+    two cards of different benchmark versions may be the benchmark's and not
+    the gate's, and a note says so.
+    """
+    worse: list[str] = []
+    notes: list[str] = []
+
+    def version(c: Mapping[str, Any]) -> Any:
+        return c.get("benchmark_version")
+
+    if version(earlier) != version(card):
+        notes.append(
+            "the two cards are of different benchmark versions: a difference may be the "
+            "benchmark's, new scenarios for example, and not the gate's"
+        )
+    before = {(str(r["gate"]), str(r["agent"])): r for r in earlier.get("results", [])}
+    for row in card.get("results", []):
+        key = (str(row["gate"]), str(row["agent"]))
+        if gates and key[0] not in gates:
+            continue
+        if not gates and key[0] in REFERENCE_CONTROLS:
+            continue
+        if key not in before:
+            notes.append(f"{key[0]}, {key[1]}: not on the earlier card")
+            continue
+        for name, title, more_is_worse in COMPARED:
+            was, now = before[key].get(name), row.get(name)
+            if was is None or now is None or float(was) == float(now):
+                continue
+            rose = float(now) > float(was)
+            line = f"{key[0]}, {key[1]}: {title} {was} -> {now}"
+            (worse if rose == more_is_worse else notes).append(
+                line if rose == more_is_worse else line + " (better)"
+            )
+    return worse, notes
+
+
+def _compare(earlier: Path, path: Path, gates: Sequence[str] | None) -> int:
+    """Print where a gate did worse than before; 1 if anywhere."""
+    try:
+        old = json.loads(earlier.read_text(encoding="utf-8"))
+        new = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        print(f"agentic-datacenter bench compare: {exc}", file=sys.stderr)
+        return 2
+    worse, notes = compare_cards(old, new, gates)
+    for line in notes:
+        print(f"note: {line}")
+    for line in worse:
+        print(f"worse: {line}")
+    print("no figure is worse than on the earlier card" if not worse else f"{len(worse)} worse")
+    return 1 if worse else 0
 
 
 def _check(path: Path, gates: Sequence[str], publication: bool = False) -> int:
@@ -549,7 +637,11 @@ def scenario(argv: Sequence[str]) -> int:
     )
     actions = parser.add_subparsers(dest="action", required=True)
     run = actions.add_parser("run", help="Run a scenario and write its evidence bundle.")
-    run.add_argument("scenario", choices=library_ids())
+    run.add_argument(
+        "scenario", type=_scenario_or_file, metavar="SCENARIO",
+        help="A scenario of the library by its id, such as OP-03, or the path of a scenario "
+        "file of your own (.yaml), for one you are writing or proposing.",
+    )  # fmt: skip
     run.add_argument("--gate", default="null_gate")
     run.add_argument(
         "--agent", type=_agent_name(sorted(DEMO_AGENTS)), default="scripted_benign",
@@ -691,6 +783,13 @@ def gate(argv: Sequence[str]) -> int:
         "signature as canonical JSON. May be given more than once (ADR 0041).",
     )  # fmt: skip
     receipts.add_argument(
+        "--verifier",
+        metavar="COMMAND",
+        help="Your own verifier, for a signature scheme or canonical form of your own. It is "
+        "run once for each receipt line, with the line as JSON on standard input, and "
+        "verifies it by exiting with status 0.",
+    )
+    receipts.add_argument(
         "--require-signed",
         action="store_true",
         help="With --key: also fail when a receipt line carries no signature.",
@@ -700,7 +799,7 @@ def gate(argv: Sequence[str]) -> int:
     if args.action == "verify-receipts":
         return _verify_receipts(
             args.decisions, args.receipts, args.require_all, args.allow_unknown,
-            tuple(args.key), args.require_signed,
+            tuple(args.key), args.require_signed, args.verifier,
         )  # fmt: skip
     installed = load_gates()
     if args.action == "list":
@@ -761,6 +860,21 @@ def _json_lines(path: Path) -> list[dict[str, Any]]:
     return lines
 
 
+def _scenario_or_file(text: str) -> str:
+    """Return *text* if it names a library scenario or a scenario file; else say what it may be."""
+    if text in library_ids() or (Path(text).suffix in (".yaml", ".yml") and Path(text).is_file()):
+        return text
+    raise argparse.ArgumentTypeError(
+        f"{text} is neither a scenario of the library ({', '.join(library_ids())}) "
+        "nor the path of a scenario file (.yaml)"
+    )
+
+
+def _share(value: Any) -> str:
+    """Return a share as a whole percentage, or ``n/a`` when there was nothing to take it of."""
+    return "n/a" if value is None else f"{100.0 * float(value):.0f} %"
+
+
 def _verify_receipts(
     decisions: Path,
     receipts: Path,
@@ -768,6 +882,7 @@ def _verify_receipts(
     allow_unknown: bool = False,
     keys: tuple[str, ...] = (),
     require_signed: bool = False,
+    verifier: str | None = None,
 ) -> int:
     """Run ``gate verify-receipts`` and return its exit status."""
     from agentic_datacenter.governance.bindings.http_gate import read_verdict
@@ -795,7 +910,21 @@ def _verify_receipts(
             "agentic-datacenter gate verify-receipts: --require-signed needs --key", file=sys.stderr
         )
         return 2
-    report = verify_receipts(records, given, read_verdict, keys)
+    check = None
+    if verifier:
+        import shlex  # noqa: PLC0415
+        import subprocess  # noqa: PLC0415
+
+        command = shlex.split(verifier)
+
+        def check(line: Any) -> bool:
+            done = subprocess.run(  # noqa: S603 - the user's own command, given on the command line
+                command, input=json.dumps(line, sort_keys=True), text=True,
+                capture_output=True, check=False, timeout=60,
+            )  # fmt: skip
+            return done.returncode == 0
+
+    report = verify_receipts(records, given, read_verdict, keys, check)
     print(json.dumps(report.as_dict(), indent=2, sort_keys=True))
     correlated = len(report.matched) + len(report.mismatched) + len(report.without_receipt)
     if not correlated:
@@ -810,7 +939,7 @@ def _verify_receipts(
     failed = failed or (require_all and bool(report.without_receipt))
     failed = failed or bool(report.bad_signature)
     failed = failed or (require_signed and bool(report.unsigned))
-    if keys:
+    if keys or verifier:
         print(
             f"signatures: {len(report.signed)} verified, {len(report.bad_signature)} failed, "
             f"{len(report.unsigned)} not signed",

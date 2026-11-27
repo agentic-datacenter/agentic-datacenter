@@ -4,10 +4,10 @@ Test autonomous data center operations before they reach production. A simulatio
 
 ## Try it
 
-[Open it in GitHub Codespaces](https://codespaces.new/darklordVirtual/agentic-datacenter), or run it on your own machine, with git, Python 3.12 or later and [uv](https://docs.astral.sh/uv/):
+[Open it in GitHub Codespaces](https://codespaces.new/agentic-datacenter/agentic-datacenter), or run it on your own machine, with git, Python 3.12 or later and [uv](https://docs.astral.sh/uv/):
 
 ```sh
-git clone https://github.com/darklordVirtual/agentic-datacenter && cd agentic-datacenter
+git clone https://github.com/agentic-datacenter/agentic-datacenter && cd agentic-datacenter
 uv sync
 uv run agentic-datacenter demo --scenario OP-03 --gate static_allowlist --out build/first-run
 ```

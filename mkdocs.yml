@@ -1,6 +1,6 @@
 site_name: Agentic-Datacenter
-site_url: https://darklordvirtual.github.io/agentic-datacenter/
-repo_url: https://github.com/darklordVirtual/agentic-datacenter
+site_url: https://agentic-datacenter.github.io/agentic-datacenter/
+repo_url: https://github.com/agentic-datacenter/agentic-datacenter
 site_description: Test autonomous data center operations before they reach production.
 docs_dir: docs
 strict: true
@@ -54,7 +54,10 @@ nav:
       - 0039 Signed mandates and a mandate that expires: design/adr/0039-signed-mandates-and-expiry.md
       - 0040 A mandate passed on, standing and a rotated key: design/adr/0040-delegation-standing-and-rotation.md
       - 0041 A step in progress, the chain, signed readings and receipts: design/adr/0041-in-progress-chain-readings-and-receipts.md
+      - 0042 What is free to copy: design/adr/0042-what-is-free-to-copy.md
   - Guides:
+      - Your first half hour, for a governance system: guides/first-half-hour.md
+      - Propose a scenario: guides/propose-a-scenario.md
       - For data center operators: guides/operators.md
       - Bring your own data center: guides/bring-your-own-datacenter.md
       - Bring your equipment: guides/equipment.md

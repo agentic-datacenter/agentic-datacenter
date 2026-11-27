@@ -11,7 +11,7 @@ uv run agentic-datacenter scenario run OP-03 --seconds 900 --agent llm:compatibl
   --llm-replay examples/llm-agent/OP-03.jsonl --out build/llm-example
 ```
 
-The run prints `agent: llm:compatible/stand-in. Language-model agent: compatible/stand-in, replayed from its transcript, no model called. Reported apart from the scripted agents.` and writes an evidence bundle whose manifest says the same. See [`examples/llm-agent`](https://github.com/darklordVirtual/agentic-datacenter/tree/main/examples/llm-agent).
+The run prints `agent: llm:compatible/stand-in. Language-model agent: compatible/stand-in, replayed from its transcript, no model called. Reported apart from the scripted agents.` and writes an evidence bundle whose manifest says the same. See [`examples/llm-agent`](https://github.com/agentic-datacenter/agentic-datacenter/tree/main/examples/llm-agent).
 
 ## Run a model
 
@@ -57,6 +57,6 @@ uv run agentic-datacenter bench run --tier quick --agent llm:openai/<model> --ou
 - **An agent served over HTTP**, after the pattern of the [gate binding](bring-your-own-gate.md): one request per decision point, one answer with its proposals.
 - **A conformance check** of such an agent, as `gate check` does for a gate.
 
-Tell us what your agent needs in an issue: [github.com/darklordVirtual/agentic-datacenter/issues](https://github.com/darklordVirtual/agentic-datacenter/issues). The design is in ADR 0035.
+Tell us what your agent needs in an issue: [github.com/agentic-datacenter/agentic-datacenter/issues](https://github.com/agentic-datacenter/agentic-datacenter/issues). The design is in ADR 0035.
 
-[Back to the README](https://github.com/darklordVirtual/agentic-datacenter#readme)
+[Back to the README](https://github.com/agentic-datacenter/agentic-datacenter#readme)

@@ -258,7 +258,7 @@ Every public class and function has a docstring; module specs and guides are par
 **Repository layout**
 
 ```text
-agentic-datacenter/                           github.com/darklordVirtual/agentic-datacenter
+agentic-datacenter/                           github.com/agentic-datacenter/agentic-datacenter
   pyproject.toml  uv.lock        uv workspace root; lock file committed
   REMORA_PIN                     repo URL, commit SHA, tag, date, reason for last bump
   modules.lock.yaml              generated registry: module, version, fidelity, requirement coverage
@@ -907,6 +907,7 @@ Each requirement below maps to at least one named test; a requirement without a 
 | ADC-UX-013 | The first run needs no credentials, no API key, no privileged access and no OT connection. | tools/first\_run |
 | ADC-UX-014 | The hero names no date, season or library count that goes stale. | conformance/test\_readme\_experience |
 | ADC-UX-015 | Two independent first-time users reach their role's result without the maintainer. | manual, not done |
+| ADC-UX-016 | `scenario run` takes the path of a scenario file of one's own and refuses one that is not there; a form takes a proposal for a scenario in words; and a guide says what gets a scenario into a frozen version. | scenario/test\_in\_progress\_and\_provenance |
 
 **Language-model agent (12.1, ADR 0035)**
 
@@ -1185,7 +1186,7 @@ This section is build history. The simulator was built in the stages below, in t
 | 11 | Evidence about hosts (ADR 0032): keepalives in shirudo's format, `SHIRUDO_PIN`, the host register and premise, host scenarios | HST-001 to 008 | A host scenario refused from a keepalive before the cross-check alarms, under a gate that reads host evidence |
 | 12 | Bring your own data center (ADR 0033): facility bundles, equipment models, values per instance, `facility check`, runs and cards on one's own facility, the number of chillers | FAC-001 to 010 | `facility check` and a `bench run --facility` of the example bundle end to end |
 | 13 | The equipment registry (ADR 0034): entries from open sources with their rights recorded, the registry's gate, `registry:` entries in bundles | EQP-001 to 004 | A bundle that names a registry chiller runs, and the gate refuses an entry without its rights |
-| 14 | The front door and onboarding (SDD-ADC-002): buttons, role guides, `facility init` and `report`, a maker's own entries | FAC-011 to 012, EQP-005, UX-001 to 015 | Two independent first-time users reach their role's result without help |
+| 14 | The front door and onboarding (SDD-ADC-002): buttons, role guides, `facility init` and `report`, a maker's own entries | FAC-011 to 012, EQP-005, UX-001 to 016 | Two independent first-time users reach their role's result without help |
 | 15 | A language-model agent (ADR 0035): `llm:<provider>/<model>` on `scenario run` and `bench run`, five providers through two adapters, transcripts and replay, cards apart | AGT-001 to 007 | A run of a model replayed from its transcript with no network gives the same run |
 | 16 | Governance systems from elsewhere (ADR 0036): one correlation for request, outcome and receipt, a fixed UTC anchor, read-only plant context, `gate verify-receipts` | INT-001 to 010 | The command starter's receipts of a run verify, and a changed one is refused |
 | 17 | Authority in time and the action trace (ADR 0038): `work_order`, `AD-15` and `OP-14`, the approval trace, the action trace, `identity`, the registry of operational findings | AUT-001 to 003, FND-001 to 003 | `AD-15` refuses the step at the check before the write, `OP-14` carries it out, and the trace shows both |

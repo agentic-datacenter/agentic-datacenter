@@ -1,0 +1,29 @@
+# REMORA, enrolled with the registration form like any other system. Its maintainer
+# is the owner of this project, and the entry says so in `relation`.
+id: remora
+name: REMORA
+gate: remora_governed
+version: 06e7a02b49563b4cbbfec1e573cde026462c3240
+connection: package
+relation: benchmark_authors
+enrolled:
+  issue: https://github.com/agentic-datacenter/agentic-datacenter/issues/67
+  date: 2026-11-27
+  listing_consent: true
+project_url: https://github.com/darklordVirtual/REMORA-research
+provides: [decisions, evidence]
+capabilities:
+  allow_deny: uses
+  asks_a_person: uses
+  abstains: uses
+  reason_codes: not_used
+  reads_premises: uses
+  authority_from_record: not_used
+  verifies_mandates: not_used
+  verifies_readings: not_used
+  states_findings: not_used
+  signs_receipts: partial       # it signs its own decision grants, in its own form
+  keeps_state: uses
+  executes_itself: uses
+results: []
+findings: []

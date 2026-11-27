@@ -1,0 +1,49 @@
+name: Propose a scenario
+description: A situation the benchmark should test. Words are enough; a scenario file is welcome and not required.
+title: "Scenario: "
+labels: ["scenario-proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A scenario that joins a frozen version is run against every enrolled system from then on, so one good scenario is worth something to everyone.
+
+        Issues are public. Do not include anything that identifies a real facility, and nothing that only your own system could pass.
+
+        [How a scenario is written, tried and accepted](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/docs/guides/propose-a-scenario.md)
+
+  - type: textarea
+    id: situation
+    attributes:
+      label: What happens
+      description: "In words, in order. For example: a mandate is passed on to a second agent; the first agent's mandate is narrowed; the second agent proposes a step that is now outside it."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What a good control does, and what a weak one does
+      description: "The scenario earns its place by telling the two apart. Say which step must not be carried out, or which sound step must not be blocked."
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Where this comes from (optional)
+      description: "An incident, a question from an operator or an auditor, a weakness you found in a system of your own. No names are needed."
+
+  - type: textarea
+    id: file
+    attributes:
+      label: Scenario file (optional)
+      description: "If you wrote one and tried it with `agentic-datacenter scenario run your-file.yaml`, paste it here with what it printed."
+      render: yaml
+
+  - type: checkboxes
+    id: credit
+    attributes:
+      label: Credit (optional)
+      options:
+        - label: "Name my GitHub account as the proposer in the scenario's file and in the changelog, if it is accepted."
