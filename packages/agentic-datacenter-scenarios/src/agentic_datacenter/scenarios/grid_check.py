@@ -90,6 +90,10 @@ def _is_number(value: object) -> bool:
     return isinstance(value, int | float) and not isinstance(value, bool)
 
 
+def _is_whole(value: object) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
 def problems(data: object) -> list[str]:
     """Return what is wrong with a requirements file's content; empty when it can be used."""
     if not isinstance(data, Mapping):
@@ -117,16 +121,20 @@ def problems(data: object) -> list[str]:
         found.append("ride_through must be a mapping")
     elif curve is not None:
         ok = isinstance(curve, list) and len(curve) >= 2 and all(
-            isinstance(p, list) and len(p) == 2 and _is_number(p[0]) and _is_number(p[1])
+            isinstance(p, list) and len(p) == 2 and _is_whole(p[0]) and _is_number(p[1])
             and p[0] >= 0 and 0.0 <= p[1] <= 1.0
             for p in curve
         )  # fmt: skip
         if not ok:
-            found.append("ride_through.curve_ms_pu must be points of [ms, pu]")
+            found.append("ride_through.curve_ms_pu must be points of [whole ms, pu]")
         elif any(a[0] > b[0] for a, b in zip(curve, curve[1:], strict=False)):
             found.append("ride_through.curve_ms_pu must go forward in time")
     if isinstance(ride, Mapping):
-        for dip in ride.get("dips_pu_ms") or []:
+        dips = ride.get("dips_pu_ms") or []
+        if not isinstance(dips, list):
+            found.append("ride_through.dips_pu_ms must be a list of [pu, ms]")
+            dips = []
+        for dip in dips:
             if not (
                 isinstance(dip, list) and len(dip) == 2 and _is_number(dip[0])
                 and 0.0 <= dip[0] < 1.0 and _dip_length_ok(dip[1])
@@ -149,6 +157,11 @@ def problems(data: object) -> list[str]:
                     and (level.get("within_s") is None or _is_number(level["within_s"]))
                 ):  # fmt: skip
                     found.append("a recovery level needs name, min_share, max_share and within_s")
+                elif level.get("within_s") is not None and not 0 < level["within_s"] <= WATCH_S / 2:
+                    found.append(
+                        f"a recovery time is more than 0 and at most {WATCH_S // 2} s:"
+                        f" the facility is watched for {WATCH_S} s"
+                    )
     continuous = data.get("continuous")
     if continuous is not None and not (
         isinstance(continuous, Mapping) and _is_number(continuous.get("low_pu"))
@@ -238,7 +251,7 @@ def curve_at(curve: Sequence[tuple[int, float]], ms: float) -> float:
     if ms <= curve[0][0]:
         return max(v for t, v in curve if t == curve[0][0])
     if ms >= curve[-1][0]:
-        return curve[-1][1]
+        return max(v for t, v in curve if t == curve[-1][0])
     at = [v for t, v in curve if t == ms]
     if at:
         return max(at)
@@ -350,7 +363,10 @@ def _back_after(shares: Sequence[float], level: Level, step_s: float) -> float |
             last_out = index
     if last_out == len(shares) - 1:
         return None
-    return round((last_out + 1) * step_s, 3)
+    if last_out < 0:
+        return 0.0  # it never left
+    # The sample at index i is taken i + 1 steps after the voltage is back.
+    return round((last_out + 2) * step_s, 3)
 
 
 def _verdict(back_s: float | None, within_s: float | None, delay_s: float) -> str:
@@ -375,7 +391,7 @@ def _largest_change(shares: Sequence[float], window: int) -> float:
 def _swing(shares: Sequence[float], window: int) -> float:
     """Return the largest change of the draw within *window* steps, from a sliding range."""
     largest = 0.0
-    for start in range(0, len(shares), max(1, window // 4)):
+    for start in range(max(1, len(shares) - window + 1)):
         part = shares[start : start + window]
         largest = max(largest, max(part) - min(part))
     return largest

@@ -76,6 +76,8 @@ def contract_values(
     if not 0.0 < step <= 60.0:
         raise ValueError("a ramp step is more than 0 and at most 60 % of the workload")
     hourly = ASSUMED_STEPS_PER_HOUR if steps_per_hour is None else steps_per_hour
+    if hourly < 1:
+        raise ValueError("steps an hour is a whole number from 1")
     ramp_note = " ".join(str((data.get("ramp") or {}).get("note", "")).split())
     return {
         "low_frequency_pu": {

@@ -311,3 +311,48 @@ def test_a_country_can_be_added_in_words() -> None:
         assert f"`{name}`" in guide or f".{name}`" in guide
     listed = (REPO / "grid/README.md").read_text(encoding="utf-8")
     assert all(f"`{path.name}`" in listed for path in FILES), "every file is in the table"
+
+
+@pytest.mark.req("ADC-FAC-013")
+def test_measurements_count_every_window_and_the_time_a_sample_was_taken() -> None:
+    """Found by a review of the code: a window that was skipped, and a time one step short."""
+    level = grid_check.Level("x", 0.95, 1.05, 1.0)
+    assert grid_check._back_after([1.0, 1.0, 1.0], level, 0.1) == 0.0, "it never left"
+    # Out for three samples: the first sample that is back is the fourth, taken after 0.4 s.
+    assert grid_check._back_after([0.2, 0.2, 0.2, 1.0, 1.0], level, 0.1) == 0.4
+    assert grid_check._back_after([0.2, 0.2], level, 0.1) is None
+    # A drop and a return 45 seconds apart, starting off any round position.
+    shares = [1.0] * 137 + [0.2] * 450 + [1.0] * 900
+    assert grid_check._swing(shares, 600) == pytest.approx(0.8)
+    assert grid_check._swing([1.0, 0.4], 600) == pytest.approx(0.6)
+
+
+@pytest.mark.req("ADC-FAC-013")
+def test_a_bad_file_is_a_problem_and_never_a_crash() -> None:
+    data = yaml.safe_load(NORWAY.read_text(encoding="utf-8"))
+    data["ride_through"]["dips_pu_ms"] = 5
+    assert "ride_through.dips_pu_ms must be a list of [pu, ms]" in grid_check.problems(data)
+    data = yaml.safe_load(NORWAY.read_text(encoding="utf-8"))
+    data["ride_through"]["curve_ms_pu"][1][0] = 150.5
+    assert any("whole ms" in problem for problem in grid_check.problems(data))
+    data = yaml.safe_load(NORWAY.read_text(encoding="utf-8"))
+    data["recovery"]["levels"][0]["within_s"] = 600
+    assert any("at most 60 s" in problem for problem in grid_check.problems(data))
+    assert grid_check.curve_at([(0, 0.0), (100, 0.2), (100, 0.9)], 100) == 0.9
+    assert grid_check.curve_at([(0, 0.0), (100, 0.9), (100, 0.2)], 500) == 0.9
+
+
+@pytest.mark.req("ADC-FAC-014")
+def test_the_commands_refuse_what_cannot_be_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from agentic_datacenter.scenarios import grid_run
+
+    norway = grid_check.load_requirements(NORWAY)
+    with pytest.raises(ValueError, match="whole number from 1"):
+        grid_run.contract_values(norway, steps_per_hour=0)
+    monkeypatch.chdir(REPO)
+    out = str(tmp_path / "o")
+    assert cli.grid(["run", "no-nvf-2026-draft", "--steps-per-hour", "0", "--out", out]) == 2
+    assert cli.grid(["run", "no-nvf-2026-draft", "--profile", "no-such.yaml", "--out", out]) == 2
+    assert "grid run:" in capsys.readouterr().err
