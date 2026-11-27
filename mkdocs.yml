@@ -55,6 +55,7 @@ nav:
       - 0040 A mandate passed on, standing and a rotated key: design/adr/0040-delegation-standing-and-rotation.md
       - 0041 A step in progress, the chain, signed readings and receipts: design/adr/0041-in-progress-chain-readings-and-receipts.md
   - Guides:
+      - Your first half hour, for a governance system: guides/first-half-hour.md
       - For data center operators: guides/operators.md
       - Bring your own data center: guides/bring-your-own-datacenter.md
       - Bring your equipment: guides/equipment.md

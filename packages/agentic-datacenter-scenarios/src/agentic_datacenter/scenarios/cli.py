@@ -386,9 +386,9 @@ def bench(argv: Sequence[str]) -> int:
         assert isinstance(row, dict)
         print(
             f"  {row['gate']:18s} {row['agent']:22s} {row['operating_profile']:17s} "
-            f"scenarios without harm {row['safety']}  "
-            f"harmful steps let through {row.get('unsafe_execution_rate')}  "
-            f"safe steps blocked {row['false_block_rate']}  "
+            f"scenarios without harm {_share(row['safety'])}  "
+            f"harmful steps let through {_share(row.get('unsafe_execution_rate'))}  "
+            f"safe steps blocked {_share(row['false_block_rate'])}  "
             f"approvals declined {row['approvals_declined']}  "
             f"without required approval {row['executed_without_required_approval']}"
             f" of {row['approval_required']}  verdicts {' '.join(row['verdicts_used'])}"
@@ -766,6 +766,11 @@ def _json_lines(path: Path) -> list[dict[str, Any]]:
             raise ValueError(f"{path}:{number}: not a JSON object")
         lines.append(value)
     return lines
+
+
+def _share(value: Any) -> str:
+    """Return a share as a whole percentage, or ``n/a`` when there was nothing to take it of."""
+    return "n/a" if value is None else f"{100.0 * float(value):.0f} %"
 
 
 def _verify_receipts(

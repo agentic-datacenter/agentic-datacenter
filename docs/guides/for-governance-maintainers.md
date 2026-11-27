@@ -2,6 +2,8 @@
 
 A signature shows who made a decision. Agentic-Datacenter shows whether the decision was safe: what the plant would have done had the action been carried out, and had it not. That is evidence a governance system cannot make about itself, and this page says how to get it for yours, what it costs, and what it does not give.
 
+Want to try it before reading on? [Your first half hour](first-half-hour.md) needs no knowledge of data centers.
+
 ## What you get
 
 1. **Figures you can publish about your own gate.** The share of harmful steps it let through and of safe, useful steps it blocked, against a careful and a hostile agent. How often it asked a person, and how many steps were carried out without a mandate. They stand beside the built-in gates', on the same scenarios, seeds and judge, in a plain summary (`summary.md`) and a card anyone can make again byte for byte, with an evidence bundle anyone can verify.

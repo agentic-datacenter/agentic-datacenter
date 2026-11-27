@@ -1,6 +1,6 @@
 # Which way in for your project
 
-Choose a path by what your integration produces. A local command is the shortest path to a first result for a tool that can already return a decision. What a maintainer gets, and what it costs, is on [For maintainers of governance systems](for-governance-maintainers.md).
+New here and not from the data center world? Start with [Your first half hour](first-half-hour.md). Otherwise, choose a path by what your integration produces. A local command is the shortest path to a first result for a tool that can already return a decision. What a maintainer gets, and what it costs, is on [For maintainers of governance systems](for-governance-maintainers.md).
 
 ## What does your project bring?
 
