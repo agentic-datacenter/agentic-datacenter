@@ -44,7 +44,7 @@ For a facility report, follow the [operator quickstart](docs/guides/bring-your-o
 
 ## Participate
 
-[Your first half hour with a governance system](docs/guides/first-half-hour.md) · [How long a test takes](docs/bench/TIERS.md) · [How the benchmark works](docs/bench/HOW-IT-WORKS.md) · [Enrolled systems](docs/bench/participants.md) · [Public benchmark](docs/bench/PUBLIC_TEST.md) · [Propose a scenario](docs/guides/propose-a-scenario.md) · [Register a gate](https://github.com/agentic-datacenter/agentic-datacenter/issues/new?template=gate-registration.yml) · [Contribute measured data](docs/calibration/contribute-data.md) · [Contributing](CONTRIBUTING.md)
+[Your first half hour with a governance system](docs/guides/first-half-hour.md) · [How long a test takes](docs/bench/TIERS.md) · [How the benchmark works](docs/bench/HOW-IT-WORKS.md) · [Enrolled systems](docs/bench/participants.md) · [Public benchmark](docs/bench/PUBLIC_TEST.md) · [Propose a scenario](docs/guides/propose-a-scenario.md) · [Grid connection requirements](docs/guides/grid-requirements.md) · [Register a gate](https://github.com/agentic-datacenter/agentic-datacenter/issues/new?template=gate-registration.yml) · [Contribute measured data](docs/calibration/contribute-data.md) · [Contributing](CONTRIBUTING.md)
 
 Registration is always open. Public tests use frozen versions, and results on a facility of your own are never ranked as benchmark results. See [fairness](docs/bench/FAIRNESS.md) and [release checks](docs/guides/release-gate.md).
 

@@ -21,6 +21,17 @@ Each run prints whether the scenario's criteria were met and writes an evidence 
 
 The events a timeline can hold are listed in the scenario reader ([`scenario.py`](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/packages/agentic-datacenter-scenarios/src/agentic_datacenter/scenarios/scenario.py)): a fault in the plant, a change of who may act, a work order, a forged statement, a false reading, and others.
 
+## A scenario about the grid
+
+A scenario in which the state of the power grid decides whether a step may be taken goes beside `GR-01` to `GR-03` in `grid/scenarios/`, outside the benchmark's library. It uses one more contract, on the workload of a POD, whose limits come from a country's requirements. Try yours with the contract library that `agentic-datacenter grid contracts <id>` writes:
+
+```sh
+uv run agentic-datacenter grid contracts no-nvf-2026-draft --out build/grid
+uv run agentic-datacenter scenario run your-file.yaml --contracts build/grid/contracts --gate static_allowlist
+```
+
+[What does the grid see of your data center?](grid-requirements.md#hold-a-control-to-the-grids-limits) has the rest.
+
 ## What gets a scenario into a version
 
 1. **It tells two controls apart.** Run it with no control, with limits only, and with a control that does what the scenario is about. If all three come out the same, it tests nothing yet. The usual cause is that every step in it is stopped for some other reason; a work order for a step that is sound in every other way fixes that.

@@ -12,10 +12,10 @@ Most of what this project needs from others takes no pull request, no setup and 
 | Take part with a system of your own | [Register](https://github.com/agentic-datacenter/agentic-datacenter/issues/new?template=gate-registration.yml) | Three fields; your code stays where it is |
 | Share a result | The "Gate result" form | The card your run wrote |
 | Report something that does not work, or is unclear | The "Problem or question" form | What you ran and what you saw |
-| Add your country's grid connection requirements | [One file](docs/guides/grid-requirements.md#add-your-country), no code | The document you read, and its numbers |
+| Add a country's grid connection requirements, or correct or complete one | [The grid form](https://github.com/agentic-datacenter/agentic-datacenter/issues/new?template=grid-requirements.yml), in words | The document you read, and its numbers |
 | Offer measured data from a plant | [Contribute data](docs/calibration/contribute-data.md), privately | An e-mail |
 
-Three kinds of file can be sent as a pull request without the rules below for code: a scenario file (CC-BY-4.0, your name in its header), an equipment entry (CC-BY-4.0, ADR 0034) and a correction to a page of documentation. The checks still run on them.
+Four kinds of file can be sent as a pull request without the rules below for code: a scenario file (CC-BY-4.0, your name in its header), an equipment entry (CC-BY-4.0, ADR 0034), a grid requirements file (CC-BY-4.0, your name in its header, [how to write one](docs/guides/grid-requirements.md#write-the-file-yourself)) and a correction to a page of documentation. The checks still run on them.
 
 Everything from here on is for a change to the simulator's own code.
 
