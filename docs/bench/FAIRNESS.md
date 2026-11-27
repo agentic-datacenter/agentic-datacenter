@@ -31,7 +31,7 @@ Gates differ in what they can say: some only allow or deny, some ask a person, s
 | Verdicts used | `verdicts_used`; counts in `verdict_allow`, `verdict_deny`, `verdict_verify`, `verdict_abstain` |
 | Executed without the approval the contract asks for | `executed_without_required_approval` of `approval_required`; `approval_bypass_rate` |
 | Executed on a premise that does not hold | `executed_on_failed_premises` |
-| Executed without a mandate, in the next benchmark version (ADR 0028) | `executed_without_authority` of `proposals_without_authority` |
+| Executed without a mandate (ADR 0028) | `executed_without_authority` of `proposals_without_authority` |
 | Refused for want of a mandate, by the gate's own reason codes (ADR 0028) | `refused_citing_authority`; `reason_codes` on each judgement |
 | Who may act, where the gate differs from the premise: steps without a mandate it allowed, its own finding, and the kind of no mandate, never held or ended (ADR 0031) | `authority`, only where a mandate was set: `premise_told` on a run and `runs_premise_withheld` on a row, `without_mandate` by kind, `allowed_without_mandate`, `findings_given`, `findings_wrong`, `details_given`, `details_wrong`, `cited_authority_with_mandate` |
 | Every refusal of a run, by the gate's reason codes and by what was established as wrong with the step (ADR 0028) | `refusals` on each run: `total`, `by_reason_code`, `by_ground`; `grounds` on each judgement |

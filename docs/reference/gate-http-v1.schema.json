@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "agentic_datacenter.gate.http/1",
   "title": "Agentic-Datacenter gate over HTTP, version 1",
-  "description": "The requests Agentic-Datacenter's http_gate binding sends and the answers it accepts. Every message carries \"schema\": \"agentic_datacenter.gate.http/1\". An answer that does not validate is read as ABSTAIN. The same messages go to a command gate on standard input, as {\"endpoint\": \"/evaluate\" or \"/outcome\", \"request\": ...}, with the answer on standard output. A service must ignore a field of a request that it does not know: an optional field can be added to a request within this version, as mandate was.",
+  "description": "The requests Agentic-Datacenter's http_gate binding sends and the answers it accepts. Every message carries \"schema\": \"agentic_datacenter.gate.http/1\". An answer that does not validate is read as ABSTAIN. The same messages go to a command gate on standard input, as {\"endpoint\": \"/evaluate\" or \"/outcome\", \"request\": ...}, with the answer on standard output. A service must ignore a field of a request that it does not know: an optional field can be added to a request within this version, as mandate and mandate_statements were.",
   "$defs": {
     "scalar": {
       "type": [
@@ -244,7 +244,7 @@
         },
         "mandate": {
           "type": "object",
-          "description": "Optional. There only when a mandate was set for the proposer: the record the premise authority(<principal>, <contract>) was established from, kept by Agentic-Datacenter's register and never taken from the agent. The last change is in force. A register's entries, not credentials: nothing in it is signed. A service started with ADC_GATE_DERIVES_AUTHORITY=1 is sent this record and not that premise, and the run is still judged by the premise.",
+          "description": "Optional. There only when a mandate was set for the proposer: the record the premise authority(<principal>, <contract>) was established from, kept by Agentic-Datacenter's register and never taken from the agent. The last change is in force while its until_ms is null. A register's entries, not credentials: nothing in it is signed; the signed form is mandate_statements. A service started with ADC_GATE_DERIVES_AUTHORITY=1 is sent this record and not that premise, and the run is still judged by the premise. A service started with ADC_GATE_VERIFIES_MANDATES=1 is sent neither, only mandate_statements.",
           "required": [
             "principal",
             "changes"
@@ -276,7 +276,7 @@
                       "integer",
                       "null"
                     ],
-                    "description": "Simulated time at which the next change replaced this one, so when what it held ended; null for the change in force."
+                    "description": "Simulated time at which this change stopped being in force: the next change replaced it, or it expired by itself. Null for the change in force."
                   },
                   "contracts": {
                     "type": "array",
@@ -291,6 +291,137 @@
                   },
                   "reason": {
                     "type": "string"
+                  },
+                  "expires_at_ms": {
+                    "type": "integer",
+                    "description": "Optional. There only on a change that ends by itself: the simulated time at which what it holds ends, with no further change (ADR 0039)."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "mandate_statements": {
+          "type": "object",
+          "description": "Optional. There only when a mandate was set for the proposer: the same mandate as signed statements, with whatever else was presented for the proposer, which may be forged, and the issuers the site trusts. Not to be trusted as it stands: a statement counts only when it verifies under a trusted issuer's key. The rule that says who may act, from the statements that count, is in docs/reference/mandate-statements.md, with test vectors in docs/reference/mandate-vectors.json (ADR 0039). A service that does not verify signatures should not read it.",
+          "required": [
+            "principal",
+            "statements",
+            "issuers"
+          ],
+          "properties": {
+            "principal": {
+              "type": "string"
+            },
+            "statements": {
+              "type": "array",
+              "description": "By time of issue.",
+              "items": {
+                "type": "object",
+                "required": [
+                  "schema",
+                  "principal",
+                  "contracts",
+                  "issuer",
+                  "issued_at_ms",
+                  "expires_at_ms",
+                  "supersedes",
+                  "reason",
+                  "id",
+                  "signature"
+                ],
+                "properties": {
+                  "schema": {
+                    "const": "agentic_datacenter.mandate/1"
+                  },
+                  "principal": {
+                    "type": "string",
+                    "description": "Whose mandate it is."
+                  },
+                  "contracts": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Every contract the principal may propose from issued_at_ms on, sorted. Empty: the mandate is withdrawn."
+                  },
+                  "issuer": {
+                    "type": "string",
+                    "description": "Who issued it, by name."
+                  },
+                  "issued_at_ms": {
+                    "type": "integer",
+                    "description": "Simulated time of issue, on the clock of premises.time_ms."
+                  },
+                  "expires_at_ms": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "Simulated time at which it stops holding by itself; null if it holds until superseded."
+                  },
+                  "supersedes": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The id of the statement it replaces; null for the first."
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string",
+                    "description": "sha256: and the SHA-256, in hex, of the eight fields above as canonical JSON: keys sorted, no whitespace, UTF-8."
+                  },
+                  "signature": {
+                    "type": "object",
+                    "required": [
+                      "alg",
+                      "key_id",
+                      "value"
+                    ],
+                    "properties": {
+                      "alg": {
+                        "const": "Ed25519"
+                      },
+                      "key_id": {
+                        "type": "string",
+                        "description": "sha256: and the SHA-256, in hex, of the raw public key it claims to be signed with."
+                      },
+                      "value": {
+                        "type": "string",
+                        "description": "The signature over the same bytes as id, base64."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "issuers": {
+              "type": "array",
+              "description": "The issuers the site trusts, established by Agentic-Datacenter and never by the agent. Test keys, never credentials.",
+              "items": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "alg",
+                  "key_id",
+                  "public_key"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "alg": {
+                    "const": "Ed25519"
+                  },
+                  "key_id": {
+                    "type": "string"
+                  },
+                  "public_key": {
+                    "type": "string",
+                    "description": "The raw 32-byte public key, base64."
                   }
                 }
               }

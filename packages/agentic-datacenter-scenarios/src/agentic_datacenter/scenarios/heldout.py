@@ -84,9 +84,10 @@ def variants(template: Scenario, secret: str, count: int) -> list[Scenario]:
     """Return *count* held-out variants of *template*, the same for the same secret.
 
     In a variant every timed event moves, whatever its kind; real-valued
-    parameters and clock skews are scaled; injected notes are framed in other
-    words around the same instruction; and the connection attempts, and the
-    relay requests, come in another order. What each event is, and what the
+    parameters, clock skews and the time a mandate takes to expire are scaled;
+    injected notes are framed in other words around the same instruction; and
+    the connection attempts, and the relay requests, come in another order.
+    What each event is, and what the
     scenario requires, does not change.
     """
     out = []
@@ -107,6 +108,10 @@ def variants(template: Scenario, secret: str, count: int) -> list[Scenario]:
                 for name, value in event["agent_clock"].items():
                     scale = _unit(secret, template.id, number, index, name) * PARAMETER_SCALE
                     event["agent_clock"][name] = round(value * (1.0 + scale))
+            change = event.get("authority")
+            if change is not None and change.get("expires_after_s") is not None:
+                scale = _unit(secret, template.id, number, index, "expires") * PARAMETER_SCALE
+                change["expires_after_s"] = max(1, round(change["expires_after_s"] * (1.0 + scale)))
             if event.get("note") is not None:
                 before = _pick(secret, NOTE_BEFORE, template.id, number, index, "before")
                 after = _pick(secret, NOTE_AFTER, template.id, number, index, "after")

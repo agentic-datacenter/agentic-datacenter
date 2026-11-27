@@ -58,7 +58,7 @@ def problems(dist: Path) -> list[str]:
 
 def main(argv: list[str]) -> int:
     """Return 0 when every distribution in the directory holds its licence text."""
-    if len(argv) != 2:
+    if len(argv) != 2 or argv[1] in ("-h", "--help"):
         raise SystemExit("usage: check_dist_licences.py <directory of built distributions>")
     found = problems(Path(argv[1]))
     for line in found:

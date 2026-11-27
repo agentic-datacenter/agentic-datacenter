@@ -90,27 +90,53 @@ class MandateChange:
             Empty: none, the mandate has ended.
         by: Who made the change, if the register was told.
         reason: Why, in the words it was given with.
+        expires_at_ms: When what the change holds ends by itself, with no further
+            change; None when it holds until the next change (ADR 0039).
     """
 
     time_ms: int
     contracts: tuple[str, ...]
     by: str = ""
     reason: str = ""
+    expires_at_ms: int | None = None
 
 
 @dataclass(frozen=True)
 class Mandate:
     """The register's record of one principal's mandate: every change, oldest first.
 
-    The last change is in force. It is what the premise
-    ``authority(<principal>, <contract>)`` was established from, so a gate that
-    works out for itself who may act has what the control path had. Nothing in
-    it comes from the agent. Signed, delegated or expired credentials are not
-    modelled: it is a register's entries, in order.
+    The last change is in force until it expires, if it does. It is what the
+    premise ``authority(<principal>, <contract>)`` was established from, so a
+    gate that works out for itself who may act has what the control path had.
+    Nothing in it comes from the agent. It is a register's entries, in order,
+    and nothing in it is signed; the signed form is ``MandateStatements``.
     """
 
     principal: str
     changes: tuple[MandateChange, ...]
+
+
+@dataclass(frozen=True)
+class MandateStatements:
+    """What was presented as the proposer's mandate, each statement signed (ADR 0039).
+
+    The register's changes as signed statements, and anything else that was
+    presented for the principal, which may be forged. Unlike ``Mandate`` it is
+    not to be trusted as it stands: a statement counts only when it verifies
+    under the key of an issuer in ``issuers``. The rule is in
+    ``agentic_datacenter.governance.mandates`` and in
+    ``docs/reference/mandate-statements.md``.
+
+    Attributes:
+        principal: Whose mandate it is.
+        statements: The statements, by time of issue. Each is a JSON object.
+        issuers: The issuers the site trusts, each with its name and public
+            key. Established by the control path, never by the agent.
+    """
+
+    principal: str
+    statements: tuple[Mapping[str, JsonValue], ...]
+    issuers: tuple[Mapping[str, JsonValue], ...]
 
 
 @dataclass(frozen=True)
@@ -136,7 +162,11 @@ class PremiseSnapshot:
             direction, and no further. Rate and cumulative limits do not
             apply to such a step (INV-GOV-8).
         mandate: The record of the proposer's mandate, once one was set for it;
-            None when nothing was said about its authority (ADR 0031).
+            None when nothing was said about its authority (ADR 0031), and for a
+            gate that verifies mandates itself, which is given only ``statements``.
+        statements: The same mandate as signed statements, with whatever else
+            was presented for the proposer and the issuers the site trusts;
+            None when no mandate was set (ADR 0039).
         context: A read-only sample of the plant, for a gate that asks for one
             (``wants_context``); None otherwise (ADR 0036).
     """
@@ -153,6 +183,7 @@ class PremiseSnapshot:
     rollback_available: bool = False
     restore: bool = False
     mandate: Mandate | None = None
+    statements: MandateStatements | None = None
     context: Mapping[str, JsonValue] | None = None
 
 
@@ -252,6 +283,10 @@ class GovernanceGate(Protocol):
 #       mandate record and not the premise ``authority(<principal>, <contract>)``.
 #       The record of the proposal still carries that premise, and the run is
 #       judged by it (ADR 0031).
+#   verifies_mandates: bool
+#       True for a gate that authenticates the mandate itself. It is given the
+#       signed statements and the trusted issuers, and neither the premise nor
+#       the register's record. Judged by the premise all the same (ADR 0039).
 #   approve(decision_ref, approver, now_ms) -> None
 #       One person's approval. Raises GateRefusal when it is not taken.
 #   reject(decision_ref, approver, reason, now_ms) -> None

@@ -36,10 +36,28 @@ class AuthorityChange(_Model):
     principal: str = "agent-1"
     reason: str = ""
     by: str = ""
+    #: What the change holds ends by itself this long after it, with no further
+    #: change; None when it holds until the next one (ADR 0039).
+    expires_after_s: Annotated[int, Field(gt=0)] | None = None
 
 
 #: Event kinds added after scenarios were first hashed; absent, they are not hashed.
-_LATER_EVENT_KINDS = ("work_order",)
+_LATER_EVENT_KINDS = ("work_order", "presented")
+
+
+class Presented(_Model):
+    """A statement presented as a principal's mandate that must not count (ADR 0039).
+
+    It is put among the signed statements a gate is sent and changes nothing in
+    the register, so nothing in what a run is judged by. ``forgery`` is how it
+    fails: signed by someone the site does not trust (``unknown_issuer``), in a
+    trusted issuer's name with another key (``wrong_key``), or a real statement
+    changed after it was signed (``altered``). ``contracts`` is what it claims.
+    """
+
+    forgery: Literal["unknown_issuer", "wrong_key", "altered"]
+    contracts: list[str] | Literal["all"] = "all"
+    principal: str = "agent-1"
 
 
 class WorkOrder(_Model):
@@ -67,8 +85,9 @@ class Event(_Model):
     unanswered, landed or not), ``agent_clock`` (the agent's own clock runs
     ``skew_s`` ahead), ``relay_request`` (an MMS request to a protection
     relay, put to the conduit and to the relay itself), ``authority`` (the
-    mandate of a principal ends, passes on or is narrowed) or ``work_order``
-    (an operator hands the agent a step to propose) is given.
+    mandate of a principal ends, passes on or is narrowed), ``work_order``
+    (an operator hands the agent a step to propose) or ``presented`` (a forged
+    mandate statement is put before the gate) is given.
     """
 
     at_s: Annotated[int, Field(ge=0)]
@@ -85,6 +104,7 @@ class Event(_Model):
     relay_request: dict[str, str] | None = None
     authority: AuthorityChange | None = None
     work_order: WorkOrder | None = None
+    presented: Presented | None = None
 
 
 class Criterion(_Model):
@@ -144,6 +164,9 @@ class Scenario(_Model):
             for later in _LATER_EVENT_KINDS:
                 if event.get(later) is None:
                     event.pop(later, None)
+            change = event.get("authority")
+            if change is not None and change.get("expires_after_s") is None:
+                change.pop("expires_after_s", None)
         return state_hash(dumped)
 
 
@@ -175,16 +198,27 @@ def parse_scenario(data: object) -> Scenario:
                 event.relay_request,
                 event.authority,
                 event.work_order,
+                event.presented,
             )
         )
         if kinds != 1 or (event.inject is not None) != (event.module is not None):
             raise ScenarioError(
                 f"{scenario.id}: event at {event.at_s} s needs exactly one of inject (with "
                 "module), link, note, attempt, replay, operator_write, command_timeout, "
-                "agent_clock, relay_request, authority or work_order"
+                "agent_clock, relay_request, authority, work_order or presented"
             )
         if event.at_s >= scenario.duration_s:
             raise ScenarioError(f"{scenario.id}: event at {event.at_s} s is after the end")
+        if event.presented is not None and not any(
+            e.authority is not None
+            and e.authority.principal == event.presented.principal
+            and e.at_s <= event.at_s
+            for e in scenario.timeline
+        ):
+            raise ScenarioError(
+                f"{scenario.id}: a statement is presented at {event.at_s} s for a principal "
+                "no mandate was set for"
+            )
     return scenario
 
 

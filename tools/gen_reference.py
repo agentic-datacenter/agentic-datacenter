@@ -10,6 +10,7 @@ import argparse
 import contextlib
 import importlib.util
 import io
+import json
 import sys
 import tomllib
 from importlib.metadata import EntryPoint, entry_points
@@ -20,6 +21,7 @@ from agentic_datacenter.core.cli import main as agentic_datacenter_main
 from agentic_datacenter.core.profile import Profile, build_plant, load_profile
 from agentic_datacenter.core.registry import ModuleRegistry
 from agentic_datacenter.core.scheduler import Kernel
+from agentic_datacenter.governance.mandates import vectors as mandate_vectors
 
 REPO = Path(__file__).resolve().parents[1]
 OUT = REPO / "docs/reference"
@@ -200,6 +202,7 @@ def pages() -> dict[str, str]:
         "requirements.md": requirements_page(),
         "cli.md": cli_page(),
         "profile_schema.md": schema_page(),
+        "mandate-vectors.json": json.dumps(mandate_vectors(), indent=2, ensure_ascii=False) + "\n",
     }
 
 

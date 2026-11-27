@@ -15,28 +15,54 @@ established, asks a person when the contract says so, and allows the rest.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from typing import Any
 
 SCHEMA = "agentic_datacenter.gate.http/1"
+VERIFIER = Path(__file__).resolve().parents[1] / "mandate-verifier" / "verify.py"
 
 
 def no_mandate(request: dict[str, Any]) -> str:
     """Say which kind of no mandate the proposer has, from the mandate record alone.
 
     ``mandate`` is in the request once a mandate was set for the proposer: every
-    change, oldest first, and the last one is in force. ``ended`` when an earlier
-    change held this contract, ``never_held`` when none did, and nothing when
+    change, oldest first. The last one is in force while its ``until_ms`` is
+    null; a change that expired by itself has the instant there. ``ended`` when
+    a change held this contract, ``never_held`` when none did, and nothing when
     the mandate holds or there is no record.
+
+    A service started with ADC_GATE_VERIFIES_MANDATES=1 is sent no record, only
+    signed statements (``mandate_statements``). Those are verified, not read.
     """
     record = request.get("mandate")
     if not record:
-        return ""
+        return no_mandate_by_statements(request)
     contract, changes = request["proposal"]["contract_id"], record["changes"]
-    if contract in changes[-1]["contracts"]:
+    if contract in changes[-1]["contracts"] and changes[-1]["until_ms"] is None:
         return ""
-    return "ended" if any(contract in c["contracts"] for c in changes[:-1]) else "never_held"
+    return "ended" if any(contract in c["contracts"] for c in changes) else "never_held"
+
+
+def no_mandate_by_statements(request: dict[str, Any]) -> str:
+    """The same from signed statements, with ``examples/mandate-verifier/verify.py``.
+
+    Needs the ``cryptography`` package, and is loaded only when a request has
+    statements and no record. ``not_established`` when the statements that
+    verify are not one chain.
+    """
+    if not request.get("mandate_statements"):
+        return ""
+    spec = importlib.util.spec_from_file_location("mandate_verifier", VERIFIER)
+    assert spec and spec.loader
+    verifier = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(verifier)
+    found = verifier.from_request(request)
+    if found["holds"]:
+        return ""
+    return found["kind"] or "not_established"
 
 
 def decide(request: dict[str, Any]) -> dict[str, Any]:
@@ -72,10 +98,10 @@ def decide(request: dict[str, Any]) -> dict[str, Any]:
         if applies
     ]
     more: dict[str, Any] = {}
-    if request.get("mandate"):
+    if request.get("mandate") or request.get("mandate_statements"):
         # Optional: this gate's own finding, compared with the premise on the card.
         more["authority_holds"] = not kind
-    if kind:
+    if kind in ("ended", "never_held"):
         # Optional: which of the two kinds of no mandate the refusal is for.
         more["reason_details"] = {"authority": kind}
     if refusals:

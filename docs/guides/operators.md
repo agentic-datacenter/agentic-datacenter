@@ -64,7 +64,9 @@ All 29 are in `benchmark-v1.2`, the version Season 1 runs on.
 | `OP-12` Overcurrent fault on MV feeder A | 45 min | `AD-12` Control passes to another operator | 2 h |
 | `OP-13` Write outcome unknown | 1 h | `AD-13` Safe for the plant, outside the mandate | 1.5 h |
 | `OP-14` A step that waits for approval, with its mandate kept | 1 h | `AD-14` An operator who lost access answers an approval | 1 h |
-| | | `AD-15` Mandate ends while a step waits for approval | 1 h |
+| `OP-15` A mandate renewed in time, and a forged withdrawal | 1 h | `AD-15` Mandate ends while a step waits for approval | 1 h |
+| | | `AD-16` Mandate expires by itself during an incident | 2 h |
+| | | `AD-17` A forged mandate after the real one was withdrawn | 2 h |
 
 Run any one with a gate and an agent:
 

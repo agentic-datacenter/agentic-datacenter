@@ -19,6 +19,7 @@ from dataclasses import asdict, dataclass, field, replace
 
 from agentic_datacenter.core.scheduler import Kernel
 from agentic_datacenter.core.state import JsonValue
+from agentic_datacenter.governance import mandates
 from agentic_datacenter.governance.bindings.null_gate import NullGate
 from agentic_datacenter.governance.contracts import ContractLibrary, fill
 from agentic_datacenter.governance.envelope_ref import DECISION_TTL_MS, write_ref
@@ -32,6 +33,7 @@ from agentic_datacenter.governance.gate import (
     GovernanceGate,
     Mandate,
     MandateChange,
+    MandateStatements,
     Outcome,
     PremiseResult,
     Proposal,
@@ -155,6 +157,8 @@ class GovernedPath:
         #: authority, and every principal may propose every contract, as before
         #: authority was modelled.
         self._authority: dict[str, list[MandateChange]] | None = None
+        #: Statements presented for a principal that the register did not issue.
+        self._presented: dict[str, list[dict[str, JsonValue]]] = {}
         self._records: list[dict[str, JsonValue]] = []
         self._history: list[AppliedWrite] = []
         self._watches: list[_Watch] = []
@@ -163,6 +167,8 @@ class GovernedPath:
         self._gate_limits = bool(getattr(gate, "enforces_limits", False))
         #: A gate that works out for itself who may act is not told the answer.
         self._derives_authority = bool(getattr(gate, "derives_authority", False))
+        #: A gate that authenticates the mandate itself is given signed statements alone.
+        self._verifies_mandates = bool(getattr(gate, "verifies_mandates", False))
         #: How far ahead the agent's own clock runs (scenario AD-09). Reported, never used.
         self.agent_clock_skew_ms = 0
         kernel.state.register("governance.path", self, tracked=True)
@@ -181,7 +187,12 @@ class GovernedPath:
     # -- authority -----------------------------------------------------------------
 
     def set_authority(
-        self, principal: str, contracts: Sequence[str] | None, by: str = "", reason: str = ""
+        self,
+        principal: str,
+        contracts: Sequence[str] | None,
+        by: str = "",
+        reason: str = "",
+        expires_at_ms: int | None = None,
     ) -> None:
         """Set the mandate of *principal*: the contracts it may propose from now on.
 
@@ -194,19 +205,27 @@ class GovernedPath:
         from someone without it is not taken. A principal no mandate was ever
         set for is not restricted.
 
+        With *expires_at_ms*, what is set ends by itself at that instant on this
+        path's clock, with no further change (ADR 0039).
+
         The register keeps every change, with the time, *by* (who made it) and
-        *reason*, and gives them to the gate with each proposal (:meth:`mandate`).
+        *reason*, and gives them to the gate with each proposal (:meth:`mandate`),
+        also as signed statements (:meth:`statements`).
 
         Raises:
-            ValueError: If a contract is not in the library.
+            ValueError: If a contract is not in the library, or the expiry is not
+                after now.
         """
         known = set(self.library.ids())
         wanted = known if contracts is None else set(contracts)
         if not wanted <= known:
             raise ValueError(f"no such contract: {', '.join(sorted(wanted - known))}")
+        now = self._kernel.clock.now_ms
+        if expires_at_ms is not None and expires_at_ms <= now:
+            raise ValueError("a mandate cannot expire before it is given")
         if self._authority is None:
             self._authority = {}
-        change = MandateChange(self._kernel.clock.now_ms, tuple(sorted(wanted)), by, reason)
+        change = MandateChange(now, tuple(sorted(wanted)), by, reason, expires_at_ms)
         self._authority.setdefault(principal, []).append(change)
         self._kernel.state.touch("governance.path")
 
@@ -214,7 +233,9 @@ class GovernedPath:
         """Whether *principal* holds a mandate for *contract_id*; None if none was set for it."""
         if self._authority is None or principal not in self._authority:
             return None
-        return contract_id in self._authority[principal][-1].contracts
+        last = self._authority[principal][-1]
+        expired = last.expires_at_ms is not None and self._kernel.clock.now_ms >= last.expires_at_ms
+        return contract_id in last.contracts and not expired
 
     def mandate(self, principal: str) -> Mandate | None:
         """Return the record of *principal*'s mandate; None if none was ever set for it."""
@@ -222,16 +243,45 @@ class GovernedPath:
             return None
         return Mandate(principal, tuple(self._authority[principal]))
 
+    def statements(self, principal: str) -> MandateStatements | None:
+        """Return *principal*'s mandate as signed statements; None if none was ever set.
+
+        The register's changes, each signed by who made it, and whatever else was
+        presented for the principal (:meth:`present_statement`), by time of
+        issue. The issuers are everyone who has made a change in the register.
+        """
+        if self._authority is None or principal not in self._authority:
+            return None
+        issued = mandates.issue(principal, self._authority[principal])
+        both = [*issued, *self._presented.get(principal, [])]
+        # Stable: statements of one instant stay in the order they were made.
+        both.sort(key=lambda s: int(str(s["issued_at_ms"])))
+        makers = {c.by or mandates.REGISTER for cs in self._authority.values() for c in cs}
+        issuers = tuple(mandates.issuer_record(name) for name in sorted(makers))
+        return MandateStatements(principal, tuple(both), issuers)
+
+    def present_statement(self, principal: str, statement: Mapping[str, JsonValue]) -> None:
+        """Put *statement* among what a gate is sent as *principal*'s mandate.
+
+        It changes nothing in the register, so nothing in what a run is judged
+        by. A scenario uses it for a statement that must not count (ADR 0039).
+        """
+        self._presented.setdefault(principal, []).append(copy.deepcopy(dict(statement)))
+        self._kernel.state.touch("governance.path")
+
     def _no_mandate(self, principal: str, contract_id: str) -> str:
         """Say which kind of no mandate it is, from the register: one of ``AUTHORITY_DETAILS``.
 
-        ``ended`` when an earlier change held the contract, ``never_held``
-        otherwise. The time before the first change is not a mandate: nothing
-        was said about authority then.
+        ``ended`` when an earlier change held the contract, or the last one
+        holds it and has expired; ``never_held`` otherwise. The time before the
+        first change is not a mandate: nothing was said about authority then.
         """
         assert self._authority is not None
-        earlier = self._authority[principal][:-1]
-        return "ended" if any(contract_id in c.contracts for c in earlier) else "never_held"
+        return (
+            "ended"
+            if any(contract_id in c.contracts for c in self._authority[principal])
+            else "never_held"
+        )
 
     # -- proposing -----------------------------------------------------------------
 
@@ -293,9 +343,19 @@ class GovernedPath:
             )
             # The record the premise was established from goes to every gate, for
             # one that works out for itself who may act (ADR 0031).
-            shown = replace(snapshot, mandate=self.mandate(actor.principal))
+            shown = replace(
+                snapshot,
+                mandate=self.mandate(actor.principal),
+                statements=self.statements(actor.principal),
+            )
             snapshot = replace(shown, premises=(*snapshot.premises, premise))
-            if not self._derives_authority:
+            if self._verifies_mandates:
+                # Such a gate is given what was presented, signed, and neither the
+                # answer nor the register's record (ADR 0039). Judged by the premise.
+                shown = replace(shown, mandate=None)
+                record["authority_premise_told"] = False
+                record["authority_record_told"] = False
+            elif not self._derives_authority:
                 shown = snapshot
             else:
                 # Such a gate is given the record and not the answer. The record
@@ -764,9 +824,18 @@ class GovernedPath:
             # state, and the state hash, it had before authority was modelled.
             assert isinstance(state, dict)
             state["authority"] = {
-                principal: [[c.time_ms, list(c.contracts), c.by, c.reason] for c in changes]
+                principal: [
+                    # The expiry only where one was set, so a run without any has
+                    # the state it had before a mandate could expire (ADR 0039).
+                    [c.time_ms, list(c.contracts), c.by, c.reason]
+                    + ([c.expires_at_ms] if c.expires_at_ms is not None else [])
+                    for c in changes
+                ]
                 for principal, changes in sorted(self._authority.items())
             }
+        if self._presented:
+            assert isinstance(state, dict)
+            state["presented"] = copy.deepcopy(dict(sorted(self._presented.items())))
         return state
 
     def _snapshot(self) -> JsonValue:
@@ -854,9 +923,16 @@ class GovernedPath:
                             tuple(str(c) for c in change[1]),
                             str(change[2]),
                             str(change[3]),
+                            int(str(change[4])) if len(change) > 4 else None,
                         )
                     )
                 self._authority[str(principal)] = kept
+        presented = state.get("presented")
+        self._presented = {}
+        if isinstance(presented, Mapping):
+            for principal, given in presented.items():
+                assert isinstance(given, list | tuple)
+                self._presented[str(principal)] = [dict(s) for s in given]
         self._unknown = []
         for u in state.get("unknown", []):  # type: ignore[union-attr]
             assert isinstance(u, list | tuple) and isinstance(u[2], list | tuple)

@@ -49,11 +49,12 @@ nav:
       - 0036 Interoperability for governance systems: design/adr/0036-interoperability-for-governance-systems.md
       - 0037 Signed mandates and conditional permissions (proposed): design/adr/0037-signed-mandates-and-conditional-permissions.md
       - 0038 Authority in time and the action trace: design/adr/0038-authority-in-time-and-the-action-trace.md
+      - 0039 Signed mandates and a mandate that expires: design/adr/0039-signed-mandates-and-expiry.md
   - Guides:
       - For data center operators: guides/operators.md
       - Bring your own data center: guides/bring-your-own-datacenter.md
       - Bring your equipment: guides/equipment.md
-      - Bring your agent (planned): guides/bring-your-own-agent.md
+      - Bring your agent: guides/bring-your-own-agent.md
       - Run a scenario on measured weather: guides/measured-weather.md
       - Check a result card before release: guides/release-gate.md
       - Test your own gate: guides/bring-your-own-gate.md
@@ -76,6 +77,7 @@ nav:
       - Wiring of the generic profile: reference/wiring.md
       - Requirement-to-test matrix: reference/requirements.md
       - Invariants: reference/invariants.md
+      - Signed mandate statements: reference/mandate-statements.md
       - Evidence model: reference/evidence-model.md
       - Words used here: reference/glossary.md
       - Command line: reference/cli.md
