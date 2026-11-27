@@ -370,3 +370,34 @@ def test_no_workflow_pastes_an_input_or_event_text_into_a_shell_script() -> None
                 assert not risky.search(str(step.get("run", ""))), (path.name, step.get("name"))
     runner = (REPO / ".github/workflows/bench-runner.yml").read_text(encoding="utf-8")
     assert "Check the inputs" in runner
+
+
+@pytest.mark.req("ADC-CI-001")
+def test_the_parts_of_the_suite_are_the_whole_suite_and_a_failed_part_fails_the_check() -> None:
+    """The whole suite runs in parts on machines of their own; nothing may fall between them."""
+    import fnmatch
+
+    flow = yaml.safe_load((REPO / ".github/workflows/pr.yml").read_text("utf-8"))
+    suite, trace = flow["jobs"]["suite"], flow["jobs"]["traceability"]
+    parts = suite["strategy"]["matrix"]["part"]
+    script = next(s["run"] for s in suite["steps"] if "case" in str(s.get("run", "")))
+    paths = {
+        line.split(")")[0].strip(): line.split("set --")[1].rsplit(";;")[0].split()
+        for line in script.splitlines() if "set --" in line
+    }  # fmt: skip
+    assert set(paths) == set(parts)
+    files = sorted(p.name for p in (REPO / "tests/scenario").glob("test_*.py"))
+    first, second = paths["scenario-1"][0], paths["scenario-2"][0]
+    covered = [
+        [f for f in files if fnmatch.fnmatch(f"tests/scenario/{f}", pattern)]
+        for pattern in (first, second)
+    ]
+    assert sorted(covered[0] + covered[1]) == files and not set(covered[0]) & set(covered[1])
+    assert paths["bench"] == ["tests/bench"]
+    assert paths["rest"] == ["packages", "tests", "--ignore=tests/scenario", "--ignore=tests/bench"]
+    # A skipped job counts as a passed check, so the last job always runs and asks.
+    assert trace["needs"] == "suite" and trace["if"] == "always()"
+    runs = [str(s.get("run", "")) for s in trace["steps"]]
+    assert any('test "${SUITE:-success}" = "success"' in r for r in runs)
+    checked = next(r for r in runs if "tools/traceability.py" in r)
+    assert all(f"build/requirements-{part}.json" in checked for part in parts)
