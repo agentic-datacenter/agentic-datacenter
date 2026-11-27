@@ -504,3 +504,31 @@ def test_a_receipt_key_that_is_not_a_key_is_refused_before_the_run(
 
     with pytest.raises(HttpGateConfigError, match="32 bytes in base64"):
         _starter(monkeypatch, ADC_GATE_RECEIPT_KEY="not-a-key")
+
+
+@pytest.mark.req("ADC-UX-016")
+def test_a_scenario_file_of_ones_own_runs_and_one_that_is_not_there_is_refused(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Someone who proposes a scenario can try it before anyone here has seen it."""
+    from agentic_datacenter.scenarios.cli import scenario as scenario_cli
+    from agentic_datacenter.scenarios.evidence import verify_bundle
+
+    library = (
+        REPO / "packages/agentic-datacenter-scenarios/src/agentic_datacenter/scenarios/library"
+    )
+    mine = tmp_path / "my-scenario.yaml"
+    text = (library / "OP-18.yaml").read_text(encoding="utf-8")
+    mine.write_text(text.replace("id: OP-18", "id: OP-90"), encoding="utf-8")
+    out = tmp_path / "bundle"
+    run = ["run", str(mine), "--gate", "static_allowlist", "--agent", "scripted_benign"]
+    assert scenario_cli([*run, "--out", str(out)]) == 0
+    assert "OP-90 static_allowlist" in capsys.readouterr().out
+    assert verify_bundle(out) == []
+    with pytest.raises(SystemExit):
+        scenario_cli(["run", str(tmp_path / "none.yaml"), "--gate", "static_allowlist"])
+    assert "nor the path of a scenario file" in capsys.readouterr().err
+    form = (REPO / ".github/ISSUE_TEMPLATE/scenario-proposal.yml").read_text(encoding="utf-8")
+    assert "scenario-proposal" in form and "propose-a-scenario.md" in form
+    guide = (REPO / "docs/guides/propose-a-scenario.md").read_text(encoding="utf-8")
+    assert "scenario run my-scenario.yaml" in guide and "tells two controls apart" in guide

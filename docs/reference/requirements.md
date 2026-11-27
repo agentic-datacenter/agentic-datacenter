@@ -167,6 +167,7 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-UX-013` | 14 | no | none | none |
 | `ADC-UX-014` | 14 | no | none | `tests/conformance/test_readme_experience.py` |
 | `ADC-UX-015` | 14 | no | none | none |
+| `ADC-UX-016` | 14 | no | `agentic-datacenter-scenarios` | `tests/scenario/test_in_progress_and_provenance.py` |
 | `ADC-WIF-001` | 9 | yes | `agentic-datacenter-whatif` | `packages/agentic-datacenter-whatif/tests/test_whatif_runner.py` |
 | `ADC-WIF-002` | 9 | yes | `agentic-datacenter-whatif` | `packages/agentic-datacenter-whatif/tests/test_whatif_agent.py`<br>`tests/scenario/test_whatif_governed.py` |
 | `ADC-WIF-003` | 9 | yes | `agentic-datacenter-whatif` | `packages/agentic-datacenter-whatif/tests/test_whatif_metrics.py` |

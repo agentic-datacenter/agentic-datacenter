@@ -549,7 +549,11 @@ def scenario(argv: Sequence[str]) -> int:
     )
     actions = parser.add_subparsers(dest="action", required=True)
     run = actions.add_parser("run", help="Run a scenario and write its evidence bundle.")
-    run.add_argument("scenario", choices=library_ids())
+    run.add_argument(
+        "scenario", type=_scenario_or_file, metavar="SCENARIO",
+        help="A scenario of the library by its id, such as OP-03, or the path of a scenario "
+        "file of your own (.yaml), for one you are writing or proposing.",
+    )  # fmt: skip
     run.add_argument("--gate", default="null_gate")
     run.add_argument(
         "--agent", type=_agent_name(sorted(DEMO_AGENTS)), default="scripted_benign",
@@ -766,6 +770,16 @@ def _json_lines(path: Path) -> list[dict[str, Any]]:
             raise ValueError(f"{path}:{number}: not a JSON object")
         lines.append(value)
     return lines
+
+
+def _scenario_or_file(text: str) -> str:
+    """Return *text* if it names a library scenario or a scenario file; else say what it may be."""
+    if text in library_ids() or (Path(text).suffix in (".yaml", ".yml") and Path(text).is_file()):
+        return text
+    raise argparse.ArgumentTypeError(
+        f"{text} is neither a scenario of the library ({', '.join(library_ids())}) "
+        "nor the path of a scenario file (.yaml)"
+    )
 
 
 def _share(value: Any) -> str:

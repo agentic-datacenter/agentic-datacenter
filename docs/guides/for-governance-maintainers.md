@@ -56,4 +56,4 @@ A run against your system published by this project says which relation it has t
 - **Conditional permissions**: a permission that caps a step, judged on the step as carried out (ADR 0037).
 - **More scenarios, data and participants**, which every run of the workflow picks up.
 
-Enrol with the [registration form](https://github.com/agentic-datacenter/agentic-datacenter/issues/new?template=gate-registration.yml), and tick the box to be listed by name if you want to be. Tell us what your system needs in an issue: a field, a scenario, a kind of verdict.
+Enrol with the [registration form](https://github.com/agentic-datacenter/agentic-datacenter/issues/new?template=gate-registration.yml), and tick the box to be listed by name if you want to be. Tell us what your system needs in an issue: a field, a kind of verdict. And [propose a scenario](propose-a-scenario.md): one that joins a frozen version is run against every enrolled system from then on, yours included.

@@ -59,6 +59,10 @@ Tooling
 
 Entries are newest first. Where an older entry names a benchmark version, a deadline or a number of scenarios, the newest entry is the one that holds.
 
+Added
+
+- A way in for scenarios from outside. `scenario run` takes the path of a scenario file of one's own, there is a form to propose a scenario in words, and `docs/guides/propose-a-scenario.md` says what gets one into a frozen version. `docs/guides/first-half-hour.md` takes a governance maintainer who knows nothing of data centers from a clone to a result for their own system.
+
 Changed
 
 - One structure for every system, whatever it brings. An entry of an enrolled system now says what the system brings (decisions, findings, evidence or verification) and what of the interface it uses, and the page of enrolled systems shows both as tables made from the entries. REMORA, whose maintainer owns this project, is enrolled with the same form and listed under the same rules, with `relation: benchmark_authors`; the reference controls beside every result are the two that belong to no system. "Which way in" starts from what a project produces, so that a project that decides nothing can take part. `gate verify-receipts --verifier` puts each receipt to a verifier of the system's own. A bundle with a served gate's correlation now has `execution.json`, which holds the hash of what the manifest leaves out.
