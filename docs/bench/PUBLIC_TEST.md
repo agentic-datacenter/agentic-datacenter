@@ -17,26 +17,26 @@ A public test runs in seasons, one after another without a gap, so a season is a
 
 A season fixes three things before any participant can know its held-out scenarios:
 
-1. **A frozen benchmark version.** `agentic-datacenter bench freeze` writes the hashes of the profile, contracts, scenarios and oracle to a file, and the version is tagged. A season uses the version that is frozen when it opens. Today that is `benchmark-v1.2` ([VERSION.json](VERSION.json)). It freezes all 29 scenarios of the library: the 23 of `benchmark-v1`, which ran no season, `AD-11` to `AD-14` (ADR 0028), and `AD-15` and `OP-14` (ADR 0038). The records of `benchmark-v1` and `benchmark-v1.1`, neither of which ran a season, are in `versions/`. A new version is named in `seasons.json`, with the season it first applies to, before that season opens. A card from any other version is refused for the season.
+1. **A frozen benchmark version.** `agentic-datacenter bench freeze` writes the hashes of the profile, contracts, scenarios and oracle to a file, and the version is tagged. A season uses the version that is frozen when it opens. Today that is `benchmark-v1.3` ([VERSION.json](VERSION.json)). It freezes all 32 scenarios of the library: the 23 of `benchmark-v1`, `AD-11` to `AD-14` (ADR 0028), `AD-15` and `OP-14` (ADR 0038), and `AD-16`, `AD-17` and `OP-15` (ADR 0039). The records of `benchmark-v1`, `benchmark-v1.1` and `benchmark-v1.2`, none of which ran a season, are in `versions/`. A new version is named in `seasons.json`, with the season it first applies to, before that season opens. A card from any other version is refused for the season.
 2. **A beacon round.** The secret that draws the held-out variants of Track D is the output of the drand "quicknet" public randomness beacon at the round emitted when the season closes. The rounds of the coming year are in the calendar below, so each is published long before it exists. No one, the authors of Agentic-Datacenter included, can know it before the round is emitted; afterwards anyone can fetch it and check it (`tools/heldout_beacon.py`).
 3. **A registration deadline**, the instant the round is emitted. A gate takes part in a season's Track D only if it was registered before then, with the exact version it will run.
 
 <!-- seasons: made by tools/season.py from docs/bench/seasons.json; do not edit -->
 | Season | Opens (UTC) | Registration closes and the round is emitted (UTC) | Beacon round | Benchmark version |
 | --- | --- | --- | --- | --- |
-| 1 | 2026-11-20 | 2027-01-13 12:00 | `35679412` | `benchmark-v1.2` |
-| 2 | 2027-01-13 12:00 | 2027-02-10 12:00 | `36485812` | `benchmark-v1.2` |
-| 3 | 2027-02-10 12:00 | 2027-03-10 12:00 | `37292212` | `benchmark-v1.2` |
-| 4 | 2027-03-10 12:00 | 2027-04-07 12:00 | `38098612` | `benchmark-v1.2` |
-| 5 | 2027-04-07 12:00 | 2027-05-05 12:00 | `38905012` | `benchmark-v1.2` |
-| 6 | 2027-05-05 12:00 | 2027-06-02 12:00 | `39711412` | `benchmark-v1.2` |
-| 7 | 2027-06-02 12:00 | 2027-06-30 12:00 | `40517812` | `benchmark-v1.2` |
-| 8 | 2027-06-30 12:00 | 2027-07-28 12:00 | `41324212` | `benchmark-v1.2` |
-| 9 | 2027-07-28 12:00 | 2027-08-25 12:00 | `42130612` | `benchmark-v1.2` |
-| 10 | 2027-08-25 12:00 | 2027-09-22 12:00 | `42937012` | `benchmark-v1.2` |
-| 11 | 2027-09-22 12:00 | 2027-10-20 12:00 | `43743412` | `benchmark-v1.2` |
-| 12 | 2027-10-20 12:00 | 2027-11-17 12:00 | `44549812` | `benchmark-v1.2` |
-| 13 | 2027-11-17 12:00 | 2027-12-15 12:00 | `45356212` | `benchmark-v1.2` |
+| 1 | 2026-11-20 | 2027-01-13 12:00 | `35679412` | `benchmark-v1.3` |
+| 2 | 2027-01-13 12:00 | 2027-02-10 12:00 | `36485812` | `benchmark-v1.3` |
+| 3 | 2027-02-10 12:00 | 2027-03-10 12:00 | `37292212` | `benchmark-v1.3` |
+| 4 | 2027-03-10 12:00 | 2027-04-07 12:00 | `38098612` | `benchmark-v1.3` |
+| 5 | 2027-04-07 12:00 | 2027-05-05 12:00 | `38905012` | `benchmark-v1.3` |
+| 6 | 2027-05-05 12:00 | 2027-06-02 12:00 | `39711412` | `benchmark-v1.3` |
+| 7 | 2027-06-02 12:00 | 2027-06-30 12:00 | `40517812` | `benchmark-v1.3` |
+| 8 | 2027-06-30 12:00 | 2027-07-28 12:00 | `41324212` | `benchmark-v1.3` |
+| 9 | 2027-07-28 12:00 | 2027-08-25 12:00 | `42130612` | `benchmark-v1.3` |
+| 10 | 2027-08-25 12:00 | 2027-09-22 12:00 | `42937012` | `benchmark-v1.3` |
+| 11 | 2027-09-22 12:00 | 2027-10-20 12:00 | `43743412` | `benchmark-v1.3` |
+| 12 | 2027-10-20 12:00 | 2027-11-17 12:00 | `44549812` | `benchmark-v1.3` |
+| 13 | 2027-11-17 12:00 | 2027-12-15 12:00 | `45356212` | `benchmark-v1.3` |
 <!-- /seasons -->
 
 - **Which season is open now:** `python tools/season.py current`. The page is not rewritten when a season ends.
@@ -61,7 +61,7 @@ A season fixes three things before any participant can know its held-out scenari
 3. **Run the public tracks at any time** on the frozen version, at its tag. The main branch carries the next version while it is being made, and a season's run made there is refused.
 
     ```sh
-    git checkout benchmark-v1.2 && uv sync    # the tag of the season's version, from the calendar
+    git checkout benchmark-v1.3 && uv sync    # the tag of the season's version, from the calendar
     uv run agentic-datacenter bench run --tier season --gate <gate> --gate static_allowlist --jobs 8 --out build/season1
     ```
 
@@ -94,7 +94,7 @@ A season fixes three things before any participant can know its held-out scenari
 | `null_gate` · `static_allowlist` | baselines: no gate; role and range checks | `UNGOVERNED` · `STATIC_ALLOWLIST` |
 | `remora` · `remora_governed` · `remora_shadow` | REMORA, pinned in `REMORA_PIN` | `DECISION_ONLY` · `GOVERNED` · `SHADOW` |
 
-The built-in gates are written by Agentic-Datacenter's authors and are reported apart from the others. The maintainers ran one season of `remora_governed` at the tag `benchmark-v1`, a version that ran no season and was replaced, by `benchmark-v1.1` and then `benchmark-v1.2`, before the repository was public; it is a development run and is not reported. Every run so far is a development run.
+The built-in gates are written by Agentic-Datacenter's authors and are reported apart from the others. The maintainers ran one season of `remora_governed` at the tag `benchmark-v1`, a version that ran no season and was replaced, by `benchmark-v1.1`, `benchmark-v1.2` and then `benchmark-v1.3`, before the repository was public; it is a development run and is not reported. Every run so far is a development run.
 
 ## Verified and self-reported results
 
