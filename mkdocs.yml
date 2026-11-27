@@ -1,4 +1,6 @@
 site_name: Agentic-Datacenter
+site_url: https://darklordvirtual.github.io/agentic-datacenter/
+repo_url: https://github.com/darklordVirtual/agentic-datacenter
 site_description: Test autonomous data center operations before they reach production.
 docs_dir: docs
 strict: true
