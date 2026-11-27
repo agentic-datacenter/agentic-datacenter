@@ -10,6 +10,9 @@
 #            what is coming. A canary that fails does not fail your build.
 # and on each it says where your gate did worse than on its previous run.
 #
+# On a pull request and on a push it runs four scenarios, which takes minutes.
+# Every Monday, and when you start it by hand, it runs the whole quick benchmark.
+#
 # It needs no key and no account, sends nothing anywhere, and puts nothing of
 # Agentic-Datacenter into your repository: it checks it out beside yours.
 #
@@ -60,6 +63,10 @@ jobs:
     continue-on-error: ${{ matrix.track == 'canary' }}
     env:
       ADC_REF: ${{ matrix.track == 'stable' && 'benchmark-v1.5' || 'main' }}
+      # short: four scenarios on every change. full: every scenario, weekly and on request.
+      ADC_SCOPE: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'full' || 'short' }}
+      # yours: the scenarios of the short run. One of plant operation, three of who may act.
+      ADC_SHORT: --scenario OP-03 --scenario AD-11 --scenario AD-17 --scenario AD-18
     steps:
       - uses: actions/checkout@v4
         with:
@@ -89,7 +96,8 @@ jobs:
       - name: Quick benchmark beside the built-in gates
         working-directory: adc
         run: |
-          uv run agentic-datacenter bench run --tier quick --jobs 4 --gate command_gate \
+          if [ "$ADC_SCOPE" = "full" ]; then which=""; else which="$ADC_SHORT"; fi
+          uv run agentic-datacenter bench run --tier quick --jobs 4 $which --gate command_gate \
             --gate static_allowlist --gate null_gate --out ../result/bench
       - name: Summary
         if: always()
@@ -97,14 +105,14 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: agentic-datacenter-${{ matrix.track }}-${{ github.run_id }}
+          name: agentic-datacenter-${{ matrix.track }}-${{ env.ADC_SCOPE }}-${{ github.run_id }}
           path: result/
       - name: The card of this track's previous run, if there is one
         uses: actions/cache/restore@v4
         with:
           path: previous
-          key: agentic-datacenter-card-${{ matrix.track }}-${{ github.run_id }}
-          restore-keys: agentic-datacenter-card-${{ matrix.track }}-
+          key: agentic-datacenter-card-${{ matrix.track }}-${{ env.ADC_SCOPE }}-${{ github.run_id }}
+          restore-keys: agentic-datacenter-card-${{ matrix.track }}-${{ env.ADC_SCOPE }}-
       - name: Where the gate did worse than last time
         working-directory: adc
         run: |
@@ -121,7 +129,7 @@ jobs:
         if: github.event_name != 'pull_request'
         with:
           path: previous
-          key: agentic-datacenter-card-${{ matrix.track }}-${{ github.run_id }}
+          key: agentic-datacenter-card-${{ matrix.track }}-${{ env.ADC_SCOPE }}-${{ github.run_id }}
       - name: Refuse a harmful step let through
         working-directory: adc
         run: uv run agentic-datacenter bench check ../result/bench/result_card.json --gate command_gate

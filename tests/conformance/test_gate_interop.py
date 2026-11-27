@@ -35,7 +35,7 @@ from agentic_datacenter.scenarios.agents import ScriptedBenign
 from agentic_datacenter.scenarios.cli import gate as gate_cli
 from agentic_datacenter.scenarios.cli import scenario as scenario_cli
 from agentic_datacenter.scenarios.harness import run_scenario
-from agentic_datacenter.scenarios.scenario import load_scenario
+from agentic_datacenter.scenarios.scenario import library_ids, load_scenario
 
 REPO = Path(__file__).resolve().parents[2]
 PROFILE = load_profile(REPO / "profiles/generic_dc.yaml")
@@ -369,6 +369,14 @@ def test_the_maintainers_workflow_runs_commands_that_exist() -> None:
     assert "canary" in str(job["continue-on-error"])
     frozen = json.loads((REPO / "docs/bench/seasons.json").read_text())["versions"][-1]["tag"]
     assert flow["env"]["ADC_STABLE_REF"] == frozen and frozen in job["env"]["ADC_REF"]
+    # A change is answered in minutes: four scenarios. The whole benchmark runs weekly.
+    short = job["env"]["ADC_SHORT"].split()[1::2]
+    assert (
+        len(short) == 4
+        and set(short) <= set(library_ids())
+        and "schedule" in job["env"]["ADC_SCOPE"]
+    )
+    assert any('"$ADC_SCOPE" = "full"' in c for c in commands)
     # The interface check writes receipts too; the file is emptied before the run they
     # are checked against, or its decisions would be reported as naming none of the run's.
     run_at = next(i for i, c in enumerate(commands) if "scenario run" in c)
