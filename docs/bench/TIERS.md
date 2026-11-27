@@ -8,10 +8,10 @@ Pick a test by the time you have. Each step up plays more of the same scenarios;
 | **2 minutes** | `bench run --tier quick --scenario OP-03 --gate <yours> --gate static_allowlist` | one scenario, your system beside a reference control | your first figures, a report and a card | 1 min 45 s in one process |
 | **5 to 7 minutes** | the same with `--jobs 4` and the scenarios that matter to you, for example the seven on who may act | a chosen set, shortened | what your system does where it should differ from others | 6 min 30 s for seven scenarios and two gates |
 | **About half an hour** | `bench run --tier quick --jobs 6 --gate <yours> --gate static_allowlist --gate null_gate` | all 38 scenarios, each shortened to what shows its last event | the whole picture, as a development result | 26 min for three gates, one of them a full service |
-| **A few hours** | `bench run --tier standard --jobs <cores>` | all 38 at full length, three seeds | a result of your own that others can make again | not yet measured on this version; 59 min on an earlier one with 23 scenarios |
+| **A few hours** | `bench run --tier standard --jobs <cores>` | all 38 at full length, three seeds | a result of your own that others can make again | 2 h 11 min for three gates with 9 jobs, on a machine with 16 threads |
 | **Overnight, or split over machines** | `bench run --tier season`, in parts with `--seeds` and `bench merge` | all 38 at full length, thirty seeds | what a season reports | not yet measured on this version; 6 h 40 min on an earlier one |
 
-The first four were measured on 2026-11-27 on a laptop with eight cores and 8 GB of memory (Apple M1), on the version of Season 1. The last two were measured on `benchmark-v1`, which had 23 scenarios, on a machine with 16 threads; expect them to take about 38/23 as long now.
+The first four were measured on 2026-11-27 on a laptop with eight cores and 8 GB of memory (Apple M1), on the version of Season 1. `standard` was measured the same day on that version, on a machine with 16 threads: `remora_governed`, `static_allowlist` and `null_gate` together, 228 runs of each, in 2 hours 11 minutes; memory was not recorded. `season` was measured on `benchmark-v1`, which had 23 scenarios, on that machine; expect it to take about 38/23 as long now.
 
 ## What machine
 
@@ -75,6 +75,7 @@ Seven runs were timed between 2026-11-17 and 2026-11-19, on one machine with 16 
 | --- | --- | --- | --- | --- | --- |
 | `quick` | `static_allowlist` | 6 | 2 minutes | 11 minutes | not recorded |
 | `standard` | `remora_governed` | 9 | 59 minutes | not recorded | about 14 GB, 5 GB of it swap |
+| `standard`, on `benchmark-v1.6`, 2026-11-27 | `remora_governed`, `static_allowlist`, `null_gate` | 9 | 2 hours 11 minutes | not recorded | not recorded |
 | `season`, seeds 1–10 | `remora_governed` | 15 | 2 h 29 min | not recorded | not recorded |
 | `season`, seeds 11–20 | `remora_governed` | 15 | 1 h 58 min | not recorded | not recorded |
 | `season`, seeds 21–30 | `remora_governed` | 15 | 1 h 55 min | not recorded | not recorded |
@@ -99,7 +100,7 @@ No special hardware. A run uses processor and memory only: no GPU, and no networ
 | To do | Tier | What it took on 16 threads | Who needs it |
 | --- | --- | --- | --- |
 | Try a gate | `quick` | 2 minutes with 6 jobs | everyone, first |
-| Your own result | `standard` | 59 minutes with 9 jobs | a participant who wants to check seeds 1 to 3 |
+| Your own result | `standard` | about 45 minutes for each gate with 9 jobs | a participant who wants to check seeds 1 to 3 |
 | A season | `season` | 6 h 22 min with 15 jobs; or split over machines and merged | a participant who reports a result |
 | The full-replay check | `full` | 22 h 41 min with three seeds and no replay jobs | the maintainers only ([Public test](PUBLIC_TEST.md#taking-part)) |
 
