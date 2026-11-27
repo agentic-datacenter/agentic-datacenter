@@ -16,6 +16,7 @@ WORKFLOWS = sorted((REPO / ".github/workflows").glob("*.yml"))
 PACKAGES = sorted(p.name for p in (REPO / "packages").iterdir() if p.is_dir())
 EXPECTED_WORKFLOWS = {
     "pr", "integration", "nightly", "bench", "bench-runner", "pin-bump", "release", "docs",
+    "weekly",
 }  # fmt: skip
 
 

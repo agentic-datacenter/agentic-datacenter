@@ -155,7 +155,7 @@ class Scenario(_Model):
     schema_version: Literal[1]
     #: ``OP`` operational and ``AD`` adversarial (SDD 10.1, 10.2); ``WF`` a what-if
     #: scenario, kept in the what-if package and out of this library (SDD 10.4).
-    id: Annotated[str, Field(pattern=r"^(OP|AD|WF|GR)-\d{2}$")]
+    id: Annotated[str, Field(pattern=r"^(OP|AD|WF|GR|WK)-\d{2}$")]
     title: str
     track: Literal["A", "B", "C", "D"]
     duration_s: Annotated[int, Field(gt=0)]

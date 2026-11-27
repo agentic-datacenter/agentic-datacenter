@@ -1,0 +1,31 @@
+# Scheduled, every Monday before the workflows of enrolled systems run theirs.
+# Budget: 5 minutes. It checks that the weekly scenario of this Monday was
+# released and that the one of next Monday is sealed, and fails when either is
+# not so (docs/bench/WEEKLY.md, ADR 0046). It writes nothing: releasing a
+# scenario is a pull request made by a person.
+name: weekly
+on:
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+concurrency:
+  group: weekly-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  due:
+    runs-on: ubuntu-24.04
+    container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
+    timeout-minutes: 5
+    steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: uv sync --frozen
+      - name: The register and the released files agree
+        run: uv run python tools/weekly.py check
+      - name: What is late, and what is missing
+        # A failure here is the notice: a scheduled workflow that fails is sent to the maintainers.
+        run: uv run python tools/weekly.py due
