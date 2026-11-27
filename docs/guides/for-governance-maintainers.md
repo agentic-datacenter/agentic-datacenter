@@ -17,6 +17,8 @@ Want to try it before reading on? [Your first half hour](first-half-hour.md) nee
 
 ## What it costs, in order
 
+How long each kind of test takes, from one minute to overnight, and on what machine: [How long a test takes, and what it needs](../bench/TIERS.md).
+
 | Step | Time | Command |
 | --- | --- | --- |
 | Wrap your system as a command, from the MIT starter | an hour to a day | [`examples/command-gate/adapter.py`](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/examples/command-gate/adapter.py) |

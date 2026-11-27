@@ -66,6 +66,10 @@ It can still take part. See [What does your project bring?](which-way-in.md#what
 - **Propose a scenario** your system should be tested on, in words: [Propose a scenario](propose-a-scenario.md). One that is accepted is run against every system from then on.
 - **Enrol.** [Three fields](https://github.com/agentic-datacenter/agentic-datacenter/issues/new?template=gate-registration.yml), no installation. Your system then takes part in every four-week season, and is listed under the same rules as every other, if you tick the box to be named.
 
+## If you have more time, or less
+
+One minute, five minutes, half an hour, a few hours, overnight: [How long a test takes, and what it needs](../bench/TIERS.md) says what each plays, what you get, and what machine it was measured on. Any laptop does for everything on this page.
+
 ## What it costs you, and what it does not
 
 - Running this to develop, test, evaluate or benchmark your system is free under the licence. Your adapter and your system are yours, under your licence; nothing of yours goes into this repository.
