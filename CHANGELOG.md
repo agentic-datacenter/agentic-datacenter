@@ -26,7 +26,7 @@ Governance gates and the REMORA binding
 
 Scenarios and benchmark
 
-- Thirty-eight scenarios, eighteen operational and twenty adversarial, played by scripted agents: careful, hostile, drifting and flooding. All of them are in the frozen version `benchmark-v1.5`.
+- Thirty-eight scenarios, eighteen operational and twenty adversarial, played by scripted agents: careful, hostile, drifting and flooding. All of them are in the frozen version `benchmark-v1.6`.
 - Counterfactual replay: a blocked proposal is replayed as if it had been carried out, to show whether the block avoided harm or cost a useful step. Every run is also compared with the same scenario and seed with no agent.
 - `agentic-datacenter bench run` in four tiers (`docs/bench/TIERS.md`), in several processes or split over machines and merged. The result card is the same, byte for byte, however it was made.
 - `agentic-datacenter demo`: three scenarios with no gate and with one, from the same seed, as a page with every decision and its record and as a one-page result report in HTML and Markdown.
@@ -51,7 +51,7 @@ Tooling
 
 - `compose` mode is not built. Everything runs in one process (`inproc`).
 - A language-model agent is an option, not the default, and no result of a model has been published. An agent of one's own served over HTTP is not built.
-- No benchmark result has been reported. Season 1 runs on the frozen version `benchmark-v1.5`; its hidden track is drawn at its deadline, 2027-01-13 12:00 UTC.
+- No benchmark result has been reported. Season 1 runs on the frozen version `benchmark-v1.6`; its hidden track is drawn at its deadline, 2027-01-13 12:00 UTC.
 - No result has been reproduced on a second machine.
 - The other differences from the design document are in its section 14.
 
@@ -73,8 +73,13 @@ Changed
 - One structure for every system, whatever it brings. An entry of an enrolled system now says what the system brings (decisions, findings, evidence or verification) and what of the interface it uses, and the page of enrolled systems shows both as tables made from the entries. REMORA, whose maintainer owns this project, is enrolled with the same form and listed under the same rules, with `relation: benchmark_authors`; the reference controls beside every result are the two that belong to no system. "Which way in" starts from what a project produces, so that a project that decides nothing can take part. `gate verify-receipts --verifier` puts each receipt to a verifier of the system's own. A bundle with a served gate's correlation now has `execution.json`, which holds the hash of what the manifest leaves out.
 - The repository moved to an organization of its own on 2026-11-27, the day it became public: `github.com/agentic-datacenter/agentic-datacenter`, with the documentation at `agentic-datacenter.github.io/agentic-datacenter`. The old address redirects. The project is its own home, and no governance system's owner is in its address.
 
+Changed
+
+- The whole suite runs in four parts on four machines at once in the pull-request checks, with one last job that reads their requirement reports together. A change waits about a quarter of the time it did.
+
 Fixed
 
+- A run is held to what a control can do (ADR 0043). A criterion on the agent's own conduct, such as telling a person, and a criterion that asks for something to happen in a run cut before the scenario's last event, no longer make a run "not passed"; each is kept and printed apart. Under every control, none included, the same three runs of the quick benchmark used to read as failed. Season 1 runs on `benchmark-v1.6`.
 - After a review of the code on the day the repository became public (ADR 0041, "Corrected after review"). A held-out variant could move the events of `AD-20` and `OP-17` to the other side of the 300 seconds a step is in progress, so that every gate would have failed those variants; a variant now keeps what a scenario is about, and the scheme of the variants is 3. With two proposers on one point, a step in progress is now judged by its own proposer's mandate. An issuer can no longer lose its standing at the instant it makes a change. Neither verifier of mandate statements fails on a statement made to break it. A release tag must carry its own name. Season 1 runs on `benchmark-v1.5`, which has the same scenarios, contracts, agents, profile and judge as `benchmark-v1.4`.
 - `gate check` now points at a first result that takes minutes, the summary printed after `bench run` uses the words of the card, and the guides have one sequence to paste for signed mandates and one for signed receipts.
 

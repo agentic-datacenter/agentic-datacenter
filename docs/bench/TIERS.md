@@ -1,8 +1,33 @@
-# Tiers: how long a benchmark takes
+# How long a test takes, and what it needs
+
+Pick a test by the time you have. Each step up plays more of the same scenarios; none needs a key, an account, a GPU or a network connection.
+
+| You have | Run | What it plays | What you get | Measured |
+| --- | --- | --- | --- | --- |
+| **1 minute** | `demo --scenario OP-03 --gate static_allowlist` | one scenario, with no control and with one | a page that shows what an agent does to a plant | 54 s |
+| **2 minutes** | `bench run --tier quick --scenario OP-03 --gate <yours> --gate static_allowlist` | one scenario, your system beside a reference control | your first figures, a report and a card | 1 min 45 s in one process |
+| **5 to 7 minutes** | the same with `--jobs 4` and the scenarios that matter to you, for example the seven on who may act | a chosen set, shortened | what your system does where it should differ from others | 6 min 30 s for seven scenarios and two gates |
+| **About half an hour** | `bench run --tier quick --jobs 6 --gate <yours> --gate static_allowlist --gate null_gate` | all 38 scenarios, each shortened to what shows its last event | the whole picture, as a development result | 26 min for three gates, one of them a full service |
+| **A few hours** | `bench run --tier standard --jobs <cores>` | all 38 at full length, three seeds | a result of your own that others can make again | not yet measured on this version; 59 min on an earlier one with 23 scenarios |
+| **Overnight, or split over machines** | `bench run --tier season`, in parts with `--seeds` and `bench merge` | all 38 at full length, thirty seeds | what a season reports | not yet measured on this version; 6 h 40 min on an earlier one |
+
+The first four were measured on 2026-11-27 on a laptop with eight cores and 8 GB of memory (Apple M1), on the version of Season 1. The last two were measured on `benchmark-v1`, which had 23 scenarios, on a machine with 16 threads; expect them to take about 38/23 as long now.
+
+## What machine
+
+- **Any laptop does for the first four.** They ran on one with 8 GB of memory.
+- **Cores are time.** `--jobs N` runs N scenarios at once, and the card is the same bytes whatever N is. With half the cores, expect about twice the time.
+- **Memory matters for `standard` and above.** The week-long runs of `OP-10` are what it goes to: about 14 GB at nine processes on the earlier version. With less, lower `--jobs`.
+- **A slow machine is not a reason to stay out.** A long run splits by seed over machines or over nights, and the parts merge into the card of the whole, byte for byte ([Run long benchmarks on a machine of your own](../guides/bench-runner.md)).
+
+## In your own CI
+
+[The workflow to copy](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/examples/ci/agentic-datacenter.yml) uses two of the steps above: four scenarios on every change, which takes minutes, and the whole quick benchmark every Monday. A hosted runner has fewer cores than a laptop, so the Monday run takes longer than half an hour there; it does not hold up a pull request.
+
+## The tiers
+
 
 `agentic-datacenter bench run --tier <name>` sets the length, the seeds and how each proposal is judged. Options given beside a tier take precedence. The tier's bounds are on the card, under `judging`.
-
-Every time on this page was measured on `benchmark-v1`, which had 23 scenarios. `benchmark-v1.5`, the version of Season 1, has 38, and its IT load trips on hot inlet air; it has not been timed yet. Expect a season to take about 38/23 of the times below.
 
 | Tier | Scenarios | Seeds | Replay of each proposal | Proposals judged per run | For |
 | --- | --- | --- | --- | --- | --- |
@@ -40,7 +65,7 @@ Before this, the main branch cut the twelve it then had of these at 30 minutes. 
 
 A quick run still plays only the first steps of an agent's script. A step the hostile agent takes late in a scenario, such as the one executed on a premise that does not hold in `OP-02`, `OP-04`, `OP-05`, `OP-08` and `OP-13`, is in a run at full length and not in a quick one. `--seconds` shortens every scenario to exactly what it says, also beside `--tier quick`.
 
-One run of each of the 38 scenarios is 31 hours 45 minutes of simulated time in a quick run, against 18 hours 40 minutes if each were cut at 30 minutes: seven tenths more. The times below were measured before that, and `quick` has not been timed again.
+One run of each of the 38 scenarios is 31 hours 45 minutes of simulated time in a quick run, against 18 hours 40 minutes if each were cut at 30 minutes: seven tenths more. The table at the top of this page has the times measured since.
 
 ## What it costs
 

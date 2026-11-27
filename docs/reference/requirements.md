@@ -34,7 +34,7 @@ A requirement of a later stage is not due. That does not mean it is not built: m
 | `ADC-BEN-007` | 9 | yes | `agentic-datacenter-scenarios` | `tests/bench/test_release_gate.py`<br>`tests/conformance/test_result_card.py` |
 | `ADC-BEN-008` | 9 | yes | `agentic-datacenter-scenarios` | `packages/agentic-datacenter-remora/tests/test_governed.py`<br>`tests/bench/test_bounded_replay.py` |
 | `ADC-BEN-009` | 9 | yes | `agentic-datacenter-scenarios` | `tests/bench/test_fairness.py`<br>`tests/conformance/test_result_card.py` |
-| `ADC-CI-001` | 1 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_traceability.py` |
+| `ADC-CI-001` | 1 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_ci.py`<br>`tests/conformance/test_traceability.py` |
 | `ADC-CI-002` | 1 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_ci.py` |
 | `ADC-CI-003` | 1 | yes | `agentic-datacenter-workspace` | `tests/conformance/test_ci.py` |
 | `ADC-CI-004` | 1 | yes | `agentic-datacenter-workspace` | `packages/agentic-datacenter-core/tests/test_state.py`<br>`tests/conformance/test_ci.py` |

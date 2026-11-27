@@ -161,6 +161,8 @@ def build_bundle(
             {
                 "passed": result.passed,
                 "failed_criteria": result.failed_criteria,
+                **({"agent_conduct": result.agent_conduct} if result.agent_conduct else {}),
+                **({"not_reached": result.not_reached} if result.not_reached else {}),
                 "metrics": result.metrics.as_dict(),
             },
             indent=2,

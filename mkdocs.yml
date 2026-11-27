@@ -55,6 +55,7 @@ nav:
       - 0040 A mandate passed on, standing and a rotated key: design/adr/0040-delegation-standing-and-rotation.md
       - 0041 A step in progress, the chain, signed readings and receipts: design/adr/0041-in-progress-chain-readings-and-receipts.md
       - 0042 What is free to copy: design/adr/0042-what-is-free-to-copy.md
+      - 0043 What a run is held to: design/adr/0043-what-a-run-is-held-to.md
   - Guides:
       - Your first half hour, for a governance system: guides/first-half-hour.md
       - Propose a scenario: guides/propose-a-scenario.md
@@ -75,7 +76,7 @@ nav:
       - How the benchmark works: bench/HOW-IT-WORKS.md
       - Public test: bench/PUBLIC_TEST.md
       - Comparing gates fairly: bench/FAIRNESS.md
-      - Tiers: bench/TIERS.md
+      - How long a test takes: bench/TIERS.md
   - Calibration:
       - Contribute calibration data: calibration/contribute-data.md
       - Suggested resources: calibration/suggested_resources.md
