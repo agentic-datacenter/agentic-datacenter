@@ -151,7 +151,7 @@ def _path() -> Any:
 def test_the_committed_vectors_are_the_ones_the_code_gives() -> None:
     committed = json.loads((REPO / "docs/reference/mandate-vectors.json").read_text())
     assert committed == mandates.vectors()
-    assert len(committed["cases"]) >= 14
+    assert len(committed["cases"]) >= 25
 
 
 @pytest.mark.req("ADC-AUT-004")
@@ -161,14 +161,14 @@ def test_the_rule_and_the_reference_to_copy_agree_on_every_vector() -> None:
     for case in vectors["cases"]:  # type: ignore[union-attr]
         for query in case["queries"]:  # type: ignore[index,call-overload,union-attr]
             args = (
-                case["statements"], vectors["issuers"], case["principal"],  # type: ignore[index,call-overload]
+                case["statements"], case["issuers"], case["principal"],  # type: ignore[index,call-overload]
                 query["contract"], query["time_ms"],
             )  # fmt: skip
             found = mandates.current(*args)  # type: ignore[arg-type]
             mine = {"established": found.established, "holds": found.holds, "kind": found.kind}
             assert mine == query["expect"] == VERIFIER.current(*args), case["name"]  # type: ignore[index,call-overload]
             asked += 1
-    assert asked >= 20
+    assert asked >= 40
 
 
 @pytest.mark.req("ADC-AUT-004")
@@ -190,6 +190,7 @@ def test_the_same_changes_give_the_same_statements_and_each_follows_the_one_befo
     assert [i["name"] for i in signed.issuers] == sorted(
         [mandates.REGISTER, "operator-1", "operator-2"]
     )
+    assert all(i["root"] and i["valid_until_ms"] is None for i in signed.issuers)
     for statement in signed.statements:
         assert not mandates.not_counted(statement, AGENT.principal, signed.issuers, path.now_ms())
     assert path.statements("operator-eva") is None
@@ -200,9 +201,14 @@ def test_the_same_changes_give_the_same_statements_and_each_follows_the_one_befo
 def test_a_forged_statement_does_not_count_and_says_why(kind: str) -> None:
     chain = mandates.issue("agent-1", [])
     grant = mandates.sign("agent-1", [POD], "operator-1", 0)
-    issuers = [mandates.issuer_record("operator-1")]
+    # operator-1 has rotated its key, and operator-2 has left.
+    issuers = [
+        *mandates.issuer_records("operator-1", True, [("rotated", 5)]),
+        *mandates.issuer_records("operator-2", True, [("ended", 5)]),
+    ]
     assert chain == () and not mandates.not_counted(grant, "agent-1", issuers, 0)
-    false = mandates.forged(kind, "agent-1", [grant], [POD, ROTATE], 10)
+    false = mandates.forged(kind, "agent-1", [grant], [POD, ROTATE], 10, issuers)
+    assert false["signature"]["value"] and false["issued_at_ms"] == 10  # type: ignore[index,call-overload]
     assert mandates.not_counted(false, "agent-1", issuers, 10)
     assert mandates.current([grant, false], issuers, "agent-1", ROTATE, 10).holds is False
     assert mandates.current([grant, false], issuers, "agent-1", POD, 10).holds is True
@@ -300,7 +306,7 @@ def test_the_published_schema_describes_the_statements_a_request_carries() -> No
     issuer = spec["properties"]["issuers"]["items"]
     assert set(signed["issuers"][0]) == set(issuer["required"]) == set(issuer["properties"])
     change = request["properties"]["mandate"]["properties"]["changes"]["items"]
-    assert set(change["properties"]) - set(change["required"]) == {"expires_at_ms"}
+    assert set(change["properties"]) - set(change["required"]) == {"expires_at_ms", "delegated"}
 
 
 @pytest.mark.req("ADC-AUT-004")
@@ -499,3 +505,294 @@ def test_a_gate_that_stops_at_a_statement_it_cannot_verify_blocks_the_sound_step
     assert run["authority"]["cited_authority_with_mandate"] > 0
     order = next(d for d in decisions if d["contract_id"] == ROTATE)
     assert order["outcome"] == "NOT_EXECUTED" and order["authorized"] is True
+
+
+# --- delegation: nobody passes on more than they hold, or for longer (ADR 0040) ----------
+
+LEAD = "orchestrator-1"
+
+
+@pytest.mark.req("ADC-AUT-007")
+def test_a_mandate_passed_on_holds_only_what_the_giver_holds_and_only_while_it_does() -> None:
+    path, kernel = _path()
+    start = path.now_ms()
+    path.set_authority(LEAD, [POD], by="operator-1", expires_at_ms=start + 5000)
+    path.set_authority(AGENT.principal, [POD, ROTATE], by=LEAD, delegated=True)
+    assert path.authorized(AGENT.principal, POD) is True
+    assert path.authorized(AGENT.principal, ROTATE) is False
+    assert path._no_mandate(AGENT.principal, ROTATE) == "never_held"
+    kernel.run_for(5000)
+    assert path.authorized(AGENT.principal, POD) is False
+    assert path._no_mandate(AGENT.principal, POD) == "ended"
+    path.set_authority(LEAD, [POD, ROTATE], by="operator-1")
+    assert path.authorized(AGENT.principal, POD) is True
+    assert path.authorized(AGENT.principal, ROTATE) is True
+    path.set_authority(LEAD, [], by="operator-1")
+    assert path.authorized(AGENT.principal, ROTATE) is False
+    assert path._no_mandate(AGENT.principal, ROTATE) == "ended"
+    with pytest.raises(ValueError, match="no mandate to pass on"):
+        path.set_authority(AGENT.principal, [POD], by="nobody-1", delegated=True)
+
+
+@pytest.mark.req("ADC-AUT-007")
+def test_the_statements_and_the_record_of_a_delegation_reach_back_to_its_source() -> None:
+    path, _ = _path()
+    path.set_authority(LEAD, [POD], by="operator-1")
+    path.set_authority(AGENT.principal, [POD, ROTATE], by=LEAD, delegated=True)
+    signed = path.statements(AGENT.principal)
+    assert [(s["principal"], s["issuer"], s["delegation"]) for s in signed.statements] == [
+        (LEAD, "operator-1", False), (AGENT.principal, LEAD, True),
+    ]  # fmt: skip
+    assert {i["name"]: i["root"] for i in signed.issuers} == {"operator-1": True, LEAD: False}
+    for contract, holds in ((POD, True), (ROTATE, False)):
+        found = mandates.current(
+            signed.statements, signed.issuers, AGENT.principal, contract, path.now_ms()
+        )
+        assert found.established and found.holds is holds is path.authorized(
+            AGENT.principal, contract
+        )
+        assert (
+            VERIFIER.current(
+                list(signed.statements),
+                list(signed.issuers),
+                AGENT.principal,
+                contract,
+                path.now_ms(),
+            )["holds"]
+            is holds
+        )
+    record = path.mandate(AGENT.principal)
+    assert record.changes[0].delegated and [m.principal for m in record.delegators] == [LEAD]
+    body = _request(path, ROTATE)
+    assert body["mandate"]["changes"][0]["delegated"] is True
+    assert [m["principal"] for m in body["mandate"]["delegators"]] == [LEAD]
+    other, _ = _path()
+    other.restore(path.snapshot())
+    assert other.mandate(AGENT.principal) == record and other.snapshot() == path.snapshot()
+
+
+@pytest.mark.req("ADC-AUT-007")
+def test_a_record_without_a_delegation_is_the_record_it_was() -> None:
+    path, _ = _path()
+    path.set_authority(AGENT.principal, [POD], by="operator-1")
+    body = _request(path)
+    assert "delegators" not in body["mandate"] and "delegated" not in body["mandate"]["changes"][0]
+    assert "issuer_events" not in path.snapshot()
+
+
+@pytest.fixture(scope="module")
+def passed_on() -> tuple[RunResult, Any]:
+    return _run("AD-18", lambda contracts: _VerifiesAndAsks())
+
+
+def _orders(result: RunResult) -> dict[str, dict[str, Any]]:
+    return {str(r["rationale"])[:6]: r for r in result.records if str(r["rationale"])[:3] == "WO-"}
+
+
+@pytest.mark.req("ADC-AUT-007")
+def test_a_step_the_giver_never_held_and_one_after_its_mandate_ended_are_not_executed(
+    passed_on: tuple[RunResult, Any],
+) -> None:
+    result, _ = passed_on
+    after = _orders(result)["WO-314"]
+    assert after["authorized"] is False and after["authority_detail"] == "ended"
+    assert after["outcome"] == "NOT_EXECUTED"
+    assert after["reason_details"] == {"authority": "ended"}
+    without = [r for r in result.records if r.get("authorized") is False]
+    withdrawn_ms = WARMUP_MS + 3000 * 1000
+    wider = [r for r in without if int(r["time_ms"]) < withdrawn_ms]
+    assert wider and {r["authority_detail"] for r in wider} == {"never_held"}
+    assert all(r["contract_id"] != POD for r in wider)
+    assert result.metrics.executed_without_authority == 0 and result.passed, result.failed_criteria
+
+
+def _own_statement_only(premises: PremiseSnapshot, contract_id: str) -> bool:
+    """Reads the proposer's own chain and never asks what its giver holds."""
+    signed = premises.statements
+    assert signed is not None
+    as_root = [{**i, "root": True} for i in signed.issuers]
+    own = [
+        {**s, "delegation": s["delegation"]}
+        for s in signed.statements
+        if not mandates.not_counted(s, signed.principal, as_root, premises.time_ms)
+    ]
+    return bool(own) and contract_id in own[-1]["contracts"]  # type: ignore[operator]
+
+
+class _Wrapped(_VerifiesAndAsks):
+    """The example policy with *holds* in place of its own finding of who may act."""
+
+    holds = staticmethod(_own_statement_only)
+
+    def evaluate(self, proposal: Any, premises: Any, actor: Any) -> Decision:
+        bare = replace(premises, mandate=None, statements=None)
+        decision = super().evaluate(proposal, bare, actor)
+        if premises.statements is None or self.holds(premises, proposal.contract_id):
+            return decision
+        return Decision(
+            Verdict.DENY, decision.decision_ref, proposal.contract_id,
+            reasons=("no mandate",), reason_codes=("authority",), authority_holds=False,
+        )  # fmt: skip
+
+
+def _wrapped(holds: Any) -> Any:
+    made = type("_Changed", (_Wrapped,), {"holds": staticmethod(holds)})
+    return lambda contracts: made()
+
+
+@pytest.mark.req("ADC-AUT-007")
+@pytest.mark.parametrize("agent", [ScriptedBenign, ScriptedAdversarial])
+def test_a_gate_that_reads_only_the_agents_own_statement_executes_both(agent: type) -> None:
+    result, _ = _run("AD-18", _wrapped(_own_statement_only), agent)
+    assert _orders(result)["WO-314"]["outcome"] == "APPLIED"
+    done = [
+        r for r in result.records
+        if r.get("authorized") is False and r["outcome"] not in ("NOT_EXECUTED", "REJECTED")
+    ]  # fmt: skip
+    assert {r["authority_detail"] for r in done} == {"never_held", "ended"}
+    assert not result.passed
+
+
+@pytest.mark.req("ADC-AUT-007")
+def test_the_example_gate_follows_a_delegated_record_when_given_the_record() -> None:
+    derives = type("_Derives", (EXAMPLE.ExampleGate,), {"derives_authority": True})
+    result, _ = _run("AD-18", lambda contracts: derives())
+    assert all(r["outcome"] == "NOT_EXECUTED" for r in _orders(result).values())
+    assert result.metrics.executed_without_authority == 0 and result.passed
+    server = _load(REPO / "examples/http-gate/server.py", "example_http_gate_delegated")
+    path, _ = _path()
+    path.set_authority(LEAD, [POD], by="operator-1")
+    path.set_authority(AGENT.principal, [POD, ROTATE], by=LEAD, delegated=True)
+    body = _request(path, ROTATE)
+    del body["mandate_statements"]
+    assert server.decide(body)["reason_details"] == {"authority": "never_held"}
+    assert server.decide({**_request(path, ROTATE), "mandate": None})["authority_holds"] is False
+
+
+# --- an issuer's standing, and a rotated key (ADR 0040) ----------------------------------------
+
+
+@pytest.mark.req("ADC-AUT-008")
+def test_a_key_signs_only_while_it_is_valid_and_what_it_signed_before_stays() -> None:
+    path, kernel = _path()
+    start = path.now_ms()
+    path.set_authority(AGENT.principal, [POD], by="operator-1")
+    kernel.run_for(1000)
+    path.rotate_issuer_key("operator-1")
+    kernel.run_for(1000)
+    path.set_authority(AGENT.principal, [POD, ROTATE], by="operator-1")
+    signed = path.statements(AGENT.principal)
+    old, new = signed.issuers
+    assert old["valid_until_ms"] == new["valid_from_ms"] == start + 1000
+    assert new["valid_until_ms"] is None and old["key_id"] != new["key_id"]
+    first, second = signed.statements
+    assert first["signature"]["key_id"] == old["key_id"]
+    assert second["signature"]["key_id"] == new["key_id"]
+    assert not any(
+        mandates.not_counted(s, AGENT.principal, signed.issuers, path.now_ms())
+        for s in signed.statements
+    )
+    late = mandates.forged(
+        "retired_key", AGENT.principal, signed.statements, [POD], path.now_ms(), signed.issuers
+    )
+    assert "retired" in mandates.not_counted(late, AGENT.principal, signed.issuers, path.now_ms())
+    other, _ = _path()
+    other.restore(path.snapshot())
+    assert other.statements(AGENT.principal) == signed and other.snapshot() == path.snapshot()
+
+
+@pytest.mark.req("ADC-AUT-008")
+def test_an_issuer_without_standing_gives_nothing_more_and_takes_nothing_back() -> None:
+    path, kernel = _path()
+    path.set_authority(AGENT.principal, [POD], by="operator-2")
+    kernel.run_for(1000)
+    path.end_issuer_standing("operator-2")
+    assert path.authorized(AGENT.principal, POD) is True
+    with pytest.raises(ValueError, match="no longer has standing"):
+        path.set_authority(AGENT.principal, [POD, ROTATE], by="operator-2")
+    with pytest.raises(ValueError, match="already ended"):
+        path.rotate_issuer_key("operator-2")
+    signed = path.statements(AGENT.principal)
+    (key,) = signed.issuers
+    assert key["valid_until_ms"] == path.now_ms()
+    assert mandates.current(
+        signed.statements, signed.issuers, AGENT.principal, POD, path.now_ms()
+    ).holds
+
+
+@pytest.fixture(scope="module")
+def retired() -> tuple[RunResult, Any]:
+    return _run("AD-19", lambda contracts: _VerifiesAndAsks())
+
+
+@pytest.mark.req("ADC-AUT-008")
+def test_a_retired_key_and_a_former_issuer_give_nothing_back(
+    retired: tuple[RunResult, Any],
+) -> None:
+    result, _ = retired
+    order = _orders(result)["WO-315"]
+    assert order["authorized"] is False and order["outcome"] == "NOT_EXECUTED"
+    assert order["gate_authority_holds"] is False
+    assert result.metrics.executed_without_authority == 0 and result.passed, result.failed_criteria
+
+
+def _signature_and_not_when_the_key_was_valid(premises: PremiseSnapshot, contract_id: str) -> bool:
+    signed = premises.statements
+    assert signed is not None
+    always = [{**i, "valid_from_ms": 0, "valid_until_ms": None} for i in signed.issuers]
+    return mandates.current(
+        signed.statements, always, signed.principal, contract_id, premises.time_ms
+    ).holds
+
+
+@pytest.mark.req("ADC-AUT-008")
+def test_a_gate_that_checks_the_signature_and_not_when_the_key_was_valid_executes() -> None:
+    result, gate = _run("AD-19", _wrapped(_signature_and_not_when_the_key_was_valid))
+    assert _orders(result)["WO-315"]["outcome"] == "APPLIED" and not result.passed
+
+
+def _first_key_only(premises: PremiseSnapshot, contract_id: str) -> bool:
+    signed = premises.statements
+    assert signed is not None
+    first = [i for i in signed.issuers if i["valid_from_ms"] == 0]
+    return mandates.current(
+        signed.statements, first, signed.principal, contract_id, premises.time_ms
+    ).holds
+
+
+def _keys_in_use_only(premises: PremiseSnapshot, contract_id: str) -> bool:
+    signed = premises.statements
+    assert signed is not None
+    in_use = [i for i in signed.issuers if i["valid_until_ms"] is None]
+    return mandates.current(
+        signed.statements, in_use, signed.principal, contract_id, premises.time_ms
+    ).holds
+
+
+@pytest.mark.req("ADC-AUT-008")
+@pytest.mark.parametrize("agent", [ScriptedBenign, ScriptedAdversarial])
+def test_a_mandate_passed_on_within_what_was_held_holds_across_a_rotation(agent: type) -> None:
+    result, _ = _run("OP-16", lambda contracts: _VerifiesAndAsks(), agent)
+    order = _orders(result)["WO-316"]
+    assert order["authorized"] is True and order["gate_authority_holds"] is True
+    assert order["verdict"] == "VERIFY" and order["outcome"] == "APPLIED"
+    assert result.passed, result.failed_criteria
+
+
+@pytest.mark.req("ADC-AUT-008")
+@pytest.mark.parametrize("holds", [_first_key_only, _keys_in_use_only])
+def test_a_gate_that_keeps_to_one_key_blocks_the_sound_step(holds: Any) -> None:
+    result, _ = _run("OP-16", _wrapped(holds), ScriptedBenign)
+    order = _orders(result)["WO-316"]
+    assert order["authorized"] is True and order["outcome"] == "NOT_EXECUTED"
+
+
+@pytest.mark.req("ADC-AUT-008")
+def test_an_issuer_event_is_one_kind_of_event_and_is_checked() -> None:
+    for earlier in ("AD-11", "AD-16", "AD-17", "OP-15"):
+        dumped = load_scenario(earlier).model_dump(mode="json")
+        assert all(e["issuer"] is None for e in dumped["timeline"])
+    data = load_scenario("AD-19").model_dump(mode="json")
+    data["timeline"][5]["issuer"]["change"] = "promote"
+    with pytest.raises(ScenarioError):
+        parse_scenario(data)

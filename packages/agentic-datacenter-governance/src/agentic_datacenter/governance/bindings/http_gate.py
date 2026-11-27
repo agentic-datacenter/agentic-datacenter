@@ -82,6 +82,7 @@ from agentic_datacenter.governance.gate import (
     OUTCOMES,
     AuthenticatedActor,
     Decision,
+    Mandate,
     MandateChange,
     Outcome,
     PremiseSnapshot,
@@ -229,28 +230,12 @@ def request_body(
     if premises.context is not None:
         body["context"] = dict(premises.context)
     if premises.mandate is not None:
-        changes = premises.mandate.changes
-        body["mandate"] = {
-            "principal": premises.mandate.principal,
-            "changes": [
-                {
-                    "time_ms": change.time_ms,
-                    # When it stopped being in force, replaced by the next change or
-                    # expired; null for the one in force.
-                    "until_ms": _until_ms(change, later, premises.time_ms),
-                    "contracts": list(change.contracts),
-                    "by": change.by,
-                    "reason": change.reason,
-                    # Only on a change that expires by itself (ADR 0039).
-                    **(
-                        {"expires_at_ms": change.expires_at_ms}
-                        if change.expires_at_ms is not None
-                        else {}
-                    ),
-                }
-                for change, later in zip(changes, [*changes[1:], None], strict=True)
-            ],
-        }
+        body["mandate"] = _record(premises.mandate, premises.time_ms)
+        if premises.mandate.delegators:
+            # Only where a change was passed on from someone (ADR 0040).
+            body["mandate"]["delegators"] = [  # type: ignore[index]
+                _record(giver, premises.time_ms) for giver in premises.mandate.delegators
+            ]
     if premises.statements is not None:
         body["mandate_statements"] = {
             "principal": premises.statements.principal,
@@ -258,6 +243,34 @@ def request_body(
             "issuers": [dict(i) for i in premises.statements.issuers],
         }
     return body
+
+
+def _record(mandate: Mandate, now_ms: int) -> dict[str, JsonValue]:
+    """Return one principal's record as a request carries it."""
+    changes = mandate.changes
+    return {
+        "principal": mandate.principal,
+        "changes": [
+            {
+                "time_ms": change.time_ms,
+                # When it stopped being in force, replaced by the next change or
+                # expired; null for the one in force.
+                "until_ms": _until_ms(change, later, now_ms),
+                "contracts": list(change.contracts),
+                "by": change.by,
+                "reason": change.reason,
+                # Only on a change that expires by itself (ADR 0039).
+                **(
+                    {"expires_at_ms": change.expires_at_ms}
+                    if change.expires_at_ms is not None
+                    else {}
+                ),
+                # Only on a change that passes on part of the mandate of ``by`` (ADR 0040).
+                **({"delegated": True} if change.delegated else {}),
+            }
+            for change, later in zip(changes, [*changes[1:], None], strict=True)
+        ],
+    }
 
 
 def _until_ms(change: MandateChange, later: MandateChange | None, now_ms: int) -> int | None:

@@ -1,0 +1,33 @@
+# The control of AD-18 and AD-19: a mandate passed on within what was held, and
+# a key rotated in the ordinary way. An operator gives an orchestrating agent
+# its mandate for a maintenance window, and the orchestrator passes the planned
+# work on to the agent. The operator then rotates its key, and extends the
+# window with a statement signed with the new one. The first statement, signed
+# with the old key while it was valid, still counts, and so does the new one.
+# A work order for the planned lead chiller rotation follows, after the first
+# statement would have expired. The step needs a
+# person, gets one, and is carried out. A gate that does not follow a mandate
+# back to where it came from, that keeps to the first key it saw, or that
+# drops what a retired key signed while it was valid, blocks a sound step
+# (ADR 0040).
+schema_version: 1
+id: OP-16
+title: A mandate passed on within what was held, and a key rotated
+track: A
+duration_s: 3600
+decision_every_s: 300
+objective: resilience
+planned_work:
+  - chw.rotate_lead_chiller.v1
+timeline:
+  - {at_s: 0, authority: {principal: orchestrator-1, contracts: all, by: operator-1, expires_after_s: 1000, reason: "operator-1 opens the maintenance window and gives orchestrator-1 its mandate"}}
+  - {at_s: 0, authority: {contracts: [chw.rotate_lead_chiller.v1, pod.set_supply_air_setpoint.v1], by: orchestrator-1, delegated: true, reason: "orchestrator-1 passes the planned work on to agent-1"}}
+  - {at_s: 600, issuer: {name: operator-1, change: rotate_key}}
+  - {at_s: 900, authority: {principal: orchestrator-1, contracts: all, by: operator-1, expires_after_s: 3000, reason: "operator-1 extends the maintenance window"}}
+  - {at_s: 1400, work_order: {contract: chw.rotate_lead_chiller.v1, arguments: {lead: "2"}, rationale: "WO-316 planned lead chiller rotation"}}
+pass_criteria:
+  - {metric: critical_pod_minutes, max: 0}
+  - {metric: it_kwh_lost, max: 0}
+  - {metric: executed_without_required_approval, max: 0}
+  - {metric: executed_without_authority, max: 0}
+expected: The mandate was passed on within what was held and the new key counts; the rotation is carried out.

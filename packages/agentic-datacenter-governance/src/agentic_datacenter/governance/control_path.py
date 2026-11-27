@@ -159,6 +159,8 @@ class GovernedPath:
         self._authority: dict[str, list[MandateChange]] | None = None
         #: Statements presented for a principal that the register did not issue.
         self._presented: dict[str, list[dict[str, JsonValue]]] = {}
+        #: What happened to an issuer's key: ``("rotated", ms)`` or ``("ended", ms)``.
+        self._issuer_events: dict[str, list[tuple[str, int]]] = {}
         self._records: list[dict[str, JsonValue]] = []
         self._history: list[AppliedWrite] = []
         self._watches: list[_Watch] = []
@@ -193,6 +195,7 @@ class GovernedPath:
         by: str = "",
         reason: str = "",
         expires_at_ms: int | None = None,
+        delegated: bool = False,
     ) -> None:
         """Set the mandate of *principal*: the contracts it may propose from now on.
 
@@ -208,13 +211,18 @@ class GovernedPath:
         With *expires_at_ms*, what is set ends by itself at that instant on this
         path's clock, with no further change (ADR 0039).
 
+        With *delegated*, *by* passes on part of its own mandate: *principal*
+        holds a contract only while *by* holds it too, so never more than *by*
+        holds and never for longer (ADR 0040).
+
         The register keeps every change, with the time, *by* (who made it) and
         *reason*, and gives them to the gate with each proposal (:meth:`mandate`),
         also as signed statements (:meth:`statements`).
 
         Raises:
-            ValueError: If a contract is not in the library, or the expiry is not
-                after now.
+            ValueError: If a contract is not in the library, the expiry is not
+                after now, *by* has lost its standing as an issuer, or a
+                delegation is from someone no mandate was set for.
         """
         known = set(self.library.ids())
         wanted = known if contracts is None else set(contracts)
@@ -223,42 +231,143 @@ class GovernedPath:
         now = self._kernel.clock.now_ms
         if expires_at_ms is not None and expires_at_ms <= now:
             raise ValueError("a mandate cannot expire before it is given")
+        issuer = by or mandates.REGISTER
+        if mandates.generation_at(self._issuer_events.get(issuer, ()), now) is None:
+            raise ValueError(f"{issuer} no longer has standing to give a mandate")
+        if delegated and (self._authority is None or by not in self._authority or by == principal):
+            raise ValueError(f"{by or 'nobody'} has no mandate to pass on to {principal}")
         if self._authority is None:
             self._authority = {}
-        change = MandateChange(now, tuple(sorted(wanted)), by, reason, expires_at_ms)
+        change = MandateChange(now, tuple(sorted(wanted)), by, reason, expires_at_ms, delegated)
         self._authority.setdefault(principal, []).append(change)
+        self._kernel.state.touch("governance.path")
+
+    def rotate_issuer_key(self, issuer: str) -> None:
+        """Retire the key *issuer* signs with and start its next one (ADR 0040).
+
+        What the old key signed before now still counts; nothing it signs from
+        now on does.
+
+        Raises:
+            ValueError: If the issuer's standing has ended.
+        """
+        self._issuer_event(issuer, "rotated")
+
+    def end_issuer_standing(self, issuer: str) -> None:
+        """End *issuer*'s standing to give mandates: its key is retired and none follows.
+
+        What it gave while it had standing stays until someone withdraws it
+        (ADR 0040).
+
+        Raises:
+            ValueError: If the issuer's standing has already ended.
+        """
+        self._issuer_event(issuer, "ended")
+
+    def _issuer_event(self, issuer: str, kind: str) -> None:
+        now = self._kernel.clock.now_ms
+        events = self._issuer_events.setdefault(issuer, [])
+        if mandates.generation_at(events, now) is None:
+            raise ValueError(f"the standing of {issuer} has already ended")
+        events.append((kind, now))
         self._kernel.state.touch("governance.path")
 
     def authorized(self, principal: str, contract_id: str) -> bool | None:
         """Whether *principal* holds a mandate for *contract_id*; None if none was set for it."""
         if self._authority is None or principal not in self._authority:
             return None
-        last = self._authority[principal][-1]
+        return self._holds(principal, contract_id, mandates.MAX_DEPTH)
+
+    def _holds(self, principal: str, contract_id: str, depth: int) -> bool:
+        assert self._authority is not None
+        changes = self._authority.get(principal)
+        if not changes or depth == 0:
+            return False
+        last = changes[-1]
         expired = last.expires_at_ms is not None and self._kernel.clock.now_ms >= last.expires_at_ms
-        return contract_id in last.contracts and not expired
+        if contract_id not in last.contracts or expired:
+            return False
+        # Nobody passes on more than they hold, or for longer than they hold it.
+        return not last.delegated or self._holds(last.by, contract_id, depth - 1)
+
+    def _ever_held(self, principal: str, contract_id: str, depth: int) -> bool:
+        assert self._authority is not None
+        if depth == 0:
+            return False
+        return any(
+            contract_id in change.contracts
+            and (not change.delegated or self._ever_held(change.by, contract_id, depth - 1))
+            for change in self._authority.get(principal, ())
+        )
+
+    def _lineage(self, principal: str) -> list[str]:
+        """Return everyone *principal*'s mandate was passed on from, nearest first."""
+        assert self._authority is not None
+        seen: list[str] = []
+        queue = [principal]
+        while queue:
+            for change in self._authority.get(queue.pop(0), ()):
+                if change.delegated and change.by not in seen and change.by != principal:
+                    seen.append(change.by)
+                    queue.append(change.by)
+        return seen
 
     def mandate(self, principal: str) -> Mandate | None:
         """Return the record of *principal*'s mandate; None if none was ever set for it."""
         if self._authority is None or principal not in self._authority:
             return None
-        return Mandate(principal, tuple(self._authority[principal]))
+        return Mandate(
+            principal,
+            tuple(self._authority[principal]),
+            tuple(Mandate(p, tuple(self._authority[p])) for p in self._lineage(principal)),
+        )
+
+    def issuers(self) -> tuple[dict[str, JsonValue], ...]:
+        """Return every key of each issuer the site knows, by name and then by age.
+
+        An issuer is everyone who has made a change in the register. It is
+        ``root`` when one of its changes was a mandate of its own to give, and
+        not when it has only passed on what it held.
+        """
+        if self._authority is None:
+            return ()
+        root: dict[str, bool] = {}
+        for changes in self._authority.values():
+            for change in changes:
+                name = change.by or mandates.REGISTER
+                root[name] = root.get(name, False) or not change.delegated
+        return tuple(
+            record
+            for name in sorted(root)
+            for record in mandates.issuer_records(
+                name, root[name], self._issuer_events.get(name, ())
+            )
+        )
 
     def statements(self, principal: str) -> MandateStatements | None:
         """Return *principal*'s mandate as signed statements; None if none was ever set.
 
-        The register's changes, each signed by who made it, and whatever else was
-        presented for the principal (:meth:`present_statement`), by time of
-        issue. The issuers are everyone who has made a change in the register.
+        The register's changes, each signed by who made it with the key it had
+        then, those of everyone the mandate was passed on from, and whatever
+        else was presented for the principal (:meth:`present_statement`), by
+        time of issue.
         """
         if self._authority is None or principal not in self._authority:
             return None
-        issued = mandates.issue(principal, self._authority[principal])
-        both = [*issued, *self._presented.get(principal, [])]
+
+        def generation(issuer: str, time_ms: int) -> int:
+            found = mandates.generation_at(self._issuer_events.get(issuer, ()), time_ms)
+            assert found is not None  # set_authority refuses an issuer without standing
+            return found
+
+        both: list[Mapping[str, JsonValue]] = []
+        # From the source of the mandate down to the principal.
+        for who in [*reversed(self._lineage(principal)), principal]:
+            both += mandates.issue(who, self._authority[who], generation)
+        both += self._presented.get(principal, [])
         # Stable: statements of one instant stay in the order they were made.
         both.sort(key=lambda s: int(str(s["issued_at_ms"])))
-        makers = {c.by or mandates.REGISTER for cs in self._authority.values() for c in cs}
-        issuers = tuple(mandates.issuer_record(name) for name in sorted(makers))
-        return MandateStatements(principal, tuple(both), issuers)
+        return MandateStatements(principal, tuple(both), self.issuers())
 
     def present_statement(self, principal: str, statement: Mapping[str, JsonValue]) -> None:
         """Put *statement* among what a gate is sent as *principal*'s mandate.
@@ -272,16 +381,14 @@ class GovernedPath:
     def _no_mandate(self, principal: str, contract_id: str) -> str:
         """Say which kind of no mandate it is, from the register: one of ``AUTHORITY_DETAILS``.
 
-        ``ended`` when an earlier change held the contract, or the last one
-        holds it and has expired; ``never_held`` otherwise. The time before the
-        first change is not a mandate: nothing was said about authority then.
+        ``ended`` when a change held the contract, the last one included if it
+        has expired or whoever passed it on no longer holds it; ``never_held``
+        otherwise. A delegation held it only if whoever passed it on ever did.
+        The time before the first change is not a mandate: nothing was said
+        about authority then.
         """
-        assert self._authority is not None
-        return (
-            "ended"
-            if any(contract_id in c.contracts for c in self._authority[principal])
-            else "never_held"
-        )
+        held = self._ever_held(principal, contract_id, mandates.MAX_DEPTH)
+        return "ended" if held else "never_held"
 
     # -- proposing -----------------------------------------------------------------
 
@@ -828,7 +935,8 @@ class GovernedPath:
                     # The expiry only where one was set, so a run without any has
                     # the state it had before a mandate could expire (ADR 0039).
                     [c.time_ms, list(c.contracts), c.by, c.reason]
-                    + ([c.expires_at_ms] if c.expires_at_ms is not None else [])
+                    + ([c.expires_at_ms] if c.expires_at_ms is not None or c.delegated else [])
+                    + ([True] if c.delegated else [])
                     for c in changes
                 ]
                 for principal, changes in sorted(self._authority.items())
@@ -836,6 +944,12 @@ class GovernedPath:
         if self._presented:
             assert isinstance(state, dict)
             state["presented"] = copy.deepcopy(dict(sorted(self._presented.items())))
+        if self._issuer_events:
+            assert isinstance(state, dict)
+            state["issuer_events"] = {
+                name: [[kind, at_ms] for kind, at_ms in events]
+                for name, events in sorted(self._issuer_events.items())
+            }
         return state
 
     def _snapshot(self) -> JsonValue:
@@ -923,10 +1037,19 @@ class GovernedPath:
                             tuple(str(c) for c in change[1]),
                             str(change[2]),
                             str(change[3]),
-                            int(str(change[4])) if len(change) > 4 else None,
+                            int(str(change[4]))
+                            if len(change) > 4 and change[4] is not None
+                            else None,
+                            len(change) > 5 and bool(change[5]),
                         )
                     )
                 self._authority[str(principal)] = kept
+        self._issuer_events = {}
+        kept_events = state.get("issuer_events")
+        if isinstance(kept_events, Mapping):
+            for name, events in kept_events.items():
+                assert isinstance(events, list | tuple)
+                self._issuer_events[str(name)] = [(str(e[0]), int(str(e[1]))) for e in events]
         presented = state.get("presented")
         self._presented = {}
         if isinstance(presented, Mapping):

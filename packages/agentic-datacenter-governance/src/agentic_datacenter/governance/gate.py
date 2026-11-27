@@ -92,6 +92,8 @@ class MandateChange:
         reason: Why, in the words it was given with.
         expires_at_ms: When what the change holds ends by itself, with no further
             change; None when it holds until the next change (ADR 0039).
+        delegated: ``by`` passed on part of its own mandate. The principal then
+            holds a contract only while ``by`` holds it too (ADR 0040).
     """
 
     time_ms: int
@@ -99,6 +101,7 @@ class MandateChange:
     by: str = ""
     reason: str = ""
     expires_at_ms: int | None = None
+    delegated: bool = False
 
 
 @dataclass(frozen=True)
@@ -114,14 +117,18 @@ class Mandate:
 
     principal: str
     changes: tuple[MandateChange, ...]
+    #: The record of everyone a change of this one was passed on from, and of
+    #: those they had it from; empty when no change is a delegation (ADR 0040).
+    delegators: tuple[Mandate, ...] = ()
 
 
 @dataclass(frozen=True)
 class MandateStatements:
     """What was presented as the proposer's mandate, each statement signed (ADR 0039).
 
-    The register's changes as signed statements, and anything else that was
-    presented for the principal, which may be forged. Unlike ``Mandate`` it is
+    The register's changes as signed statements, those of everyone the mandate
+    was passed on from, and anything else that was presented for the principal,
+    which may be forged. Unlike ``Mandate`` it is
     not to be trusted as it stands: a statement counts only when it verifies
     under the key of an issuer in ``issuers``. The rule is in
     ``agentic_datacenter.governance.mandates`` and in
@@ -130,8 +137,10 @@ class MandateStatements:
     Attributes:
         principal: Whose mandate it is.
         statements: The statements, by time of issue. Each is a JSON object.
-        issuers: The issuers the site trusts, each with its name and public
-            key. Established by the control path, never by the agent.
+        issuers: Every key of each issuer the site knows: the name, the public
+            key, when it was valid, and whether the issuer may give a mandate
+            of its own (``root``) or only pass one on. Established by the
+            control path, never by the agent.
     """
 
     principal: str

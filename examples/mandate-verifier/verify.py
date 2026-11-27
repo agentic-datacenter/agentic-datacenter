@@ -24,28 +24,27 @@ from typing import Any
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-SCHEMA = "agentic_datacenter.mandate/1"
+SCHEMA = "agentic_datacenter.mandate/2"
 SIGNED = (
     "schema", "principal", "contracts", "issuer", "issued_at_ms", "expires_at_ms",
-    "supersedes", "reason",
+    "supersedes", "delegation", "reason",
 )  # fmt: skip
+MAX_DEPTH = 8  # links of delegation followed before authority is not established
 
 
 def signed_bytes(statement: dict[str, Any]) -> bytes:
     """Return what is signed and addressed: the body as canonical JSON.
 
     Keys sorted, no whitespace, UTF-8, no escaping of non-ASCII characters. The
-    body holds only strings, integers, null and lists of strings.
+    body holds only strings, integers, booleans, null and lists of strings.
     """
     body = {name: statement.get(name) for name in SIGNED}
     return json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
 
 
-def counts(
-    statement: dict[str, Any], principal: str, issuers: list[dict[str, Any]], now_ms: int
-) -> bool:
+def counts(statement: dict[str, Any], issuers: list[dict[str, Any]], now_ms: int) -> bool:
     """Rule 1: whether *statement* counts. One that does not is ignored."""
-    if statement.get("schema") != SCHEMA or statement.get("principal") != principal:
+    if statement.get("schema") != SCHEMA:
         return False
     contracts, issued = statement.get("contracts"), statement.get("issued_at_ms")
     expires = statement.get("expires_at_ms")
@@ -53,33 +52,50 @@ def counts(
         return False
     if type(issued) is not int or (expires is not None and type(expires) is not int):
         return False
+    if type(statement.get("delegation")) is not bool:
+        return False
     if statement.get("id") != "sha256:" + hashlib.sha256(signed_bytes(statement)).hexdigest():
         return False
-    issuer = next((i for i in issuers if i.get("name") == statement.get("issuer")), None)
     signature = statement.get("signature")
-    if issuer is None or not isinstance(signature, dict) or signature.get("alg") != "Ed25519":
+    if not isinstance(signature, dict) or signature.get("alg") != "Ed25519":
         return False
-    if signature.get("key_id") != issuer.get("key_id"):
+    # The key it names must be one of this issuer's.
+    key = next(
+        (
+            i
+            for i in issuers
+            if i.get("name") == statement.get("issuer") and i.get("key_id") == signature["key_id"]
+        ),
+        None,
+    )
+    if key is None:
         return False
     try:
-        key = Ed25519PublicKey.from_public_bytes(base64.b64decode(issuer["public_key"]))
-        key.verify(base64.b64decode(str(signature.get("value"))), signed_bytes(statement))
+        public = Ed25519PublicKey.from_public_bytes(base64.b64decode(key["public_key"]))
+        public.verify(base64.b64decode(str(signature.get("value"))), signed_bytes(statement))
     except (InvalidSignature, ValueError, KeyError):
+        return False
+    # A key signs only while it is valid: from valid_from_ms, until valid_until_ms.
+    if issued < key["valid_from_ms"]:
+        return False
+    if key["valid_until_ms"] is not None and issued >= key["valid_until_ms"]:
+        return False
+    # Only an issuer the site trusts gives a mandate of its own. Anyone else
+    # can only pass on what they hold, and must say so.
+    if not statement["delegation"] and key.get("root") is not True:
         return False
     return issued <= now_ms
 
 
-def current(
-    statements: list[dict[str, Any]],
-    issuers: list[dict[str, Any]],
-    principal: str,
-    contract: str,
-    now_ms: int,
-) -> dict[str, Any]:
-    """Return ``{"established", "holds", "kind"}`` for *principal* and *contract* at *now_ms*."""
-    counted = {s["id"]: s for s in statements if counts(s, principal, issuers, now_ms)}
-    # Rule 2: one chain. One statement supersedes nothing, every other supersedes
-    # one that counts, and no two supersede the same.
+def chain_of(
+    statements: list[dict[str, Any]], issuers: list[dict[str, Any]], principal: str, now_ms: int
+) -> list[dict[str, Any]] | None:
+    """Rule 2: the statements that count for *principal*, oldest first; None if not one chain."""
+    counted = {
+        s["id"]: s
+        for s in statements
+        if s.get("principal") == principal and counts(s, issuers, now_ms)
+    }
     roots = [s for s in counted.values() if s["supersedes"] is None]
     followers = {s["supersedes"]: s for s in counted.values() if s["supersedes"] is not None}
     one_chain = (
@@ -88,19 +104,66 @@ def current(
         and all(earlier in counted for earlier in followers)
     )
     if not one_chain:
-        return {"established": False, "holds": False, "kind": ""}
+        return None
     chain = [roots[0]]
     while chain[-1]["id"] in followers:
         chain.append(followers[chain[-1]["id"]])
-    if len(chain) != len(counted):
-        return {"established": False, "holds": False, "kind": ""}
-    # Rule 3: the head decides. It holds what it lists until it expires.
+    return chain if len(chain) == len(counted) else None
+
+
+def current(
+    statements: list[dict[str, Any]],
+    issuers: list[dict[str, Any]],
+    principal: str,
+    contract: str,
+    now_ms: int,
+    depth: int = MAX_DEPTH,
+) -> dict[str, Any]:
+    """Return ``{"established", "holds", "kind"}`` for *principal* and *contract* at *now_ms*."""
+    nothing = {"established": False, "holds": False, "kind": ""}
+    chain = chain_of(statements, issuers, principal, now_ms)
+    if chain is None or depth == 0:
+        return nothing
+    # Rule 3: the head decides. It holds what it lists until it expires, and a
+    # delegation only while whoever passed it on holds the contract too.
     head = chain[-1]
     live = head["expires_at_ms"] is None or now_ms < head["expires_at_ms"]
-    if contract in head["contracts"] and live:
+    holds = contract in head["contracts"] and live
+    if holds and head["delegation"]:
+        giver = current(statements, issuers, head["issuer"], contract, now_ms, depth - 1)
+        if not giver["established"]:
+            return nothing
+        holds = giver["holds"]
+    if holds:
         return {"established": True, "holds": True, "kind": ""}
-    held_before = any(contract in s["contracts"] for s in chain)
-    return {"established": True, "holds": False, "kind": "ended" if held_before else "never_held"}
+    before = ever_held(statements, issuers, principal, contract, now_ms, depth)
+    return {"established": True, "holds": False, "kind": "ended" if before else "never_held"}
+
+
+def ever_held(
+    statements: list[dict[str, Any]],
+    issuers: list[dict[str, Any]],
+    principal: str,
+    contract: str,
+    now_ms: int,
+    depth: int,
+) -> bool:
+    """Whether a statement that counts ever gave *principal* the contract.
+
+    A delegation gave it only if whoever passed it on was ever given it.
+    """
+    if depth == 0:
+        return False
+    for s in statements:
+        if s.get("principal") != principal or not counts(s, issuers, now_ms):
+            continue
+        if contract not in s["contracts"]:
+            continue
+        if not s["delegation"]:
+            return True
+        if ever_held(statements, issuers, s["issuer"], contract, now_ms, depth - 1):
+            return True
+    return False
 
 
 def from_request(request: dict[str, Any]) -> dict[str, Any] | None:
@@ -122,7 +185,7 @@ def run_vectors(path: str) -> int:
     for case in vectors["cases"]:
         for query in case["queries"]:
             got = current(
-                case["statements"], vectors["issuers"], case["principal"],
+                case["statements"], case["issuers"], case["principal"],
                 query["contract"], query["time_ms"],
             )  # fmt: skip
             total += 1
