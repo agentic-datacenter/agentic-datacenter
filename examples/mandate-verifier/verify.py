@@ -153,8 +153,14 @@ def current(
     now_ms: int,
     first_seen: dict[str, int] | None = None,
     depth: int = MAX_DEPTH,
+    model: str = "holdings",
 ) -> dict[str, Any]:
-    """Return ``{"established", "holds", "kind"}`` for *principal* and *contract* at *now_ms*."""
+    """Return ``{"established", "holds", "kind"}`` for *principal* and *contract* at *now_ms*.
+
+    *model* is how the site reads a delegation. ``holdings``: it holds while
+    whoever passed it on holds the contract now. ``grant_bound``: it holds only
+    under the grant its issuer held when it was passed on (see ``bound``).
+    """
     nothing = {"established": False, "holds": False, "kind": ""}
     chain = chain_of(statements, issuers, principal, now_ms, first_seen)
     if chain is None or depth == 0:
@@ -164,17 +170,48 @@ def current(
     head = chain[-1]
     live = head.get("expires_at_ms") is None or now_ms < head["expires_at_ms"]
     holds = contract in head["contracts"] and live
+    unbound = False
+    if holds and head["delegation"] and model == "grant_bound":
+        under = bound(head, statements, issuers, now_ms, first_seen)
+        if under is None:
+            return nothing
+        holds, unbound = under, not under
     if holds and head["delegation"]:
         giver = current(
-            statements, issuers, head["issuer"], contract, now_ms, first_seen, depth - 1
+            statements, issuers, head["issuer"], contract, now_ms, first_seen, depth - 1, model
         )
         if not giver["established"]:
             return nothing
-        holds = giver["holds"]
+        holds, unbound = giver["holds"], giver["kind"] == "unbound"
     if holds:
         return {"established": True, "holds": True, "kind": ""}
+    if unbound:
+        return {"established": True, "holds": False, "kind": "unbound"}
     before = ever_held(statements, issuers, principal, contract, now_ms, first_seen, depth)
     return {"established": True, "holds": False, "kind": "ended" if before else "never_held"}
+
+
+def bound(
+    head: dict[str, Any],
+    statements: list[dict[str, Any]],
+    issuers: list[dict[str, Any]],
+    now_ms: int,
+    first_seen: dict[str, int] | None = None,
+) -> bool | None:
+    """Whether a delegation is under the grant its issuer holds now; None if nothing is established.
+
+    For a site that binds a delegation to its grant. The grant is the statement
+    that was the head of the issuer's chain when the delegation was issued. The
+    delegation is bound while that statement is still the issuer's head, and
+    only if it lists nothing the grant did not.
+    """
+    chain = chain_of(statements, issuers, head["issuer"], now_ms, first_seen)
+    if chain is None:
+        return None
+    earlier = [s for s in chain if s["issued_at_ms"] <= head["issued_at_ms"]]
+    if not earlier or earlier[-1] is not chain[-1]:
+        return False  # passed on before any grant, or the grant has been replaced since
+    return set(head["contracts"]) <= set(chain[-1]["contracts"])
 
 
 def ever_held(
@@ -212,7 +249,7 @@ def from_request(request: dict[str, Any]) -> dict[str, Any] | None:
     return current(
         signed["statements"], signed["issuers"], signed["principal"],
         request["proposal"]["contract_id"], request["premises"]["time_ms"],
-        signed.get("first_seen_ms"),
+        signed.get("first_seen_ms"), model=signed.get("model", "holdings"),
     )  # fmt: skip
 
 
@@ -226,6 +263,7 @@ def run_vectors(path: str) -> int:
             got = current(
                 case["statements"], case["issuers"], case["principal"],
                 query["contract"], query["time_ms"], case.get("first_seen_ms"),
+                model=case.get("model", "holdings"),
             )  # fmt: skip
             total += 1
             if got != query["expect"]:

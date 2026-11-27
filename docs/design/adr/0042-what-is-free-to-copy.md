@@ -21,6 +21,8 @@ A scenario from outside met the other obstacle. The contribution terms of `CONTR
 
 The simulator, the scenarios written by this project, the contracts, the judge and the tools are under the Business Source License 1.1. Running them to develop, test, evaluate or benchmark is free. A system that connects is its owner's, under its owner's licence.
 
+A fourth file joined these on 2026-11-27: `docs/reference/mandate-vectors-grant-bound.json`, the vectors for a site that binds a delegation to its grant (ADR 0048).
+
 ## Consequences
 
 - A participant's licence question has one short answer for each thing they touch: their system is theirs; the interface and the examples are MIT; a scenario or an equipment entry they give is CC-BY-4.0 with their name on it.

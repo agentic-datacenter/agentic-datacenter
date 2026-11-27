@@ -155,6 +155,65 @@ def test_the_committed_vectors_are_the_ones_the_code_gives() -> None:
     assert len(committed["cases"]) >= 30
 
 
+@pytest.mark.req("ADC-AUT-011")
+def test_a_delegation_is_read_under_the_model_the_site_declares() -> None:
+    """The two cases of issue 76: one way under holdings, the other under grant_bound."""
+    committed = json.loads(
+        (REPO / "docs/reference/mandate-vectors-grant-bound.json").read_text(encoding="utf-8")
+    )
+    assert committed == mandates.vectors_grant_bound()
+    spec = importlib.util.spec_from_file_location(
+        "reference_verifier", REPO / "examples/mandate-verifier/verify.py"
+    )
+    assert spec and spec.loader
+    reference = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(reference)
+    answers: dict[str, dict[str, list[bool]]] = {}
+    for case in committed["cases"]:
+        name, model = case["name"].rsplit(" (", 1)[0], case["model"]
+        assert model in mandates.MODELS and case["name"].endswith(f"({model})")
+        for query in case["queries"]:
+            found = mandates.current(
+                case["statements"], case["issuers"], case["principal"], query["contract"],
+                query["time_ms"], model=model,
+            )  # fmt: skip
+            got = {"established": found.established, "holds": found.holds, "kind": found.kind}
+            assert got == query["expect"], (case["name"], query)
+            copied = reference.current(
+                case["statements"], case["issuers"], case["principal"], query["contract"],
+                query["time_ms"], model=model,
+            )  # fmt: skip
+            assert copied == query["expect"], (case["name"], query)
+            answers.setdefault(name, {}).setdefault(model, []).append(found.holds)
+    restored = answers["authority restored at the source"]
+    assert restored["holdings"] == [True, False, True]
+    assert restored["grant_bound"] == [True, False, False]
+    widened = answers["authority widened at the source"]
+    assert widened["holdings"] == [True, False, True]
+    assert widened["grant_bound"] == [False, False, False]
+    for again in ("passed on again after the restoration", "passed on again after the widening"):
+        assert all(answers[again]["holdings"]) and all(answers[again]["grant_bound"])
+    assert reference.run_vectors(str(REPO / "docs/reference/mandate-vectors-grant-bound.json")) == 0
+
+
+@pytest.mark.req("ADC-AUT-011")
+def test_what_names_no_model_is_read_as_before() -> None:
+    """The vectors of the rule as it was are unchanged, and an unknown model is refused."""
+    for case in mandates.vectors()["cases"]:  # type: ignore[union-attr]
+        assert "model" not in case  # type: ignore[operator]
+        for query in case["queries"]:  # type: ignore[index,call-overload,union-attr]
+            args = (
+                case["statements"], case["issuers"], case["principal"],  # type: ignore[index,call-overload]
+                query["contract"], query["time_ms"], case.get("first_seen_ms"),  # type: ignore[index,call-overload,union-attr]
+            )  # fmt: skip
+            assert mandates.current(*args) == mandates.current(*args, model="holdings")  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="authorization model"):
+        mandates.current([], [], "agent-1", "x", 0, model="whatever")
+    page = (REPO / "docs/reference/mandate-statements.md").read_text(encoding="utf-8")
+    assert "## A site that binds a delegation to its grant" in page and "`unbound`" in page
+    assert "mandate-vectors-grant-bound.json" in (REPO / "docs/reference/LICENSE").read_text()
+
+
 @pytest.mark.req("ADC-AUT-004")
 def test_the_rule_and_the_reference_to_copy_agree_on_every_vector() -> None:
     vectors = mandates.vectors()
