@@ -55,6 +55,16 @@ ramp:
   note: >-
     The system operator may set limits on ramping up and down. No number is given.
 
+low_frequency:
+  # A.2.8: below the threshold a data center reduces its consumption, and that
+  # setpoint prevails over any other that would raise consumption. 49.8 Hz,
+  # and 49.5 Hz in the Nordic and Irish synchronous areas.
+  threshold_hz: 49.8
+  threshold_hz_nordic_and_ireland: 49.5
+  note: >-
+    A.2.8. In the Nordic and Irish synchronous areas the level is 49.5 Hz; give
+    it with --low-frequency-hz 49.5.
+
 not_checked:
   - what: Withstanding a rate of change of frequency, up to 4 Hz/s over 0.25 s (A.2.3)
     why: Nothing in the model reacts to how fast the frequency changes, so a pass would mean nothing.

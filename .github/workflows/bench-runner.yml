@@ -117,10 +117,21 @@ jobs:
         env:
           GATES: ${{ inputs.gates }}
         run: |
+          # Every gate is checked and its lines are kept. A reference control is there to be
+          # compared with and is expected not to pass, so only a system under test fails the
+          # job; the record and its attestation below are then still made for a run in which
+          # a reference control did what it does.
           read -ra gates <<< "$GATES"
+          failed=()
           for gate in "${gates[@]}"; do
-            uv run agentic-datacenter bench check "$OUT/result_card.json" --gate "$gate" | tee -a "$OUT/check.txt"
+            if ! uv run agentic-datacenter bench check "$OUT/result_card.json" --gate "$gate" | tee -a "$OUT/check.txt"; then
+              case "$gate" in
+                null_gate|static_allowlist) echo "::notice::$gate is a reference control; it did not pass the release check, as expected of it" ;;
+                *) failed+=("$gate") ;;
+              esac
+            fi
           done
+          if [ "${#failed[@]}" -gt 0 ]; then echo "::error::did not pass the release check: ${failed[*]}"; exit 1; fi
       - name: Record the commit and the hash of every file made
         run: uv run agentic-datacenter bench record "$OUT"
       - name: Attest which commit and which job made the record

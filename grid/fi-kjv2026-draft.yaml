@@ -1,0 +1,87 @@
+# What Fingrid put to consultation in June 2026 for demand connections of
+# 30 MW and above, as far as its stakeholder presentation states it and this
+# model can try it. A draft, not a rule in force: see `status`.
+schema: agentic_datacenter.grid-requirements/1
+id: fi-kjv2026-draft
+jurisdiction: Finland
+authority: Fingrid, the transmission system operator
+status: proposed
+status_note: >-
+  The draft grid code specifications for demand connections (KJV2026), in
+  public consultation from 12 June to 21 August 2026, to be confirmed by the
+  Energy Authority. The presentation says a separate document with almost the
+  same content applies to new connection agreements of 30 MW and above; that
+  document has not been read, so this file keeps the status of the draft.
+source:
+  title: KJV2026 Grid code specifications for Demand Connections, presentation for stakeholders
+  publisher: Fingrid
+  published: "2026-06-12"
+  url: https://www.fingrid.fi/globalassets/dokumentit/fi/palvelut/kulutuksen-ja-tuotannon-liittaminen-kantaverkkoon/kjv2026-presentation-12june2026.pdf
+  sections: "Common requirements; type D: active power controllability, voltage disturbances, 11.3.7, 11.3.9"
+read_on: "2026-11-27"
+applies_to: >-
+  Type D demand facilities: a rated demand of 30 MW or more, such as a data
+  center, an electric boiler or power-to-gas.
+nominal_hz: 50
+
+continuous:
+  # "0.90-1.10 pu: normal operation". 1.10 to 1.20 pu is normal operation for
+  # 5 seconds, which is not tried here.
+  low_pu: 0.9
+  high_pu: 1.1
+
+ride_through:
+  # "0.00pu voltage time is 200ms." Between 0.50 and 0.90 pu consumption may
+  # be reduced, and below 0.50 pu it may stop. The curve between those is a
+  # drawing and is not in this file.
+  curve_ms_pu: null
+  dips_pu_ms:
+    - [0.0, 200]
+  note: >-
+    One dip is tried, the one the presentation states in numbers: zero voltage
+    for 200 ms. A facility must also withstand eight 100 ms faults within 90
+    seconds, which is not tried.
+
+recovery:
+  # 11.3.7: consumption recovers to at least 90 % of the level before the
+  # disturbance within 1.0 s after the voltage has returned to 0.90 pu.
+  voltage_back_pu: 0.9
+  levels:
+    - name: as drafted
+      min_share: 0.9
+      max_share: null
+      within_s: 1.0
+
+ramp:
+  # "Required capability to limit maximum rate of change of active power to
+  # 5-50 MW/min (indicative)." and "The maximum single step change in power
+  # caused by the internal process of the demand facility shall be 50 MW".
+  limit_share_per_s: null
+  limit_mw_per_min: 50.0
+  limit_mw_per_min_low: 5.0
+  max_step_mw: 50.0
+  note: >-
+    The facility must be able to limit how fast its consumption changes to a
+    rate between 5 and 50 MW a minute, which the presentation calls
+    indicative, and Fingrid may ask for a change of rate by remote signal. A
+    single step caused by the facility's own process is at most 50 MW.
+
+low_frequency:
+  # Common requirements: where the network operator allows a facility to
+  # reconnect by itself, the frequency window is 49.9 to 50.1 Hz. Read here
+  # as: load is not brought back while the frequency is below 49.9 Hz.
+  threshold_hz: 49.9
+  note: >-
+    The lower edge of the frequency window in which a facility may reconnect
+    by itself, where that is allowed. The presentation gives no other level
+    below which consumption must not rise.
+
+not_checked:
+  - what: Eight consecutive 100 ms faults within 90 seconds
+    why: One dip is played at a time.
+  - what: Voltage angle steps of 30 degrees, and voltages of 1.10 to 1.20 pu for 5 seconds
+    why: The model has one voltage magnitude and no angle, and a UPS input range that ends at 1.10 pu.
+  - what: Limits on continuous power oscillations, 0.01 to 45 Hz (table 11.1)
+    why: The model has no dynamic grid, and its step is 100 ms.
+  - what: Withstanding a rate of change of frequency of 2 Hz/s over 1 second
+    why: Nothing in the model reacts to how fast the frequency changes, so a pass would mean nothing.

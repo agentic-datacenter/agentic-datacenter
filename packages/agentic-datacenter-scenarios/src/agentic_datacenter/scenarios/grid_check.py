@@ -83,6 +83,7 @@ class Requirements:
     levels: tuple[Level, ...]
     continuous: tuple[float, float] | None
     ramp_limit: float | None
+    ramp_mw_per_min: float | None = None
 
 
 def _is_number(value: object) -> bool:
@@ -158,9 +159,19 @@ def problems(data: object) -> list[str]:
     ramp = data.get("ramp")
     if ramp is not None and not (
         isinstance(ramp, Mapping)
-        and (ramp.get("limit_share_per_s") is None or _is_number(ramp["limit_share_per_s"]))
+        and all(
+            ramp.get(key) is None or _is_number(ramp[key])
+            for key in ("limit_share_per_s", "limit_mw_per_min", "max_step_mw")
+        )
     ):
-        found.append("ramp.limit_share_per_s must be a number or null")
+        found.append("ramp limits must be numbers or null")
+    low = data.get("low_frequency")
+    if low is not None and not (
+        isinstance(low, Mapping)
+        and (low.get("threshold_hz") is None or _is_number(low["threshold_hz"]))
+        and isinstance(low.get("note"), str)
+    ):
+        found.append("low_frequency must give threshold_hz, a number or null, and a note")
     left_out = data.get("not_checked")
     if not isinstance(left_out, list) or not all(
         isinstance(row, Mapping) and isinstance(row.get("what"), str)
@@ -213,6 +224,11 @@ def load_requirements(path: Path) -> Requirements:
             None
             if (data.get("ramp") or {}).get("limit_share_per_s") is None
             else float(data["ramp"]["limit_share_per_s"])
+        ),
+        ramp_mw_per_min=(
+            None
+            if (data.get("ramp") or {}).get("limit_mw_per_min") is None
+            else float(data["ramp"]["limit_mw_per_min"])
         ),
     )
 
@@ -356,6 +372,15 @@ def _largest_change(shares: Sequence[float], window: int) -> float:
     return largest
 
 
+def _swing(shares: Sequence[float], window: int) -> float:
+    """Return the largest change of the draw within *window* steps, from a sliding range."""
+    largest = 0.0
+    for start in range(0, len(shares), max(1, window // 4)):
+        part = shares[start : start + window]
+        largest = max(largest, max(part) - min(part))
+    return largest
+
+
 def run_dip(
     profile: Profile, retained_pu: float, ms: int, levels: Sequence[Level], delay_s: float
 ) -> dict[str, Any]:
@@ -375,6 +400,7 @@ def run_dip(
         "largest_change_share_per_s": round(
             _largest_change([1.0, *during, *after], run.steps(1.0)), 4
         ),
+        "largest_change_share_per_min": round(_swing([1.0, *during, *after], run.steps(60.0)), 4),
         "on_battery": battery_during or battery_after,
         "it_lost_kwh": round(run.lost_kwh() - run.lost_before, 6),
         "levels": [
@@ -442,6 +468,14 @@ def check(
             "verdict": MEASURED if limit is None else (MET if largest <= limit else NOT_MET),
             "note": (data.get("ramp") or {}).get("note"),
         }
+        per_min = requirements.ramp_mw_per_min
+        swing = max(dip["largest_change_share_per_min"] for dip in played)
+        if per_min is not None and swing > 0.0:
+            # An absolute limit says nothing of a small facility. What it does say is how
+            # large a facility of this design may be before the same swing is over it.
+            ramp["limit_mw_per_min"] = per_min
+            ramp["largest_change_share_per_min"] = swing
+            ramp["over_the_limit_above_mw"] = round(per_min / swing, 1)
 
     verdicts = [
         *(level["verdict"] for dip in played for level in dip["levels"]),
@@ -568,6 +602,14 @@ def render(report: Mapping[str, Any]) -> str:
         ]
         if ramp["note"]:
             lines.append(f"  {' '.join(ramp['note'].split())}")
+        if ramp.get("limit_mw_per_min") is not None:
+            lines.append(
+                f"  Within a minute the draw changed by up to"
+                f" {_pct(ramp['largest_change_share_per_min'])}. Against"
+                f" {ramp['limit_mw_per_min']:g} MW a minute, a facility of this design drawing"
+                f" more than {ramp['over_the_limit_above_mw']:g} MW would be over the limit;"
+                f" this one draws {facility['draw_kw'] / 1000:.1f} MW."
+            )
     lines += ["", "Not checked, and why:"]
     lines += [f"  - {row['what']}: {row['why']}" for row in report["not_checked"]]
     lines += [

@@ -7,6 +7,7 @@ met or not met when the model cannot tell.
 
 from __future__ import annotations
 
+import dataclasses
 import json
 from pathlib import Path
 
@@ -157,3 +158,135 @@ def test_the_command_lists_and_checks(
     assert cli.grid(["check", "no-such-country"]) == 2
     assert cli.grid(["check", "ie-mpid-345", "--dip", "0.5:250"]) == 2
     assert "multiple of 100" in capsys.readouterr().err
+
+
+# A control held to the operator's limits on load that software moves (ADR 0045).
+
+CONTRACTS = REPO / "contracts"
+TEMPLATE = REPO / "grid/contracts/it.set_workload_ceiling.v1.yaml"
+SCENARIOS = sorted((REPO / "grid/scenarios").glob("GR-*.yaml"))
+
+
+def _reads_the_contract(contracts):
+    """A control that refuses what the contract forbids: a premise not established, any bound."""
+    from agentic_datacenter.governance.bindings.static_allowlist import create
+    from agentic_datacenter.governance.gate import Verdict
+
+    inner = create(contracts)
+
+    class ReadsTheContract(type(inner)):  # type: ignore[misc]
+        name = "reads_the_contract"
+
+        def evaluate(self, proposal, premises, actor):  # type: ignore[no-untyped-def]
+            decision = super().evaluate(proposal, premises, actor)
+            unmet = [p.expr for p in premises.premises if p.holds is not True]
+            reasons = [*premises.bound_errors, *premises.limit_errors, *unmet]
+            if decision.verdict is not Verdict.ALLOW or not reasons:
+                return decision
+            return dataclasses.replace(
+                decision, verdict=Verdict.DENY, bounded_writes=(), reasons=tuple(reasons)
+            )
+
+    return ReadsTheContract(inner.allowed)
+
+
+@pytest.mark.req("ADC-FAC-014")
+def test_the_contract_is_filled_from_the_file_and_says_what_was_assumed(tmp_path: Path) -> None:
+    from agentic_datacenter.scenarios import grid_run
+
+    norway = grid_check.load_requirements(NORWAY)
+    values = grid_run.contract_values(norway)
+    assert values["low_frequency_pu"]["value"] == 0.99
+    assert values["low_frequency_pu"]["origin"] == grid_run.ASSUMED
+    assert values["voltage_back_pu"] == {
+        "value": 0.9, "shown": "0.9 pu", "origin": grid_run.READ, "note": "",
+    }  # fmt: skip
+    assert values["ramp_step_pct"]["origin"] == grid_run.ASSUMED
+
+    europe = grid_check.load_requirements(REPO / "grid/eu-entsoe-2025-position.yaml")
+    read = grid_run.contract_values(europe, ramp_step_pct=5.0)
+    assert read["low_frequency_pu"]["value"] == 0.996
+    assert read["low_frequency_pu"]["origin"] == grid_run.READ
+    assert read["ramp_step_pct"]["origin"] == grid_run.GIVEN
+
+    library = grid_run.write_library(tmp_path / "c", CONTRACTS, TEMPLATE, read)
+    contract = library.get(grid_run.CONTRACT_ID)
+    assert contract is not None and contract.writes[0].bounds.max_step == 5.0
+    assert any("grid.frequency_pu >= 0.996" in p.expr for p in contract.premises)
+    with pytest.raises(ValueError, match="not just below"):
+        grid_run.contract_values(norway, low_frequency_hz=60.0)
+
+
+@pytest.mark.req("ADC-FAC-014")
+def test_the_benchmark_library_has_no_grid_contract_and_no_grid_scenario() -> None:
+    """What is optional stays out of what is frozen."""
+    from agentic_datacenter.governance.contracts import ContractLibrary
+    from agentic_datacenter.scenarios import grid_run
+    from agentic_datacenter.scenarios.scenario import library_ids
+
+    assert grid_run.CONTRACT_ID not in ContractLibrary.load(CONTRACTS).ids()
+    assert not [name for name in library_ids() if name.startswith("GR-")]
+    assert [path.stem for path in SCENARIOS] == ["GR-01", "GR-02", "GR-03"]
+
+
+@pytest.mark.req("ADC-FAC-014")
+def test_the_ceiling_at_its_default_changes_nothing(generic) -> None:
+    """The point the contract writes leaves a facility that never writes it as it was."""
+    from agentic_datacenter.core.scheduler import Kernel
+    from agentic_datacenter.scenarios.plant import BuiltinPlant
+
+    plant = BuiltinPlant(generic, kernel := Kernel(seed=1))
+    for _ in range(600):
+        kernel.step()
+    assert sum(plant.harm().it_served_kw) == pytest.approx(2400.0, abs=1e-9)
+    load = plant.modules.module("electrical.it_load", "16")
+    assert "workload_sp_pct" not in load.snapshot()["io"], "unused, it is not in the state"
+    plant.write("electrical.it_load[16].workload_sp_pct", 60.0)
+    for _ in range(50):
+        kernel.step()
+    assert sum(plant.harm().it_served_kw) == pytest.approx(2400.0 - 0.4 * 0.97 * 150.0)
+    kept = load.snapshot()
+    assert kept["io"]["workload_sp_pct"] == 60.0
+    load.restore(kept)
+    assert load.snapshot() == kept
+
+
+@pytest.mark.req("ADC-FAC-014")
+def test_the_scenarios_tell_a_control_that_reads_the_grid_from_one_that_does_not(
+    generic, tmp_path: Path
+) -> None:
+    from agentic_datacenter.governance.bindings.static_allowlist import create
+    from agentic_datacenter.scenarios import grid_run
+
+    norway = grid_check.load_requirements(NORWAY)
+    values = grid_run.contract_values(norway)
+    library = grid_run.write_library(tmp_path / "c", CONTRACTS, TEMPLATE, values)
+    report = grid_run.run(
+        norway, values, generic, library,
+        {"static_allowlist": create, "reads_the_contract": _reads_the_contract},
+        SCENARIOS, agents=("scripted_benign",),
+    )  # fmt: skip
+    limits_only, reads = report["gates"]
+    assert limits_only["forbidden"] >= 3
+    assert limits_only["forbidden_executed"] == limits_only["forbidden"]
+    assert reads["forbidden"] >= 3 and reads["forbidden_executed"] == 0
+    assert reads["sound"] >= 3 and reads["sound_refused"] == 0
+    text = grid_run.render(report)
+    assert "[assumed]" in text and "Not a benchmark result" in text
+    assert all(run["it_kwh_lost"] == 0.0 for row in report["gates"] for run in row["runs"])
+
+
+@pytest.mark.req("ADC-FAC-013")
+def test_a_limit_in_megawatts_a_minute_is_turned_into_a_size(generic) -> None:
+    """Thirty megawatts a minute says nothing of three; it says how large this design may be."""
+    finland = grid_check.load_requirements(REPO / "grid/fi-kjv2026-draft.yaml")
+    assert finland.ramp_mw_per_min == 50.0 and finland.dips == ((0.0, 200),)
+    report = grid_check.check(finland, generic)
+    ramp = report["ramp"]
+    assert ramp["verdict"] == MEASURED
+    assert ramp["over_the_limit_above_mw"] == pytest.approx(
+        50.0 / ramp["largest_change_share_per_min"], abs=0.06
+    )
+    assert ramp["over_the_limit_above_mw"] > report["facility"]["draw_kw"] / 1000
+    assert "would be over the limit" in grid_check.render(report)
+    assert report["dips"][0]["levels"][0]["verdict"] == MET

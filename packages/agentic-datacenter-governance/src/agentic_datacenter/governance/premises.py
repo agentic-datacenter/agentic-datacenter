@@ -6,6 +6,7 @@ them: a form that is not listed here is refused when the contract is loaded.
 - ``all(pod.supply_air_c <= 25.0)`` and ``any(...)``: every, or some, instance.
 - ``tes.charge_pct >= 80``: every instance of the module (usually there is one).
 - ``pod[{pod}].thermally_critical == false``: the instance named by an argument.
+- ``all(grid.frequency_pu >= 0.99)``: the utility incomers, for a premise on the grid.
 - ``redundancy.chillers >= N_PLUS_1``.
 - ``no_active_alarm(priority >= HIGH, system in [CHW, POD])``.
 
@@ -35,6 +36,7 @@ ALIASES = {
     "pumps": "cooling.pump_station", "eroom": "cooling.eroom",
     "train": "electrical.power_train", "ups": "electrical.ups",
     "genset": "electrical.genset", "it": "electrical.it_load",
+    "grid": "electrical.utility",
 }  # fmt: skip
 _OPS = {
     "<=": operator.le,
