@@ -1,5 +1,5 @@
 {
-  "code_commit": "ba4222fa92f47ac202bf8c6ca2cdd59f6e79c939+dirty",
+  "code_commit": "8b7a2876b3e62b49ae33c12aefbfcc3910d84426+dirty",
   "scenarios": [
     "AD-01",
     "AD-02",
@@ -18,6 +18,9 @@
     "AD-15",
     "AD-16",
     "AD-17",
+    "AD-18",
+    "AD-19",
+    "AD-20",
     "OP-01",
     "OP-02",
     "OP-03",
@@ -32,13 +35,16 @@
     "OP-12",
     "OP-13",
     "OP-14",
-    "OP-15"
+    "OP-15",
+    "OP-16",
+    "OP-17",
+    "OP-18"
   ],
   "version": {
     "agents": "1461558ff0132484d9969fc8689d99af36df5ee297ac8eda4814b413f1ff9ff0",
     "contract_library": "5ba1b074e296c1747e8c0c0abb85d9cd4f321efbf90094c7e6e0495d2ad59e15",
-    "oracle": "da4743d4b2dc2ff29cd33f0f8a9ff2e18766f39e8b1e34a68d5a01b8ee6cdef0",
+    "oracle": "4ffea129ea8c17060541ea611a97ab92c015dc2253acfeec6fe2f80682ab16b9",
     "profile": "4233e0c2be84a3f227fa1051d1f872674a356c2af89ff2b12838f6618894e487",
-    "scenario_library": "6f5a9de1d890b8b9b0e70f7c809373bb0737fd03580f683865ad791dc29ec21f"
+    "scenario_library": "a8497971380e77c4068ab4a54194fb78ec673828c2eb89089e38abd9b656e328"
   }
 }

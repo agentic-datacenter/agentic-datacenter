@@ -20,7 +20,7 @@ Whoever runs Agentic-Datacenter on a measured dataset of their own gives the att
 
 ## Media
 
-`docs/media/agentic_datacenter_visual.mp4` and `docs/media/agentic_datacenter_visual.webp` were made by the owner of this repository, based on this project, and are under the licence of this repository. They show a rendered, illustrative facility, not a real site.
+`docs/media/agentic_datacenter_visual.mp4` and `docs/media/agentic_datacenter_visual.webp` were made by the owner of this repository, based on this project, and are under the licence of this repository. `docs/media/agentic_datacenter_poster.webp` is one frame of that video. They show a rendered, illustrative facility, not a real site.
 
 ## Services used at run time
 
@@ -70,7 +70,7 @@ Agentic-Datacenter is licensed under the Business Source License 1.1 (`LICENSE`)
 
 ### Runtime dependencies
 
-As installed from `uv.lock` on 2026-11-13, with the licence each project declares in its package metadata.
+As installed from `uv.lock` on 2026-11-27, with the licence each project declares in its package metadata. Every package that `uv.lock` installs for a distribution, and not only for development, is named in this table; `tests/conformance/test_third_party_notices.py` checks that.
 
 | Component | Version | Declared licence | Used by |
 | --- | --- | --- | --- |
@@ -80,9 +80,11 @@ As installed from `uv.lock` on 2026-11-13, with the licence each project declare
 | `pymodbus` | 3.16.2 | BSD-3-Clause | `agentic-datacenter-net` |
 | `bacpypes3` | 0.0.110 | MIT as its licence expression, with the classifier "BSD License"; the package and its repository carry no licence text (ADR 0013) | `agentic-datacenter-net` |
 | `pysnmp` (with `pyasn1`) | 7.1.33 (`pyasn1` 0.6.5) | BSD-2-Clause, from the licence file in the package (its metadata declares none); `pyasn1` BSD-2-Clause | `agentic-datacenter-net` |
-| `asyncua` (with `aiosqlite`, `pytz`, `sortedcontainers`, `python-dateutil`, `cryptography`) | 2.1.0 | LGPL-3.0-or-later; `aiosqlite` and `pytz` MIT; `sortedcontainers` Apache-2.0; `python-dateutil` BSD-3-Clause; `cryptography` Apache-2.0 or BSD-3-Clause | `agentic-datacenter-net` |
-| `cryptography` | 50.0.2 | Apache-2.0 or BSD-3-Clause | `agentic-datacenter-governance`, for the host keys and quotes of ADR 0032; also installed with `asyncua` above |
+| `asyncua` (with `aiosqlite`, `pytz`, `sortedcontainers`, `python-dateutil`, `tzdata`, `cryptography`) | 2.1.0 (`tzdata` 2026.6) | LGPL-3.0-or-later; `aiosqlite` and `pytz` MIT; `sortedcontainers` and `tzdata` Apache-2.0; `python-dateutil` BSD-3-Clause; `cryptography` Apache-2.0 or BSD-3-Clause | `agentic-datacenter-net` |
+| `cryptography` (with `cffi`, `pycparser`) | 50.0.2 (`cffi` 2.1.1, `pycparser` 3.12) | Apache-2.0 or BSD-3-Clause; `cffi` MIT-0; `pycparser` BSD-3-Clause | `agentic-datacenter-governance`, for the host keys and quotes of ADR 0032; also installed with `asyncua` above |
 | REMORA (`remora-assurance`) | 0.12.0 at the commit in `REMORA_PIN` | BUSL-1.1, with a separate commercial licence, as declared by that project | `agentic-datacenter-remora` only |
+| `uvicorn` (with `click`, `h11`, `httptools`, `uvloop`, `watchfiles`, `websockets`, `python-dotenv`) | 0.54.0 (`click` 8.5.1, `h11` 0.16.0, `httptools` 0.9.0, `uvloop` 0.23.0, `watchfiles` 1.3.0, `websockets` 17.4, `python-dotenv` 1.2.4) | BSD-3-Clause; `click`, `websockets` and `python-dotenv` BSD-3-Clause; `h11`, `httptools` and `watchfiles` MIT; `uvloop` MIT as its licence field, with classifiers and licence texts for both MIT and Apache-2.0 | `agentic-datacenter-remora` only: REMORA's `api` extra installs them. `h11` is also installed with the `llm` group below |
+| `httpx` (with `httpcore`, `certifi`) | 0.28.1 (`httpcore` 1.0.9, `certifi` 2026.10.23) | BSD-3-Clause; `certifi` MPL-2.0 | `agentic-datacenter-remora` only: REMORA's `sdk` extra installs them. `httpx` is also a test tool, listed below |
 | `pyiec61850-ng`, carrying `libiec61850` 1.6.1 and Mbed TLS | 1.6.1.10 | GPLv3; Mbed TLS Apache-2.0 | `agentic-datacenter-iec61850` only, on Linux only (ADR 0017). That distribution is GPL-3.0-or-later; its licence text is `packages/agentic-datacenter-iec61850/LICENSE` |
 | `anthropic` (with `httpx2`, `httpcore2`, `jiter`, `docstring-parser`, `sniffio`, `truststore`, and `httpx2-jsfetch` on Emscripten only) | 2.14.0 | Apache-2.0; `httpx2`, `httpcore2` and `httpx2-jsfetch` BSD-3-Clause; `jiter`, `docstring-parser` and `truststore` MIT; `sniffio` MIT or Apache-2.0 | the optional group `llm` only, for a language-model agent (ADR 0035); never installed by default |
 | `openai` (with the packages of `anthropic` above) | 3.59.0 | Apache-2.0 | the optional group `llm` only, for a language-model agent (ADR 0035); never installed by default |

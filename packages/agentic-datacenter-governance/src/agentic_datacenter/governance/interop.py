@@ -56,6 +56,7 @@ CONTEXT_POINTS: Mapping[str, tuple[str, ...]] = {
 GATE_DETAIL_KEPT = (
     "served_by", "session", "correlation_id", "action_ref", "issued_at",
     "service_verdict", "answered_verdict", "service_decision_id", "service_receipt", "members",
+    "receipt_signature",
 )  # fmt: skip
 #: The fields of a receipt that are compared with the record, when the receipt gives them.
 RECEIPT_FIELDS = ("action_ref", "verdict", "outcome", "decision_id")
@@ -118,14 +119,25 @@ def correlation_id(session: str, proposal_id: str) -> str:
 
 
 def plant_context(
-    points: Any, overview: Any, time_ms: int, epoch: str = EPOCH
+    points: Any,
+    overview: Any,
+    time_ms: int,
+    epoch: str = EPOCH,
+    spoofed: Mapping[str, JsonValue] | None = None,
 ) -> dict[str, JsonValue]:
     """Return the read-only sample of the plant a request carries with ``ADC_GATE_CONTEXT=1``.
 
     *points* is the point database and *overview* the supervisory overview
     over it. Work permits are not modelled as points in this version; the
     context says so rather than leave them out unsaid.
+
+    Each reading is signed by its source, the plant module that owns the
+    point, and ``sources`` holds their public keys (ADR 0041). *spoofed* maps
+    a tag to a value put in its place by someone on the network: that row
+    names the source and is signed by someone else.
     """
+    from agentic_datacenter.governance import attest  # noqa: PLC0415 - attest imports this module
+
     tags = sorted(points.tags())
     out: dict[str, JsonValue] = {
         "schema": CONTEXT_SCHEMA,
@@ -135,16 +147,25 @@ def plant_context(
         "observed_at": utc(time_ms, epoch),
         "time_anchor": epoch,
     }
+    names: set[str] = set()
     for group, patterns in CONTEXT_POINTS.items():
         chosen = [t for t in tags if any(re.search(p, t) for p in patterns)]
         rows: list[JsonValue] = []
         for tag in chosen:
             r = points.read(tag)
-            rows.append({
+            row: dict[str, JsonValue] = {
                 "tag": r.tag, "value": r.value, "unit": r.unit, "quality": r.quality,
                 "time_ms": r.time_ms, "observed_at": utc(r.time_ms, epoch),
-            })  # fmt: skip
+            }  # fmt: skip
+            false = spoofed is not None and tag in spoofed
+            if false:
+                assert spoofed is not None
+                row = {**row, "value": spoofed[tag], "quality": "good", "time_ms": int(time_ms),
+                       "observed_at": utc(time_ms, epoch)}  # fmt: skip
+            rows.append(attest.signed_reading(row, attest.INTRUDER if false else None))
+            names.add(attest.source_of(tag))
         out[group] = rows
+    out["sources"] = [attest.source_record(name) for name in sorted(names)]
     out["redundancy"] = {
         name: {"available": m.available, "required": m.required, "level": m.level_name,
                "quality": m.quality}
@@ -179,11 +200,18 @@ class ReceiptReport:
     unknown: list[str] = field(default_factory=list)
     without_receipt: list[str] = field(default_factory=list)
     unbound_records: list[str] = field(default_factory=list)
+    #: Correlation ids by what was found of their receipts' signatures, when keys
+    #: were given: every line verified, a line without a signature, a line whose
+    #: signature does not verify.
+    signed: list[str] = field(default_factory=list)
+    unsigned: list[str] = field(default_factory=list)
+    bad_signature: list[str] = field(default_factory=list)
+    signatures_checked: bool = False
 
     @property
     def ok(self) -> bool:
         """Every receipt matched a decision on record, and the record's own reference holds."""
-        return not (self.mismatched or self.unknown or self.unbound_records)
+        return not (self.mismatched or self.unknown or self.unbound_records or self.bad_signature)
 
     def as_dict(self) -> dict[str, JsonValue]:
         """Return the report for printing."""
@@ -194,6 +222,17 @@ class ReceiptReport:
             "unknown_correlation_ids": list(self.unknown),
             "decisions_without_receipt": list(self.without_receipt),
             "records_whose_action_ref_does_not_hold": list(self.unbound_records),
+            **(
+                {
+                    "signatures": {
+                        "verified": list(self.signed),
+                        "not_signed": list(self.unsigned),
+                        "failed": list(self.bad_signature),
+                    }
+                }
+                if self.signatures_checked
+                else {}
+            ),
         }
 
 
@@ -211,6 +250,8 @@ def merge_receipts(
         key = str(line.get("correlation_id", ""))
         merged = out.setdefault(key, {})
         for field_name, value in line.items():
+            if field_name == "signature":
+                continue  # each line carries its own
             if field_name in merged and merged[field_name] != value:
                 conflicts.setdefault(key, []).append(f"conflicting {field_name}")
             else:
@@ -234,6 +275,7 @@ def verify_receipts(
     records: Sequence[Mapping[str, Any]],
     receipts: Iterable[Mapping[str, Any]],
     read_verdict: Any = None,
+    public_keys: Sequence[str] = (),
 ) -> ReceiptReport:
     """Check receipts against the decision records of a run.
 
@@ -244,10 +286,31 @@ def verify_receipts(
     service answered. Each record's own ``action_ref`` is made again from the
     record, so a record whose action was changed is found. That the verdict
     and outcome on record are those of the run is for the evidence bundle's
-    manifest to show (``scenario verify``). No signature is checked: that is
-    the system's own verifier's work.
+    manifest to show (``scenario verify``).
+
+    With *public_keys*, raw Ed25519 public keys in base64, the signature of
+    each receipt line is checked too: over the line without its ``signature``,
+    as canonical JSON (ADR 0041). A line whose signature does not verify fails
+    the check; one without a signature is listed. Without keys no signature is
+    checked.
     """
+    from agentic_datacenter.governance import attest  # noqa: PLC0415 - attest imports this module
+
     report = ReceiptReport()
+    receipts = list(receipts)
+    if public_keys:
+        report.signatures_checked = True
+        found: dict[str, set[str]] = {}
+        for line in receipts:
+            state = attest.receipt_signature(line, public_keys)
+            found.setdefault(str(line.get("correlation_id", "")), set()).add(state)
+        for cid, states in found.items():
+            if attest.FAILED in states:
+                report.bad_signature.append(cid)
+            elif attest.NOT_SIGNED in states:
+                report.unsigned.append(cid)
+            else:
+                report.signed.append(cid)
     by_id: dict[str, Mapping[str, Any]] = {}
     details: dict[str, Mapping[str, Any]] = {}
     for record in records:

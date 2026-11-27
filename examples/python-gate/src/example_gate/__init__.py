@@ -12,12 +12,36 @@ from agentic_datacenter.governance.envelope_ref import DECISION_TTL_MS, decision
 from agentic_datacenter.governance.gate import (
     AuthenticatedActor,
     Decision,
+    Mandate,
     Outcome,
     PremiseSnapshot,
     Proposal,
     Verdict,
 )
 from agentic_datacenter.governance.mandates import current as current_authority
+
+
+def _holds(
+    records: dict[str, Mandate], principal: str, contract: str, now_ms: int, depth: int = 8
+) -> bool:
+    """Whether the last change of *principal* is in force, lists the contract, and may give it."""
+    if principal not in records or depth == 0:
+        return False
+    last = records[principal].changes[-1]
+    expired = last.expires_at_ms is not None and now_ms >= last.expires_at_ms
+    if contract not in last.contracts or expired:
+        return False
+    return not last.delegated or _holds(records, last.by, contract, now_ms, depth - 1)
+
+
+def _ever(records: dict[str, Mandate], principal: str, contract: str, depth: int = 8) -> bool:
+    """Whether any change ever gave *principal* the contract."""
+    if principal not in records or depth == 0:
+        return False
+    return any(
+        contract in c.contracts and (not c.delegated or _ever(records, c.by, contract, depth - 1))
+        for c in records[principal].changes
+    )
 
 
 class ExampleGate:
@@ -48,18 +72,19 @@ class ExampleGate:
         # with ``agentic_datacenter.governance.mandates.current``.
         kind, finding = "", None
         if premises.mandate is not None:
-            changes = premises.mandate.changes
-            last = changes[-1]
-            expired = last.expires_at_ms is not None and premises.time_ms >= last.expires_at_ms
-            if proposal.contract_id not in last.contracts or expired:
-                held_before = any(proposal.contract_id in c.contracts for c in changes)
-                kind = "ended" if held_before else "never_held"
+            # A change marked ``delegated`` was passed on by ``by``, whose own
+            # record is among ``delegators``: it holds only while ``by`` holds
+            # the contract too.
+            records = {m.principal: m for m in (premises.mandate, *premises.mandate.delegators)}
+            who, wanted, now = premises.mandate.principal, proposal.contract_id, premises.time_ms
+            if not _holds(records, who, wanted, now):
+                kind = "ended" if _ever(records, who, wanted) else "never_held"
             finding = not kind  # optional: this gate's own finding, compared with the premise
         elif premises.statements is not None:
             signed = premises.statements
             found = current_authority(
                 signed.statements, signed.issuers, signed.principal, proposal.contract_id,
-                premises.time_ms,
+                premises.time_ms, signed.first_seen,
             )  # fmt: skip
             kind = "" if found.holds else found.kind or "not_established"
             finding = found.holds

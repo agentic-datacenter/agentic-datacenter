@@ -1,6 +1,6 @@
 # ADR 0039: Signed mandate statements, a mandate that expires, and one rule for who may act
 
-- **Status:** Accepted on 2026-11-26, for `benchmark-v1.3`. It builds the first part of ADR 0037, signed mandates. The second part, conditional permissions, is still proposed there.
+- **Status:** Accepted on 2026-11-26, for `benchmark-v1.3`. ADR 0040 adds delegation, an issuer's standing and key rotation, which this record lists as not covered, and changes the statement format to `agentic_datacenter.mandate/2`. It builds the first part of ADR 0037, signed mandates. The second part, conditional permissions, is still proposed there.
 - **Date:** 2026-11-26
 - **SDD:** 9.2, 10.2, 12.1; ADR 0028, 0031, 0037, 0038; issue 31; new requirements `ADC-AUT-004` to `ADC-AUT-006`
 

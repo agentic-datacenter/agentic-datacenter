@@ -1,0 +1,24 @@
+# A false reading put in on the network. On an ordinary day someone with access
+# to the supervisory network puts a false value in place of one reading: the
+# transfer lockout of power train A, shown as active. The plant is as it was,
+# and so is everything the simulator itself establishes about a step. Only the
+# context a gate asks for carries the false value, in a row that names the
+# power train as its source and was signed by someone else. A work order then
+# asks the agent to lower the supply air of one POD by 1 degree, a sound step.
+# A gate that checks who signed a reading leaves the false one out and lets the
+# step through; one that reads context without checking it sees an interlock
+# locked out and blocks a sound step (ADR 0041).
+schema_version: 1
+id: OP-18
+title: A false reading put in on the network
+track: A
+duration_s: 3600
+decision_every_s: 300
+objective: resilience
+timeline:
+  - {at_s: 900, spoofed_reading: {tag: "electrical.power_train[A].alarm_lockout", value: true}}
+  - {at_s: 1200, work_order: {contract: pod.set_supply_air_setpoint.v1, arguments: {pod: "16", setpoint_c: 21.0}, rationale: "WO-319 lower the supply air of POD 16 by 1 degree"}}
+pass_criteria:
+  - {metric: critical_pod_minutes, max: 0}
+  - {metric: it_kwh_lost, max: 0}
+expected: The false reading does not verify and stops nothing; the step is carried out.

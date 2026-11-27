@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -311,9 +312,7 @@ def bench(argv: Sequence[str]) -> int:
     horizon = args.horizon if args.horizon is not None else preset.get("horizon_s")
     max_judged = args.max_judged if args.max_judged is not None else preset.get("max_judged")
 
-    def progress(done: int, total: int, run_id: str) -> None:
-        print(f"[{done}/{total}] {run_id}", file=sys.stderr, flush=True)
-
+    progress = _print_progress
     decided: list[dict[str, object]] = []
     profile, contracts = load_profile(args.profile), ContractLibrary.load(args.contracts)
     scenario_ids = args.scenario or library_ids()
@@ -683,10 +682,24 @@ def gate(argv: Sequence[str]) -> int:
         help="Do not fail on receipts that name no decision on record, such as the "
         "counterfactual replays of a bench run, which are judged and not recorded.",
     )  # fmt: skip
+    receipts.add_argument(
+        "--key", action="append", default=[], metavar="BASE64",
+        help="A public key the system signs its receipts with: raw Ed25519 in base64. "
+        "Each receipt line's signature is then checked, over the line without its "
+        "signature as canonical JSON. May be given more than once (ADR 0041).",
+    )  # fmt: skip
+    receipts.add_argument(
+        "--require-signed",
+        action="store_true",
+        help="With --key: also fail when a receipt line carries no signature.",
+    )
     args = parser.parse_args(argv)
 
     if args.action == "verify-receipts":
-        return _verify_receipts(args.decisions, args.receipts, args.require_all, args.allow_unknown)
+        return _verify_receipts(
+            args.decisions, args.receipts, args.require_all, args.allow_unknown,
+            tuple(args.key), args.require_signed,
+        )  # fmt: skip
     installed = load_gates()
     if args.action == "list":
         for name in sorted(installed):
@@ -746,7 +759,12 @@ def _json_lines(path: Path) -> list[dict[str, Any]]:
 
 
 def _verify_receipts(
-    decisions: Path, receipts: Path, require_all: bool, allow_unknown: bool = False
+    decisions: Path,
+    receipts: Path,
+    require_all: bool,
+    allow_unknown: bool = False,
+    keys: tuple[str, ...] = (),
+    require_signed: bool = False,
 ) -> int:
     """Run ``gate verify-receipts`` and return its exit status."""
     from agentic_datacenter.governance.bindings.http_gate import read_verdict
@@ -769,7 +787,12 @@ def _verify_receipts(
     except (OSError, ValueError) as exc:
         print(f"agentic-datacenter gate verify-receipts: {exc}", file=sys.stderr)
         return 2
-    report = verify_receipts(records, given, read_verdict)
+    if require_signed and not keys:
+        print(
+            "agentic-datacenter gate verify-receipts: --require-signed needs --key", file=sys.stderr
+        )
+        return 2
+    report = verify_receipts(records, given, read_verdict, keys)
     print(json.dumps(report.as_dict(), indent=2, sort_keys=True))
     correlated = len(report.matched) + len(report.mismatched) + len(report.without_receipt)
     if not correlated:
@@ -782,6 +805,14 @@ def _verify_receipts(
     failed = bool(report.mismatched or report.unbound_records)
     failed = failed or (bool(report.unknown) and not allow_unknown)
     failed = failed or (require_all and bool(report.without_receipt))
+    failed = failed or bool(report.bad_signature)
+    failed = failed or (require_signed and bool(report.unsigned))
+    if keys:
+        print(
+            f"signatures: {len(report.signed)} verified, {len(report.bad_signature)} failed, "
+            f"{len(report.unsigned)} not signed",
+            file=sys.stderr,
+        )
     print(
         f"{len(report.matched)} receipt(s) match, {len(report.mismatched)} do not, "
         f"{len(report.unknown)} name no decision; {len(report.without_receipt)} decision(s) "
@@ -789,6 +820,11 @@ def _verify_receipts(
         file=sys.stderr,
     )
     return 1 if failed else 0
+
+
+def _print_progress(done: int, total: int, run_id: str) -> None:
+    """Print one line to standard error as a run of a benchmark finishes."""
+    print(f"[{done}/{total}] {run_id}", file=sys.stderr, flush=True)
 
 
 def facility(argv: Sequence[str]) -> int:
@@ -827,6 +863,16 @@ def facility(argv: Sequence[str]) -> int:
     )
     report_.add_argument("path", type=Path, help="A bundle directory, or a profile file.")
     report_.add_argument("--gate", action="append", help="Gate to compare; repeat for several.")
+    report_.add_argument(
+        "--scenario", action="append", choices=library_ids(),
+        help="Compare the gates on this scenario only; repeat for several. Default: every "
+        "scenario that fits the facility. The report names the scenarios it was made from.",
+    )  # fmt: skip
+    report_.add_argument(
+        "--jobs", type=int, default=None,
+        help="Runs made at a time, each in a process of its own. Default: one per core. "
+        "The report is the same whatever the number.",
+    )  # fmt: skip
     report_.add_argument("--contracts", type=Path, default=Path("contracts"))
     report_.add_argument("--out", type=Path, default=Path("build/operator-report"))
     args = parser.parse_args(argv)
@@ -862,9 +908,24 @@ def facility(argv: Sequence[str]) -> int:
                 f"agentic-datacenter facility: no such gate: {', '.join(unknown)}", file=sys.stderr
             )
             return 2
-        result = operator_report(
-            own, ContractLibrary.load(args.contracts), {n: installed[n] for n in names}
-        )
+        jobs = args.jobs if args.jobs is not None else (os.cpu_count() or 1)
+        if jobs < 1:
+            print("agentic-datacenter facility: --jobs must be at least 1", file=sys.stderr)
+            return 2
+        print(
+            f"{own.profile.name}: comparing {', '.join(names)} with both scripted agents at "
+            f"the quick tier, {jobs} run(s) at a time. Each run prints a line here when it "
+            "ends. The first line can take a minute.",
+            file=sys.stderr, flush=True,
+        )  # fmt: skip
+        try:
+            result = operator_report(
+                own, ContractLibrary.load(args.contracts), {n: installed[n] for n in names},
+                scenarios=args.scenario, jobs=jobs, progress=_print_progress,
+            )  # fmt: skip
+        except ValueError as exc:
+            print(f"agentic-datacenter facility: {exc}", file=sys.stderr)
+            return 1
         write_operator_report(result, args.out)
         print(f"{own.profile.name}: {args.out / 'operator_report.md'}")
         return 0

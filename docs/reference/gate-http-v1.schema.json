@@ -295,19 +295,35 @@
                   "expires_at_ms": {
                     "type": "integer",
                     "description": "Optional. There only on a change that ends by itself: the simulated time at which what it holds ends, with no further change (ADR 0039)."
+                  },
+                  "delegated": {
+                    "const": true,
+                    "description": "Optional. There only on a change by which `by` passed on part of its own mandate: the principal then holds a contract only while `by` holds it too. The record of `by` is among delegators (ADR 0040)."
                   }
                 }
+              }
+            },
+            "delegators": {
+              "type": "array",
+              "description": "Optional. There only when a change was passed on from someone: the record of everyone the mandate was passed on from, and of those they had it from, each with principal and changes as above (ADR 0040).",
+              "items": {
+                "type": "object",
+                "required": [
+                  "principal",
+                  "changes"
+                ]
               }
             }
           }
         },
         "mandate_statements": {
           "type": "object",
-          "description": "Optional. There only when a mandate was set for the proposer: the same mandate as signed statements, with whatever else was presented for the proposer, which may be forged, and the issuers the site trusts. Not to be trusted as it stands: a statement counts only when it verifies under a trusted issuer's key. The rule that says who may act, from the statements that count, is in docs/reference/mandate-statements.md, with test vectors in docs/reference/mandate-vectors.json (ADR 0039). A service that does not verify signatures should not read it.",
+          "description": "Optional. There only when a mandate was set for the proposer: the same mandate as signed statements, those of everyone it was passed on from, whatever else was presented for the proposer, which may be forged, and every key of each issuer the site knows. Not to be trusted as it stands: a statement counts only when it verifies under a key of its issuer that was valid when it was issued. The rule that says who may act, from the statements that count, is in docs/reference/mandate-statements.md, with test vectors in docs/reference/mandate-vectors.json (ADR 0039, ADR 0040). A service that does not verify signatures should not read it.",
           "required": [
             "principal",
             "statements",
-            "issuers"
+            "issuers",
+            "first_seen_ms"
           ],
           "properties": {
             "principal": {
@@ -315,7 +331,7 @@
             },
             "statements": {
               "type": "array",
-              "description": "By time of issue.",
+              "description": "By time of issue. For the proposer and for everyone its mandate was passed on from.",
               "items": {
                 "type": "object",
                 "required": [
@@ -326,17 +342,18 @@
                   "issued_at_ms",
                   "expires_at_ms",
                   "supersedes",
+                  "delegation",
                   "reason",
                   "id",
                   "signature"
                 ],
                 "properties": {
                   "schema": {
-                    "const": "agentic_datacenter.mandate/1"
+                    "const": "agentic_datacenter.mandate/2"
                   },
                   "principal": {
                     "type": "string",
-                    "description": "Whose mandate it is."
+                    "description": "Whose mandate it is: the proposer, or someone the proposer's mandate was passed on from."
                   },
                   "contracts": {
                     "type": "array",
@@ -367,12 +384,16 @@
                     ],
                     "description": "The id of the statement it replaces; null for the first."
                   },
+                  "delegation": {
+                    "type": "boolean",
+                    "description": "True when the issuer passes on part of its own mandate. The principal then holds a contract only while the issuer holds it too, by the statements for the issuer as principal. False for a mandate the issuer gives of its own, which counts only from an issuer that is root."
+                  },
                   "reason": {
                     "type": "string"
                   },
                   "id": {
                     "type": "string",
-                    "description": "sha256: and the SHA-256, in hex, of the eight fields above as canonical JSON: keys sorted, no whitespace, UTF-8."
+                    "description": "sha256: and the SHA-256, in hex, of the nine fields above as canonical JSON: keys sorted, no whitespace, UTF-8."
                   },
                   "signature": {
                     "type": "object",
@@ -387,7 +408,7 @@
                       },
                       "key_id": {
                         "type": "string",
-                        "description": "sha256: and the SHA-256, in hex, of the raw public key it claims to be signed with."
+                        "description": "sha256: and the SHA-256, in hex, of the raw public key it is signed with. It must be a key of the issuer."
                       },
                       "value": {
                         "type": "string",
@@ -400,18 +421,25 @@
             },
             "issuers": {
               "type": "array",
-              "description": "The issuers the site trusts, established by Agentic-Datacenter and never by the agent. Test keys, never credentials.",
+              "description": "Every key of each issuer the site knows, established by Agentic-Datacenter and never by the agent. An issuer that has rotated its key has one entry for each. Test keys, never credentials.",
               "items": {
                 "type": "object",
                 "required": [
                   "name",
+                  "root",
                   "alg",
                   "key_id",
-                  "public_key"
+                  "public_key",
+                  "valid_from_ms",
+                  "valid_until_ms"
                 ],
                 "properties": {
                   "name": {
                     "type": "string"
+                  },
+                  "root": {
+                    "type": "boolean",
+                    "description": "Whether the site trusts the issuer to give a mandate of its own. One that is not root can only pass on what it holds."
                   },
                   "alg": {
                     "const": "Ed25519"
@@ -422,8 +450,26 @@
                   "public_key": {
                     "type": "string",
                     "description": "The raw 32-byte public key, base64."
+                  },
+                  "valid_from_ms": {
+                    "type": "integer",
+                    "description": "Simulated time from which the key signs."
+                  },
+                  "valid_until_ms": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "Simulated time at which the key was retired, by a rotation or because the issuer's standing ended; the instant itself is outside. Null for a key in use."
                   }
                 }
+              }
+            },
+            "first_seen_ms": {
+              "type": "object",
+              "description": "When the site first saw each statement, by its id, in simulated milliseconds. Kept by Agentic-Datacenter's control path and not by any issuer, so a statement cannot be dated back past it: a statement counts only if the key it is signed with was still valid when it was first seen (ADR 0040).",
+              "additionalProperties": {
+                "type": "integer"
               }
             }
           }
@@ -629,7 +675,10 @@
         "unit",
         "quality",
         "time_ms",
-        "observed_at"
+        "observed_at",
+        "source",
+        "reading",
+        "signature"
       ],
       "properties": {
         "tag": {
@@ -650,8 +699,38 @@
         "observed_at": {
           "type": "string",
           "format": "date-time"
+        },
+        "source": {
+          "type": "string",
+          "description": "The plant module that owns the point and signed the reading (ADR 0041)."
+        },
+        "reading": {
+          "type": "string",
+          "description": "The text that was signed: a JSON object with tag, value, unit, quality and time_ms. Check the signature over the UTF-8 bytes of this text, then that it says what the row says."
+        },
+        "signature": {
+          "type": "object",
+          "required": [
+            "alg",
+            "key_id",
+            "value"
+          ],
+          "properties": {
+            "alg": {
+              "const": "Ed25519"
+            },
+            "key_id": {
+              "type": "string",
+              "description": "sha256: and the SHA-256, in hex, of the raw public key of the source."
+            },
+            "value": {
+              "type": "string",
+              "description": "The signature over the bytes of reading, base64."
+            }
+          }
         }
-      }
+      },
+      "description": "One reading, signed by its source. A reading whose signature does not verify under the key of its source, in sources, did not come from that source."
     },
     "correlation": {
       "type": "object",
@@ -699,7 +778,8 @@
         "interlocks",
         "redundancy",
         "alarms",
-        "permits"
+        "permits",
+        "sources"
       ],
       "properties": {
         "schema": {
@@ -752,6 +832,34 @@
         "permits": {
           "type": "object",
           "description": "Work permits are not modelled as points in this version: {\"modelled\": false, \"items\": []}."
+        },
+        "sources": {
+          "type": "array",
+          "description": "The source of every reading in this context, each with its public key. Test keys, derived from the source's name; never credentials (ADR 0041).",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "alg",
+              "key_id",
+              "public_key"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "alg": {
+                "const": "Ed25519"
+              },
+              "key_id": {
+                "type": "string"
+              },
+              "public_key": {
+                "type": "string",
+                "description": "The raw 32-byte public key, base64."
+              }
+            }
+          }
         }
       }
     }

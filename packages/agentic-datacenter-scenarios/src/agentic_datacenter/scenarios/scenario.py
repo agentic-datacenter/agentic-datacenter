@@ -39,10 +39,13 @@ class AuthorityChange(_Model):
     #: What the change holds ends by itself this long after it, with no further
     #: change; None when it holds until the next one (ADR 0039).
     expires_after_s: Annotated[int, Field(gt=0)] | None = None
+    #: ``by`` passes on part of its own mandate: the principal holds a contract
+    #: only while ``by`` holds it too (ADR 0040).
+    delegated: bool = False
 
 
 #: Event kinds added after scenarios were first hashed; absent, they are not hashed.
-_LATER_EVENT_KINDS = ("work_order", "presented")
+_LATER_EVENT_KINDS = ("work_order", "presented", "issuer", "spoofed_reading")
 
 
 class Presented(_Model):
@@ -51,11 +54,17 @@ class Presented(_Model):
     It is put among the signed statements a gate is sent and changes nothing in
     the register, so nothing in what a run is judged by. ``forgery`` is how it
     fails: signed by someone the site does not trust (``unknown_issuer``), in a
-    trusted issuer's name with another key (``wrong_key``), or a real statement
-    changed after it was signed (``altered``). ``contracts`` is what it claims.
+    trusted issuer's name with another key (``wrong_key``), a real statement
+    changed after it was signed (``altered``), signed now with a key its issuer
+    has rotated out (``retired_key``), signed now by an issuer whose standing
+    has ended (``former_issuer``), or signed with a retired key and dated
+    before it was retired (``backdated``, ADR 0040). ``contracts`` is what it
+    claims.
     """
 
-    forgery: Literal["unknown_issuer", "wrong_key", "altered"]
+    forgery: Literal[
+        "unknown_issuer", "wrong_key", "altered", "retired_key", "former_issuer", "backdated"
+    ]
     contracts: list[str] | Literal["all"] = "all"
     principal: str = "agent-1"
 
@@ -73,6 +82,18 @@ class WorkOrder(_Model):
     rationale: str = ""
 
 
+class IssuerChange(_Model):
+    """Something happens to an issuer of mandates (ADR 0040).
+
+    ``rotate_key`` retires the key it signs with and starts its next one.
+    ``end_standing`` retires the key and starts none: the issuer may give no
+    more mandates. What it signed before stays as it was in both cases.
+    """
+
+    name: str
+    change: Literal["rotate_key", "end_standing"]
+
+
 class Event(_Model):
     """One injected event.
 
@@ -86,8 +107,10 @@ class Event(_Model):
     ``skew_s`` ahead), ``relay_request`` (an MMS request to a protection
     relay, put to the conduit and to the relay itself), ``authority`` (the
     mandate of a principal ends, passes on or is narrowed), ``work_order``
-    (an operator hands the agent a step to propose) or ``presented`` (a forged
-    mandate statement is put before the gate) is given.
+    (an operator hands the agent a step to propose), ``presented`` (a forged
+    mandate statement is put before the gate), ``issuer`` (an issuer of
+    mandates rotates its key or loses its standing) or ``spoofed_reading`` (a
+    false value is put in place of a reading a gate is sent) is given.
     """
 
     at_s: Annotated[int, Field(ge=0)]
@@ -105,6 +128,10 @@ class Event(_Model):
     authority: AuthorityChange | None = None
     work_order: WorkOrder | None = None
     presented: Presented | None = None
+    issuer: IssuerChange | None = None
+    #: ``{tag, value}``: someone on the network puts a false value in place of
+    #: a reading, in the context a gate asks for. The plant is untouched (ADR 0041).
+    spoofed_reading: dict[str, bool | int | float | str] | None = None
 
 
 class Criterion(_Model):
@@ -167,6 +194,8 @@ class Scenario(_Model):
             change = event.get("authority")
             if change is not None and change.get("expires_after_s") is None:
                 change.pop("expires_after_s", None)
+            if change is not None and not change.get("delegated"):
+                change.pop("delegated", None)
         return state_hash(dumped)
 
 
@@ -199,13 +228,16 @@ def parse_scenario(data: object) -> Scenario:
                 event.authority,
                 event.work_order,
                 event.presented,
+                event.issuer,
+                event.spoofed_reading,
             )
         )
         if kinds != 1 or (event.inject is not None) != (event.module is not None):
             raise ScenarioError(
                 f"{scenario.id}: event at {event.at_s} s needs exactly one of inject (with "
                 "module), link, note, attempt, replay, operator_write, command_timeout, "
-                "agent_clock, relay_request, authority, work_order or presented"
+                "agent_clock, relay_request, authority, work_order, presented, issuer or "
+                "spoofed_reading"
             )
         if event.at_s >= scenario.duration_s:
             raise ScenarioError(f"{scenario.id}: event at {event.at_s} s is after the end")

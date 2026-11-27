@@ -40,10 +40,37 @@ def no_mandate(request: dict[str, Any]) -> str:
     record = request.get("mandate")
     if not record:
         return no_mandate_by_statements(request)
-    contract, changes = request["proposal"]["contract_id"], record["changes"]
-    if contract in changes[-1]["contracts"] and changes[-1]["until_ms"] is None:
+    contract = request["proposal"]["contract_id"]
+    # A change marked ``delegated`` was passed on by ``by``, whose own record is
+    # among ``delegators``: it holds only while ``by`` holds the contract too.
+    records = {r["principal"]: r for r in [record, *record.get("delegators", [])]}
+    if holds_by_record(records, record["principal"], contract):
         return ""
-    return "ended" if any(contract in c["contracts"] for c in changes) else "never_held"
+    return "ended" if ever_by_record(records, record["principal"], contract) else "never_held"
+
+
+def holds_by_record(records: dict[str, Any], principal: str, contract: str, depth: int = 8) -> bool:
+    """Whether the last change of *principal* is in force, lists the contract, and may give it."""
+    if principal not in records or depth == 0:
+        return False
+    last = records[principal]["changes"][-1]
+    if contract not in last["contracts"] or last["until_ms"] is not None:
+        return False
+    return not last.get("delegated") or holds_by_record(records, last["by"], contract, depth - 1)
+
+
+def ever_by_record(records: dict[str, Any], principal: str, contract: str, depth: int = 8) -> bool:
+    """Whether any change ever gave *principal* the contract."""
+    if principal not in records or depth == 0:
+        return False
+    return any(
+        contract in change["contracts"]
+        and (
+            not change.get("delegated")
+            or ever_by_record(records, change["by"], contract, depth - 1)
+        )
+        for change in records[principal]["changes"]
+    )
 
 
 def no_mandate_by_statements(request: dict[str, Any]) -> str:

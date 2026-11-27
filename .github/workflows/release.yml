@@ -1,4 +1,7 @@
-# Runs on a signed version tag.
+# Runs on a signed version tag. The first thing the job does is to verify the
+# signature against the public keys in .github/release-signers/allowed_signers
+# on the main branch (tools/verify_release_tag.py); nothing is installed, tested
+# or built from a tag that does not verify.
 # Every job runs in one digest-pinned image with the frozen lock, and every
 # third-party action is pinned by commit SHA (ADC-CI-003, SDD 12.4).
 name: release
@@ -15,18 +18,29 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
-    timeout-minutes: 30
+    # The whole suite takes about 45 minutes in one process, so it runs in one
+    # process per core. The limit leaves room for a runner with two cores.
+    timeout-minutes: 60
     # The two write permissions are for the attestations below and nothing else (ADR 0025).
     permissions:
       contents: read
       id-token: write
       attestations: write
     steps:
-      - name: Install git
-        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Install git, and ssh-keygen to verify the tag with
+        run: apt-get update && apt-get install -y --no-install-recommends git openssh-client ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: The tag is signed by a key the main branch names
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        # The checkout holds the tagged commit. The tag itself, which carries the
+        # signature, and the main branch, which names the keys, are fetched here.
+        run: |
+          git fetch --no-tags --depth=1 --force origin "refs/tags/$GITHUB_REF_NAME:refs/tags/$GITHUB_REF_NAME" "refs/heads/$DEFAULT_BRANCH:refs/remotes/origin/$DEFAULT_BRANCH"
+          python3 tools/verify_release_tag.py "$GITHUB_REF_NAME" --commit "$GITHUB_SHA" --signers-ref "origin/$DEFAULT_BRANCH"
       - run: uv sync --frozen
-      - run: uv run pytest
+      - name: The whole suite, one process per core
+        run: uv run pytest -n auto --dist loadfile
       - name: Wheels and source distributions
         run: uv build --all-packages
       - name: Every wheel and source distribution holds its licence text

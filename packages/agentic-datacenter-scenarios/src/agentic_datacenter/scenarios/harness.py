@@ -270,6 +270,7 @@ def apply_event(world: World, event: Mapping[str, JsonValue]) -> None:
                 if change.get("expires_after_s") is not None
                 else None
             ),
+            delegated=bool(change.get("delegated")),
         )
         if change.get("reason"):
             world.path.add_note(str(change["reason"]))
@@ -279,15 +280,32 @@ def apply_event(world: World, event: Mapping[str, JsonValue]) -> None:
         claim = event["presented"]
         assert isinstance(claim, Mapping)
         principal, wanted = str(claim["principal"]), claim["contracts"]
+        # A forgery follows whatever was put before the gate last, a forgery
+        # included: someone who forges one statement can forge the next on top of it.
         issued = world.path.statements(principal)
         assert issued is not None and (wanted == "all" or isinstance(wanted, list | tuple))
         contracts = world.path.library.ids() if wanted == "all" else [str(c) for c in wanted]
+        own = [s for s in issued.statements if s["principal"] == principal]
         world.path.present_statement(
             principal,
             forged(
-                str(claim["forgery"]), principal, issued.statements, contracts, world.path.now_ms()
+                str(claim["forgery"]), principal, own, contracts, world.path.now_ms(),
+                issued.issuers,
             ),
-        )
+        )  # fmt: skip
+    elif event.get("spoofed_reading") is not None:
+        false = event["spoofed_reading"]
+        assert isinstance(false, Mapping)
+        value = false["value"]
+        assert isinstance(value, bool | int | float | str)
+        world.path.spoof_reading(str(false["tag"]), value)
+    elif event.get("issuer") is not None:
+        what = event["issuer"]
+        assert isinstance(what, Mapping)
+        if what["change"] == "rotate_key":
+            world.path.rotate_issuer_key(str(what["name"]))
+        else:
+            world.path.end_issuer_standing(str(what["name"]))
     elif event.get("work_order") is not None:
         # Proposed as the agent, through the agent's own tools: whatever the agent,
         # the same step reaches the gate (ADR 0038).

@@ -18,7 +18,7 @@ Simulate infrastructure. Evaluate decisions. Measure consequences.
 </p>
 
 <p align="center">
-  <a href="docs/media/agentic_datacenter_visual.mp4"><img src="docs/media/agentic_datacenter_visual.webp" alt="Illustrative rendered modular data center, with cooling, power and IT infrastructure" width="100%"></a>
+  <a href="docs/media/agentic_datacenter_visual.mp4"><img src="docs/media/agentic_datacenter_poster.webp" alt="Illustrative rendered modular data center, with cooling, power and IT infrastructure" width="100%"></a>
 </p>
 <p align="center"><sub>Illustrative facility · <a href="docs/media/agentic_datacenter_visual.mp4">View video</a></sub></p>
 
