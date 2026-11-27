@@ -62,7 +62,7 @@ It can still take part. See [What does your project bring?](which-way-in.md#what
 ## What to do with the result
 
 - **Keep it to yourself.** Nothing leaves your machine unless you send it.
-- **Keep testing.** Copy [the workflow](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/examples/ci/agentic-datacenter.yml) into your repository. It runs on your every change, and every Monday against the newest scenarios here, among them [the scenario of the week](../bench/WEEKLY.md).
+- **Keep testing.** Copy [the workflow](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/examples/ci/agentic-datacenter.yml) into your repository. It runs on your every change, and every Monday against the newest scenarios here, among them [the three drawn for the week](../bench/WEEKLY.md), which nobody has seen before.
 - **Propose a scenario** your system should be tested on, in words: [Propose a scenario](propose-a-scenario.md). One that is accepted is run against every system from then on.
 - **Enrol.** [Three fields](https://github.com/agentic-datacenter/agentic-datacenter/issues/new?template=gate-registration.yml), no installation. Your system then takes part in every four-week season, and is listed under the same rules as every other, if you tick the box to be named.
 

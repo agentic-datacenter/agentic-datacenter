@@ -1,6 +1,6 @@
 # ADR 0046: A scenario every week, sealed before it is shown
 
-- **Status:** Accepted on 2026-11-27. The owner asked that new scenarios come once a week and that they can be preregistered, and that none of them is of a kind nobody can run.
+- **Status:** Superseded on 2026-11-27, the day it was accepted, by [ADR 0047](0047-drawn-from-a-beacon.md): a week's scenarios are drawn from a public beacon, and are not written, sealed or released by a person. What follows is the record of what was decided first. Accepted on 2026-11-27. The owner asked that new scenarios come once a week and that they can be preregistered, and that none of them is of a kind nobody can run.
 - **Date:** 2026-11-27
 - **SDD:** 12.1, 12.4; ADR 0023, 0036, 0043
 

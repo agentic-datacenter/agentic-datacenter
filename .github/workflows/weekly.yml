@@ -1,8 +1,9 @@
 # Scheduled, every Monday before the workflows of enrolled systems run theirs.
-# Budget: 5 minutes. It checks that the weekly scenario of this Monday was
-# released and that the one of next Monday is sealed, and fails when either is
-# not so (docs/bench/WEEKLY.md, ADR 0046). It writes nothing: releasing a
-# scenario is a pull request made by a person.
+# Budget: 20 minutes. It draws the week's scenarios from the public beacon,
+# runs them with no control and with the limits-only control, checks that the
+# week as drawn tests something, and keeps the files and the report
+# (docs/bench/WEEKLY.md, ADR 0047). It writes nothing to the repository: a
+# week's scenarios are a function of the week and the beacon, not files here.
 name: weekly
 on:
   schedule:
@@ -15,17 +16,20 @@ concurrency:
   group: weekly-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  due:
+  draw:
     runs-on: ubuntu-24.04
     container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
-    timeout-minutes: 5
+    timeout-minutes: 20
     steps:
       - name: Install git
         run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: uv sync --frozen
-      - name: The register and the released files agree
-        run: uv run python tools/weekly.py check
-      - name: What is late, and what is missing
-        # A failure here is the notice: a scheduled workflow that fails is sent to the maintainers.
-        run: uv run python tools/weekly.py due
+      - name: Draw this week's scenarios and run them with the reference controls
+        run: uv run agentic-datacenter weekly run --gate null_gate --gate static_allowlist --check --out build/weekly
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: weekly-${{ github.run_id }}
+          path: build/weekly
+          if-no-files-found: warn

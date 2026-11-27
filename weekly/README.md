@@ -1,12 +1,19 @@
-# The weekly scenario
+# The weekly scenarios
 
-One new scenario every Monday, sealed before it is shown. [How it works, and how to run it](../docs/bench/WEEKLY.md); the design decision is [ADR 0046](../docs/design/adr/0046-a-scenario-every-week.md).
-
-- `register.yaml` lists every week: what is planned, the SHA-256 of each sealed file, and what has been released.
-- `scenarios/` holds the released files. Each hashes to what the register sealed for it.
+Every week has scenarios of its own, drawn from a public randomness beacon, and nobody writes them. [How it works, and how to run them](../docs/bench/WEEKLY.md); the design decision is [ADR 0047](../docs/design/adr/0047-drawn-from-a-beacon.md).
 
 ```sh
-uv run python tools/weekly.py check
+uv run agentic-datacenter weekly show     # this week's scenario files
+uv run agentic-datacenter weekly run      # run them under the two reference controls
 ```
 
-These scenarios are no part of a frozen benchmark version until a season takes them in.
+Nothing is stored here for a week: the files are a function of the week and the beacon, the same for everyone.
+
+`first/` holds the two scenarios that were written by hand and sealed on 2026-11-27, before the drawing replaced sealing the same day. They are shown as they were sealed:
+
+| File | SHA-256, as registered on 2026-11-27 |
+| --- | --- |
+| `first/WK-01.yaml` | `77f5413dc5d5337caad7d16cd29a2e8bfb27747c6a7de95b474425ae2e2c25be` |
+| `first/WK-02.yaml` | `b7cdf4da4e61454bc9658e9c83a00596d246d6d7063db9785326265731a16115` |
+
+Their two patterns are among the kinds the generator draws from.

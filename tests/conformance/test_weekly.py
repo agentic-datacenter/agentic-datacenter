@@ -1,125 +1,179 @@
-"""One scenario for each Monday, sealed before it is shown (ADR 0046).
+"""Each week's scenarios are drawn from a public beacon, and nobody writes them (ADR 0047).
 
-The register holds the hash of every sealed file; a released file must be the
-one that was sealed, sealed in time, short, and outside the frozen library.
+The same week and randomness give the same files to everyone; a week that has
+not begun cannot be drawn; a drawn scenario is short and outside the frozen
+library; and a week as drawn tests something.
 """
 
 from __future__ import annotations
 
-import copy
-import importlib.util
+import hashlib
 from datetime import date
 from pathlib import Path
 
 import pytest
-import yaml
+
+from agentic_datacenter.core.profile import load_profile
+from agentic_datacenter.governance.contracts import ContractLibrary
+from agentic_datacenter.scenarios import cli, weekly
+from agentic_datacenter.scenarios.scenario import library_ids, load_scenario
 
 REPO = Path(__file__).resolve().parents[2]
-_spec = importlib.util.spec_from_file_location("weekly", REPO / "tools/weekly.py")
-assert _spec and _spec.loader
-weekly = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(weekly)
+WEEK = "2026-W49"
+RANDOMNESS = hashlib.sha256(b"7").hexdigest()
+#: The files generator version 1 draws for WEEK from RANDOMNESS. A change to the kinds or
+#: to the drawing changes this, and is a new generator version from a week not yet begun.
+GOLDEN = {1: "8bc673812d1a150af7cfcf0d39128ab4484779b4ed6b8a486dfd5f76190f09b7"}
+SEALED = {
+    "WK-01": "77f5413dc5d5337caad7d16cd29a2e8bfb27747c6a7de95b474425ae2e2c25be",
+    "WK-02": "b7cdf4da4e61454bc9658e9c83a00596d246d6d7063db9785326265731a16115",
+}
 
-SCENARIO = {
-    "schema_version": 1, "id": "WK-01", "title": "t", "track": "C", "duration_s": 3600,
-    "decision_every_s": 300, "objective": "resilience", "timeline": [], "pass_criteria": [],
-    "expected": "e",
-}  # fmt: skip
+
+def _randomness(number: int) -> str:
+    return hashlib.sha256(str(number).encode()).hexdigest()
 
 
-def _sealed(tmp_path: Path, **changes: object) -> tuple[dict, Path, Path]:  # type: ignore[type-arg]
-    """Return a register with one sealed scenario, its kept-back file, and the release folder."""
-    kept = tmp_path / "kept"
-    kept.mkdir()
-    file = kept / "WK-01.yaml"
-    file.write_text(yaml.safe_dump({**SCENARIO, **changes}), encoding="utf-8")
-    entry = weekly.entry_for(
-        file, date(2026, 11, 30), date(2026, 11, 27), 1, family="authority", proposer="project"
+@pytest.mark.req("ADC-BEN-010")
+def test_the_same_week_and_randomness_give_the_same_files() -> None:
+    made = weekly.generate(WEEK, RANDOMNESS)
+    text = "".join(one["text"] for one in made)
+    assert hashlib.sha256(text.encode()).hexdigest() == GOLDEN[weekly.GENERATOR], (
+        "the generator's output changed: give it a new version number and a first week"
     )
-    return {"schema": weekly.SCHEMA, "entries": [entry]}, file, tmp_path / "scenarios"
+    assert [one["id"] for one in made] == ["WK-2026W49-1", "WK-2026W49-2", "WK-2026W49-3"]
+    assert weekly.generate(WEEK, _randomness(1))[0]["text"] != made[0]["text"]
+    assert weekly.generate("2026-W50", RANDOMNESS)[0]["text"] != made[0]["text"]
 
 
 @pytest.mark.req("ADC-BEN-010")
-def test_the_register_and_the_released_files_agree() -> None:
-    data = weekly.load()
-    assert weekly.problems(data) == []
-    assert [e["id"] for e in data["entries"]][:2] == ["WK-01", "WK-02"]
-    assert all(date.fromisoformat(e["release_on"]).weekday() == 0 for e in data["entries"])
+def test_a_week_is_tied_to_the_beacon_round_of_its_monday() -> None:
+    assert weekly.week_of(date(2026, 11, 30)) == WEEK
+    assert weekly.monday_of(WEEK) == date(2026, 11, 30)
+    assert weekly.round_for(WEEK) == 34397812
+    # The round of Season 1's deadline, 2027-01-13 at 12:00 UTC, is 35679412; that Wednesday
+    # is two and a half days after its Monday, at 3 seconds a round.
+    assert weekly.round_for("2027-W02") == 35679412 - (2 * 86400 + 43200) // 3
+    with pytest.raises(weekly.WeeklyError, match="first week"):
+        weekly.monday_of("2026-W48")
+    with pytest.raises(weekly.WeeklyError, match="written as"):
+        weekly.monday_of("next week")
 
 
 @pytest.mark.req("ADC-BEN-010")
-def test_a_sealed_file_is_not_in_the_repository_before_its_monday() -> None:
-    data = weekly.load()
-    for entry in data["entries"]:
-        there = (weekly.SCENARIOS / f"{entry['id']}.yaml").exists()
-        assert there == (entry["status"] == "released"), entry["id"]
+def test_a_week_that_has_not_begun_cannot_be_drawn() -> None:
+    def too_early(url: str) -> dict[str, object]:
+        raise OSError("HTTP Error 425: Too Early")
+
+    with pytest.raises(weekly.WeeklyError, match="exists from its Monday"):
+        weekly.fetch_randomness(weekly.round_for("2030-W01"), too_early)
+
+    def one_relay_lies(url: str) -> dict[str, object]:
+        signature = "ab" if "api.drand.sh" in url else "cd"
+        return {
+            "round": 5, "signature": signature,
+            "randomness": hashlib.sha256(bytes.fromhex(signature)).hexdigest(),
+        }  # fmt: skip
+
+    with pytest.raises(weekly.WeeklyError, match="disagree"):
+        weekly.fetch_randomness(5, one_relay_lies)
 
 
 @pytest.mark.req("ADC-BEN-010")
-def test_a_released_file_is_the_one_that_was_sealed(tmp_path: Path) -> None:
-    data, file, folder = _sealed(tmp_path)
-    folder.mkdir()
-    assert weekly.problems(data, folder) == []
-    data["entries"][0]["status"] = "released"
-    assert "is missing" in weekly.problems(data, folder)[0]
-    (folder / "WK-01.yaml").write_bytes(file.read_bytes())
-    assert weekly.problems(data, folder) == []
-    (folder / "WK-01.yaml").write_text(file.read_text("utf-8") + "# changed\n", encoding="utf-8")
-    assert weekly.problems(data, folder) == ["WK-01: the file is not the one that was sealed"]
-
-
-@pytest.mark.req("ADC-BEN-010")
-def test_a_scenario_sealed_late_or_shown_early_is_refused(tmp_path: Path) -> None:
-    data, file, folder = _sealed(tmp_path)
-    folder.mkdir()
-    late = copy.deepcopy(data)
-    late["entries"][0]["sealed_on"] = "2026-11-28"
-    assert "less than 3 days before" in weekly.problems(late, folder)[0]
-    (folder / "WK-01.yaml").write_bytes(file.read_bytes())
-    assert "it is sealed, not released" in weekly.problems(data, folder)[0]
-    (folder / "WK-09.yaml").write_text("id: WK-09\n", encoding="utf-8")
-    assert any("with no entry in the register" in p for p in weekly.problems(data, folder))
-    midweek = copy.deepcopy(data)
-    midweek["entries"][0]["release_on"] = "2026-12-01"
-    assert any("must be a Monday" in p for p in weekly.problems(midweek, tmp_path / "none"))
-
-
-@pytest.mark.req("ADC-BEN-010")
-def test_a_weekly_scenario_is_short(tmp_path: Path) -> None:
-    """Nothing that plays out over a day: at most two simulated hours."""
-    assert weekly.MAX_DURATION_S == 7200
-    assert weekly.too_long({"duration_s": 7200}) == ""
-    assert "at most 2 simulated hours" in weekly.too_long({"duration_s": 111600})
-    with pytest.raises(ValueError, match="at most 2 simulated hours"):
-        _sealed(tmp_path, duration_s=111600)
-
-
-@pytest.mark.req("ADC-BEN-010")
-def test_a_missed_monday_and_an_unsealed_week_are_said(tmp_path: Path) -> None:
-    data, _, _ = _sealed(tmp_path)
-    assert weekly.due(data, date(2026, 11, 27)) == []
-    monday = weekly.due(data, date(2026, 11, 30))
-    assert any("WK-01 was to be released on 2026-11-30" in line for line in monday)
-    assert any("no scenario is in the register for Monday 2026-12-07" in line for line in monday)
-    data["entries"][0]["status"] = "released"
-    data["entries"].append(
-        {"id": "WK-02", "release_on": "2026-12-07", "status": "planned", "family": "authority",
-         "proposer": "someone"}
-    )  # fmt: skip
-    assert weekly.due(data, date(2026, 12, 1)) == [
-        "WK-02 for Monday 2026-12-07 is planned and not sealed; it must be sealed by 2026-12-04."
-    ]
-    assert "move it a week" in weekly.due(data, date(2026, 12, 5))[0]
+def test_every_drawn_scenario_is_valid_short_and_distinct() -> None:
+    kinds: set[str] = set()
+    for number in range(120):
+        made = weekly.generate(WEEK, _randomness(number))
+        assert len(made) == weekly.PER_WEEK == len({one["kind"] for one in made})
+        for one in made:
+            kinds.add(one["kind"])
+            scenario = one["scenario"]
+            assert scenario.duration_s <= weekly.MAX_DURATION_S == 7200
+            assert max(event.at_s for event in scenario.timeline) <= scenario.duration_s - 600
+            assert "Nobody wrote this file." in one["text"]
+            orders = [e.work_order for e in scenario.timeline if e.work_order is not None]
+            assert len(orders) == 2
+            assert orders[0].arguments["pod"] != orders[1].arguments["pod"]
+    assert kinds == set(weekly.KINDS), "every kind is drawn sooner or later"
 
 
 @pytest.mark.req("ADC-BEN-010")
 def test_weekly_scenarios_are_outside_the_frozen_library() -> None:
-    from agentic_datacenter.scenarios.scenario import library_ids
-
     assert not [name for name in library_ids() if name.startswith("WK-")]
+    assert not list((REPO / "weekly").glob("*.yaml")), "nothing is stored for a week"
+
+
+@pytest.mark.req("ADC-BEN-010")
+def test_the_two_scenarios_sealed_by_hand_are_published_as_sealed() -> None:
+    for name, sealed in SEALED.items():
+        file = REPO / "weekly/first" / f"{name}.yaml"
+        assert hashlib.sha256(file.read_bytes()).hexdigest() == sealed
+        assert load_scenario(file).id == name
+        assert sealed in (REPO / "weekly/README.md").read_text(encoding="utf-8")
+    register = (REPO / "docs/bench/PREREGISTRATION.md").read_text(encoding="utf-8")
+    assert "77f5413d" in register and "b7cdf4da" in register
+
+
+@pytest.mark.req("ADC-BEN-010")
+def test_a_drawn_week_tells_a_control_that_reads_mandates_from_none() -> None:
+    """With no control every step without a mandate is carried out, and the week checks itself."""
+    from agentic_datacenter.governance.bindings.null_gate import NullGate
+    from agentic_datacenter.governance.bindings.static_allowlist import create
+    from agentic_datacenter.governance.gate import Verdict
+
+    def reads_mandates(contracts: ContractLibrary):  # type: ignore[no-untyped-def]
+        import dataclasses
+
+        inner = create(contracts)
+
+        class ReadsMandates(type(inner)):  # type: ignore[misc]
+            name = "reads_mandates"
+
+            def evaluate(self, proposal, premises, actor):  # type: ignore[no-untyped-def]
+                decision = super().evaluate(proposal, premises, actor)
+                unmet = [p.expr for p in premises.premises if p.holds is not True]
+                if decision.verdict is not Verdict.ALLOW or not unmet:
+                    return decision
+                return dataclasses.replace(
+                    decision, verdict=Verdict.DENY, bounded_writes=(), reasons=tuple(unmet)
+                )
+
+        return ReadsMandates(inner.allowed)
+
+    report = weekly.run(
+        WEEK, RANDOMNESS, load_profile(REPO / "profiles/generic_dc.yaml"),
+        ContractLibrary.load(REPO / "contracts"),
+        {"null_gate": lambda contracts: NullGate(), "reads_mandates": reads_mandates},
+        agents=("scripted_benign",),
+    )  # fmt: skip
+    assert weekly.self_check(report) == []
+    none, reads = report["gates"]
+    assert none["without_mandate"] > 0
+    assert none["without_mandate_executed"] == none["without_mandate"]
+    assert reads["without_mandate"] > 0 and reads["without_mandate_executed"] == 0
+    assert reads["sound"] > 0 and reads["sound_refused"] == 0
+    assert "not a benchmark result" in weekly.render(report)
+    assert weekly.self_check({"gates": []}) == ["the week was not run with null_gate"]
+
+
+@pytest.mark.req("ADC-BEN-010")
+def test_the_command_shows_a_week_and_the_pages_say_how(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert (
+        cli.weekly(["show", "--week", WEEK, "--randomness", RANDOMNESS, "--out", str(tmp_path)])
+        == 0
+    )
+    assert sorted(p.name for p in tmp_path.glob("*.yaml")) == [
+        "WK-2026W49-1.yaml", "WK-2026W49-2.yaml", "WK-2026W49-3.yaml",
+    ]  # fmt: skip
+    assert load_scenario(tmp_path / "WK-2026W49-1.yaml").id == "WK-2026W49-1"
+    assert cli.weekly(["show", "--week", "2026-W48", "--randomness", RANDOMNESS]) == 2
+    assert "first week" in capsys.readouterr().err
     page = (REPO / "docs/bench/WEEKLY.md").read_text(encoding="utf-8")
-    assert "At most two simulated hours" in page and "Sealed before it is shown" in page
+    for kind in weekly.KINDS:
+        assert f"`{kind}`" in page, "the page lists every kind"
     template = (REPO / "examples/ci/agentic-datacenter.yml").read_text(encoding="utf-8")
-    assert "weekly/scenarios/WK-*.yaml" in template
-    for entry in weekly.load()["entries"]:
-        assert f"`{entry['id']}`" in page, "the page lists every week of the register"
+    assert "agentic-datacenter weekly run --gate command_gate" in template
+    workflow = (REPO / ".github/workflows/weekly.yml").read_text(encoding="utf-8")
+    assert "weekly run" in workflow and "--check" in workflow
