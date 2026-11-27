@@ -1,10 +1,15 @@
-# Runs on every pull request. Budget: 10 minutes. Pull requests from forks get no secrets.
+# Runs on every pull request, on every change of the main branch, and on request.
+# Budget: 10 minutes. Pull requests from forks get no secrets.
 # Every job runs in one digest-pinned image with the frozen lock, and every
 # third-party action is pinned by commit SHA (ADC-CI-003, SDD 12.4).
 name: pr
 on:
   pull_request:
   merge_group:
+  # So that the main branch itself carries the result of its checks.
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -80,12 +85,15 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # With REMORA and the IEC 61850 package: a test that is skipped verifies nothing, and the
       # requirements of the governed path have no test that runs without REMORA. The whole suite
-      # in one process does not fit the ten-minute budget of this workflow.
+      # in one process does not fit the ten-minute budget of this workflow, nor the hour
+      # of this job on a hosted runner, so it runs in one process per core.
       - run: uv sync --frozen --all-groups
       - name: Whole suite, recording which requirement each test verifies
-        run: uv run pytest --req-report build/requirements.json
+        run: uv run pytest -n auto --dist loadfile --req-report build/requirements.json
       - name: Every requirement due at this stage has a passing test and an owner
-        run: uv run python tools/traceability.py --report build/requirements.json
+        # The keyed scan for forbidden terms needs a key that no pull request is given, so
+        # its test is skipped here. The nightly workflow runs it on every commit with the key.
+        run: uv run python tools/traceability.py --report build/requirements.json --verified-elsewhere ADC-PRV-002
   docs:
     runs-on: ubuntu-24.04
     container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58

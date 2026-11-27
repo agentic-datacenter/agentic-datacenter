@@ -72,8 +72,7 @@ For a run made by hand, `uv run agentic-datacenter bench record <directory>` wri
 
 A self-hosted runner executes whatever a workflow asks of it. On a public repository a pull request from a fork can add or change a workflow, so a runner that accepts such a job runs a stranger's code on the machine. For as long as a runner is registered:
 
-- While the repository is private, workflows from fork pull requests do not run at all (**Settings → Actions → General → Fork pull request workflows in private repositories**, all unticked). That is how it is set now.
-- The moment it is made public, set **Fork pull request workflows from outside collaborators** to *Require approval for all external contributors*. GitHub offers that setting only on a public repository:
+- The repository is public, and **Fork pull request workflows from outside collaborators** is set to *Require approval for all external contributors* (set on 2026-11-27, when it was made public). To check it, or to set it again:
 
   ```sh
   gh api -X PUT repos/darklordVirtual/agentic-datacenter/actions/permissions/fork-pr-contributor-approval -f approval_policy=all_external_contributors

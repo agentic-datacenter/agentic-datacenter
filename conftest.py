@@ -42,8 +42,28 @@ def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo[None]):  
 
 
 def pytest_sessionfinish(session: pytest.Session) -> None:
+    """Write the report. With pytest-xdist each worker writes a part, and the parts are merged."""
     path = session.config.getoption("--req-report")
-    if path:
-        text = json.dumps(_REPORT, indent=2, sort_keys=True) + "\n"
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
-        Path(path).write_text(text, encoding="utf-8")
+    if not path:
+        return
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    worker = getattr(session.config, "workerinput", None)
+    if worker is not None:
+        # A worker of a run in several processes: the tests ran here, not in the
+        # process that writes the report.
+        part = target.with_name(f"{target.name}.{worker['workerid']}.part")
+        part.write_text(json.dumps(_REPORT), encoding="utf-8")
+        return
+    merged = {
+        req_id: {k: list(v) for k, v in outcomes.items()} for req_id, outcomes in _REPORT.items()
+    }
+    for part in sorted(target.parent.glob(f"{target.name}.*.part")):
+        for req_id, outcomes in json.loads(part.read_text(encoding="utf-8")).items():
+            for outcome, nodeids in outcomes.items():
+                merged.setdefault(req_id, {}).setdefault(outcome, []).extend(nodeids)
+        part.unlink()
+    for outcomes in merged.values():
+        for outcome in outcomes:
+            outcomes[outcome] = sorted(set(outcomes[outcome]))
+    target.write_text(json.dumps(merged, indent=2, sort_keys=True) + "\n", encoding="utf-8")

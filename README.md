@@ -18,7 +18,7 @@ Simulate infrastructure. Evaluate decisions. Measure consequences.
 </p>
 
 <p align="center">
-  <a href="docs/media/agentic_datacenter_visual.mp4"><img src="docs/media/agentic_datacenter_poster.webp" alt="Illustrative rendered modular data center, with cooling, power and IT infrastructure" width="100%"></a>
+  <a href="docs/media/agentic_datacenter_visual.mp4"><img src="docs/media/agentic_datacenter_visual.webp" alt="Illustrative rendered modular data center, with cooling, power and IT infrastructure" width="100%"></a>
 </p>
 <p align="center"><sub>Illustrative facility · <a href="docs/media/agentic_datacenter_visual.mp4">View video</a></sub></p>
 
@@ -38,7 +38,7 @@ uv sync
 uv run agentic-datacenter demo --scenario OP-03 --gate static_allowlist --out build/first-run
 ```
 
-Open `build/first-run/index.html` to see the chiller trip play out with and without the built-in safety control. The first install downloads dependencies. The simulator needs no API key.
+Open `build/first-run/executive.html` for the result on one page, or `build/first-run/index.html` to see the chiller trip play out, decision by decision, with and without the built-in safety control. The first install downloads dependencies. The simulator needs no API key.
 
 For a facility report, follow the [operator quickstart](docs/guides/bring-your-own-datacenter.md#try-the-example).
 

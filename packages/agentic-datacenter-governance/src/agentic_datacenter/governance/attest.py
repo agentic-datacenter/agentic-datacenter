@@ -10,7 +10,10 @@ word for it:
   the signer did. A reading whose signature does not verify under its
   source's key did not come from that source.
 - **A receipt.** A governance system may sign each receipt it gives. The
-  signature is over the receipt without its ``signature``, as canonical JSON.
+  signature is over the receipt without its ``signature``, as canonical JSON:
+  keys sorted, no whitespace, UTF-8. Keep a receipt to text, whole numbers,
+  true, false and null. A number that is not whole is written here the way
+  Python writes it, and a signer in another language may write it otherwise.
 
 The source keys are test keys, derived from the source's name. They are public
 by construction and never credentials. A receipt key is the governance
@@ -109,8 +112,10 @@ def reading_not_verified(row: Mapping[str, Any], sources: Sequence[Mapping[str, 
     if signature.get("key_id") != source.get("key_id"):
         return "signed with a key that is not the source's"
     try:
-        key = Ed25519PublicKey.from_public_bytes(base64.b64decode(str(source["public_key"])))
-        key.verify(base64.b64decode(str(signature.get("value"))), text.encode("utf-8"))
+        key = Ed25519PublicKey.from_public_bytes(
+            base64.b64decode(str(source["public_key"]), validate=True)
+        )
+        key.verify(base64.b64decode(str(signature.get("value")), validate=True), text.encode())
     except (InvalidSignature, ValueError):
         return "signature does not verify"
     try:
@@ -158,12 +163,12 @@ def receipt_signature(receipt: object, public_keys: Sequence[str]) -> str:
         return FAILED
     try:
         covered = receipt_bytes(receipt)
-        value = base64.b64decode(str(signature.get("value")))
+        value = base64.b64decode(str(signature.get("value")), validate=True)
     except (TypeError, ValueError):
         return FAILED
     for text in public_keys:
         try:
-            raw = base64.b64decode(text)
+            raw = base64.b64decode(text, validate=True)
             if signature.get("key_id") not in (None, key_id(raw)):
                 continue
             Ed25519PublicKey.from_public_bytes(raw).verify(value, covered)

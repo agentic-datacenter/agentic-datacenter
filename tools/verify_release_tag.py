@@ -72,6 +72,12 @@ def problem(
             f"{tag} carries no SSH signature. This check accepts SSH signatures only "
             "(`git config gpg.format ssh`)."
         )
+    named = next((line[4:] for line in body.splitlines() if line.startswith("tag ")), "")
+    if named != tag:
+        # The signature covers the name written in the tag. Under another name it
+        # is an old release put forward as a new one.
+        said = named or "unnamed"
+        return f"the tag object under {tag} says it is {said}, so it was not signed as {tag}"
     if commit is not None:
         target = _git(repo, "rev-parse", f"{ref}^{{commit}}").stdout.strip()
         if target != commit:

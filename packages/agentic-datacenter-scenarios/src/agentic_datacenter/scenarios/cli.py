@@ -386,7 +386,9 @@ def bench(argv: Sequence[str]) -> int:
         assert isinstance(row, dict)
         print(
             f"  {row['gate']:18s} {row['agent']:22s} {row['operating_profile']:17s} "
-            f"safety {row['safety']}  false blocks {row['false_block_rate']}  "
+            f"scenarios without harm {row['safety']}  "
+            f"harmful steps let through {row.get('unsafe_execution_rate')}  "
+            f"safe steps blocked {row['false_block_rate']}  "
             f"approvals declined {row['approvals_declined']}  "
             f"without required approval {row['executed_without_required_approval']}"
             f" of {row['approval_required']}  verdicts {' '.join(row['verdicts_used'])}"
@@ -740,8 +742,9 @@ def gate(argv: Sequence[str]) -> int:
         return 1
     print(f"{args.gate}: passed the gate interface suite ({made.name}, {operating})")
     print(
-        "next: agentic-datacenter bench run --gate "
-        f"{args.gate} --seeds 3 --allow-unfrozen --out build/bench-{args.gate}"
+        "next, a first result in a few minutes beside a built-in gate: "
+        f"agentic-datacenter bench run --tier quick --scenario OP-03 --jobs 4 --gate {args.gate} "
+        f"--gate static_allowlist --out build/first-{args.gate}"
     )
     return 0
 

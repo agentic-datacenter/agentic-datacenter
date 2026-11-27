@@ -9,6 +9,8 @@ Who may act, worked out from signed statements. This page is the rule a gate mus
 uv run python examples/mandate-verifier/verify.py docs/reference/mandate-vectors.json
 ```
 
+To run a gate against the scenarios that test the rule, see [Signed mandates, in two terminals](../guides/bring-your-own-gate.md#signed-mandates-in-two-terminals).
+
 ## What a gate is sent
 
 A request carries `mandate_statements` once a mandate was set for the proposer:

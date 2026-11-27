@@ -70,6 +70,7 @@ standard output (``ADC_GATE_URL`` is not used).
 
 from __future__ import annotations
 
+import base64
 import ipaddress
 import itertools
 import json
@@ -589,7 +590,17 @@ def from_environment(environ: Mapping[str, str] | None = None) -> HttpGate:
 
 def _receipt_keys(env: Mapping[str, str]) -> tuple[str, ...]:
     """Return the public keys of ``ADC_GATE_RECEIPT_KEY``: one or more, separated by commas."""
-    return tuple(k.strip() for k in env.get("ADC_GATE_RECEIPT_KEY", "").split(",") if k.strip())
+    keys = tuple(k.strip() for k in env.get("ADC_GATE_RECEIPT_KEY", "").split(",") if k.strip())
+    for key in keys:
+        try:
+            raw = base64.b64decode(key, validate=True)
+        except ValueError:
+            raw = b""
+        if len(raw) != 32:
+            raise HttpGateConfigError(
+                "ADC_GATE_RECEIPT_KEY: each key is a raw Ed25519 public key, 32 bytes in base64"
+            )
+    return keys
 
 
 def command_from_environment(environ: Mapping[str, str] | None = None) -> CommandGate:

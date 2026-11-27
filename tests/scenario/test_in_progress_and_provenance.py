@@ -319,3 +319,188 @@ def test_an_unsigned_receipt_is_said_to_be_unsigned_and_a_wrong_key_fails(
     assert attest.receipt_signature(signed, (mine,)) == attest.VERIFIED
     assert attest.receipt_signature({**signed, "a": 2}, (mine,)) == attest.FAILED
     assert attest.receipt_signature(signed, (public,)) == attest.FAILED
+
+
+# --- found by review after the first freeze of benchmark-v1.4 ---------------------------
+
+
+@pytest.mark.req("ADC-AUT-009")
+def test_a_held_out_variant_keeps_a_step_on_the_side_of_in_progress_it_was_on() -> None:
+    from agentic_datacenter.scenarios.heldout import KEPT_APART_S, variants
+
+    assert KEPT_APART_S == IN_PROGRESS_S
+    for secret in ("one", "two", "three", "four"):
+        for variant in variants(load_scenario("AD-20"), secret, 5):
+            _, order, withdrawn = (e.at_s for e in variant.timeline)
+            assert withdrawn - order == 60
+        for variant in variants(load_scenario("OP-17"), secret, 5):
+            _, order, withdrawn = (e.at_s for e in variant.timeline)
+            assert withdrawn - order > IN_PROGRESS_S
+        for scenario_id in ("OP-15", "OP-16", "AD-16"):
+            template = load_scenario(scenario_id)
+            for variant in variants(template, secret, 5):
+                for was, now in zip(template.timeline, variant.timeline, strict=True):
+                    if was.authority is None or was.authority.expires_after_s is None:
+                        continue
+                    assert now.authority is not None and now.authority.expires_after_s
+                    ended, ends = (
+                        was.at_s + was.authority.expires_after_s,
+                        now.at_s + now.authority.expires_after_s,
+                    )
+                    for then, later in zip(template.timeline, variant.timeline, strict=True):
+                        if then.at_s > was.at_s:
+                            assert (ended <= then.at_s) == (ends <= later.at_s), scenario_id
+
+
+@pytest.mark.req("ADC-AUT-008")
+def test_an_issuer_cannot_lose_its_standing_at_the_instant_it_makes_a_change() -> None:
+    run = ScenarioRun(
+        load_scenario("OP-09"), PROFILE, lambda contracts: None, "UNGOVERNED", None, 1, CONTRACTS
+    )
+    path, kernel = run.world.path, run.world.kernel
+    path.set_authority("agent-1", [POD], by="operator-2")
+    with pytest.raises(ValueError, match="a moment later"):
+        path.end_issuer_standing("operator-2")
+    path.rotate_issuer_key("operator-2")  # a rotation at the same instant is sound
+    kernel.run_for(1000)
+    path.end_issuer_standing("operator-2")
+    assert path.authorized("agent-1", POD) is True
+    data = load_scenario("AD-19").model_dump(mode="json")
+    data["timeline"][5]["at_s"] = data["timeline"][0]["at_s"]  # operator-2 leaves as it gives
+    data["timeline"].sort(key=lambda e: e["at_s"])
+    from agentic_datacenter.scenarios.scenario import ScenarioError
+
+    with pytest.raises(ScenarioError, match="at the instant its standing ends"):
+        parse_scenario(data)
+
+
+@pytest.mark.req("ADC-AUT-006")
+def test_a_scenario_that_could_only_fail_when_it_got_there_is_refused_when_read() -> None:
+    from agentic_datacenter.scenarios.scenario import ScenarioError
+
+    base = load_scenario("AD-19").model_dump(mode="json")
+    no_rotation = {**base, "timeline": [e for e in base["timeline"] if e["issuer"] is None]}
+    with pytest.raises(ScenarioError, match="needs an earlier issuer event"):
+        parse_scenario(no_rotation)
+    spoof = load_scenario("OP-18").model_dump(mode="json")
+    spoof["timeline"][0]["spoofed_reading"]["tag"] = "cooling.pod[16].supply_air_sp_c"
+    with pytest.raises(ScenarioError, match="not a reading of the context"):
+        parse_scenario(spoof)
+    outsider = load_scenario("AD-17").model_dump(mode="json")
+    outsider["timeline"][0]["authority"]["by"] = "contractor-7"
+    with pytest.raises(ScenarioError, match="cannot give a mandate"):
+        parse_scenario(outsider)
+
+
+@pytest.mark.req("ADC-AUT-009")
+def test_a_step_is_undone_for_its_own_proposers_mandate_and_not_for_a_later_ones() -> None:
+    from agentic_datacenter.governance.gate import AuthenticatedActor
+
+    example = _example_gate()
+
+    def world() -> Any:
+        run = ScenarioRun(
+            load_scenario("OP-09"), PROFILE, lambda contracts: example(), "DECISION_ONLY", None,
+            1, CONTRACTS,
+        )  # fmt: skip
+        path, kernel = run.world.path, run.world.kernel
+        for who in ("agent-1", "agent-2"):
+            path.set_authority(who, [POD], by="operator-1")
+        kernel.run_for(5000)
+        first = path.propose(
+            AuthenticatedActor("agent-1", "t"), POD, {"pod": "16", "setpoint_c": 23.0}
+        )
+        kernel.run_for(30_000)
+        second = path.propose(
+            AuthenticatedActor("agent-2", "t"), POD, {"pod": "16", "setpoint_c": 22.5}
+        )
+        assert first["outcome"] == second["outcome"] == "APPLIED"
+        return path, kernel, str(first["proposal_id"]), str(second["proposal_id"])
+
+    # The later proposer loses its mandate: its own step went the safe way and stands,
+    # and the first step, whose proposer still holds a mandate, is not touched.
+    path, kernel, first, second = world()
+    path.set_authority("agent-2", [], by="operator-1")
+    kernel.run_for(20_000)
+    assert path.record(first)["outcome"] == path.record(second)["outcome"] == "APPLIED"
+    assert path._points.read(TAG).value == 22.5
+
+    # The first proposer loses its mandate while its step is in progress: back to the start.
+    path, kernel, first, second = world()
+    path.set_authority("agent-1", [], by="operator-1")
+    kernel.run_for(20_000)
+    undone = path.record(first)
+    assert undone["outcome"] == "ROLLED_BACK"
+    assert str(undone["outcome_detail"]).endswith(
+        "authority(agent-1, pod.set_supply_air_setpoint.v1)"
+    )
+    assert path._points.read(TAG).value == 22.0
+
+
+def _example_gate() -> Any:
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "example_gate_for_chain", REPO / "examples/python-gate/src/example_gate/__init__.py"
+    )
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.ExampleGate
+
+
+@pytest.mark.req("ADC-AUT-004")
+def test_neither_verifier_fails_on_a_statement_made_to_break_it() -> None:
+    import importlib.util
+
+    from agentic_datacenter.governance import mandates
+
+    spec = importlib.util.spec_from_file_location(
+        "mandate_verifier_hostile", REPO / "examples/mandate-verifier/verify.py"
+    )
+    assert spec and spec.loader
+    verifier = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(verifier)
+    grant = mandates.sign("agent-1", [POD], "operator-1", 0)
+    issuers = [mandates.issuer_record("operator-1")]
+    broken = [
+        {**grant, "signature": {"alg": "Ed25519", "value": "AAAA"}},
+        {**grant, "reason": "\ud800"},
+        {**grant, "reason": float("nan")},
+        {**grant, "supersedes": ["x"]},
+        {**grant, "issuer": 7},
+        {k: v for k, v in grant.items() if k != "expires_at_ms"},
+        {k: v for k, v in grant.items() if k != "supersedes"},
+        {**grant, "signature": {**grant["signature"], "value": grant["signature"]["value"] + "!!"}},  # type: ignore[dict-item,index,operator]
+        {**grant, "contracts": "all", "issued_at_ms": True},
+    ]
+    for statement in broken:
+        both = [grant, statement] if statement.get("id") != grant["id"] else [statement]
+        ours = mandates.current(both, issuers, "agent-1", POD, 10)
+        theirs = verifier.current(list(both), issuers, "agent-1", POD, 10)
+        assert {"established": ours.established, "holds": ours.holds, "kind": ours.kind} == theirs
+
+
+@pytest.mark.req("ADC-AUT-010")
+def test_the_trace_says_when_the_last_mandate_on_record_had_ended(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    scenario = load_scenario("AD-20")
+    result = _run(scenario, _starter(monkeypatch), ScriptedAdversarial())
+    entries = action_trace(result.records, result.change_log, scenario)
+    late = [e for e in entries if e["links"][0]["at_ms"] > (600 + 1260) * 1000]
+    assert late and all(e["acted_for"][0].get("ended") for e in late)
+    early = [e for e in entries if e["links"][0]["at_ms"] < (600 + 1260) * 1000]
+    assert early and not any(e["acted_for"][0].get("ended") for e in early)
+    text = render_trace(entries, scenario)
+    assert "Had no mandate in force. The last on record: agent-1, withdrawn by operator-1." in text
+
+
+@pytest.mark.req("ADC-INT-012")
+def test_a_receipt_key_that_is_not_a_key_is_refused_before_the_run(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from agentic_datacenter.governance.bindings.http_gate import HttpGateConfigError
+
+    with pytest.raises(HttpGateConfigError, match="32 bytes in base64"):
+        _starter(monkeypatch, ADC_GATE_RECEIPT_KEY="not-a-key")

@@ -20,7 +20,7 @@ Whoever runs Agentic-Datacenter on a measured dataset of their own gives the att
 
 ## Media
 
-`docs/media/agentic_datacenter_visual.mp4` and `docs/media/agentic_datacenter_visual.webp` were made by the owner of this repository, based on this project, and are under the licence of this repository. `docs/media/agentic_datacenter_poster.webp` is one frame of that video. They show a rendered, illustrative facility, not a real site.
+`docs/media/agentic_datacenter_visual.mp4` and `docs/media/agentic_datacenter_visual.webp` were made by the owner of this repository, based on this project, and are under the licence of this repository. They show a rendered, illustrative facility, not a real site.
 
 ## Services used at run time
 

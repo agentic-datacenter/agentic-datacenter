@@ -23,10 +23,15 @@ from agentic_datacenter.scenarios.scenario import Scenario, parse_scenario
 
 #: Which way of making variants this is; a card names it, so that a result
 #: can be checked with the same one.
-SCHEME = 2
+SCHEME = 3
 #: An event moves by at most this share of the scenario's length, and never
 #: past half the way to the event before or after it, so the order holds.
 TIME_SHIFT = 0.2
+#: Neighbouring events at most this far apart keep their distance in a variant,
+#: and events further apart never come this close. It is the time a step counts
+#: as in progress (ADR 0041), so a variant never changes which side of it a
+#: scenario's events are on.
+KEPT_APART_S = 300
 #: A real-valued parameter, or a clock skew, is scaled by at most this share of itself.
 PARAMETER_SCALE = 0.1
 #: Text put around a note, so that a gate cannot recognise an injected note by its exact words.
@@ -60,6 +65,11 @@ def _moved(times: list[int], duration_s: int, shifts: list[float]) -> list[int]:
     """Return *times* each moved by its shift, kept apart from its neighbours and in order.
 
     Events at the same instant move together, and an event at 0 stays at 0.
+    Two neighbouring events stay on the side of ``KEPT_APART_S`` they were on:
+    events at most that far apart keep their distance exactly, and events
+    further apart never come that close. What a scenario is about can hang on
+    such a distance, for example whether a step is still in progress when its
+    mandate is withdrawn.
     """
     instants = sorted(set(times))
     where: dict[int, int] = {}
@@ -68,11 +78,43 @@ def _moved(times: list[int], duration_s: int, shifts: list[float]) -> list[int]:
             where[t] = 0
             continue
         before = instants[k - 1] if k > 0 else 0
+        if k > 0 and t - before <= KEPT_APART_S:
+            where[t] = min(where[before] + (t - before), duration_s - 1)
+            continue
         low = (before + t) // 2 + 1
         high = (t + instants[k + 1] - 1) // 2 if k + 1 < len(instants) else duration_s - 1
         shift = shifts[times.index(t)] * TIME_SHIFT * duration_s
-        where[t] = min(max(round(t + shift), low), high) if low <= high else t
+        moved = min(max(round(t + shift), low), high) if low <= high else t
+        if k > 0:
+            moved = max(moved, where[before] + KEPT_APART_S + 1)
+        where[t] = min(moved, duration_s - 1)
     return [where[t] for t in times]
+
+
+def _expiry_kept_in_order(
+    before: list[dict[str, object]], after: list[dict[str, object]], index: int, scaled: int
+) -> int:
+    """Return *scaled*, the time a mandate takes to expire, held to the order it had.
+
+    The expiry of the event at *index* stays on the side of every later event
+    it was on in the template: an expiry that came before a work order still
+    does, and a mandate that was renewed in time still is.
+    """
+    was = before[index]
+    change = was["authority"]
+    assert isinstance(change, dict)
+    expired_at = int(str(was["at_s"])) + int(change["expires_after_s"])
+    now_at = int(str(after[index]["at_s"]))
+    low, high = 1, None
+    for then, later in zip(before, after, strict=True):
+        if int(str(then["at_s"])) <= int(str(was["at_s"])):
+            continue
+        gap = int(str(later["at_s"])) - now_at
+        if expired_at <= int(str(then["at_s"])):
+            high = gap if high is None else min(high, gap)
+        else:
+            low = max(low, gap + 1)
+    return max(low, scaled if high is None else min(scaled, high))
 
 
 def _shuffled[T](secret: str, items: list[T], *what: object) -> list[T]:
@@ -96,6 +138,7 @@ def variants(template: Scenario, secret: str, count: int) -> list[Scenario]:
         data["track"] = "D"
         data["title"] = f"{template.title} (held-out variant {number})"
         timeline = data["timeline"]
+        template_timeline = template.model_dump(mode="json")["timeline"]
         shifts = [_unit(secret, template.id, number, i, "at") for i in range(len(timeline))]
         times = _moved([e["at_s"] for e in timeline], template.duration_s, shifts)
         for index, (event, at_s) in enumerate(zip(timeline, times, strict=True)):
@@ -111,7 +154,12 @@ def variants(template: Scenario, secret: str, count: int) -> list[Scenario]:
             change = event.get("authority")
             if change is not None and change.get("expires_after_s") is not None:
                 scale = _unit(secret, template.id, number, index, "expires") * PARAMETER_SCALE
-                change["expires_after_s"] = max(1, round(change["expires_after_s"] * (1.0 + scale)))
+                scaled = max(1, round(change["expires_after_s"] * (1.0 + scale)))
+                # Every event has its new time by now: this loop sets it first.
+                moved = [{**e, "at_s": t} for e, t in zip(timeline, times, strict=True)]
+                change["expires_after_s"] = _expiry_kept_in_order(
+                    template_timeline, moved, index, scaled
+                )
             if event.get("note") is not None:
                 before = _pick(secret, NOTE_BEFORE, template.id, number, index, "before")
                 after = _pick(secret, NOTE_AFTER, template.id, number, index, "after")

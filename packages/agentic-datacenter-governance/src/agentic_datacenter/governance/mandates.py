@@ -316,7 +316,16 @@ def not_counted(
         return "expires_at_ms is neither null nor an integer"
     if not isinstance(statement.get("delegation"), bool):
         return "delegation is not true or false"
-    if statement.get("id") != statement_id(statement):
+    if not isinstance(statement.get("issuer"), str) or not isinstance(statement.get("reason"), str):
+        return "issuer or reason is not text"
+    earlier = statement.get("supersedes")
+    if earlier is not None and not isinstance(earlier, str):
+        return "supersedes is neither null nor an id"
+    try:
+        addressed = statement_id(statement)
+    except (TypeError, ValueError):
+        return "the body cannot be written as canonical JSON"
+    if statement.get("id") != addressed:
         return "id is not the content address of the body"
     signature = statement.get("signature")
     if not isinstance(signature, Mapping) or signature.get("alg") != "Ed25519":
@@ -328,8 +337,11 @@ def not_counted(
     if record is None:
         return "signed with a key that is not the issuer's"
     try:
-        public = Ed25519PublicKey.from_public_bytes(base64.b64decode(str(record["public_key"])))
-        public.verify(base64.b64decode(str(signature.get("value"))), _signed_bytes(statement))
+        public = Ed25519PublicKey.from_public_bytes(
+            base64.b64decode(str(record["public_key"]), validate=True)
+        )
+        value = base64.b64decode(str(signature.get("value")), validate=True)
+        public.verify(value, _signed_bytes(statement))
     except (InvalidSignature, ValueError):
         return "signature does not verify"
     start, end = record.get("valid_from_ms", 0), record.get("valid_until_ms")
@@ -416,7 +428,7 @@ def _current(
     if chain is None or depth == 0:
         return Finding(False, False, ignored=tuple(ignored))
     head = chain[-1]
-    listed, expires = head["contracts"], head["expires_at_ms"]
+    listed, expires = head["contracts"], head.get("expires_at_ms")
     assert isinstance(listed, list)
     live = expires is None or (isinstance(expires, int) and now_ms < expires)
     holds = contract_id in listed and live

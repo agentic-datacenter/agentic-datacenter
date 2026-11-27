@@ -279,6 +279,17 @@ class GovernedPath:
         events = self._issuer_events.setdefault(issuer, [])
         if mandates.generation_at(events, now) is None:
             raise ValueError(f"the standing of {issuer} has already ended")
+        made_now = self._authority is not None and any(
+            (change.by or mandates.REGISTER) == issuer and change.time_ms == now
+            for changes in self._authority.values()
+            for change in changes
+        )
+        if kind == "ended" and made_now:
+            # A statement issued at the instant its key is retired cannot count,
+            # and the register would hold what no statement shows.
+            raise ValueError(
+                f"{issuer} made a change at this instant; its standing can end a moment later"
+            )
         events.append((kind, now))
         self._kernel.state.touch("governance.path")
 
@@ -371,7 +382,6 @@ class GovernedPath:
             return found
 
         both: list[Mapping[str, JsonValue]] = []
-        first_seen: dict[str, int] = {}
         # From the source of the mandate down to the principal.
         for who in [*reversed(self._lineage(principal)), principal]:
             both += mandates.issue(who, self._authority[who], generation)
@@ -934,32 +944,55 @@ class GovernedPath:
         return watch.trigger if now - watch.since_ms >= hold_s * 1000 else ""
 
     def _mandate_lost(self, watch: _Watch, now: int) -> str:
-        """Say why a step in progress is undone for want of a mandate; empty if it is not."""
+        """Say why a step in progress is undone for want of a mandate; empty if it is not.
+
+        The steps a watch would undo are those of its chain. Each is judged by
+        its own proposer, its own contract and the time of its own writes.
+        """
         if self._authority is None:
             return ""
-        record = next((r for r in self._records if r["proposal_id"] == watch.proposal_id), None)
-        if record is None or record.get("authorized") is not True:
-            return ""  # taken without a mandate: counted as that, and not this case
-        principal, contract_id = str(record["principal"]), str(record["contract_id"])
-        if self.authorized(principal, contract_id) is not False:
-            return ""
         tags = {tag for tag, _ in watch.writes}
-        written = [
-            w.time_ms for w in self._history if w.contract_id == contract_id and w.tag in tags
-        ]
-        if not written or now - max(written) > IN_PROGRESS_S * 1000:
-            return ""
-        contract = self.library.get(contract_id)
-        safe = contract.safe_direction() if contract is not None else None
+        standing = set(watch.chain or [watch.proposal_id])
+        for record in self._records:
+            if record["proposal_id"] not in standing or record.get("authorized") is not True:
+                continue  # taken without a mandate: counted as that, and not this case
+            principal, contract_id = str(record["principal"]), str(record["contract_id"])
+            if self.authorized(principal, contract_id) is not False:
+                continue
+            recent = any(
+                w.contract_id == contract_id and w.tag in tags
+                and now - w.time_ms <= IN_PROGRESS_S * 1000
+                for w in self._history
+            )  # fmt: skip
+            if not recent:
+                continue  # nothing of this contract was written lately: no need to read the log
+            marked = f"({record['proposal_id']})"
+            written = [
+                int(str(entry["time_ms"]))
+                for entry in self._service.change_log()
+                if entry["accepted"]
+                and entry["tag"] in tags
+                and str(entry["reason"]).endswith(marked)
+            ]
+            if not written or now - max(written) > IN_PROGRESS_S * 1000:
+                continue
+            contract = self.library.get(contract_id)
+            safe = contract.safe_direction() if contract is not None else None
+            if safe is not None and self._undo_is_safe(watch, safe):
+                return f"{MANDATE_ENDED_IN_PROGRESS}: authority({principal}, {contract_id})"
+        return ""
+
+    def _undo_is_safe(self, watch: _Watch, safe: str) -> bool:
+        """Whether writing every point of *watch* back moves it in the direction *safe*."""
         for tag, previous in watch.writes:
             current = self._points.read(tag).value
             numeric = isinstance(current, int | float) and isinstance(previous, int | float)
-            if not numeric or isinstance(current, bool) or safe is None:
-                return ""
+            if not numeric or isinstance(current, bool):
+                return False
             back = "decrease" if float(previous) < float(current) else "increase"
             if float(previous) != float(current) and back != safe:
-                return ""  # undoing would move the plant away from safety
-        return f"{MANDATE_ENDED_IN_PROGRESS}: authority({principal}, {contract_id})"
+                return False  # undoing would move the plant away from safety
+        return True
 
     def _premise_lost(self, watch: _Watch, now: int) -> str:
         lost = [

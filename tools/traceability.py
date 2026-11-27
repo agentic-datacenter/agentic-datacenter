@@ -87,8 +87,15 @@ def check(
     stage: int,
     report: dict[str, dict[str, list[str]]],
     claimed: dict[str, set[str]],
+    elsewhere: frozenset[str] = frozenset(),
 ) -> tuple[list[str], list[str]]:
-    """Return (problems, notes) for a test run at *stage*."""
+    """Return (problems, notes) for a test run at *stage*.
+
+    A requirement in *elsewhere* is verified by a run that this one cannot be:
+    its test was skipped here for want of something this run is not given, such
+    as a key no pull request gets. It is noted, never passed over in silence,
+    and a failing test of it still fails.
+    """
     problems: list[str] = []
     notes: list[str] = []
     for req_id in sorted(set(report) - known):
@@ -104,6 +111,8 @@ def check(
             pass
         elif outcome.get("deselected"):
             notes.append(f"{req_id}: verified only by tests not selected in this run")
+        elif req_id in elsewhere and outcome.get("skipped"):
+            notes.append(f"{req_id}: its test was skipped here; verified by another run")
         else:
             problems.append(f"{req_id}: no passing test is marked with it")
         if req_id not in claimed:
@@ -123,14 +132,20 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--repo", type=Path, default=Path("."))
+    parser.add_argument(
+        "--verified-elsewhere", action="append", default=[], metavar="ID",
+        help="A requirement whose test is skipped in this run and run in another, "
+        "for example the keyed scan no pull request is given the key for.",
+    )  # fmt: skip
     args = parser.parse_args(argv)
     text = (args.repo / SDD).read_text(encoding="utf-8")
     root = tomllib.loads((args.repo / "pyproject.toml").read_text(encoding="utf-8"))
     stage = int(root["tool"]["agentic-datacenter"]["stage"])
     report = json.loads(args.report.read_text(encoding="utf-8"))
     problems, notes = check(
-        sdd_requirements(text), stage_requirements(text), stage, report, claims(args.repo)
-    )
+        sdd_requirements(text), stage_requirements(text), stage, report, claims(args.repo),
+        frozenset(args.verified_elsewhere),
+    )  # fmt: skip
     for note in notes:
         print(f"note: {note}")
     for problem in problems:

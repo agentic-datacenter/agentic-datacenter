@@ -39,7 +39,9 @@ def signed_bytes(statement: dict[str, Any]) -> bytes:
     body holds only strings, integers, booleans, null and lists of strings.
     """
     body = {name: statement.get(name) for name in SIGNED}
-    return json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+    return json.dumps(
+        body, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
+    ).encode()
 
 
 def counts(
@@ -63,7 +65,15 @@ def counts(
         return False
     if type(statement.get("delegation")) is not bool:
         return False
-    if statement.get("id") != "sha256:" + hashlib.sha256(signed_bytes(statement)).hexdigest():
+    if type(statement.get("issuer")) is not str or type(statement.get("reason")) is not str:
+        return False
+    if statement.get("supersedes") is not None and type(statement["supersedes"]) is not str:
+        return False
+    try:
+        addressed = "sha256:" + hashlib.sha256(signed_bytes(statement)).hexdigest()
+    except (TypeError, ValueError):
+        return False  # a body that cannot be written as canonical JSON
+    if statement.get("id") != addressed:
         return False
     signature = statement.get("signature")
     if not isinstance(signature, dict) or signature.get("alg") != "Ed25519":
@@ -73,28 +83,32 @@ def counts(
         (
             i
             for i in issuers
-            if i.get("name") == statement.get("issuer") and i.get("key_id") == signature["key_id"]
+            if i.get("name") == statement.get("issuer")
+            and i.get("key_id") == signature.get("key_id")
         ),
         None,
     )
     if key is None:
         return False
     try:
-        public = Ed25519PublicKey.from_public_bytes(base64.b64decode(key["public_key"]))
-        public.verify(base64.b64decode(str(signature.get("value"))), signed_bytes(statement))
+        public = Ed25519PublicKey.from_public_bytes(
+            base64.b64decode(key["public_key"], validate=True)
+        )
+        value = base64.b64decode(str(signature.get("value")), validate=True)
+        public.verify(value, signed_bytes(statement))
     except (InvalidSignature, ValueError, KeyError):
         return False
     # A key signs only while it is valid: from valid_from_ms, until valid_until_ms.
-    if issued < key["valid_from_ms"]:
+    if type(key.get("valid_from_ms")) is not int or issued < key["valid_from_ms"]:
         return False
-    if key["valid_until_ms"] is not None and issued >= key["valid_until_ms"]:
+    if key.get("valid_until_ms") is not None and issued >= key.get("valid_until_ms"):
         return False
     # The same key must still have been valid when the site first saw the statement.
     if first_seen is not None:
         seen = first_seen.get(statement["id"])
         if seen is None or seen < issued or seen > now_ms:
             return False
-        if key["valid_until_ms"] is not None and seen >= key["valid_until_ms"]:
+        if key.get("valid_until_ms") is not None and seen >= key.get("valid_until_ms"):
             return False
     # Only an issuer the site trusts gives a mandate of its own. Anyone else
     # can only pass on what they hold, and must say so.
@@ -116,8 +130,8 @@ def chain_of(
         for s in statements
         if s.get("principal") == principal and counts(s, issuers, now_ms, first_seen)
     }
-    roots = [s for s in counted.values() if s["supersedes"] is None]
-    followers = {s["supersedes"]: s for s in counted.values() if s["supersedes"] is not None}
+    roots = [s for s in counted.values() if s.get("supersedes") is None]
+    followers = {s["supersedes"]: s for s in counted.values() if s.get("supersedes") is not None}
     one_chain = (
         len(roots) == 1
         and len(followers) == len(counted) - 1
@@ -148,7 +162,7 @@ def current(
     # Rule 3: the head decides. It holds what it lists until it expires, and a
     # delegation only while whoever passed it on holds the contract too.
     head = chain[-1]
-    live = head["expires_at_ms"] is None or now_ms < head["expires_at_ms"]
+    live = head.get("expires_at_ms") is None or now_ms < head["expires_at_ms"]
     holds = contract in head["contracts"] and live
     if holds and head["delegation"]:
         giver = current(

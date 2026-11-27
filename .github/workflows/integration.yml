@@ -23,7 +23,8 @@ jobs:
       - name: Install without the REMORA binding (ADC-PIN-001)
         run: uv sync --frozen --group iec61850
       - run: uv run python -c "import importlib.util as u, sys; sys.exit(u.find_spec('remora') is not None)"
-      - run: uv run pytest
+      - name: Whole suite, one process per core
+        run: uv run pytest -n auto --dist loadfile
   without-iec61850:
     runs-on: ubuntu-24.04
     container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
@@ -35,7 +36,8 @@ jobs:
       - name: Install without the IEC 61850 package (ADC-IEC-005)
         run: uv sync --frozen
       - run: uv run python -c "import importlib.util as u, sys; sys.exit(u.find_spec('agentic_datacenter_iec61850') is not None)"
-      - run: uv run pytest
+      - name: Whole suite, one process per core
+        run: uv run pytest -n auto --dist loadfile
   protocol:
     runs-on: ubuntu-24.04
     container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58

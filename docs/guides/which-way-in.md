@@ -49,9 +49,24 @@ A local command needs no service or public registration. Move to the HTTP bindin
 ```sh
 export ADC_GATE_COMMAND="python examples/command-gate/adapter.py" ADC_GATE_NAME=example_command
 export ADC_GATE_CONTEXT=1 ADC_RECEIPTS_FILE=build/receipts.jsonl
+rm -f build/receipts.jsonl    # the starter adds to the file; start each run with none
 uv run agentic-datacenter scenario run OP-03 --gate command_gate --seconds 1800 --out build/receipts-run
 uv run agentic-datacenter gate verify-receipts build/receipts-run build/receipts.jsonl --require-all
 ```
+
+To have the signatures of your receipts checked too, sign them and give the public key. The starter signs with an Ed25519 key made from a seed of your own, 64 hexadecimal digits:
+
+```sh
+export ADC_RECEIPTS_KEY_SEED=$(python -c "import secrets; print(secrets.token_hex(32))")
+export ADC_RECEIPTS_FILE=build/receipts-signed.jsonl
+PUB=$(uv run python examples/command-gate/adapter.py --public-key)
+rm -f build/receipts-signed.jsonl
+uv run agentic-datacenter scenario run OP-03 --gate command_gate --seconds 1800 --out build/receipts-signed-run
+uv run agentic-datacenter gate verify-receipts build/receipts-signed-run build/receipts-signed.jsonl \
+    --require-all --require-signed --key "$PUB"
+```
+
+It ends with `signatures: 5 verified, 0 failed, 0 not signed`. Change one line of the file and it fails. With `ADC_GATE_RECEIPT_KEY="$PUB"` set, the same check is made on each answer during the run, and the action trace says `Signature: verified`. Keep a receipt to text, whole numbers, true, false and null: the signature is over the receipt without its `signature`, as JSON with sorted keys and no whitespace (ADR 0041).
 
 If your integration needs new context or identity material, describe the missing field or behavior in an issue. You can identify your system when you choose to participate.
 

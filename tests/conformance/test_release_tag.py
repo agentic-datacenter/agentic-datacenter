@@ -128,6 +128,14 @@ def test_only_a_tag_signed_by_a_listed_key_verifies(tmp_path: Path) -> None:
     assert "not at the commit being built" in tool.problem("v1.0.0", signers, repo, "0" * 40)
     assert tool.main(["v1.0.1", "--signers", str(signers), "--repo", str(repo)]) == 1
 
+    # A signed tag put under another name is an old release offered as a new one.
+    obj = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "refs/tags/v1.0.0"],
+        check=True, capture_output=True, text=True,
+    ).stdout.strip()  # fmt: skip
+    _git(repo, "update-ref", "refs/tags/v2.0.0", obj)
+    assert "was not signed as v2.0.0" in tool.problem("v2.0.0", signers, repo, commit=head)
+
     # A key for another purpose than git does not sign a release.
     public = ours.with_suffix(".pub").read_text(encoding="utf-8").split()
     elsewhere = tmp_path / "file_signers"
