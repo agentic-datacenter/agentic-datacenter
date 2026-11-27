@@ -115,7 +115,7 @@ def test_one_job_runs_the_whole_suite_without_the_package_and_one_runs_the_proto
     assert "find_spec('agentic_datacenter_iec61850') is not None" in without, (
         "it checks the package is absent"
     )
-    assert "uv run pytest" in without.splitlines()
+    assert "uv run pytest -n auto --dist loadfile" in without.splitlines()
     protocol = "\n".join(step.get("run", "") for step in jobs["protocol"]["steps"])
     assert "uv sync --frozen --group iec61850" in protocol
     assert "library.version()" in protocol, "it fails, not skips, if the library does not load"
