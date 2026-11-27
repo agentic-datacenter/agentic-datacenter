@@ -26,7 +26,7 @@ Text links: [Explore the demo](docs/demo/result-report.md) · [Bring your datace
 
 ## What you can discover
 
-See how an AI agent's decisions affect temperatures, IT load, energy and human approvals, and replay every blocked command as if it had run. In a development run with scripted agents, the simulated plant was harmed in 1 of 3 scenarios without a safety control and 0 of 3 with REMORA's governed execution. [Inspect the result, its method and its limits](docs/demo/result-report.md). This is not a benchmark result, and not proof of production safety.
+See how an AI agent's decisions affect temperatures, IT load, energy and human approvals, and replay every blocked command as if it had run. In a development run with scripted agents, the simulated plant was harmed in 1 of 3 scenarios without a safety control and 0 of 3 with a control that governs execution. [Inspect the result, its method and its limits](docs/demo/result-report.md). This is not a benchmark result, and not proof of production safety.
 
 ## Try it locally
 
@@ -44,7 +44,7 @@ For a facility report, follow the [operator quickstart](docs/guides/bring-your-o
 
 ## Participate
 
-[How the benchmark works](docs/bench/HOW-IT-WORKS.md) · [Public benchmark](docs/bench/PUBLIC_TEST.md) · [Register a gate](https://github.com/agentic-datacenter/agentic-datacenter/issues/new?template=gate-registration.yml) · [Contribute measured data](docs/calibration/contribute-data.md) · [Contributing](CONTRIBUTING.md)
+[How the benchmark works](docs/bench/HOW-IT-WORKS.md) · [Enrolled systems](docs/bench/participants.md) · [Public benchmark](docs/bench/PUBLIC_TEST.md) · [Register a gate](https://github.com/agentic-datacenter/agentic-datacenter/issues/new?template=gate-registration.yml) · [Contribute measured data](docs/calibration/contribute-data.md) · [Contributing](CONTRIBUTING.md)
 
 Registration is always open. Public tests use frozen versions, and results on a facility of your own are never ranked as benchmark results. See [fairness](docs/bench/FAIRNESS.md) and [release checks](docs/guides/release-gate.md).
 

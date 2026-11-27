@@ -465,3 +465,39 @@ def test_a_chain_sends_context_only_where_asked_counts_failures_and_asks_no_one_
     asking = Captured(answer={"verdict": "VERIFY", "required_approvers": 2})
     result = _run(ChainGate({"no": Captured(answer={"verdict": "DENY"}), "ask": asking}), 600)
     assert all(r["verdict"] == "DENY" and r["required_approvers"] == 0 for r in result.records)
+
+
+@pytest.mark.req("ADC-INT-012")
+def test_what_the_manifest_leaves_out_is_hashed_for_the_execution_and_a_verifier_of_ones_own_runs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from agentic_datacenter.scenarios.evidence import verify_bundle
+
+    receipts = tmp_path / "receipts.jsonl"
+    monkeypatch.chdir(REPO)
+    monkeypatch.setenv("ADC_GATE_COMMAND", shlex.join([sys.executable, str(ADAPTER)]))
+    monkeypatch.setenv("ADC_GATE_NAME", "example_command")
+    monkeypatch.setenv("ADC_RECEIPTS_FILE", str(receipts))
+    bundle = tmp_path / "bundle"
+    run = ["run", "OP-03", "--gate", "command_gate", "--seconds", "900", "--out", str(bundle)]
+    assert scenario_cli(run) == 0
+    record = json.loads((bundle / "execution.json").read_text())
+    assert set(record["files"]) == {"correlation.jsonl"}
+    assert "execution.json" not in json.loads((bundle / "manifest.json").read_text())["files"]
+    assert verify_bundle(bundle) == []
+
+    # The system's own verifier is put every line, and its word decides.
+    accepts = shlex.join([sys.executable, "-c", "import json,sys; json.load(sys.stdin)"])
+    refuses = shlex.join([sys.executable, "-c", "import sys; sys.exit(3)"])
+    capsys.readouterr()
+    assert gate_cli(["verify-receipts", str(bundle), str(receipts), "--verifier", accepts]) == 0
+    assert json.loads(capsys.readouterr().out)["signatures"]["failed"] == []
+    assert gate_cli(["verify-receipts", str(bundle), str(receipts), "--verifier", refuses]) == 1
+    assert json.loads(capsys.readouterr().out)["signatures"]["verified"] == []
+
+    # A changed line of the correlation is found, though the manifest does not list the file.
+    lines = (bundle / "correlation.jsonl").read_text().splitlines()
+    (bundle / "correlation.jsonl").write_text("\n".join(lines[1:]) + "\n")
+    assert verify_bundle(bundle) == ["correlation.jsonl does not match the hash in execution.json"]
+    (bundle / "execution.json").unlink()
+    assert "execution.json" in verify_bundle(bundle)[0]

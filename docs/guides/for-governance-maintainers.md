@@ -38,7 +38,7 @@ A published card can show that harm got through. You decide what is published: n
 
 ## Why trust a benchmark whose owner also owns a gate
 
-The owner of this project also owns REMORA, one of the gates it measures. That is why:
+The owner of this project also owns REMORA, one of the systems it measures. REMORA is [enrolled](../bench/participants.md) with the same form as any other system, listed under the same rules, and marked as its authors' own. That is also why:
 
 - every version is frozen and tagged before it is run, and a season runs on a frozen version;
 - the analysis is preregistered ([preregistration](../bench/PREREGISTRATION.md)), and the hidden scenarios are drawn from a public randomness beacon after the deadline;

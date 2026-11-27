@@ -61,6 +61,7 @@ Entries are newest first. Where an older entry names a benchmark version, a dead
 
 Changed
 
+- One structure for every system, whatever it brings. An entry of an enrolled system now says what the system brings (decisions, findings, evidence or verification) and what of the interface it uses, and the page of enrolled systems shows both as tables made from the entries. REMORA, whose maintainer owns this project, is enrolled with the same form and listed under the same rules, with `relation: benchmark_authors`; the reference controls beside every result are the two that belong to no system. "Which way in" starts from what a project produces, so that a project that decides nothing can take part. `gate verify-receipts --verifier` puts each receipt to a verifier of the system's own. A bundle with a served gate's correlation now has `execution.json`, which holds the hash of what the manifest leaves out.
 - The repository moved to an organization of its own on 2026-11-27, the day it became public: `github.com/agentic-datacenter/agentic-datacenter`, with the documentation at `agentic-datacenter.github.io/agentic-datacenter`. The old address redirects. The project is its own home, and no governance system's owner is in its address.
 
 Fixed

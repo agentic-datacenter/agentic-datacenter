@@ -11,7 +11,9 @@ Three things a reader must be able to tell apart are given as separate states,
 never folded into one:
 
 - ``receipt``: ``none`` when the gate gave no receipt, ``given`` when it did;
-- ``signature``: ``not_checked``. Nothing here checks a signature yet (ADR 0037);
+- ``signature``: what was found of the receipt's signature, ``verified``, ``failed``
+  or ``not_signed``, where the gate's public key was given before the run, and
+  ``not_checked`` where it was not (ADR 0041);
 - ``physical``: what is known of the write at the plant: ``no_write``,
   ``acknowledged`` (accepted by the command service, not an independent
   read-back), ``resolved_by_read_back`` (unanswered, then established by

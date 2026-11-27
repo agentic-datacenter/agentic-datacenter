@@ -2,6 +2,19 @@
 
 Choose a path by what your integration produces. A local command is the shortest path to a first result for a tool that can already return a decision. What a maintainer gets, and what it costs, is on [For maintainers of governance systems](for-governance-maintainers.md).
 
+## What does your project bring?
+
+A project need not be a gate to take part. Start from what yours produces.
+
+| Your project | Brings | The shortest way in | What you get back |
+| --- | --- | --- | --- |
+| Decides whether an action may run: a policy engine, a guard, an approval flow | **decisions** | [Try a local adapter](#try-a-local-adapter), below | What your decisions did to the plant: harm let through, sound steps blocked, people asked, beside two reference controls |
+| Knows something about who is acting and decides nothing: identity, delegation, trust or risk signals | **findings** | The same adapter, with `ADC_GATE_PROFILE=SHADOW`. Answer with your finding, for example `"authority_holds": false`, and any verdict. Nothing you say is executed. | How often your finding was what the register holds, on mandates that were withdrawn, expired, passed on or forged ([Signed mandates](bring-your-own-gate.md#signed-mandates-in-two-terminals)) |
+| Makes records of what happened: receipts, attestations, signed logs | **evidence** | Give a receipt with each answer, or export them as JSON lines ([Integration sequence](#integration-sequence)) | Each receipt checked against what happened in the run, and its signature with your key or your own verifier |
+| Checks records others made: a verifier, an auditor, an observer | **verification** | No adapter. Run any scenario, and read its evidence bundle: `manifest.json`, `decisions.jsonl`, `action_trace.jsonl` and `execution.json` ([Evidence model](../reference/evidence-model.md)) | A bundle with known contents to run your verifier against, the same bytes for everyone who makes it |
+
+One project may bring several. Whichever it is, [enrolment](../bench/participants.md) asks the same of everyone: what you bring, what of the interface you use, and how you stand to this project.
+
 ## Try a local adapter
 
 From the repository root after [setup](../index.md#try-it), run:
@@ -67,6 +80,8 @@ uv run agentic-datacenter gate verify-receipts build/receipts-signed-run build/r
 ```
 
 It ends with `signatures: 5 verified, 0 failed, 0 not signed`. Change one line of the file and it fails. With `ADC_GATE_RECEIPT_KEY="$PUB"` set, the same check is made on each answer during the run, and the action trace says `Signature: verified`. Keep a receipt to text, whole numbers, true, false and null: the signature is over the receipt without its `signature`, as JSON with sorted keys and no whitespace (ADR 0041).
+
+If your receipts are signed another way, with another algorithm, canonical form or envelope, give your own verifier in place of a key: `--verifier "my-verify --strict"`. It is run once for each receipt line, with the line as JSON on standard input, and verifies it by exiting with status 0. What the receipt says is still checked against the run here; whether it is authentic is then yours to say.
 
 If your integration needs new context or identity material, describe the missing field or behavior in an issue. You can identify your system when you choose to participate.
 

@@ -691,6 +691,13 @@ def gate(argv: Sequence[str]) -> int:
         "signature as canonical JSON. May be given more than once (ADR 0041).",
     )  # fmt: skip
     receipts.add_argument(
+        "--verifier",
+        metavar="COMMAND",
+        help="Your own verifier, for a signature scheme or canonical form of your own. It is "
+        "run once for each receipt line, with the line as JSON on standard input, and "
+        "verifies it by exiting with status 0.",
+    )
+    receipts.add_argument(
         "--require-signed",
         action="store_true",
         help="With --key: also fail when a receipt line carries no signature.",
@@ -700,7 +707,7 @@ def gate(argv: Sequence[str]) -> int:
     if args.action == "verify-receipts":
         return _verify_receipts(
             args.decisions, args.receipts, args.require_all, args.allow_unknown,
-            tuple(args.key), args.require_signed,
+            tuple(args.key), args.require_signed, args.verifier,
         )  # fmt: skip
     installed = load_gates()
     if args.action == "list":
@@ -768,6 +775,7 @@ def _verify_receipts(
     allow_unknown: bool = False,
     keys: tuple[str, ...] = (),
     require_signed: bool = False,
+    verifier: str | None = None,
 ) -> int:
     """Run ``gate verify-receipts`` and return its exit status."""
     from agentic_datacenter.governance.bindings.http_gate import read_verdict
@@ -795,7 +803,21 @@ def _verify_receipts(
             "agentic-datacenter gate verify-receipts: --require-signed needs --key", file=sys.stderr
         )
         return 2
-    report = verify_receipts(records, given, read_verdict, keys)
+    check = None
+    if verifier:
+        import shlex  # noqa: PLC0415
+        import subprocess  # noqa: PLC0415
+
+        command = shlex.split(verifier)
+
+        def check(line: Any) -> bool:
+            done = subprocess.run(  # noqa: S603 - the user's own command, given on the command line
+                command, input=json.dumps(line, sort_keys=True), text=True,
+                capture_output=True, check=False, timeout=60,
+            )  # fmt: skip
+            return done.returncode == 0
+
+    report = verify_receipts(records, given, read_verdict, keys, check)
     print(json.dumps(report.as_dict(), indent=2, sort_keys=True))
     correlated = len(report.matched) + len(report.mismatched) + len(report.without_receipt)
     if not correlated:
@@ -810,7 +832,7 @@ def _verify_receipts(
     failed = failed or (require_all and bool(report.without_receipt))
     failed = failed or bool(report.bad_signature)
     failed = failed or (require_signed and bool(report.unsigned))
-    if keys:
+    if keys or verifier:
         print(
             f"signatures: {len(report.signed)} verified, {len(report.bad_signature)} failed, "
             f"{len(report.unsigned)} not signed",

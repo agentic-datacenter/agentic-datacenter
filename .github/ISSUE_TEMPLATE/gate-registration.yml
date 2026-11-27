@@ -78,6 +78,17 @@ body:
       render: text
 
   - type: checkboxes
+    id: provides
+    attributes:
+      label: What does your system bring? (optional)
+      description: "A system need not decide anything to take part. Tick what fits; it can be changed later."
+      options:
+        - label: "Decisions: it decides on each proposed action."
+        - label: "Findings: it states what it found, such as whether a mandate holds, without deciding."
+        - label: "Evidence: it gives records or receipts of its own that others can check."
+        - label: "Verification: it checks evidence that this project or another system made."
+
+  - type: checkboxes
     id: listing
     attributes:
       label: Listed by name (optional)
