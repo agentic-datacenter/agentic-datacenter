@@ -42,8 +42,17 @@ def signed_bytes(statement: dict[str, Any]) -> bytes:
     return json.dumps(body, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
 
 
-def counts(statement: dict[str, Any], issuers: list[dict[str, Any]], now_ms: int) -> bool:
-    """Rule 1: whether *statement* counts. One that does not is ignored."""
+def counts(
+    statement: dict[str, Any],
+    issuers: list[dict[str, Any]],
+    now_ms: int,
+    first_seen: dict[str, int] | None = None,
+) -> bool:
+    """Rule 1: whether *statement* counts. One that does not is ignored.
+
+    *first_seen* is when the site first saw each statement, by ``id``. The site
+    keeps it, not the issuer, so a statement cannot be dated back past it.
+    """
     if statement.get("schema") != SCHEMA:
         return False
     contracts, issued = statement.get("contracts"), statement.get("issued_at_ms")
@@ -80,6 +89,13 @@ def counts(statement: dict[str, Any], issuers: list[dict[str, Any]], now_ms: int
         return False
     if key["valid_until_ms"] is not None and issued >= key["valid_until_ms"]:
         return False
+    # The same key must still have been valid when the site first saw the statement.
+    if first_seen is not None:
+        seen = first_seen.get(statement["id"])
+        if seen is None or seen < issued or seen > now_ms:
+            return False
+        if key["valid_until_ms"] is not None and seen >= key["valid_until_ms"]:
+            return False
     # Only an issuer the site trusts gives a mandate of its own. Anyone else
     # can only pass on what they hold, and must say so.
     if not statement["delegation"] and key.get("root") is not True:
@@ -88,13 +104,17 @@ def counts(statement: dict[str, Any], issuers: list[dict[str, Any]], now_ms: int
 
 
 def chain_of(
-    statements: list[dict[str, Any]], issuers: list[dict[str, Any]], principal: str, now_ms: int
+    statements: list[dict[str, Any]],
+    issuers: list[dict[str, Any]],
+    principal: str,
+    now_ms: int,
+    first_seen: dict[str, int] | None = None,
 ) -> list[dict[str, Any]] | None:
     """Rule 2: the statements that count for *principal*, oldest first; None if not one chain."""
     counted = {
         s["id"]: s
         for s in statements
-        if s.get("principal") == principal and counts(s, issuers, now_ms)
+        if s.get("principal") == principal and counts(s, issuers, now_ms, first_seen)
     }
     roots = [s for s in counted.values() if s["supersedes"] is None]
     followers = {s["supersedes"]: s for s in counted.values() if s["supersedes"] is not None}
@@ -117,11 +137,12 @@ def current(
     principal: str,
     contract: str,
     now_ms: int,
+    first_seen: dict[str, int] | None = None,
     depth: int = MAX_DEPTH,
 ) -> dict[str, Any]:
     """Return ``{"established", "holds", "kind"}`` for *principal* and *contract* at *now_ms*."""
     nothing = {"established": False, "holds": False, "kind": ""}
-    chain = chain_of(statements, issuers, principal, now_ms)
+    chain = chain_of(statements, issuers, principal, now_ms, first_seen)
     if chain is None or depth == 0:
         return nothing
     # Rule 3: the head decides. It holds what it lists until it expires, and a
@@ -130,13 +151,15 @@ def current(
     live = head["expires_at_ms"] is None or now_ms < head["expires_at_ms"]
     holds = contract in head["contracts"] and live
     if holds and head["delegation"]:
-        giver = current(statements, issuers, head["issuer"], contract, now_ms, depth - 1)
+        giver = current(
+            statements, issuers, head["issuer"], contract, now_ms, first_seen, depth - 1
+        )
         if not giver["established"]:
             return nothing
         holds = giver["holds"]
     if holds:
         return {"established": True, "holds": True, "kind": ""}
-    before = ever_held(statements, issuers, principal, contract, now_ms, depth)
+    before = ever_held(statements, issuers, principal, contract, now_ms, first_seen, depth)
     return {"established": True, "holds": False, "kind": "ended" if before else "never_held"}
 
 
@@ -146,6 +169,7 @@ def ever_held(
     principal: str,
     contract: str,
     now_ms: int,
+    first_seen: dict[str, int] | None,
     depth: int,
 ) -> bool:
     """Whether a statement that counts ever gave *principal* the contract.
@@ -155,13 +179,13 @@ def ever_held(
     if depth == 0:
         return False
     for s in statements:
-        if s.get("principal") != principal or not counts(s, issuers, now_ms):
+        if s.get("principal") != principal or not counts(s, issuers, now_ms, first_seen):
             continue
         if contract not in s["contracts"]:
             continue
         if not s["delegation"]:
             return True
-        if ever_held(statements, issuers, s["issuer"], contract, now_ms, depth - 1):
+        if ever_held(statements, issuers, s["issuer"], contract, now_ms, first_seen, depth - 1):
             return True
     return False
 
@@ -174,6 +198,7 @@ def from_request(request: dict[str, Any]) -> dict[str, Any] | None:
     return current(
         signed["statements"], signed["issuers"], signed["principal"],
         request["proposal"]["contract_id"], request["premises"]["time_ms"],
+        signed.get("first_seen_ms"),
     )  # fmt: skip
 
 
@@ -186,7 +211,7 @@ def run_vectors(path: str) -> int:
         for query in case["queries"]:
             got = current(
                 case["statements"], case["issuers"], case["principal"],
-                query["contract"], query["time_ms"],
+                query["contract"], query["time_ms"], case.get("first_seen_ms"),
             )  # fmt: skip
             total += 1
             if got != query["expect"]:

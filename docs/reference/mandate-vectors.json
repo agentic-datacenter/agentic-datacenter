@@ -2220,6 +2220,374 @@
           }
         }
       ]
+    },
+    {
+      "name": "an unsigned withdrawal",
+      "about": "A withdrawal with no signature: someone says the mandate was withdrawn. It does not count, so the mandate is held as before. A withdrawal is evidence only when it is signed.",
+      "principal": "agent-1",
+      "issuers": [
+        {
+          "name": "operator-1",
+          "root": true,
+          "alg": "Ed25519",
+          "key_id": "sha256:34b542ff1c3b08c74a4d4f5dc193ad663c02f912dacce0cec7321f562c1e56d4",
+          "public_key": "vTkUhyXy1bEuJdzEoeltH5eODRzR2zHtmHaPA4jcqmc=",
+          "valid_from_ms": 0,
+          "valid_until_ms": null
+        },
+        {
+          "name": "operator-2",
+          "root": true,
+          "alg": "Ed25519",
+          "key_id": "sha256:364684273c9bff8daf6f4a28d10a7867a1afd487c18d2e03958a4b9624a6d476",
+          "public_key": "uEJtD2zhjbTVdZBN53PFIZ7DOceCGpCanzjs30tdDu4=",
+          "valid_from_ms": 0,
+          "valid_until_ms": null
+        }
+      ],
+      "statements": [
+        {
+          "schema": "agentic_datacenter.mandate/2",
+          "principal": "agent-1",
+          "contracts": [
+            "chw.rotate_lead_chiller.v1",
+            "pod.set_supply_air_setpoint.v1"
+          ],
+          "issuer": "operator-1",
+          "issued_at_ms": 0,
+          "expires_at_ms": null,
+          "supersedes": null,
+          "delegation": false,
+          "reason": "operator-1 gives agent-1 its mandate",
+          "id": "sha256:e39d12e69528b3f56b3f58a8d6ea99a771d2b45f60a01d1e123f04269611eb98",
+          "signature": {
+            "alg": "Ed25519",
+            "key_id": "sha256:34b542ff1c3b08c74a4d4f5dc193ad663c02f912dacce0cec7321f562c1e56d4",
+            "value": "aCejtxv+4NXnVrOb7P18QrHxxlTwueDLj/VJkISf4lcJCxDm5ODBeb9fQPUzugXML1BZuQgXWxpuZz/Z5oU4BQ=="
+          }
+        },
+        {
+          "schema": "agentic_datacenter.mandate/2",
+          "principal": "agent-1",
+          "contracts": [],
+          "issuer": "operator-1",
+          "issued_at_ms": 1000,
+          "expires_at_ms": null,
+          "supersedes": "sha256:e39d12e69528b3f56b3f58a8d6ea99a771d2b45f60a01d1e123f04269611eb98",
+          "delegation": false,
+          "reason": "operator-1 withdraws it",
+          "id": "sha256:de0a6b91146df08f50ac4dc55ed3a269ca810ed6cb876322e50b65e17c406ac4"
+        }
+      ],
+      "queries": [
+        {
+          "contract": "pod.set_supply_air_setpoint.v1",
+          "time_ms": 3000,
+          "expect": {
+            "established": true,
+            "holds": true,
+            "kind": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "dated back: first seen after the key was retired",
+      "about": "Signed with a retired key and dated one millisecond before it was retired. By its own date it would count. The site first saw it at 4000, after the key was retired at 3000, so it does not.",
+      "principal": "agent-1",
+      "issuers": [
+        {
+          "name": "operator-1",
+          "root": true,
+          "alg": "Ed25519",
+          "key_id": "sha256:34b542ff1c3b08c74a4d4f5dc193ad663c02f912dacce0cec7321f562c1e56d4",
+          "public_key": "vTkUhyXy1bEuJdzEoeltH5eODRzR2zHtmHaPA4jcqmc=",
+          "valid_from_ms": 0,
+          "valid_until_ms": 3000
+        },
+        {
+          "name": "operator-1",
+          "root": true,
+          "alg": "Ed25519",
+          "key_id": "sha256:c2d7905e779b68a3315353d9da477314f939d1495f4bfa6bcc84eb10a8a884a4",
+          "public_key": "RWhmjXHzUAw/pPiTmY2t2aJaZyylEa3TSw2vUgFoGgQ=",
+          "valid_from_ms": 3000,
+          "valid_until_ms": null
+        },
+        {
+          "name": "operator-2",
+          "root": true,
+          "alg": "Ed25519",
+          "key_id": "sha256:364684273c9bff8daf6f4a28d10a7867a1afd487c18d2e03958a4b9624a6d476",
+          "public_key": "uEJtD2zhjbTVdZBN53PFIZ7DOceCGpCanzjs30tdDu4=",
+          "valid_from_ms": 0,
+          "valid_until_ms": null
+        }
+      ],
+      "statements": [
+        {
+          "schema": "agentic_datacenter.mandate/2",
+          "principal": "agent-1",
+          "contracts": [
+            "chw.rotate_lead_chiller.v1",
+            "pod.set_supply_air_setpoint.v1"
+          ],
+          "issuer": "operator-1",
+          "issued_at_ms": 0,
+          "expires_at_ms": null,
+          "supersedes": null,
+          "delegation": false,
+          "reason": "operator-1 gives agent-1 its mandate",
+          "id": "sha256:e39d12e69528b3f56b3f58a8d6ea99a771d2b45f60a01d1e123f04269611eb98",
+          "signature": {
+            "alg": "Ed25519",
+            "key_id": "sha256:34b542ff1c3b08c74a4d4f5dc193ad663c02f912dacce0cec7321f562c1e56d4",
+            "value": "aCejtxv+4NXnVrOb7P18QrHxxlTwueDLj/VJkISf4lcJCxDm5ODBeb9fQPUzugXML1BZuQgXWxpuZz/Z5oU4BQ=="
+          }
+        },
+        {
+          "schema": "agentic_datacenter.mandate/2",
+          "principal": "agent-1",
+          "contracts": [],
+          "issuer": "operator-1",
+          "issued_at_ms": 1000,
+          "expires_at_ms": null,
+          "supersedes": "sha256:e39d12e69528b3f56b3f58a8d6ea99a771d2b45f60a01d1e123f04269611eb98",
+          "delegation": false,
+          "reason": "operator-1 withdraws it",
+          "id": "sha256:de0a6b91146df08f50ac4dc55ed3a269ca810ed6cb876322e50b65e17c406ac4",
+          "signature": {
+            "alg": "Ed25519",
+            "key_id": "sha256:34b542ff1c3b08c74a4d4f5dc193ad663c02f912dacce0cec7321f562c1e56d4",
+            "value": "JFI9GuNF71k8q6+iWLg1nvqcE2Ie2Kb+cBaIGHHfRkoBBrPoV5+3mcn8HQwpacoiPr19wfbNJ71u+j5RrI2lAA=="
+          }
+        },
+        {
+          "schema": "agentic_datacenter.mandate/2",
+          "principal": "agent-1",
+          "contracts": [
+            "chw.rotate_lead_chiller.v1",
+            "pod.set_supply_air_setpoint.v1"
+          ],
+          "issuer": "operator-1",
+          "issued_at_ms": 2999,
+          "expires_at_ms": null,
+          "supersedes": "sha256:de0a6b91146df08f50ac4dc55ed3a269ca810ed6cb876322e50b65e17c406ac4",
+          "delegation": false,
+          "reason": "dated back",
+          "id": "sha256:1edd6bf90caf643f40955308a06f7461f3a3c1b96e85306ca577b5e7f001c458",
+          "signature": {
+            "alg": "Ed25519",
+            "key_id": "sha256:34b542ff1c3b08c74a4d4f5dc193ad663c02f912dacce0cec7321f562c1e56d4",
+            "value": "WTYASPOE5tmtd5Hy/Rg51o/iJfa769hVHZNu3unQ7OAQlxvuVx4hj0w6QdETEI2CmrSBW5jumr+3ubY+yVVABA=="
+          }
+        }
+      ],
+      "queries": [
+        {
+          "contract": "pod.set_supply_air_setpoint.v1",
+          "time_ms": 4500,
+          "expect": {
+            "established": true,
+            "holds": false,
+            "kind": "ended"
+          }
+        }
+      ],
+      "first_seen_ms": {
+        "sha256:e39d12e69528b3f56b3f58a8d6ea99a771d2b45f60a01d1e123f04269611eb98": 0,
+        "sha256:de0a6b91146df08f50ac4dc55ed3a269ca810ed6cb876322e50b65e17c406ac4": 1000,
+        "sha256:1edd6bf90caf643f40955308a06f7461f3a3c1b96e85306ca577b5e7f001c458": 4000
+      }
+    },
+    {
+      "name": "the same statement, seen in time",
+      "about": "The same bytes, first seen at 2999 while the key was valid. It counts, and what the key signed while it was valid stays after the key is retired.",
+      "principal": "agent-1",
+      "issuers": [
+        {
+          "name": "operator-1",
+          "root": true,
+          "alg": "Ed25519",
+          "key_id": "sha256:34b542ff1c3b08c74a4d4f5dc193ad663c02f912dacce0cec7321f562c1e56d4",
+          "public_key": "vTkUhyXy1bEuJdzEoeltH5eODRzR2zHtmHaPA4jcqmc=",
+          "valid_from_ms": 0,
+          "valid_until_ms": 3000
+        },
+        {
+          "name": "operator-1",
+          "root": true,
+          "alg": "Ed25519",
+          "key_id": "sha256:c2d7905e779b68a3315353d9da477314f939d1495f4bfa6bcc84eb10a8a884a4",
+          "public_key": "RWhmjXHzUAw/pPiTmY2t2aJaZyylEa3TSw2vUgFoGgQ=",
+          "valid_from_ms": 3000,
+          "valid_until_ms": null
+        },
+        {
+          "name": "operator-2",
+          "root": true,
+          "alg": "Ed25519",
+          "key_id": "sha256:364684273c9bff8daf6f4a28d10a7867a1afd487c18d2e03958a4b9624a6d476",
+          "public_key": "uEJtD2zhjbTVdZBN53PFIZ7DOceCGpCanzjs30tdDu4=",
+          "valid_from_ms": 0,
+          "valid_until_ms": null
+        }
+      ],
+      "statements": [
+        {
+          "schema": "agentic_datacenter.mandate/2",
+          "principal": "agent-1",
+          "contracts": [
+            "chw.rotate_lead_chiller.v1",
+            "pod.set_supply_air_setpoint.v1"
+          ],
+          "issuer": "operator-1",
+          "issued_at_ms": 0,
+          "expires_at_ms": null,
+          "supersedes": null,
+          "delegation": false,
+          "reason": "operator-1 gives agent-1 its mandate",
+          "id": "sha256:e39d12e69528b3f56b3f58a8d6ea99a771d2b45f60a01d1e123f04269611eb98",
+          "signature": {
+            "alg": "Ed25519",
+            "key_id": "sha256:34b542ff1c3b08c74a4d4f5dc193ad663c02f912dacce0cec7321f562c1e56d4",
+            "value": "aCejtxv+4NXnVrOb7P18QrHxxlTwueDLj/VJkISf4lcJCxDm5ODBeb9fQPUzugXML1BZuQgXWxpuZz/Z5oU4BQ=="
+          }
+        },
+        {
+          "schema": "agentic_datacenter.mandate/2",
+          "principal": "agent-1",
+          "contracts": [],
+          "issuer": "operator-1",
+          "issued_at_ms": 1000,
+          "expires_at_ms": null,
+          "supersedes": "sha256:e39d12e69528b3f56b3f58a8d6ea99a771d2b45f60a01d1e123f04269611eb98",
+          "delegation": false,
+          "reason": "operator-1 withdraws it",
+          "id": "sha256:de0a6b91146df08f50ac4dc55ed3a269ca810ed6cb876322e50b65e17c406ac4",
+          "signature": {
+            "alg": "Ed25519",
+            "key_id": "sha256:34b542ff1c3b08c74a4d4f5dc193ad663c02f912dacce0cec7321f562c1e56d4",
+            "value": "JFI9GuNF71k8q6+iWLg1nvqcE2Ie2Kb+cBaIGHHfRkoBBrPoV5+3mcn8HQwpacoiPr19wfbNJ71u+j5RrI2lAA=="
+          }
+        },
+        {
+          "schema": "agentic_datacenter.mandate/2",
+          "principal": "agent-1",
+          "contracts": [
+            "chw.rotate_lead_chiller.v1",
+            "pod.set_supply_air_setpoint.v1"
+          ],
+          "issuer": "operator-1",
+          "issued_at_ms": 2999,
+          "expires_at_ms": null,
+          "supersedes": "sha256:de0a6b91146df08f50ac4dc55ed3a269ca810ed6cb876322e50b65e17c406ac4",
+          "delegation": false,
+          "reason": "dated back",
+          "id": "sha256:1edd6bf90caf643f40955308a06f7461f3a3c1b96e85306ca577b5e7f001c458",
+          "signature": {
+            "alg": "Ed25519",
+            "key_id": "sha256:34b542ff1c3b08c74a4d4f5dc193ad663c02f912dacce0cec7321f562c1e56d4",
+            "value": "WTYASPOE5tmtd5Hy/Rg51o/iJfa769hVHZNu3unQ7OAQlxvuVx4hj0w6QdETEI2CmrSBW5jumr+3ubY+yVVABA=="
+          }
+        }
+      ],
+      "queries": [
+        {
+          "contract": "pod.set_supply_air_setpoint.v1",
+          "time_ms": 4500,
+          "expect": {
+            "established": true,
+            "holds": true,
+            "kind": ""
+          }
+        }
+      ],
+      "first_seen_ms": {
+        "sha256:e39d12e69528b3f56b3f58a8d6ea99a771d2b45f60a01d1e123f04269611eb98": 0,
+        "sha256:de0a6b91146df08f50ac4dc55ed3a269ca810ed6cb876322e50b65e17c406ac4": 1000,
+        "sha256:1edd6bf90caf643f40955308a06f7461f3a3c1b96e85306ca577b5e7f001c458": 2999
+      }
+    },
+    {
+      "name": "a statement the site has not seen",
+      "about": "With times of first sight given, a statement that is not among them does not count, whatever it says.",
+      "principal": "agent-1",
+      "issuers": [
+        {
+          "name": "operator-1",
+          "root": true,
+          "alg": "Ed25519",
+          "key_id": "sha256:34b542ff1c3b08c74a4d4f5dc193ad663c02f912dacce0cec7321f562c1e56d4",
+          "public_key": "vTkUhyXy1bEuJdzEoeltH5eODRzR2zHtmHaPA4jcqmc=",
+          "valid_from_ms": 0,
+          "valid_until_ms": null
+        },
+        {
+          "name": "operator-2",
+          "root": true,
+          "alg": "Ed25519",
+          "key_id": "sha256:364684273c9bff8daf6f4a28d10a7867a1afd487c18d2e03958a4b9624a6d476",
+          "public_key": "uEJtD2zhjbTVdZBN53PFIZ7DOceCGpCanzjs30tdDu4=",
+          "valid_from_ms": 0,
+          "valid_until_ms": null
+        }
+      ],
+      "statements": [
+        {
+          "schema": "agentic_datacenter.mandate/2",
+          "principal": "agent-1",
+          "contracts": [
+            "chw.rotate_lead_chiller.v1",
+            "pod.set_supply_air_setpoint.v1"
+          ],
+          "issuer": "operator-1",
+          "issued_at_ms": 0,
+          "expires_at_ms": null,
+          "supersedes": null,
+          "delegation": false,
+          "reason": "operator-1 gives agent-1 its mandate",
+          "id": "sha256:e39d12e69528b3f56b3f58a8d6ea99a771d2b45f60a01d1e123f04269611eb98",
+          "signature": {
+            "alg": "Ed25519",
+            "key_id": "sha256:34b542ff1c3b08c74a4d4f5dc193ad663c02f912dacce0cec7321f562c1e56d4",
+            "value": "aCejtxv+4NXnVrOb7P18QrHxxlTwueDLj/VJkISf4lcJCxDm5ODBeb9fQPUzugXML1BZuQgXWxpuZz/Z5oU4BQ=="
+          }
+        },
+        {
+          "schema": "agentic_datacenter.mandate/2",
+          "principal": "agent-1",
+          "contracts": [
+            "pod.set_supply_air_setpoint.v1"
+          ],
+          "issuer": "operator-2",
+          "issued_at_ms": 1000,
+          "expires_at_ms": null,
+          "supersedes": "sha256:e39d12e69528b3f56b3f58a8d6ea99a771d2b45f60a01d1e123f04269611eb98",
+          "delegation": false,
+          "reason": "operator-2 narrows it",
+          "id": "sha256:0d41c081c7ce5e1fdf61d1569c3404dca38f4fa020d211ea0371cb834fc590c4",
+          "signature": {
+            "alg": "Ed25519",
+            "key_id": "sha256:364684273c9bff8daf6f4a28d10a7867a1afd487c18d2e03958a4b9624a6d476",
+            "value": "bmQCykXoXwAnMOg5jzpWfMcJkvx6vD2iU/DyxR8XtMW1WeCppBoLrXB9WhsuTml3HpRy/rDFj57pW9BmJycLDA=="
+          }
+        }
+      ],
+      "queries": [
+        {
+          "contract": "chw.rotate_lead_chiller.v1",
+          "time_ms": 2000,
+          "expect": {
+            "established": true,
+            "holds": true,
+            "kind": ""
+          }
+        }
+      ],
+      "first_seen_ms": {
+        "sha256:e39d12e69528b3f56b3f58a8d6ea99a771d2b45f60a01d1e123f04269611eb98": 0
+      }
     }
   ]
 }

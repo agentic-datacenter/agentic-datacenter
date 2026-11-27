@@ -165,6 +165,8 @@ class GovernedPath:
         self._authority: dict[str, list[MandateChange]] | None = None
         #: Statements presented for a principal that the register did not issue.
         self._presented: dict[str, list[dict[str, JsonValue]]] = {}
+        #: When each of them was first seen, by its ``id``.
+        self._presented_at: dict[str, int] = {}
         #: What happened to an issuer's key: ``("rotated", ms)`` or ``("ended", ms)``.
         self._issuer_events: dict[str, list[tuple[str, int]]] = {}
         #: Readings someone on the network has put a false value in place of, by tag.
@@ -352,13 +354,13 @@ class GovernedPath:
             )
         )
 
-    def statements(self, principal: str) -> MandateStatements | None:
+    def statements(self, principal: str, presented: bool = True) -> MandateStatements | None:
         """Return *principal*'s mandate as signed statements; None if none was ever set.
 
         The register's changes, each signed by who made it with the key it had
         then, those of everyone the mandate was passed on from, and whatever
         else was presented for the principal (:meth:`present_statement`), by
-        time of issue.
+        time of issue. Without *presented*, only what the register issued.
         """
         if self._authority is None or principal not in self._authority:
             return None
@@ -369,13 +371,18 @@ class GovernedPath:
             return found
 
         both: list[Mapping[str, JsonValue]] = []
+        first_seen: dict[str, int] = {}
         # From the source of the mandate down to the principal.
         for who in [*reversed(self._lineage(principal)), principal]:
             both += mandates.issue(who, self._authority[who], generation)
-        both += self._presented.get(principal, [])
+        # The register sees its own statements as they are issued.
+        first_seen = {str(s["id"]): int(str(s["issued_at_ms"])) for s in both}
+        for shown in self._presented.get(principal, []) if presented else []:
+            both.append(shown)
+            first_seen.setdefault(str(shown["id"]), self._presented_at.get(str(shown["id"]), 0))
         # Stable: statements of one instant stay in the order they were made.
         both.sort(key=lambda s: int(str(s["issued_at_ms"])))
-        return MandateStatements(principal, tuple(both), self.issuers())
+        return MandateStatements(principal, tuple(both), self.issuers(), first_seen)
 
     def spoof_reading(self, tag: str, value: JsonValue) -> None:
         """Put *value* in place of the reading of *tag* in what a gate is sent as context.
@@ -398,6 +405,8 @@ class GovernedPath:
         by. A scenario uses it for a statement that must not count (ADR 0039).
         """
         self._presented.setdefault(principal, []).append(copy.deepcopy(dict(statement)))
+        # When it was first seen here: the site's own record, which no issuer writes.
+        self._presented_at.setdefault(str(statement["id"]), self._kernel.clock.now_ms)
         self._kernel.state.touch("governance.path")
 
     def _no_mandate(self, principal: str, contract_id: str) -> str:
@@ -1006,6 +1015,7 @@ class GovernedPath:
         if self._presented:
             assert isinstance(state, dict)
             state["presented"] = copy.deepcopy(dict(sorted(self._presented.items())))
+            state["presented_at"] = dict(sorted(self._presented_at.items()))
         if self._spoofed:
             assert isinstance(state, dict)
             state["spoofed"] = dict(sorted(self._spoofed.items()))
@@ -1109,6 +1119,10 @@ class GovernedPath:
                         )
                     )
                 self._authority[str(principal)] = kept
+        seen = state.get("presented_at")
+        self._presented_at = (
+            {str(k): int(str(v)) for k, v in seen.items()} if isinstance(seen, Mapping) else {}
+        )
         spoofed = state.get("spoofed")
         self._spoofed = dict(spoofed) if isinstance(spoofed, Mapping) else {}
         self._issuer_events = {}

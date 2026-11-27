@@ -146,6 +146,10 @@ class MandateStatements:
     principal: str
     statements: tuple[Mapping[str, JsonValue], ...]
     issuers: tuple[Mapping[str, JsonValue], ...]
+    #: When the site first saw each statement, by its ``id``, on the control
+    #: path's clock. Kept by the site and not by the issuer, so a statement
+    #: cannot be dated back past it (ADR 0040).
+    first_seen: Mapping[str, int] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

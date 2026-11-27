@@ -248,6 +248,7 @@ def request_body(
             "principal": premises.statements.principal,
             "statements": [dict(s) for s in premises.statements.statements],
             "issuers": [dict(i) for i in premises.statements.issuers],
+            "first_seen_ms": dict(premises.statements.first_seen),
         }
     return body
 

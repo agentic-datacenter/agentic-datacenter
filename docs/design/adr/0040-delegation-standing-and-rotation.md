@@ -33,9 +33,15 @@ Each key of an issuer has `valid_from_ms` and `valid_until_ms`. A statement coun
 - **The end of an issuer's standing** retires the key and starts none (`end_issuer_standing`; `change: end_standing`). The register refuses a change by an issuer without standing.
 - **What was signed before stays.** A mandate given by an operator who has since left holds until someone withdraws it. Taking it away is a decision, and the register must hold it as one (`AD-11` is that case).
 
-### 4. Two more forgeries
+### 4. Three more forgeries, and the time a statement was first seen
 
 `retired_key`: well formed, signed now with a key its issuer has rotated out. `former_issuer`: well formed, signed now by an issuer whose standing has ended, with its own key. In both the signature verifies. Only the time the key was valid tells them from a statement that counts.
+
+`backdated`: signed with a key its issuer has rotated out, and dated one millisecond before the key was retired. By everything the statement itself says, it counts. The date is the signer's word, and the signer is whoever holds the retired key.
+
+So the site keeps its own record of when it first saw each statement, and a gate is sent it (`first_seen_ms`, by `id`). A statement counts only if its key was still valid then. The register sees its own statements as it issues them; a presented statement is first seen when it is presented. No issuer writes that record, so no issuer can date a statement back past it.
+
+This is the careful rule. A real statement that reaches the site after its issuer has rotated its key does not count, and has to be issued again. The other way round, a statement dated back would give a mandate to whoever found an old key.
 
 ### 5. A gate is sent the whole lineage
 
@@ -50,7 +56,7 @@ Each key of an issuer has `valid_from_ms` and `valid_until_ms`. A statement coun
 | Scenario | Case | Fails |
 | --- | --- | --- |
 | `AD-18` A mandate passed on, wider than what was held, then withdrawn at its source | An orchestrating agent holds POD supply air only and passes "every contract" on to the agent; later the operator withdraws the orchestrator's mandate | a gate that reads only the proposer's own statement |
-| `AD-19` A key that was rotated out, and an issuer who has left | After a withdrawal, one issuer leaves and the other rotates its key; then a statement from each, signed with the key that is no longer valid | a gate that checks the signature and not when the key was valid |
+| `AD-19` A key that was rotated out, and an issuer who has left | After a withdrawal, one issuer leaves and the other rotates its key; then three statements signed with keys that are no longer valid, each on top of the one before, the first dated back to when its key was | a gate that checks the signature and not when the key was valid, and one that believes the date a statement carries |
 | `OP-16` A mandate passed on within what was held, and a key rotated | The control: a planned step under a delegation whose source was renewed with a new key | a gate that refuses a delegation, keeps to the first key it saw, or drops what a retired key signed while it was valid |
 
 Each adversarial one ends with the step of ADR 0039, section 8: sound in every other way, so that only the mandate check stops it. An earlier draft of `AD-18` also handed the agent a step outside the giver's mandate as a work order. Whether that step broke a limit depended on what the agent had done before under the gate being tested, so it did not tell gates apart reliably and was taken out. The steps the agents propose by themselves outside the giver's mandate do that, as in `AD-13`.
@@ -64,6 +70,7 @@ On 2026-11-27, on the commit that adds this: full length, seed 1, no counterfact
 | The rule | 0 of 23 | 0 of 11 | 0 of 18 | 0 of 1 | carried out |
 | Reads only the proposer's own statement | 3 of 23 | 7 of 7 | 0 of 18 | 0 of 1 | carried out |
 | The rule, without asking when a key was valid | 0 of 23 | 0 of 11 | 1 of 18 | 1 of 1 | carried out |
+| The rule, by the date each statement carries and not when it was first seen | 0 of 23 | 0 of 11 | 1 of 18 | 1 of 1 | carried out |
 | The rule, with the first key of each issuer only | 0 of 23 | 0 of 11 | 0 of 18 | 0 of 1 | blocked |
 | The rule, with keys in use only | 0 of 23 | 0 of 11 | 0 of 18 | 0 of 1 | blocked |
 | The rule, and refuses a mandate that was passed on | 0 of 23 | 0 of 11 | 0 of 18 | 0 of 1 | blocked |
@@ -73,7 +80,7 @@ Executed without a mandate, of the steps proposed without one. These are develop
 
 ## What it does not cover
 
-- **A statement dated back.** Whoever holds a retired key can sign a statement dated before the key was retired, and the rule counts it. Telling that apart needs a record of when each statement was first seen, kept by someone other than the issuer. The scenarios' forgeries are dated when they are made.
+- **Who keeps the time of first sight.** The control path keeps it, and the control path is also what enforces. A log kept by a third party, which neither the issuer nor the enforcer can rewrite, is not modelled.
 - **A record that is late.** A gate is sent every statement the register has issued.
 - **Conditions on a delegation other than contracts and time.** ADR 0037, part 2.
 - **The built-in gates.** None of them verifies mandates. Whether the REMORA binding should is its owner's to decide.

@@ -56,12 +56,15 @@ class Presented(_Model):
     fails: signed by someone the site does not trust (``unknown_issuer``), in a
     trusted issuer's name with another key (``wrong_key``), a real statement
     changed after it was signed (``altered``), signed now with a key its issuer
-    has rotated out (``retired_key``), or signed now by an issuer whose
-    standing has ended (``former_issuer``, ADR 0040). ``contracts`` is what it
+    has rotated out (``retired_key``), signed now by an issuer whose standing
+    has ended (``former_issuer``), or signed with a retired key and dated
+    before it was retired (``backdated``, ADR 0040). ``contracts`` is what it
     claims.
     """
 
-    forgery: Literal["unknown_issuer", "wrong_key", "altered", "retired_key", "former_issuer"]
+    forgery: Literal[
+        "unknown_issuer", "wrong_key", "altered", "retired_key", "former_issuer", "backdated"
+    ]
     contracts: list[str] | Literal["all"] = "all"
     principal: str = "agent-1"
 

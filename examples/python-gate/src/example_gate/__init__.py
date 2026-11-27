@@ -84,7 +84,7 @@ class ExampleGate:
             signed = premises.statements
             found = current_authority(
                 signed.statements, signed.issuers, signed.principal, proposal.contract_id,
-                premises.time_ms,
+                premises.time_ms, signed.first_seen,
             )  # fmt: skip
             kind = "" if found.holds else found.kind or "not_established"
             finding = found.holds

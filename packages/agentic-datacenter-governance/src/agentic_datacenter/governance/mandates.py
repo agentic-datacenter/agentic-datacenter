@@ -8,10 +8,10 @@ who may act now:
 
 1. A statement **counts** when its ``id`` is the content address of its body,
    its issuer is known to the site, it is signed with a key of that issuer
-   that was valid when it was issued, the signature verifies, it was not
-   issued in the future, and it is either a delegation or comes from an issuer
-   the site trusts to give mandates. A statement that does not count is
-   ignored. It neither gives nor takes away.
+   that was valid when it was issued and when the site first saw it, the
+   signature verifies, it was not issued in the future, and it is either a
+   delegation or comes from an issuer the site trusts to give mandates. A
+   statement that does not count is ignored. It neither gives nor takes away.
 2. The statements that count for one principal must form **one chain**: one
    that supersedes nothing, and each other superseding the one before it. The
    last is the **head**. With no chain, or more than one, authority is not
@@ -54,7 +54,9 @@ BODY = (
 #: The issuer named on a change whose maker the register was not told.
 REGISTER = "mandate-register"
 #: Ways a scenario presents a statement that must not count (``forged``).
-FORGERIES = ("unknown_issuer", "wrong_key", "altered", "retired_key", "former_issuer")
+FORGERIES = (
+    "unknown_issuer", "wrong_key", "altered", "retired_key", "former_issuer", "backdated",
+)  # fmt: skip
 #: Who signs a forgery of the kind ``unknown_issuer``: nobody the site knows.
 OUTSIDER = "contractor-7"
 #: How many links of delegation are followed before authority is not established.
@@ -242,6 +244,9 @@ def forged(
     - ``retired_key``: well signed now with a key its issuer has rotated out.
     - ``former_issuer``: well signed now, with its own key, by an issuer whose
       standing has ended.
+    - ``backdated``: well signed with a key its issuer has rotated out, and
+      dated one millisecond before the key was retired. Only when the site
+      first saw it tells it from a statement that counts.
 
     Raises:
         ValueError: If *kind* is not one of ``FORGERIES``, *chain* is empty, or
@@ -268,10 +273,12 @@ def forged(
         if not record.get("root") or record.get("valid_until_ms") is None:
             continue
         name = str(record["name"])
-        if (kind == "retired_key") != (name in in_use):
+        if (kind != "former_issuer") != (name in in_use):
             continue
         generation = _generation_of(name, str(record["key_id"]))
-        return sign(principal, contracts, name, now_ms, None, head, why, generation=generation)
+        retired = int(str(record["valid_until_ms"]))
+        dated = retired - 1 if kind == "backdated" else now_ms
+        return sign(principal, contracts, name, dated, None, head, why, generation=generation)
     raise ValueError(f"cannot forge {kind!r}: no such key among the issuers")
 
 
@@ -283,9 +290,18 @@ def _generation_of(name: str, wanted: str) -> int:
 
 
 def not_counted(
-    statement: Statement, principal: str, issuers: Sequence[Issuer], now_ms: int
+    statement: Statement,
+    principal: str,
+    issuers: Sequence[Issuer],
+    now_ms: int,
+    first_seen: Mapping[str, int] | None = None,
 ) -> str:
-    """Return why *statement* does not count for *principal*; empty if it does (rule 1)."""
+    """Return why *statement* does not count for *principal*; empty if it does (rule 1).
+
+    *first_seen* says, by ``id``, when the site first saw each statement. It
+    is kept by the site and not by the issuer, so it cannot be dated back.
+    Without it, only the time a statement says it was issued is checked.
+    """
     if statement.get("schema") != SCHEMA:
         return "unknown schema"
     if statement.get("principal") != principal:
@@ -321,6 +337,16 @@ def not_counted(
         return "issued before the key was valid"
     if end is not None and (not isinstance(end, int) or issued >= end):
         return "issued after the key was retired"
+    if first_seen is not None:
+        seen = first_seen.get(str(statement["id"]))
+        if seen is None:
+            return "the site has not seen it"
+        if seen < issued:
+            return "seen before it says it was issued"
+        if end is not None and seen >= end:
+            return "first seen after the key was retired"
+        if seen > now_ms:
+            return "first seen in the future"
     if not statement["delegation"] and record.get("root") is not True:
         return "issuer may only pass on what it holds"
     if issued > now_ms:
@@ -357,9 +383,14 @@ def current(
     principal: str,
     contract_id: str,
     now_ms: int,
+    first_seen: Mapping[str, int] | None = None,
 ) -> Finding:
-    """Return whether *principal* holds a mandate for *contract_id* at *now_ms*."""
-    return _current(statements, issuers, principal, contract_id, now_ms, MAX_DEPTH)
+    """Return whether *principal* holds a mandate for *contract_id* at *now_ms*.
+
+    *first_seen* is when the site first saw each statement, by ``id``; see
+    :func:`not_counted`.
+    """
+    return _current(statements, issuers, principal, contract_id, now_ms, MAX_DEPTH, first_seen)
 
 
 def _current(
@@ -369,13 +400,14 @@ def _current(
     contract_id: str,
     now_ms: int,
     depth: int,
+    first_seen: Mapping[str, int] | None = None,
 ) -> Finding:
     counted: dict[str, Statement] = {}
     ignored: list[tuple[str, str]] = []
     for statement in statements:
         if statement.get("principal") != principal:
             continue  # another principal's; read when a delegation leads to it
-        why = not_counted(statement, principal, issuers, now_ms)
+        why = not_counted(statement, principal, issuers, now_ms, first_seen)
         if why:
             ignored.append((str(statement.get("id", "")), why))
         else:
@@ -390,13 +422,15 @@ def _current(
     holds = contract_id in listed and live
     if holds and head["delegation"]:
         # Nobody passes on more than they hold, or for longer than they hold it.
-        giver = _current(statements, issuers, str(head["issuer"]), contract_id, now_ms, depth - 1)
+        giver = _current(
+            statements, issuers, str(head["issuer"]), contract_id, now_ms, depth - 1, first_seen
+        )
         if not giver.established:
             return Finding(False, False, ignored=tuple(ignored))
         holds = giver.holds
     if holds:
         return Finding(True, True, head=str(head["id"]), ignored=tuple(ignored))
-    before = _ever(statements, issuers, principal, contract_id, now_ms, depth)
+    before = _ever(statements, issuers, principal, contract_id, now_ms, depth, first_seen)
     kind = "ended" if before else "never_held"
     return Finding(True, False, kind, str(head["id"]), tuple(ignored))
 
@@ -408,6 +442,7 @@ def _ever(
     contract_id: str,
     now_ms: int,
     depth: int,
+    first_seen: Mapping[str, int] | None = None,
 ) -> bool:
     """Whether a statement that counts ever gave *principal* the contract.
 
@@ -419,12 +454,14 @@ def _ever(
         listed = statement.get("contracts")
         if statement.get("principal") != principal or not isinstance(listed, list):
             continue
-        if contract_id not in listed or not_counted(statement, principal, issuers, now_ms):
+        if contract_id not in listed:
+            continue
+        if not_counted(statement, principal, issuers, now_ms, first_seen):
             continue
         if not statement["delegation"]:
             return True
         giver = str(statement["issuer"])
-        if _ever(statements, issuers, giver, contract_id, now_ms, depth - 1):
+        if _ever(statements, issuers, giver, contract_id, now_ms, depth - 1, first_seen):
             return True
     return False
 
@@ -501,6 +538,12 @@ def vectors() -> dict[str, JsonValue]:
                          generation=1)  # fmt: skip
     by_departed = sign(who, both, "operator-2", 4000, None, str(revoked["id"]), "after leaving")
     before_leaving = sign(who, [air], "operator-2", 1000, None, gid, "operator-2 narrows it")
+    # Dated one millisecond before the key was retired at 3000, by whoever holds it now.
+    dated_back = sign(who, both, "operator-1", 2999, None, str(revoked["id"]), "dated back")
+    unsigned = {k: v for k, v in revoked.items() if k != "signature"}
+
+    def seen(*pairs: tuple[Statement, int]) -> dict[str, int]:
+        return {str(statement["id"]): at_ms for statement, at_ms in pairs}
 
     def ask(contract: str, time_ms: int, established: bool, holds: bool, kind: str = "") -> Any:
         return {
@@ -510,12 +553,14 @@ def vectors() -> dict[str, JsonValue]:
 
     def case(
         name: str, about: str, statements: Sequence[Statement], *queries: Any,
-        issuers: Sequence[Issuer] = trusted,
+        issuers: Sequence[Issuer] = trusted, first_seen: Mapping[str, int] | None = None,
     ) -> Any:  # fmt: skip
         return {
             "name": name, "about": about, "principal": who,
             "issuers": [dict(i) for i in issuers],
             "statements": [dict(s) for s in statements], "queries": list(queries),
+            # Only in a case that is about when a statement was first seen.
+            **({"first_seen_ms": dict(first_seen)} if first_seen is not None else {}),
         }  # fmt: skip
 
     def after_revocation(kind: str) -> Statement:
@@ -697,6 +742,41 @@ def vectors() -> dict[str, JsonValue]:
             [grant, revoked, by_departed],
             ask(air, 4500, True, False, "ended"),
             issuers=departed,
+        ),
+        case(
+            "an unsigned withdrawal",
+            "A withdrawal with no signature: someone says the mandate was withdrawn. It "
+            "does not count, so the mandate is held as before. A withdrawal is evidence "
+            "only when it is signed.",
+            [grant, unsigned],
+            ask(air, 3000, True, True),
+        ),
+        case(
+            "dated back: first seen after the key was retired",
+            "Signed with a retired key and dated one millisecond before it was retired. "
+            "By its own date it would count. The site first saw it at 4000, after the key "
+            "was retired at 3000, so it does not.",
+            [grant, revoked, dated_back],
+            ask(air, 4500, True, False, "ended"),
+            issuers=rotated,
+            first_seen=seen((grant, 0), (revoked, 1000), (dated_back, 4000)),
+        ),
+        case(
+            "the same statement, seen in time",
+            "The same bytes, first seen at 2999 while the key was valid. It counts, and what "
+            "the key signed while it was valid stays after the key is retired.",
+            [grant, revoked, dated_back],
+            ask(air, 4500, True, True),
+            issuers=rotated,
+            first_seen=seen((grant, 0), (revoked, 1000), (dated_back, 2999)),
+        ),
+        case(
+            "a statement the site has not seen",
+            "With times of first sight given, a statement that is not among them does not "
+            "count, whatever it says.",
+            [grant, narrowed],
+            ask(rotate, 2000, True, True),
+            first_seen=seen((grant, 0)),
         ),
     ]  # fmt: skip
     return {

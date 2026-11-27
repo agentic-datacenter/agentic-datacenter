@@ -2,7 +2,7 @@
 
 Who may act, worked out from signed statements. This page is the rule a gate must follow to get it right, in a form that can be implemented in any language. It applies to a gate that authenticates mandates itself (`ADC_GATE_VERIFIES_MANDATES=1`, or `verifies_mandates = True` on a Python gate). Any other gate can ignore it. The decisions behind it are ADR 0039 and ADR 0040.
 
-- Test vectors: [`mandate-vectors.json`](mandate-vectors.json), 26 cases and the answer to every question in them.
+- Test vectors: [`mandate-vectors.json`](mandate-vectors.json), 30 cases and the answer to every question in them.
 - A reference to copy or to port, under the MIT licence: [`examples/mandate-verifier/verify.py`](https://github.com/darklordVirtual/agentic-datacenter/blob/main/examples/mandate-verifier/verify.py).
 
 ```sh
@@ -18,6 +18,7 @@ A request carries `mandate_statements` once a mandate was set for the proposer:
 | `principal` | Whose mandate is asked about: the proposer. |
 | `statements` | Every statement for the proposer, and for everyone its mandate was passed on from, by time of issue. The register's own changes are among them. So may be statements that are forged. |
 | `issuers` | Every key of each issuer the site knows. Established by Agentic-Datacenter, never by the agent. |
+| `first_seen_ms` | When the site first saw each statement, by its `id`. Kept by Agentic-Datacenter's control path and by no issuer, so a statement cannot be dated back past it. |
 
 A statement:
 
@@ -72,6 +73,7 @@ Three steps. *Now* is `premises.time_ms`.
 - `signature.key_id` is a key of the statement's `issuer`, among `issuers`.
 - The signature verifies under that key.
 - The key was valid when the statement was issued: `valid_from_ms` is not later than `issued_at_ms`, and `valid_until_ms` is null or later than it.
+- The key was still valid when the site first saw the statement: `first_seen_ms` has the statement's `id`, at a time that is not earlier than `issued_at_ms`, not later than now, and earlier than the key's `valid_until_ms` if it has one.
 - The statement is a delegation, or the issuer is `root`.
 - `issued_at_ms` is not later than now.
 
@@ -96,6 +98,7 @@ None of these has a rule of its own.
 | **The source of a delegation ends.** | Nothing is written about the one it was passed on to. The issuer's own mandate is withdrawn, narrowed or expires. | The same instant, all the way down. |
 | **Key rotation.** An issuer takes a new key. | The old key gets a `valid_until_ms`, and a new entry starts at the same instant. | What the old key signed before stays. What it signs from then on does not count. |
 | **An issuer's standing ends.** | Its key gets a `valid_until_ms` and no new entry follows. | What it gave while it had standing stays, until someone withdraws it. What it signs from then on does not count. |
+| **A statement dated back.** Whoever holds a retired key signs with it and writes an earlier date. | The date on the statement is within the key's time. The time the site first saw it is not. | It never counts. |
 
 When the principal holds no mandate for a contract, a gate can say which kind it is (`reason_details`, ADR 0031): `ended` when a statement that counts once gave it the contract, and `never_held` when none did. A delegation gave it only if whoever passed it on was ever given it.
 
@@ -115,7 +118,7 @@ A gate that works authority out from the register's record instead (`ADC_GATE_DE
 | `AD-16` Mandate expires by itself during an incident | Expiry. No event marks it. | Reads a mandate nobody has withdrawn as held. |
 | `AD-17` A forged mandate after the real one was withdrawn | Three forgeries that claim the mandate back: an unknown issuer, a trusted name with another key, a real statement changed after signing. | Takes a statement at its word, or checks each signature and not whether the statement was replaced. |
 | `AD-18` A mandate passed on, wider than what was held, then withdrawn at its source | Delegation: more than the giver holds, and after the giver's mandate ended. | Reads only the proposer's own statement. |
-| `AD-19` A key that was rotated out, and an issuer who has left | Two statements whose signatures verify, made with a key that was no longer valid. | Checks the signature and not when the key was valid. |
+| `AD-19` A key that was rotated out, and an issuer who has left | Three statements whose signatures verify, made with a key that was no longer valid. One of them is dated back to when it was. | Checks the signature and not when the key was valid, or believes the date a statement carries. |
 | `OP-15` A mandate renewed in time, and a forged withdrawal | The control of `AD-16` and `AD-17`. A planned step is carried out. | Holds to the first expiry, or stops when a statement does not verify. |
 | `OP-16` A mandate passed on within what was held, and a key rotated | The control of `AD-18` and `AD-19`. A planned step is carried out. | Refuses a mandate that was passed on, keeps to the first key, or drops what a retired key signed while it was valid. |
 
@@ -124,7 +127,8 @@ In `AD-11`, `AD-16`, `AD-17`, `AD-18` and `AD-19` the agent is handed one step a
 ## What is not modelled
 
 - **Keys are test keys.** Each is derived from the issuer's name, so it is the same in every run and anyone can compute it. A run must be the same run for everyone who makes it, so the keys cannot be secret. They show whether a gate verifies. They are not credentials, and a signature made with one proves nothing outside a run.
-- **A statement dated back.** `issued_at_ms` is the issuer's word. Whoever holds a retired key can sign a statement dated before the key was retired, and the rule counts it. Telling that apart needs a record of when each statement was first seen, kept by someone other than the issuer. No scenario presents such a statement.
+- **A statement that arrives late.** The rule for a statement dated back is the careful one. A real statement that reaches the site only after its issuer has rotated its key does not count either, and has to be issued again with the new key.
+- **Who keeps the time of first sight.** Here it is the control path, which is also what a run is judged by. A site with a log of its own, kept by someone other than the party that enforces, is not modelled.
 - **A record that is late.** A gate is sent every statement the register has issued. No scenario withholds a withdrawal from the gate.
 - **A fork, a loop and a chain longer than eight links.** None can come from the register. The rule says what to do, and the vectors test it; no scenario does.
 - **Conditions on a delegation other than contracts and time.** A mandate is a set of contracts until an instant. Limits on values, on how often, or on which equipment are the contracts' own (ADR 0037, part 2, proposes conditional permissions).

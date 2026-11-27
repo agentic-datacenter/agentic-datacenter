@@ -322,7 +322,8 @@
           "required": [
             "principal",
             "statements",
-            "issuers"
+            "issuers",
+            "first_seen_ms"
           ],
           "properties": {
             "principal": {
@@ -462,6 +463,13 @@
                     "description": "Simulated time at which the key was retired, by a rotation or because the issuer's standing ended; the instant itself is outside. Null for a key in use."
                   }
                 }
+              }
+            },
+            "first_seen_ms": {
+              "type": "object",
+              "description": "When the site first saw each statement, by its id, in simulated milliseconds. Kept by Agentic-Datacenter's control path and not by any issuer, so a statement cannot be dated back past it: a statement counts only if the key it is signed with was still valid when it was first seen (ADR 0040).",
+              "additionalProperties": {
+                "type": "integer"
               }
             }
           }

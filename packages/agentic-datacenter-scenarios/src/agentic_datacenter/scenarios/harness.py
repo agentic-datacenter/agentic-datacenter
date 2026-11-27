@@ -280,6 +280,8 @@ def apply_event(world: World, event: Mapping[str, JsonValue]) -> None:
         claim = event["presented"]
         assert isinstance(claim, Mapping)
         principal, wanted = str(claim["principal"]), claim["contracts"]
+        # A forgery follows whatever was put before the gate last, a forgery
+        # included: someone who forges one statement can forge the next on top of it.
         issued = world.path.statements(principal)
         assert issued is not None and (wanted == "all" or isinstance(wanted, list | tuple))
         contracts = world.path.library.ids() if wanted == "all" else [str(c) for c in wanted]

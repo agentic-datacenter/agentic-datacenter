@@ -61,8 +61,9 @@ def _by_the_rule(premises: PremiseSnapshot, contract_id: str) -> bool:
     signed = premises.statements
     assert signed is not None
     return mandates.current(
-        signed.statements, signed.issuers, signed.principal, contract_id, premises.time_ms
-    ).holds
+        signed.statements, signed.issuers, signed.principal, contract_id, premises.time_ms,
+        signed.first_seen,
+    ).holds  # fmt: skip
 
 
 def _any_statement_that_lists_it(premises: PremiseSnapshot, contract_id: str) -> bool:
@@ -151,7 +152,7 @@ def _path() -> Any:
 def test_the_committed_vectors_are_the_ones_the_code_gives() -> None:
     committed = json.loads((REPO / "docs/reference/mandate-vectors.json").read_text())
     assert committed == mandates.vectors()
-    assert len(committed["cases"]) >= 26
+    assert len(committed["cases"]) >= 30
 
 
 @pytest.mark.req("ADC-AUT-004")
@@ -162,13 +163,13 @@ def test_the_rule_and_the_reference_to_copy_agree_on_every_vector() -> None:
         for query in case["queries"]:  # type: ignore[index,call-overload,union-attr]
             args = (
                 case["statements"], case["issuers"], case["principal"],  # type: ignore[index,call-overload]
-                query["contract"], query["time_ms"],
+                query["contract"], query["time_ms"], case.get("first_seen_ms"),  # type: ignore[union-attr]
             )  # fmt: skip
             found = mandates.current(*args)  # type: ignore[arg-type]
             mine = {"established": found.established, "holds": found.holds, "kind": found.kind}
             assert mine == query["expect"] == VERIFIER.current(*args), case["name"]  # type: ignore[index,call-overload]
             asked += 1
-    assert asked >= 40
+    assert asked >= 45
 
 
 @pytest.mark.req("ADC-AUT-004")
@@ -208,10 +209,16 @@ def test_a_forged_statement_does_not_count_and_says_why(kind: str) -> None:
     ]
     assert chain == () and not mandates.not_counted(grant, "agent-1", issuers, 0)
     false = mandates.forged(kind, "agent-1", [grant], [POD, ROTATE], 10, issuers)
-    assert false["signature"]["value"] and false["issued_at_ms"] == 10  # type: ignore[index,call-overload]
-    assert mandates.not_counted(false, "agent-1", issuers, 10)
-    assert mandates.current([grant, false], issuers, "agent-1", ROTATE, 10).holds is False
-    assert mandates.current([grant, false], issuers, "agent-1", POD, 10).holds is True
+    # The site saw the real statement when it was issued, and the forgery when it was presented.
+    seen = {str(grant["id"]): 0, str(false["id"]): 10}
+    assert false["signature"]["value"]  # type: ignore[index,call-overload]
+    assert false["issued_at_ms"] == (4 if kind == "backdated" else 10)
+    assert mandates.not_counted(false, "agent-1", issuers, 10, seen)
+    assert mandates.current([grant, false], issuers, "agent-1", ROTATE, 10, seen).holds is False
+    assert mandates.current([grant, false], issuers, "agent-1", POD, 10, seen).holds is True
+    # By the date it carries alone, a statement dated back is taken for one that counts.
+    by_its_own_date = mandates.not_counted(false, "agent-1", issuers, 10)
+    assert bool(by_its_own_date) is (kind != "backdated")
 
 
 # --- the register: a mandate that expires by itself ------------------------------------
@@ -745,10 +752,53 @@ def _signature_and_not_when_the_key_was_valid(premises: PremiseSnapshot, contrac
     ).holds
 
 
+def _the_date_a_statement_carries(premises: PremiseSnapshot, contract_id: str) -> bool:
+    """Checks when a key was valid against the date on the statement, and nothing else."""
+    signed = premises.statements
+    assert signed is not None
+    return mandates.current(
+        signed.statements, signed.issuers, signed.principal, contract_id, premises.time_ms
+    ).holds
+
+
 @pytest.mark.req("ADC-AUT-008")
-def test_a_gate_that_checks_the_signature_and_not_when_the_key_was_valid_executes() -> None:
-    result, gate = _run("AD-19", _wrapped(_signature_and_not_when_the_key_was_valid))
+@pytest.mark.parametrize(
+    "holds", [_signature_and_not_when_the_key_was_valid, _the_date_a_statement_carries]
+)
+def test_a_gate_that_does_not_ask_when_a_key_was_valid_or_believes_a_date_executes(
+    holds: Any,
+) -> None:
+    result, gate = _run("AD-19", _wrapped(holds))
     assert _orders(result)["WO-315"]["outcome"] == "APPLIED" and not result.passed
+
+
+@pytest.mark.req("ADC-AUT-008")
+def test_the_site_says_when_it_first_saw_each_statement(retired: tuple[RunResult, Any]) -> None:
+    path, kernel = _path()
+    path.set_authority(AGENT.principal, [POD], by="operator-1")
+    kernel.run_for(1000)
+    path.rotate_issuer_key("operator-1")
+    kernel.run_for(1000)
+    signed = path.statements(AGENT.principal)
+    late = mandates.forged(
+        "backdated", AGENT.principal, signed.statements, [POD, ROTATE], path.now_ms(),
+        signed.issuers,
+    )  # fmt: skip
+    path.present_statement(AGENT.principal, late)
+    signed = path.statements(AGENT.principal)
+    (own,) = [s for s in signed.statements if s["id"] != late["id"]]
+    assert signed.first_seen == {own["id"]: own["issued_at_ms"], late["id"]: path.now_ms()}
+    assert late["issued_at_ms"] < path.now_ms() - 1000
+    why = mandates.not_counted(
+        late, AGENT.principal, signed.issuers, path.now_ms(), signed.first_seen
+    )
+    assert why == "first seen after the key was retired"
+    assert path.authorized(AGENT.principal, ROTATE) is False
+    body = _request(path, ROTATE)
+    assert body["mandate_statements"]["first_seen_ms"] == dict(signed.first_seen)
+    other, _ = _path()
+    other.restore(path.snapshot())
+    assert other.statements(AGENT.principal) == signed
 
 
 def _first_key_only(premises: PremiseSnapshot, contract_id: str) -> bool:
