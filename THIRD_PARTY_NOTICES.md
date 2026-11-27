@@ -79,7 +79,7 @@ As installed from `uv.lock` on 2026-11-27, with the licence each project declare
 | `fastapi` (with `starlette`, `anyio`, `idna`, `annotated-doc`, `opentelemetry-api`) | 0.165.0 | MIT; `starlette` and `idna` BSD-3-Clause; `opentelemetry-api` Apache-2.0 | `agentic-datacenter-supervisory` |
 | `pymodbus` | 3.16.2 | BSD-3-Clause | `agentic-datacenter-net` |
 | `bacpypes3` | 0.0.110 | MIT as its licence expression, with the classifier "BSD License"; the package and its repository carry no licence text (ADR 0013) | `agentic-datacenter-net` |
-| `pysnmp` (with `pyasn1`) | 7.1.33 (`pyasn1` 0.6.5) | BSD-2-Clause, from the licence file in the package (its metadata declares none); `pyasn1` BSD-2-Clause | `agentic-datacenter-net` |
+| `pysnmp` (with `pyasn1`) | 7.1.34 (`pyasn1` 0.6.5) | BSD-2-Clause, from the licence file in the package (its metadata declares none); `pyasn1` BSD-2-Clause | `agentic-datacenter-net` |
 | `asyncua` (with `aiosqlite`, `pytz`, `sortedcontainers`, `python-dateutil`, `tzdata`, `cryptography`) | 2.1.0 (`tzdata` 2026.6) | LGPL-3.0-or-later; `aiosqlite` and `pytz` MIT; `sortedcontainers` and `tzdata` Apache-2.0; `python-dateutil` BSD-3-Clause; `cryptography` Apache-2.0 or BSD-3-Clause | `agentic-datacenter-net` |
 | `cryptography` (with `cffi`, `pycparser`) | 50.0.2 (`cffi` 2.1.1, `pycparser` 3.12) | Apache-2.0 or BSD-3-Clause; `cffi` MIT-0; `pycparser` BSD-3-Clause | `agentic-datacenter-governance`, for the host keys and quotes of ADR 0032; also installed with `asyncua` above |
 | REMORA (`remora-assurance`) | 0.12.0 at the commit in `REMORA_PIN` | BUSL-1.1, with a separate commercial licence, as declared by that project | `agentic-datacenter-remora` only |
