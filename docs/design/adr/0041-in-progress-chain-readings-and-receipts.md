@@ -1,6 +1,6 @@
 # ADR 0041: A step in progress when its mandate ends, who acted for whom, signed readings, and signed receipts
 
-- **Status:** Accepted on 2026-11-27, for `benchmark-v1.4`. The owner decided the first point as recommended and asked for the other three.
+- **Status:** Accepted on 2026-11-27, for `benchmark-v1.4`. The owner decided the first point as recommended and asked for the other three. A review on the same day found three faults in what was built, corrected in `benchmark-v1.5`; they are listed at the end.
 - **Date:** 2026-11-27
 - **SDD:** 7.3, 9.4, 10.2, 11; ADR 0020, 0036, 0038, 0039, 0040; new requirements `ADC-AUT-009`, `ADC-AUT-010`, `ADC-INT-011` and `ADC-INT-012`
 
@@ -80,6 +80,16 @@ With a key seed given to the starter and its public key to the run, every decisi
 - **A reading that is withheld or replayed.** No scenario drops a reading or sends an old one again.
 - **Whose key signs a receipt.** A key is given by the system's owner before a run. Nothing here checks who holds it.
 - **Readings as premises.** A premise is established by the simulator from the point database. It is not made from the signed readings.
+
+## Corrected after review, in `benchmark-v1.5`
+
+A review of the code between `benchmark-v1.2` and `benchmark-v1.4`, made on the day the repository became public, found these. Each has a test now.
+
+- **A held-out variant could move a scenario's events to the other side of the 300 seconds.** A variant moved each event by itself. In 99 of 200 variants of `AD-20` the withdrawal came more than 300 seconds after the step, and in 43 of 200 of `OP-17` it came within them, so every gate would have failed those variants. A variant now keeps two neighbouring events on the side of 300 seconds they were on, and keeps a mandate's expiry on the side of every later event it was on. The scheme of the variants is 3.
+- **A step was judged by the newest step on its points.** With two proposers on one point, a step could be undone for another proposer's mandate, or left when its own had ended. Each step a watch would undo is now judged by its own proposer, its own contract and the time of its own writes. No scenario has two proposers, so no result changes.
+- **An issuer could lose its standing at the instant it made a change**, which no statement can show and which stopped the run. The register and the scenario reader now refuse it.
+
+Smaller things from the same review: a statement made to break a verifier (a value that cannot be written as JSON, a missing field, a field of the wrong kind) is now refused by both verifiers and stops neither; base64 is decoded strictly; a release tag must carry its own name; the trace says "had no mandate in force" where the last mandate on record had ended; a receipt key that is not a key is refused before a run; and a scenario that could only fail when the run reached it is refused when it is read.
 
 ## Consequences
 

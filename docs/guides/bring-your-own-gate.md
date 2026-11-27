@@ -16,13 +16,40 @@ In a second terminal, from the same directory, check the connection and run one 
 export ADC_GATE_URL=http://127.0.0.1:8787
 export ADC_GATE_NAME=example
 uv run agentic-datacenter gate check http_gate
-uv run agentic-datacenter bench run --scenario OP-03 --tier quick --allow-unfrozen \
+uv run agentic-datacenter bench run --scenario OP-03 --tier quick --jobs 4 \
     --gate http_gate --gate static_allowlist --out build/first-gate
 ```
 
 Open `build/first-gate/report.html` for the comparison or `build/first-gate/result_card.json` for the underlying figures. The interface check confirms the adapter can answer correctly formed requests. The development run shows what its decisions did in this scenario. Each run includes evidence you can verify.
 
 To try your own control, set `ADC_GATE_URL` and `ADC_GATE_NAME` for your service and repeat the two commands. The [HTTP adapter](#path-b-a-service-over-http-in-any-language) and [Python adapter](#path-a-a-python-package) sections cover the request format and other options. See the [public test](../bench/PUBLIC_TEST.md) when you are ready to submit a frozen-benchmark result.
+
+### Signed mandates, in two terminals
+
+If your system checks who may act, let it work that out from signed statements. Leave the example service running, and in the second terminal:
+
+```sh
+export ADC_GATE_URL=http://127.0.0.1:8787 ADC_GATE_NAME=example ADC_GATE_VERIFIES_MANDATES=1
+uv run python examples/mandate-verifier/verify.py docs/reference/mandate-vectors.json
+uv run agentic-datacenter bench run --tier quick --jobs 4 \
+    --scenario AD-11 --scenario AD-16 --scenario AD-17 --scenario AD-18 --scenario AD-19 \
+    --scenario OP-15 --scenario OP-16 \
+    --gate http_gate --gate static_allowlist --out build/signed-mandates
+```
+
+`ADC_GATE_VERIFIES_MANDATES=1` is read where `bench run` is started, not by the service: it decides what a request carries. The gate is then sent signed statements and neither the answer nor the register's record. The run takes about six minutes on four cores; `--scenario AD-17` alone, the forged mandate, takes two. It ends with lines like these:
+
+```text
+45 of 45 queries right
+http_gate         scripted_adversarial ...
+    without a mandate: 0 executed of 61 proposed, 61 refused citing authority
+    given signed mandate statements alone, neither the premise nor the record, in 7 run(s)
+    its own finding of who may act: given for 94, 0 of them not the premise
+static_allowlist  scripted_adversarial ...
+    without a mandate: 38 executed of 61 proposed, 0 refused citing authority
+```
+
+The first line is the rule's test vectors, which your own implementation should pass too. The rest says that a gate which follows the rule refused every step taken without a mandate, after a withdrawal, an expiry, three forgeries, a delegation withdrawn at its source and a retired key, while a gate that only checks limits executed 38 of them. `build/signed-mandates/summary.md` has it as a table. The rule is on one page: [Signed mandate statements](../reference/mandate-statements.md).
 
 For a first local run, use the [command adapter quickstart](which-way-in.md#try-a-local-adapter). If you maintain a governance system, [For maintainers of governance systems](for-governance-maintainers.md) says what you get, what it costs, and how to keep testing as this project grows.
 
@@ -130,7 +157,7 @@ Which way in suits which kind of project, from score producers to receipt signer
 
 ```sh
 uv run agentic-datacenter bench run --tier quick --gate my_gate --gate static_allowlist \
-    --allow-unfrozen --jobs 4 --out build/quick-my_gate
+    --jobs 4 --out build/quick-my_gate
 uv run agentic-datacenter bench run --tier standard --gate my_gate --gate static_allowlist \
     --allow-unfrozen --jobs 4 --out build/bench-my_gate
 uv run agentic-datacenter bench check build/bench-my_gate/result_card.json --gate my_gate
@@ -174,7 +201,7 @@ Who may act is told in two ways once a mandate was set for the proposer (ADR 002
 
 A gate that works out for itself who may act can ask not to be told the answer: `ADC_GATE_DERIVES_AUTHORITY=1` for a served gate, `derives_authority = True` on a Python gate. It is then sent the record and not the premise, the run is judged by the premise all the same, and the card says that the gate was not told (`premise_told`). A gate that asks for this and cannot work it out lets every step without a mandate through, and that is counted.
 
-A gate that authenticates mandates can go one step further: `ADC_GATE_VERIFIES_MANDATES=1` for a served gate, `verifies_mandates = True` on a Python gate. It is then sent `mandate_statements` and nothing else about who may act: each change as a statement signed with Ed25519 that names the one it supersedes, the statements of everyone the mandate was passed on from, whatever else was presented for the proposer, which may be forged, and every key of each issuer the site knows, with when it was valid. One rule says which statements count and who holds what after a replacement, a withdrawal, an expiry, a delegation, a key rotation or the end of an issuer's standing. It is on one page, [Signed mandate statements](../reference/mandate-statements.md), with [test vectors](../reference/mandate-vectors.json) and a reference in a hundred lines to copy or port ([`examples/mandate-verifier/verify.py`](https://github.com/darklordVirtual/agentic-datacenter/blob/main/examples/mandate-verifier/verify.py), MIT). The card says that the gate was given statements alone (`record_told`). `AD-16` to `AD-19`, `OP-15` and `OP-16` test it, and `examples/http-gate/server.py` verifies when started that way (it then needs the `cryptography` package).
+A gate that authenticates mandates can go one step further: `ADC_GATE_VERIFIES_MANDATES=1` for a served gate, `verifies_mandates = True` on a Python gate. It is then sent `mandate_statements` and nothing else about who may act: each change as a statement signed with Ed25519 that names the one it supersedes, the statements of everyone the mandate was passed on from, whatever else was presented for the proposer, which may be forged, and every key of each issuer the site knows, with when it was valid. One rule says which statements count and who holds what after a replacement, a withdrawal, an expiry, a delegation, a key rotation or the end of an issuer's standing. It is on one page, [Signed mandate statements](../reference/mandate-statements.md), with [test vectors](../reference/mandate-vectors.json) and a reference in a hundred lines to copy or port ([`examples/mandate-verifier/verify.py`](https://github.com/darklordVirtual/agentic-datacenter/blob/main/examples/mandate-verifier/verify.py), MIT). The card says that the gate was given statements alone (`record_told`). `AD-16` to `AD-19`, `OP-15` and `OP-16` test it, and `examples/http-gate/server.py` verifies whenever it is sent statements and no record (it then needs the `cryptography` package, which `uv sync` installs). Set the variable where `bench run` is started.
 
 Told or not, a gate can say two more things, both optional. Its own finding of whether the proposer holds a mandate, whatever its verdict: `"authority_holds": true` or `false`. And, with a refusal for want of a mandate, which kind it was, in `reason_details`: `{"authority": "ended"}` when an earlier change held the contract, `{"authority": "never_held"}` when none did. Both example gates decide from the record when there is one, and say both. For each run in which a mandate was set, the card counts the steps without a mandate by kind as the register holds them, the ones your gate allowed, how often its finding was not the premise, and how often its kind was not the register's (`authority` on each run and on each row of `results`). Each judgement carries the same for its proposal. A gate that says nothing more than `authority` loses nothing by it.
 

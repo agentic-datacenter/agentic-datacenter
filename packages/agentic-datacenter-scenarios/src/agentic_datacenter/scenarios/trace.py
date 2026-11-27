@@ -76,6 +76,9 @@ def _acted_for(
         }  # fmt: skip
         if "expires_at_ms" in last:
             link["expires_at_ms"] = last["expires_at_ms"]
+        if last["contracts"] == [] or at_ms >= last.get("expires_at_ms", at_ms + 1):
+            # The last on record, and no longer a mandate: withdrawn or expired.
+            link["ended"] = True
         chain.append(link)
         if not last.get("delegated"):
             break
@@ -123,12 +126,21 @@ def action_trace(
         trace = record.get("trace") if isinstance(record.get("trace"), Mapping) else {}
         assert isinstance(trace, Mapping)
         start = int(record["time_ms"])
+        own = {c["tag"] for c in change_log if str(c.get("reason", "")).endswith(f"({pid})")}
+        undone_for = f": {record.get('outcome_detail')}"
         commands = [
             c
             for c in change_log
-            # The step's own writes, and the writes that undid it.
+            # The step's own writes, and the writes that undid it. An undo is named
+            # for the newest step on its points, which may be a later one, so it is
+            # found by the points it wrote back and the reason this step was undone for.
             if str(c.get("reason", "")).endswith(f"({pid})")
-            or str(c.get("reason", "")).startswith(f"rollback of {pid}:")
+            or (
+                record.get("outcome") == "ROLLED_BACK"
+                and c["tag"] in own
+                and str(c.get("reason", "")).startswith("rollback of ")
+                and str(c.get("reason", "")).endswith(undone_for)
+            )
         ]
         undone = [int(c["time_ms"]) for c in commands if str(c["reason"]).startswith("rollback")]
         end = max([int(trace.get("finished_at_ms", start)), *undone])
@@ -241,8 +253,15 @@ def _chain_lines(chain: Sequence[Mapping[str, Any]]) -> list[str]:
     parts = []
     for link in chain:
         how = "passed on by" if link["passed_on"] else "given by"
+        if link.get("ended"):
+            how = "withdrawn by" if link["contracts"] == [] else f"expired, {how}"
         parts.append(f"{link['principal']}, {how} {link['given_by'] or 'the register'}")
-    return ["Acted under the mandate of: " + "; ".join(parts) + ".", ""]
+    lead = (
+        "Had no mandate in force. The last on record: "
+        if any(link.get("ended") for link in chain)
+        else "Acted under the mandate of: "
+    )
+    return [lead + "; ".join(parts) + ".", ""]
 
 
 def _what(link: Mapping[str, Any]) -> str:

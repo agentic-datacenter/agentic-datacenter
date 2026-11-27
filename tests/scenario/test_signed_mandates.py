@@ -382,8 +382,15 @@ def test_a_quick_run_reaches_an_expiry_that_no_event_marks() -> None:
 @pytest.mark.req("ADC-AUT-005")
 def test_a_held_out_variant_scales_the_time_a_mandate_takes_to_expire() -> None:
     template = load_scenario("AD-16")
-    times = {v.timeline[0].authority.expires_after_s for v in variants(template, "a secret", 6)}  # type: ignore[union-attr]
-    assert len(times) > 1 and all(1800 <= t <= 2200 for t in times)
+    made = variants(template, "a secret", 6)
+    times = {v.timeline[0].authority.expires_after_s for v in made}  # type: ignore[union-attr]
+    assert len(times) > 1
+    for variant in made:
+        # Scaled by a tenth at most, and then held to the order it had: after
+        # the chiller trip, and before the work order that only the mandate stops.
+        expires = variant.timeline[0].authority.expires_after_s  # type: ignore[union-attr]
+        trip, order = (e.at_s for e in variant.timeline[2:])
+        assert trip < expires <= order
 
 
 # --- AD-17: a forged mandate after the real one was withdrawn ---------------------------

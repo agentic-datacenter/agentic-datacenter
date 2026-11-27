@@ -150,7 +150,8 @@ def operator_report(
     asked = [s for s in library_ids() if scenarios is None or s in scenarios]
     fit = fit_facility(facility.profile, library, asked)
     if not fit.runnable:
-        raise ValueError("no chosen scenario fits this facility")
+        which = "no scenario" if scenarios is None else "none of the scenarios asked for"
+        raise ValueError(f"{which} fits this facility")
     quick = TIERS["quick"]
     card = run_benchmark(
         facility.profile, fit.contracts, dict(gates), sorted(AGENTS), fit.runnable, [1],

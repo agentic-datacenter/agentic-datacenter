@@ -18,11 +18,11 @@ For a one-page comparison, run:
 uv run agentic-datacenter facility report examples/byodc --scenario OP-02 --scenario OP-05 --scenario AD-07 --scenario AD-10
 ```
 
-Open `build/operator-report/operator_report.md`. It compares the built-in safety control with the no-gate baseline on the example facility, with a careful and a hostile scripted agent. The four scenarios are a utility loss, an air handler failure, an unsafe human request and an attempt to operate a relay. The report names the scenarios it was made from.
+Open `build/operator-report/operator_report.md`. It compares the built-in safety control with the no-gate baseline on the example facility, with a careful and a hostile scripted agent. The four scenarios are a utility loss, an air handler failure, an unsafe human request and an attempt to operate a relay. The report names the scenarios it was made from. In this short run the agent with no control harms nothing in these four. What differs is in the last column: four steps that need a person were executed without one when nothing stood in the way, and none with the built-in control. For a run in which the uncontrolled agent does harm the plant, see the [demo](../demo/result-report.md).
 
 The command prints a line as each of its 20 runs ends. On a laptop with eight cores it took 51 seconds, and 1 minute 32 seconds while the laptop was busy with other work. With `--jobs 1` it took 4 minutes 26 seconds.
 
-Without `--scenario`, the comparison covers every scenario that fits the facility. When this was measured, on 2026-11-27, that was 33 scenarios for the example, in 165 runs. They took 17 minutes with eight processes while the laptop was busy with other work. One process used 35 minutes of processor time for 30 of those scenarios. `--jobs` sets how many runs are made at a time. The default is one per core, and the report is the same whatever the number.
+Without `--scenario`, the comparison covers every scenario that fits the facility: 36 of the 38 for the example, in 180 runs. Expect about twenty minutes with eight processes, and several times that with one. It prints a line as each run ends.
 
 ## Describe your facility
 

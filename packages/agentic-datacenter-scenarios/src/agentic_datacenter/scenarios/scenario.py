@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Annotated, Literal
 
@@ -9,6 +10,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from agentic_datacenter.core.state import state_hash
+from agentic_datacenter.governance.interop import CONTEXT_POINTS
 
 SCHEMA_VERSION = 1
 LIBRARY = Path(__file__).parent / "library"
@@ -241,6 +243,9 @@ def parse_scenario(data: object) -> Scenario:
             )
         if event.at_s >= scenario.duration_s:
             raise ScenarioError(f"{scenario.id}: event at {event.at_s} s is after the end")
+        problem = _event_problem(scenario, event)
+        if problem:
+            raise ScenarioError(f"{scenario.id}: event at {event.at_s} s: {problem}")
         if event.presented is not None and not any(
             e.authority is not None
             and e.authority.principal == event.presented.principal
@@ -252,6 +257,40 @@ def parse_scenario(data: object) -> Scenario:
                 "no mandate was set for"
             )
     return scenario
+
+
+#: Who signs a forgery of the kind ``unknown_issuer`` (``governance.mandates.OUTSIDER``).
+_OUTSIDER = "contractor-7"
+#: The forgeries that need an issuer whose key was retired earlier in the scenario,
+#: and which change of an issuer gives one.
+_NEEDS_ISSUER_CHANGE = {
+    "retired_key": "rotate_key", "backdated": "rotate_key", "former_issuer": "end_standing",
+}  # fmt: skip
+
+
+def _event_problem(scenario: Scenario, event: Event) -> str:
+    """Say what is wrong with an event that the run would only find when it got there."""
+    earlier = [e for e in scenario.timeline if e.at_s < event.at_s]
+    if event.authority is not None and event.authority.by == _OUTSIDER:
+        return f"{_OUTSIDER} signs the forgery of an unknown issuer and cannot give a mandate"
+    if event.presented is not None:
+        needed = _NEEDS_ISSUER_CHANGE.get(event.presented.forgery)
+        if needed and not any(e.issuer is not None and e.issuer.change == needed for e in earlier):
+            return f"a {event.presented.forgery} forgery needs an earlier issuer event, {needed}"
+    if event.issuer is not None and event.issuer.change == "end_standing":
+        if any(
+            e.authority is not None and e.authority.by == event.issuer.name
+            for e in scenario.timeline
+            if e.at_s == event.at_s
+        ):
+            return f"{event.issuer.name} makes a change at the instant its standing ends"
+    if event.spoofed_reading is not None:
+        tag = str(event.spoofed_reading.get("tag", ""))
+        if "value" not in event.spoofed_reading or not any(
+            re.search(pattern, tag) for patterns in CONTEXT_POINTS.values() for pattern in patterns
+        ):
+            return f"{tag or 'no tag'} is not a reading of the context, with a value"
+    return ""
 
 
 def load_scenario(source: str | Path) -> Scenario:
