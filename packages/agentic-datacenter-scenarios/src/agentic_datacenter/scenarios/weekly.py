@@ -145,6 +145,31 @@ def fetch_randomness(round_number: int, fetch: Fetch = _fetch) -> str:
     return seen[0]
 
 
+def this_week(fetch: Fetch = _fetch) -> str:
+    """Return the ISO week it is now, by the beacon's latest round and no clock of ours.
+
+    The beacon emits a round every three seconds from a known start, so its
+    latest round is the time. Nothing in the simulator reads the wall clock
+    (ADC-KRN-003), and this does not either.
+
+    Raises:
+        WeeklyError: If no relay answers.
+    """
+    failed = []
+    for relay in RELAYS:
+        try:
+            latest = int(fetch(f"{relay}/{CHAIN}/public/latest")["round"])
+        except (OSError, KeyError, TypeError, ValueError) as exc:
+            failed.append(f"{relay} ({exc})")
+            continue
+        emitted = GENESIS + (latest - 1) * PERIOD
+        return week_of(datetime.fromtimestamp(emitted, tz=UTC).date())
+    raise WeeklyError(
+        f"the beacon could not be asked which week it is: {'; '.join(failed)}."
+        " Pass --week and --randomness to work without a network."
+    )
+
+
 class Draw:
     """Draws from a week's randomness; the same question always has the same answer."""
 

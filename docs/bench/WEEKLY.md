@@ -70,7 +70,7 @@ What repeats is the kind. There are seven, and three are drawn each week, so a k
 
 Three things it depends on, and what happens without each:
 
-- **The beacon.** Four relays are asked, and two that agree are enough. If drand's quicknet were ever retired, a new generator version would name its successor from a week not yet begun. `--randomness` draws a week from a value you have, with no network.
+- **The beacon.** Four relays are asked, and two that agree are enough. The beacon also says which week it is, by its latest round, so no clock of the machine is read. If drand's quicknet were ever retired, a new generator version would name its successor from a week not yet begun. `--randomness` draws a week from a value you have, with no network.
 - **This repository's Monday workflow.** It only checks. If it stopped running, every week's scenarios would still be drawn by everyone who asks. GitHub pauses a schedule in a repository with no activity for sixty days.
 - **The simulator.** A change to it could make a drawn step unsound. `tools/weekly_sweep.py` plays many draws with no control and fails if one tests nothing, and it runs every night.
 

@@ -1304,8 +1304,6 @@ def weekly(argv: Sequence[str]) -> int:
     Runs ``agentic-datacenter weekly show`` or ``weekly run`` and returns the exit
     status. A development result on the main branch, not a benchmark result.
     """
-    from datetime import date
-
     from agentic_datacenter.core.profile import load_profile
 
     from . import weekly as drawn
@@ -1339,8 +1337,8 @@ def weekly(argv: Sequence[str]) -> int:
                 help="Exit with status 1 if the week as drawn tests nothing (needs null_gate).",
             )  # fmt: skip
     args = parser.parse_args(argv)
-    week = args.week or drawn.week_of(date.today())  # noqa: TID251 - a week is of the calendar
     try:
+        week = args.week or drawn.this_week()
         randomness = args.randomness or drawn.fetch_randomness(drawn.round_for(week))
         scenarios = drawn.generate(week, randomness)
     except drawn.WeeklyError as exc:

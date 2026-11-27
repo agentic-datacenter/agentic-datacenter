@@ -105,6 +105,28 @@ def test_a_round_is_read_when_two_relays_agree_whatever_the_others_do() -> None:
 
 
 @pytest.mark.req("ADC-BEN-010")
+def test_the_beacon_says_which_week_it_is_and_no_clock_is_read() -> None:
+    """The latest round is the time: round 34397812 is the first instant of 2026-W49."""
+
+    def latest(round_number: int):  # type: ignore[no-untyped-def]
+        return lambda url: {"round": round_number} if url.endswith("/latest") else {}
+
+    assert weekly.this_week(latest(34397812)) == "2026-W49"
+    assert weekly.this_week(latest(34397811)) == "2026-W48"
+    assert weekly.this_week(latest(34397812 + 7 * 28800 - 1)) == "2026-W49"
+    assert weekly.this_week(latest(34397812 + 7 * 28800)) == "2026-W50"
+
+    def nobody(url: str) -> dict[str, object]:
+        raise OSError("down")
+
+    with pytest.raises(weekly.WeeklyError, match="which week it is"):
+        weekly.this_week(nobody)
+    source = REPO / "packages/agentic-datacenter-scenarios/src/agentic_datacenter/scenarios"
+    for name in ("weekly.py", "cli.py"):
+        assert "date.today" not in (source / name).read_text(encoding="utf-8")
+
+
+@pytest.mark.req("ADC-BEN-010")
 def test_ten_years_of_weeks_draw_and_no_scenario_comes_twice() -> None:
     """Every week to the end of 2036 draws three valid scenarios, a week 53 among them."""
     from datetime import timedelta
