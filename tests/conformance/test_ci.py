@@ -201,8 +201,18 @@ def test_ruleset_requires_a_pull_request_and_its_checks() -> None:
     assert ruleset["bypass_actors"] == []
     assert "pull_request" in rules
     checks = {c["context"] for c in rules["required_status_checks"]["required_status_checks"]}
-    pr_jobs = set(yaml.safe_load((REPO / ".github/workflows/pr.yml").read_text("utf-8"))["jobs"])
-    assert checks and checks <= pr_jobs
+    jobs = yaml.safe_load((REPO / ".github/workflows/pr.yml").read_text("utf-8"))["jobs"]
+    # A hosted run reports a matrix job once per leg, as ``job (value)``, and never
+    # under its bare name, so a required check names the legs.
+    reported = set()
+    for name, job in jobs.items():
+        matrix = job.get("strategy", {}).get("matrix", {})
+        (values,) = matrix.values() if matrix else ([None],)
+        reported |= {name if v is None else f"{name} ({v})" for v in values}
+    assert checks and checks <= reported
+    assert "unit" not in checks and {c for c in checks if c.startswith("unit (")} == {
+        r for r in reported if r.startswith("unit (")
+    }
     assert {"static", "traceability", "conformance"} <= checks
     assert "deletion" in rules and "non_fast_forward" in rules
 

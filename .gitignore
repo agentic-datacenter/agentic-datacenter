@@ -4,6 +4,7 @@ profiles/restricted_ref.yaml
 # REMORA register cache (agentic-datacenter remora fetch-src)
 .remora-src/
 
+.DS_Store
 __pycache__/
 *.pyc
 .venv/

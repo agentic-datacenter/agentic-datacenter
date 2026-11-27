@@ -33,6 +33,11 @@ configures every process the same way:
     then carries the mandate record and not the premise
     ``authority(<principal>, <contract>)``; the run is still judged by that
     premise (ADR 0031).
+``ADC_GATE_VERIFIES_MANDATES``
+    Set to ``1`` for a service that authenticates the mandate itself. A request
+    then carries the signed statements and the trusted issuers
+    (``mandate_statements``), and neither that premise nor the register's
+    record; the run is still judged by the premise (ADR 0039).
 ``ADC_GATE_CONTEXT``
     Set to ``1`` for a service that wants a read-only sample of the plant with
     each request: temperatures, load, interlocks, margins and alarms, each with
@@ -77,6 +82,7 @@ from agentic_datacenter.governance.gate import (
     OUTCOMES,
     AuthenticatedActor,
     Decision,
+    MandateChange,
     Outcome,
     PremiseSnapshot,
     Proposal,
@@ -181,6 +187,8 @@ def request_body(
     decides on the action itself rather than on an intent contract.
     ``mandate`` is there only when a mandate was set for the proposer: the
     register's record of it, every change oldest first (ADR 0031).
+    ``mandate_statements`` is the same mandate as signed statements, with
+    whatever else was presented and the issuers the site trusts (ADR 0039).
     """
     body: dict[str, JsonValue] = {
         "schema": SCHEMA,
@@ -227,16 +235,37 @@ def request_body(
             "changes": [
                 {
                     "time_ms": change.time_ms,
-                    # When the next change replaced it; null for the one in force.
-                    "until_ms": later.time_ms if later is not None else None,
+                    # When it stopped being in force, replaced by the next change or
+                    # expired; null for the one in force.
+                    "until_ms": _until_ms(change, later, premises.time_ms),
                     "contracts": list(change.contracts),
                     "by": change.by,
                     "reason": change.reason,
+                    # Only on a change that expires by itself (ADR 0039).
+                    **(
+                        {"expires_at_ms": change.expires_at_ms}
+                        if change.expires_at_ms is not None
+                        else {}
+                    ),
                 }
                 for change, later in zip(changes, [*changes[1:], None], strict=True)
             ],
         }
+    if premises.statements is not None:
+        body["mandate_statements"] = {
+            "principal": premises.statements.principal,
+            "statements": [dict(s) for s in premises.statements.statements],
+            "issuers": [dict(i) for i in premises.statements.issuers],
+        }
     return body
+
+
+def _until_ms(change: MandateChange, later: MandateChange | None, now_ms: int) -> int | None:
+    """Return when *change* stopped being in force: replaced, or expired; None if it is."""
+    ends = [later.time_ms] if later is not None else []
+    if change.expires_at_ms is not None and (later is not None or now_ms >= change.expires_at_ms):
+        ends.append(change.expires_at_ms)
+    return min(ends) if ends else None
 
 
 def correlation(
@@ -272,9 +301,13 @@ class HttpGate:
         derives_authority: bool = False,
         wants_context: bool = False,
         epoch: str = EPOCH,
+        verifies_mandates: bool = False,
     ) -> None:
         """Create the binding. Nothing is sent until the first decision."""
-        self._setup(name, profile, timeout_s, stateful, derives_authority, wants_context, epoch)
+        self._setup(
+            name, profile, timeout_s, stateful, derives_authority, wants_context, epoch,
+            verifies_mandates,
+        )  # fmt: skip
         if not url:
             raise HttpGateConfigError("ADC_GATE_URL is not set")
         if urllib.parse.urlsplit(url).scheme not in ("http", "https"):
@@ -294,6 +327,7 @@ class HttpGate:
         derives_authority: bool,
         wants_context: bool = False,
         epoch: str = EPOCH,
+        verifies_mandates: bool = False,
     ) -> None:
         if profile not in SERVED_PROFILES:
             raise HttpGateConfigError(f"profile {profile} is not one of {SERVED_PROFILES}")
@@ -313,7 +347,9 @@ class HttpGate:
         #: A service that keeps state cannot be put back to an earlier instant.
         self.restorable = not stateful
         #: A service that works out for itself who may act is not sent the premise.
-        self.derives_authority = derives_authority
+        self.derives_authority = derives_authority or verifies_mandates
+        #: A service that authenticates the mandate itself is sent signed statements alone.
+        self.verifies_mandates = verifies_mandates
         #: One per gate, and Agentic-Datacenter builds a gate per run and per replay.
         self.session = f"{name}-{os.getpid()}-{next(_SESSIONS)}"
         self.outcomes: dict[str, Outcome] = {}
@@ -468,11 +504,15 @@ class CommandGate(HttpGate):
         derives_authority: bool = False,
         wants_context: bool = False,
         epoch: str = EPOCH,
+        verifies_mandates: bool = False,
     ) -> None:
         """Create the binding. The command is not run until the first decision."""
         if not command.strip():
             raise HttpGateConfigError("ADC_GATE_COMMAND is not set")
-        self._setup(name, profile, timeout_s, stateful, derives_authority, wants_context, epoch)
+        self._setup(
+            name, profile, timeout_s, stateful, derives_authority, wants_context, epoch,
+            verifies_mandates,
+        )  # fmt: skip
         self.command = shlex.split(command)
         self.url = "command:" + self.command[0]
 
@@ -500,6 +540,7 @@ def _common(env: Mapping[str, str], default_name: str) -> dict[str, Any]:
         "timeout_s": float(env.get("ADC_GATE_TIMEOUT_S", "10")),
         "stateful": env.get("ADC_GATE_STATEFUL", "") == "1",
         "derives_authority": env.get("ADC_GATE_DERIVES_AUTHORITY", "") == "1",
+        "verifies_mandates": env.get("ADC_GATE_VERIFIES_MANDATES", "") == "1",
         "wants_context": env.get("ADC_GATE_CONTEXT", "") == "1",
         "epoch": env.get("ADC_GATE_EPOCH", EPOCH),
     }

@@ -17,6 +17,7 @@ from agentic_datacenter.governance.gate import (
     Proposal,
     Verdict,
 )
+from agentic_datacenter.governance.mandates import current as current_authority
 
 
 class ExampleGate:
@@ -39,16 +40,29 @@ class ExampleGate:
         if not premises.contract_known:
             reasons.insert(0, "unknown contract")
         # Who may act. The premise authority(<principal>, <contract>) says it, and so
-        # does the mandate record: every change, oldest first, the last one in force.
-        # A gate with ``derives_authority = True`` is given the record alone, so this
-        # one decides from the record, and reads the premise only when there is none.
+        # does the mandate record: every change, oldest first, the last one in force
+        # until it expires, if it does. A gate with ``derives_authority = True`` is
+        # given the record alone, so this one decides from the record, and reads
+        # the premise only when there is none. A gate with
+        # ``verifies_mandates = True`` is given signed statements alone, to verify
+        # with ``agentic_datacenter.governance.mandates.current``.
         kind, finding = "", None
         if premises.mandate is not None:
             changes = premises.mandate.changes
-            if proposal.contract_id not in changes[-1].contracts:
-                held_before = any(proposal.contract_id in c.contracts for c in changes[:-1])
+            last = changes[-1]
+            expired = last.expires_at_ms is not None and premises.time_ms >= last.expires_at_ms
+            if proposal.contract_id not in last.contracts or expired:
+                held_before = any(proposal.contract_id in c.contracts for c in changes)
                 kind = "ended" if held_before else "never_held"
             finding = not kind  # optional: this gate's own finding, compared with the premise
+        elif premises.statements is not None:
+            signed = premises.statements
+            found = current_authority(
+                signed.statements, signed.issuers, signed.principal, proposal.contract_id,
+                premises.time_ms,
+            )  # fmt: skip
+            kind = "" if found.holds else found.kind or "not_established"
+            finding = found.holds
         failed = [p.expr for p in premises.premises if p.holds is False]
         no_authority = bool(kind) or any(e.startswith("authority(") for e in failed)
         verdict, approvers = Verdict.DENY, 0
@@ -89,7 +103,7 @@ class ExampleGate:
             verdict, ref, proposal.contract_id, writes, premises.time_ms + DECISION_TTL_MS,
             ref[-12:], tuple(reasons), required_approvers=approvers, reason_codes=codes,
             # Optional: which of the two kinds of no mandate the refusal is for.
-            authority_detail=kind if "authority" in codes else "",
+            authority_detail=kind if "authority" in codes and kind != "not_established" else "",
             authority_holds=finding,
         )  # fmt: skip
 

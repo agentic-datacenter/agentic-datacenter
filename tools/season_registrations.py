@@ -14,7 +14,7 @@ season. ``--season`` reads the deadline from the plan (``tools/season.py``)
 and writes ``docs/bench/season-<n>-registrations.json``. A deadline can also be
 given by itself:
 
-    python tools/season_registrations.py --deadline 2026-12-02T12:00:00Z \
+    python tools/season_registrations.py --deadline 2027-01-13T12:00:00Z \
         --out docs/bench/season-1-registrations.json
 
 It reads the issues labelled ``gate-registration`` with the GitHub CLI
@@ -262,7 +262,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     which = parser.add_mutually_exclusive_group(required=True)
     which.add_argument("--season", type=int, help="A season of the plan (tools/season.py).")
-    which.add_argument("--deadline", help="ISO 8601, e.g. 2026-12-02T12:00:00Z")
+    which.add_argument("--deadline", help="ISO 8601, e.g. 2027-01-13T12:00:00Z")
     parser.add_argument("--out", type=Path, help="Required with --deadline.")
     args = parser.parse_args(argv)
     record: dict[str, Any] = {"repository": REPOSITORY}

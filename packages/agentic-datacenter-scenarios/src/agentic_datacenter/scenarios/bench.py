@@ -345,7 +345,7 @@ def _refusals(
 #: judgement of the card.
 AUTHORITY_KEYS = (
     "authorized", "authority_detail", "reason_details", "gate_authority_holds",
-    "authority_premise_told",
+    "authority_premise_told", "authority_record_told",
 )  # fmt: skip
 
 
@@ -397,11 +397,16 @@ def authority_counts(records: Sequence[Mapping[str, Any]]) -> dict[str, Any] | N
             counts["details_wrong"] += int(said is not None and said != kind)
         elif record["verdict"] != "ALLOW" and "authority" in _strings(record.get("reason_codes")):
             counts["cited_authority_with_mandate"] += 1
-    return {
+    out: dict[str, Any] = {
         "premise_told": all(r.get("authority_premise_told") is not False for r in told),
         "without_mandate": kinds,
         **counts,
     }
+    if any(r.get("authority_record_told") is False for r in told):
+        # Only for a gate that verifies mandates itself, so every other run has
+        # the block it had (ADR 0039).
+        out["record_told"] = False
+    return out
 
 
 def _sum_authority(blocks: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
@@ -417,6 +422,10 @@ def _sum_authority(blocks: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     }
     for key in COUNTED_OF_AUTHORITY:
         out[key] = sum(int(block[key]) for block in blocks)
+    withheld = sum(1 for block in blocks if block.get("record_told") is False)
+    if withheld:
+        # In how many of the runs the gate was given signed statements alone.
+        out["runs_record_withheld"] = withheld
     return out
 
 
@@ -539,7 +548,16 @@ def shortened(scenario: Scenario, seconds: int | None, reach_s: int | None) -> i
     """
     if seconds is None or reach_s is None:
         return seconds
-    cut_off = [event.at_s for event in scenario.timeline if seconds <= event.at_s < reach_s]
+    instants = [event.at_s for event in scenario.timeline]
+    # A mandate that expires by itself ends at an instant no event marks (ADR 0039).
+    instants += [
+        event.at_s + event.authority.expires_after_s
+        for event in scenario.timeline
+        if event.authority is not None and event.authority.expires_after_s is not None
+    ]
+    # An expiry after the scenario's end is not in any run of it.
+    instants = [at_s for at_s in instants if at_s < scenario.duration_s]
+    cut_off = [at_s for at_s in instants if seconds <= at_s < reach_s]
     past_the_last_event = max(cut_off) + seconds if cut_off else 0
     paced = DECISION_POINTS_IN_A_SHORTENED_RUN * scenario.decision_every_s
     return max(seconds, min(reach_s, max(past_the_last_event, paced)))

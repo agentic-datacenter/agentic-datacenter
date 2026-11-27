@@ -2,7 +2,7 @@
 
 `agentic-datacenter bench run --tier <name>` sets the length, the seeds and how each proposal is judged. Options given beside a tier take precedence. The tier's bounds are on the card, under `judging`.
 
-Every time on this page was measured on `benchmark-v1`, which had 23 scenarios. `benchmark-v1.2`, the version of Season 1, has 29, and its IT load trips on hot inlet air; it has not been timed yet. Expect a season to take about 29/23 of the times below.
+Every time on this page was measured on `benchmark-v1`, which had 23 scenarios. `benchmark-v1.3`, the version of Season 1, has 32, and its IT load trips on hot inlet air; it has not been timed yet. Expect a season to take about 32/23 of the times below.
 
 | Tier | Scenarios | Seeds | Replay of each proposal | Proposals judged per run | For |
 | --- | --- | --- | --- | --- | --- |
@@ -20,13 +20,13 @@ A scenario cut at 30 minutes shows nothing of what comes later. So `quick` makes
 
 The card carries the 30 minutes as `duration_override_s`, the two hours as `duration_reach_s`, and each run its own length as `duration_s`.
 
-Twelve of the 27 scenarios on the main branch are longer than 30 minutes in a quick run for that:
+Fourteen of the 32 scenarios are longer than 30 minutes in a quick run for that:
 
 | Scenario | Why | Length in a quick run |
 | --- | --- | --- |
 | `AD-01`, `OP-03` | an event at 30 minutes | 1 hour |
 | `AD-09`, `OP-01` | an event at 35 minutes | 1 hour, the whole scenario |
-| `AD-11` | the mandate ends at 33 minutes 20 seconds | 1 hour 3 minutes 20 seconds |
+| `AD-11`, `AD-16`, `AD-17` | the mandate ends at about 33 minutes, and the work order that only a mandate check stops comes at 50 minutes (ADR 0039) | 1 hour 20 minutes |
 | `AD-12` | the second, narrower mandate at 1 hour | 1 hour 30 minutes |
 | `OP-12` | an event at 30 minutes | 45 minutes, the whole scenario |
 | `AD-14`, `OP-09` | decision points 10 minutes apart; the work that needs a person is proposed at 40 minutes | 1 hour, the whole scenario |
@@ -34,11 +34,11 @@ Twelve of the 27 scenarios on the main branch are longer than 30 minutes in a qu
 | `OP-07` | decision points 30 minutes apart, and events at 30 minutes | 2 hours; the events of its second day are not in it |
 | `AD-05` | decision points 36 minutes apart | 2 hours, with three of them |
 
-Before this, the main branch cut all twelve at 30 minutes. In `AD-11` and `AD-12` the mandate then never ended: a quick run counted no step proposed without a mandate, and a gate that checks only operating limits passed both (issue 31). In `AD-14` and `OP-09` the work that needs a person was never proposed. In `AD-05` no agent proposed anything at all.
+Before this, the main branch cut the twelve it then had of these at 30 minutes. In `AD-11` and `AD-12` the mandate then never ended: a quick run counted no step proposed without a mandate, and a gate that checks only operating limits passed both (issue 31). In `AD-14` and `OP-09` the work that needs a person was never proposed. In `AD-05` no agent proposed anything at all.
 
 A quick run still plays only the first steps of an agent's script. A step the hostile agent takes late in a scenario, such as the one executed on a premise that does not hold in `OP-02`, `OP-04`, `OP-05`, `OP-08` and `OP-13`, is in a run at full length and not in a quick one. `--seconds` shortens every scenario to exactly what it says, also beside `--tier quick`.
 
-One run of each of the 27 scenarios is now 21 hours 58 minutes of simulated time in a quick run, against 13 hours 10 minutes: two thirds more. The times below were measured before that, and `quick` has not been timed again.
+One run of each of the 32 scenarios is 26 hours 25 minutes of simulated time in a quick run, against 15 hours 40 minutes if each were cut at 30 minutes: seven tenths more. The times below were measured before that, and `quick` has not been timed again.
 
 ## What it costs
 

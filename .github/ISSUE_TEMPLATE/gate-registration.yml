@@ -6,8 +6,6 @@ body:
   - type: markdown
     attributes:
       value: |
-        ![Agentic-Datacenter public test](https://github.com/darklordVirtual/agentic-datacenter/raw/refs/heads/main/docs/media/season1-register-banner.webp)
-
         ### Register once. Test when ready.
         **Registration is always open.** Seasons follow one another, four weeks each. Your gate takes part in the season that is open now, and in every season after it while this issue stays open. [Calendar and deadlines](https://github.com/darklordVirtual/agentic-datacenter/blob/main/docs/bench/PUBLIC_TEST.md#seasons)
 

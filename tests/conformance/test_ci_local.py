@@ -94,7 +94,10 @@ def test_one_status_per_job_under_the_name_the_ruleset_requires() -> None:
         if rule["type"] == "required_status_checks"
         for c in rule["parameters"]["required_status_checks"]
     }
-    assert required <= {job.context for job in ci.plan(PR, docker=False)}
+    # A matrix job is required leg by leg, under the name a hosted run reports.
+    assert statuses["unit (agentic-datacenter-core)"]["state"] == "success"
+    assert statuses["unit (agentic-datacenter-net)"]["state"] == "failure"
+    assert required <= {job.name for job in ci.plan(PR, docker=False)}
 
 
 def test_a_result_is_published_only_for_a_commit_that_is_what_was_tested() -> None:

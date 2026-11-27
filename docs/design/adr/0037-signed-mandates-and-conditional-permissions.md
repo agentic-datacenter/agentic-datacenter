@@ -1,6 +1,6 @@
 # ADR 0037: Signed mandates and conditional permissions, for the next benchmark version
 
-- **Status:** Proposed on 2026-11-25. Not built. It changes what a run is judged by, so it goes into a benchmark version after `benchmark-v1.1`, with its own scenarios, and not into a season that has started.
+- **Status:** Part 1, signed mandates, was built on 2026-11-26 by ADR 0039, which says where it differs from the proposal here (keys from the issuer's name, times in simulated milliseconds). Part 2, conditional permissions, is proposed and not built. It changes what a run is judged by, so it goes into a benchmark version after `benchmark-v1.1`, with its own scenarios, and not into a season that has started.
 - **Date:** 2026-11-25
 - **SDD:** 9.2, 12.1; ADR 0028, 0029, 0031, 0036
 

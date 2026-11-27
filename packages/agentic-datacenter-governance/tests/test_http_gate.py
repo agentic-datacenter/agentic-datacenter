@@ -330,7 +330,8 @@ def test_the_mandate_record_is_in_a_request_only_when_one_was_set() -> None:
     assert set(body["mandate"]) == set(spec["required"]) == set(spec["properties"])  # type: ignore[arg-type]
     change = spec["properties"]["changes"]["items"]
     assert set(body["mandate"]["changes"][0]) == set(change["required"])  # type: ignore[index,call-overload]
-    assert set(change["required"]) == set(change["properties"])
+    # A change that ends by itself also carries when (ADR 0039).
+    assert set(change["properties"]) - set(change["required"]) == {"expires_at_ms"}
     answer = schema["$defs"]["evaluate_answer"]
     assert "reason_details" in answer["properties"] and "reason_details" not in answer["required"]
 

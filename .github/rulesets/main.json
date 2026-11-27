@@ -37,7 +37,28 @@
             "context": "static"
           },
           {
-            "context": "unit"
+            "context": "unit (agentic-datacenter-core)"
+          },
+          {
+            "context": "unit (agentic-datacenter-data)"
+          },
+          {
+            "context": "unit (agentic-datacenter-governance)"
+          },
+          {
+            "context": "unit (agentic-datacenter-net)"
+          },
+          {
+            "context": "unit (agentic-datacenter-plant)"
+          },
+          {
+            "context": "unit (agentic-datacenter-scenarios)"
+          },
+          {
+            "context": "unit (agentic-datacenter-supervisory)"
+          },
+          {
+            "context": "unit (agentic-datacenter-whatif)"
           },
           {
             "context": "property"

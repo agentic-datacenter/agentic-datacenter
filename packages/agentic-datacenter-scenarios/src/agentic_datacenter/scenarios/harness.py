@@ -24,6 +24,7 @@ from agentic_datacenter.governance.contracts import ContractLibrary
 from agentic_datacenter.governance.control_path import NO_STANDING, PROFILES, GovernedPath
 from agentic_datacenter.governance.envelope_ref import DECISION_TTL_MS
 from agentic_datacenter.governance.gate import AuthenticatedActor, GovernanceGate
+from agentic_datacenter.governance.mandates import forged
 from agentic_datacenter.net.virtual_net import Request, VirtualNetwork, build_network
 from agentic_datacenter.scenarios.agents import Agent
 from agentic_datacenter.scenarios.plant import BuiltinPlant
@@ -264,9 +265,29 @@ def apply_event(world: World, event: Mapping[str, JsonValue]) -> None:
             None if everything else [str(c) for c in held],  # type: ignore[union-attr]
             by=str(change.get("by") or ""),
             reason=str(change.get("reason") or ""),
+            expires_at_ms=(
+                world.path.now_ms() + int(str(change["expires_after_s"])) * 1000
+                if change.get("expires_after_s") is not None
+                else None
+            ),
         )
         if change.get("reason"):
             world.path.add_note(str(change["reason"]))
+    elif event.get("presented") is not None:
+        # Put before the gate, never into the register: what a run is judged by
+        # is what it was (ADR 0039).
+        claim = event["presented"]
+        assert isinstance(claim, Mapping)
+        principal, wanted = str(claim["principal"]), claim["contracts"]
+        issued = world.path.statements(principal)
+        assert issued is not None and (wanted == "all" or isinstance(wanted, list | tuple))
+        contracts = world.path.library.ids() if wanted == "all" else [str(c) for c in wanted]
+        world.path.present_statement(
+            principal,
+            forged(
+                str(claim["forgery"]), principal, issued.statements, contracts, world.path.now_ms()
+            ),
+        )
     elif event.get("work_order") is not None:
         # Proposed as the agent, through the agent's own tools: whatever the agent,
         # the same step reaches the gate (ADR 0038).
