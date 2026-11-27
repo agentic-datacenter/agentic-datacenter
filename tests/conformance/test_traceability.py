@@ -96,6 +96,30 @@ def test_requirement_verified_only_nightly_is_a_note_not_a_failure() -> None:
 
 
 @pytest.mark.req("ADC-CI-001")
+def test_a_requirement_another_run_verifies_is_a_note_only_when_named_and_only_when_skipped() -> (
+    None
+):
+    """The keyed term scan is skipped on a pull request, which is given no key."""
+    stages = {0: {"ADC-PRV-001"}, 1: {"ADC-KRN-001"}}
+    known = {"ADC-PRV-001", "ADC-KRN-001"}
+    skipped = {**GOOD, "ADC-KRN-001": {"skipped": ["t"]}}
+    named = frozenset({"ADC-KRN-001"})
+    assert trace.check(known, stages, 1, skipped, CLAIMS)[0] == [
+        "ADC-KRN-001: no passing test is marked with it"
+    ]
+    problems, notes = trace.check(known, stages, 1, skipped, CLAIMS, named)
+    assert problems == [] and any("verified by another run" in n for n in notes)
+    failing = {**GOOD, "ADC-KRN-001": {"skipped": ["t"], "failed": ["u"]}}
+    assert trace.check(known, stages, 1, failing, CLAIMS, named)[0]
+    absent = {"ADC-PRV-001": {"passed": ["t1"]}}
+    assert trace.check(known, stages, 1, absent, CLAIMS, named)[0]
+    workflow = (REPO / ".github/workflows/pr.yml").read_text(encoding="utf-8")
+    assert "--verified-elsewhere ADC-PRV-002" in workflow
+    nightly = (REPO / ".github/workflows/nightly.yml").read_text(encoding="utf-8")
+    assert "forbidden_terms.py scan-history" in nightly and "secrets.ADC_TERMS_KEY" in nightly
+
+
+@pytest.mark.req("ADC-CI-001")
 def test_no_test_in_the_tree_cites_an_unknown_requirement() -> None:
     assert set(trace.marked_in_tree(REPO)) <= KNOWN
 

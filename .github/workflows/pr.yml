@@ -91,7 +91,9 @@ jobs:
       - name: Whole suite, recording which requirement each test verifies
         run: uv run pytest -n auto --dist loadfile --req-report build/requirements.json
       - name: Every requirement due at this stage has a passing test and an owner
-        run: uv run python tools/traceability.py --report build/requirements.json
+        # The keyed scan for forbidden terms needs a key that no pull request is given, so
+        # its test is skipped here. The nightly workflow runs it on every commit with the key.
+        run: uv run python tools/traceability.py --report build/requirements.json --verified-elsewhere ADC-PRV-002
   docs:
     runs-on: ubuntu-24.04
     container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
