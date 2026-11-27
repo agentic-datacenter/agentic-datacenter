@@ -88,10 +88,12 @@ jobs:
       # With REMORA and the IEC 61850 package: a test that is skipped verifies nothing, and the
       # requirements of the governed path have no test that runs without REMORA. The whole suite
       # in one process does not fit the ten-minute budget of this workflow, nor the hour
-      # of this job on a hosted runner, so it runs in one process per core.
+      # of this job on a hosted runner, so it runs in one process per core. A test that
+      # runs for a quarter of an hour prints where every thread stands, so that a run
+      # that hangs can be read afterwards.
       - run: uv sync --frozen --all-groups
       - name: Whole suite, recording which requirement each test verifies
-        run: uv run pytest -n auto --dist loadfile --req-report build/requirements.json
+        run: uv run pytest -n auto --dist loadfile -o faulthandler_timeout=900 --req-report build/requirements.json
       - name: Every requirement due at this stage has a passing test and an owner
         # The keyed scan for forbidden terms needs a key that no pull request is given, so
         # its test is skipped here. The nightly workflow runs it on every commit with the key.
