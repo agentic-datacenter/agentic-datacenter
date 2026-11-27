@@ -39,6 +39,7 @@ BREACHES = {
     "unknown_unresolved": "a write whose outcome was never found out",
 }
 #: Criteria on the agent's own conduct, a note only for an agent built to misbehave.
+#: A card made before a run kept them apart has them among its failed criteria.
 AGENT_CONDUCT = ("escalations",)
 HOSTILE_AGENTS = ("scripted_adversarial",)
 
@@ -244,6 +245,14 @@ def check_card(
             )
             report.violations.append(f"{name}: more harm than with no agent ({more})")
         shortened = card.get("duration_override_s") is not None
+        for criterion in run.get("agent_conduct", []):
+            report.notes.append(
+                f"{name}: {criterion} (the agent's own conduct; no gate can make an agent do it)"
+            )
+        for criterion in run.get("not_reached", []):
+            report.notes.append(
+                f"{name}: {criterion} (not reached: the run ended before the scenario's last event)"
+            )
         for criterion in run.get("failed_criteria", []):
             conduct = str(criterion).split(" ", 1)[0] in AGENT_CONDUCT
             if conduct and run.get("agent") in HOSTILE_AGENTS:

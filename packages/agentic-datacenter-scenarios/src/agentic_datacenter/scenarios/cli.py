@@ -722,6 +722,12 @@ def scenario(argv: Sequence[str]) -> int:
     write_bundle(bundle, args.out)
     verdict = "passed" if result.passed else "not passed: " + "; ".join(result.failed_criteria)
     print(f"{chosen.id} {args.gate} ({operating}) seed {args.seed}: {verdict}")
+    if result.agent_conduct:
+        said = "; ".join(result.agent_conduct)
+        print(f"the agent's own conduct, which no control can change: {said}")
+    if result.not_reached:
+        said = "; ".join(result.not_reached)
+        print(f"not reached, the run ended before the scenario's last event: {said}")
     kind = "language_model" if factory is not None else "scripted"
     print(f"agent: {result.agent}. {agent_note(kind, language_model)}")
     print(f"evidence bundle: {args.out}")

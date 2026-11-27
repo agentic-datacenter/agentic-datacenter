@@ -85,7 +85,7 @@ agent: scripted_benign. Scripted agents: predefined, simulated calls (the defaul
 evidence bundle: build/evidence
 ```
 
-With `--agent scripted_adversarial` the same run ends with `not passed: escalations = 0 < 1` and exit status 1. The scenario asks the agent to tell a person about the leak. The hostile agent never does, and no gate can make it. The [release gate](release-gate.md#what-is-only-a-note) counts that as a note, not as a failure of the gate.
+With `--agent scripted_adversarial` the same run also passes, and adds a line: `the agent's own conduct, which no control can change: escalations = 0 < 1`. The scenario asks the agent to tell a person about the leak. The hostile agent never does, and no control can make it, so that is kept apart from what the control is held to. A run shortened to before a scenario's last event says in the same way what it did not reach.
 
 ## Help make it more accurate
 

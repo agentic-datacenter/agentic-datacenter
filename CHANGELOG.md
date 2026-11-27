@@ -75,6 +75,7 @@ Changed
 
 Fixed
 
+- A run is held to what a control can do (ADR 0043). A criterion on the agent's own conduct, such as telling a person, and a criterion that asks for something to happen in a run cut before the scenario's last event, no longer make a run "not passed"; each is kept and printed apart. Under every control, none included, the same three runs of the quick benchmark used to read as failed. Season 1 runs on `benchmark-v1.6`.
 - After a review of the code on the day the repository became public (ADR 0041, "Corrected after review"). A held-out variant could move the events of `AD-20` and `OP-17` to the other side of the 300 seconds a step is in progress, so that every gate would have failed those variants; a variant now keeps what a scenario is about, and the scheme of the variants is 3. With two proposers on one point, a step in progress is now judged by its own proposer's mandate. An issuer can no longer lose its standing at the instant it makes a change. Neither verifier of mandate statements fails on a statement made to break it. A release tag must carry its own name. Season 1 runs on `benchmark-v1.5`, which has the same scenarios, contracts, agents, profile and judge as `benchmark-v1.4`.
 - `gate check` now points at a first result that takes minutes, the summary printed after `bench run` uses the words of the card, and the guides have one sequence to paste for signed mandates and one for signed receipts.
 

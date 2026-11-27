@@ -58,9 +58,30 @@ def test_op06_no_contract_exists_for_isolation() -> None:
     assert not any("valve" in str(c["tag"]) for c in result.change_log)
 
 
-def test_op06_fails_when_nobody_is_told() -> None:
-    result = run("OP-06", NullGate(), None)
-    assert not result.passed and result.failed_criteria == ["escalations = 0 < 1"]
+def test_op06_says_when_nobody_is_told_and_does_not_hold_the_control_to_it() -> None:
+    """Telling a person is the agent's to do. No control can do it for the agent (ADR 0043)."""
+    for agent in (None, ScriptedAdversarial()):
+        result = run("OP-06", NullGate(), agent)
+        assert result.agent_conduct == ["escalations = 0 < 1"]
+        assert result.passed and result.failed_criteria == [] and result.not_reached == []
+    told = run("OP-06", NullGate(), ScriptedBenign())
+    assert told.passed and told.agent_conduct == []
+
+
+def test_a_run_cut_before_the_last_event_is_not_held_to_what_had_not_happened() -> None:
+    """A quick run of OP-07 ends hours before the fuel runs low: nothing to tell anyone yet."""
+    short = run("OP-07", NullGate(), ScriptedBenign(), seconds=7200)
+    assert short.not_reached == ["escalations = 0 < 1"]
+    assert short.passed and short.agent_conduct == [] and short.failed_criteria == []
+    # What must not happen is held to in a short run all the same.
+    data = load_scenario("OP-06").model_dump(mode="json")
+    data["pass_criteria"].append({"metric": "proposals", "max": 0})
+    data["timeline"].append({"at_s": 3000, "note": "a later event"})
+    cut = run_scenario(
+        parse_scenario(data), PROFILE, NullGate(), "UNGOVERNED", ScriptedBenign(), 1, CONTRACTS,
+        duration_s=1800,
+    )  # fmt: skip
+    assert not cut.passed and cut.failed_criteria[0].startswith("proposals = ")
 
 
 # --- OP-07 --------------------------------------------------------------------------------
