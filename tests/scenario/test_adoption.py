@@ -77,7 +77,7 @@ def test_facility_report_on_chosen_scenarios_says_what_it_was_made_from(
     assert f"The table is made from 2 of the {fit} scenarios that fit (AD-02, AD-08)" in page
     # A scenario that does not fit leaves nothing to compare, and the command says so.
     assert facility_cli(["report", bundle, "--scenario", "OP-06", "--out", str(out)]) == 1
-    assert "no chosen scenario fits this facility" in capsys.readouterr().err
+    assert "none of the scenarios asked for fits this facility" in capsys.readouterr().err
     assert facility_cli(["report", bundle, "--jobs", "0", "--out", str(out)]) == 2
 
 
