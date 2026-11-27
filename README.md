@@ -28,6 +28,14 @@ Text links: [Explore the demo](docs/demo/result-report.md) · [Bring your datace
 
 See how an AI agent's decisions affect temperatures, IT load, energy and human approvals, and replay every blocked command as if it had run. In a development run with scripted agents, the simulated plant was harmed in 1 of 3 scenarios without a safety control and 0 of 3 with a control that governs execution. [Inspect the result, its method and its limits](docs/demo/result-report.md). This is not a benchmark result, and not proof of production safety.
 
+## How it fits together
+
+<p align="center">
+  <img src="docs/media/how-it-fits.svg" alt="An AI agent proposes an action under a contract. The control path puts it to the control under test, which allows it, denies it or asks a person. An allowed action is written through the site network to the simulated plant. The judge replays every decision the other way, measures both on the plant's true state, and writes the result card." width="880">
+</p>
+
+The control is the part you bring. Everything else is the same for everyone.
+
 ## Try it locally
 
 Requires Git and [uv](https://docs.astral.sh/uv/) with Python 3.12 or later. Or [open it in GitHub Codespaces](https://codespaces.new/agentic-datacenter/agentic-datacenter).
