@@ -40,7 +40,7 @@ uv run agentic-datacenter demo --scenario OP-03 --gate static_allowlist --out bu
 
 Open `build/first-run/executive.html` for the result on one page, or `build/first-run/index.html` to see the chiller trip play out, decision by decision, with and without the built-in safety control. The first install downloads dependencies. The simulator needs no API key.
 
-For a facility report, follow the [operator quickstart](docs/guides/bring-your-own-datacenter.md#try-the-example).
+For a facility report, follow the [operator quickstart](docs/guides/bring-your-own-datacenter.md#try-the-example). To see what the grid sees of a facility through a voltage dip, against what a system operator has proposed, see [connection requirements](docs/guides/grid-requirements.md); it is optional and no part of the benchmark.
 
 ## Participate
 

@@ -1130,3 +1130,98 @@ def equipment(argv: Sequence[str]) -> int:
     verdict = "can enter the registry" if not found else "cannot enter the registry yet"
     print(f"{entry.id} ({entry.maker} {entry.model}, {entry.tier}): {verdict}; file: {expected}")
     return 1 if found else 0
+
+
+def _grid_dir(start: Path | None = None) -> Path:
+    """Return the ``grid/`` directory: in the working directory, or in a parent of it."""
+    here = (start or Path.cwd()).resolve()
+    for folder in (here, *here.parents):
+        if (folder / "grid").is_dir():
+            return folder / "grid"
+    return here / "grid"
+
+
+def grid(argv: Sequence[str]) -> int:
+    """Try a facility against a system operator's connection requirements (ADR 0044).
+
+    Runs ``agentic-datacenter grid list`` or ``grid check <requirements>`` and returns
+    the exit status. Optional, and no part of the benchmark.
+    """
+    from agentic_datacenter.core.profile import load_profile
+
+    from .grid_check import NOT_MET, check, load_requirements, render
+
+    parser = argparse.ArgumentParser(
+        prog="agentic-datacenter grid",
+        description="What the grid sees of a facility through a disturbance (ADR 0044).",
+    )
+    actions = parser.add_subparsers(dest="action", required=True)
+    actions.add_parser("list", help="List the connection requirements that can be tried.")
+    run = actions.add_parser("check", help="Play a set of requirements against a facility.")
+    run.add_argument("requirements", help="An id from `grid list`, or a file of your own.")
+    run.add_argument("--profile", type=Path, default=Path("profiles/generic_dc.yaml"))
+    run.add_argument(
+        "--set", action="append", default=[], metavar="MODULE.PARAM=VALUE", dest="changes",
+        help="Change one parameter of the facility, e.g. electrical.ups.recharge_fraction=0.03.",
+    )  # fmt: skip
+    run.add_argument(
+        "--dip", action="append", default=[], metavar="PU:MS",
+        help="Try a dip of your own as well, e.g. 0.5:300.",
+    )  # fmt: skip
+    run.add_argument(
+        "--ramp-limit", type=float, metavar="SHARE",
+        help="Hold the largest change within one second to this share of the draw, e.g. 0.1.",
+    )  # fmt: skip
+    run.add_argument("--json", type=Path, help="Write the report to this file as well.")
+    run.add_argument(
+        "--fail-on-unmet", action="store_true",
+        help="Exit with status 1 when something is not met.",
+    )  # fmt: skip
+    args = parser.parse_args(argv)
+    folder = _grid_dir()
+
+    if args.action == "list":
+        files = sorted(folder.glob("*.yaml"))
+        if not files:
+            print(f"no requirements found in {folder}", file=sys.stderr)
+            return 1
+        for file in files:
+            try:
+                data = load_requirements(file).data
+            except (OSError, ValueError, yaml.YAMLError) as exc:
+                print(f"{file.name}: cannot be used: {exc}", file=sys.stderr)
+                continue
+            print(
+                f"{data['id']:<26} {data['jurisdiction']:<16} {data['status']:<12}"
+                f" {data['source']['publisher']}, {data['source']['published']}"
+            )
+        return 0
+
+    path = Path(args.requirements)
+    if not path.is_file():
+        path = folder / f"{args.requirements}.yaml"
+    try:
+        requirements = load_requirements(path)
+        profile = load_profile(args.profile)
+        changed: dict[str, object] = {}
+        for change in args.changes:
+            name, _, text = change.partition("=")
+            module_id, _, param = name.rpartition(".")
+            if not module_id or not param or not text:
+                raise ValueError(f"--set takes MODULE.PARAM=VALUE, not {change!r}")
+            profile = profile.with_param(module_id, param, float(text))
+            changed[name] = float(text)
+        dips = []
+        for dip in args.dip:
+            pu, _, ms = dip.partition(":")
+            if not 0.0 <= float(pu) < 1.0 or int(ms) <= 0 or int(ms) % 100:
+                raise ValueError(f"--dip takes PU:MS with ms a multiple of 100, not {dip!r}")
+            dips.append((float(pu), int(ms)))
+        report = check(requirements, profile, dips, args.ramp_limit, changed)
+    except (OSError, ValueError, yaml.YAMLError) as exc:
+        print(f"grid check: {exc}", file=sys.stderr)
+        return 2
+    print(render(report))
+    if args.json is not None:
+        args.json.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    return 1 if args.fail_on_unmet and report["summary"][NOT_MET] else 0
