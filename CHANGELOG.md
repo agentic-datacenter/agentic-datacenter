@@ -59,6 +59,10 @@ Tooling
 
 Entries are newest first. Where an older entry names a benchmark version, a deadline or a number of scenarios, the newest entry is the one that holds.
 
+Added
+
+- A facility tried against a system operator's connection requirements (ADR 0044). `agentic-datacenter grid check <id>` dips the voltage at the incomers and reports what they drew, before, during and after, against requirements read from a file in `grid/`: what Statnett proposed for Norway in April 2026, what ENTSO-E recommended in December 2025, and what EirGrid's overview states for Ireland. Each file names its document and says whether it is proposed, recommended or in force; none is in force. Optional, with no agent and no control, and no part of the benchmark: every hash of `benchmark-v1.6` is as it was. A report is not a statement of compliance.
+
 Changed
 
 - What is free to copy (ADR 0042). The wire format, the rule for signed mandate statements and its test vectors are under the MIT licence (`docs/reference/LICENSE`), so that anyone may ship them with their own work. A scenario file proposed from outside is under CC-BY-4.0 with its proposer named, and the contribution terms do not apply to it. `CONTRIBUTING.md` starts with the ways to contribute that take no pull request.

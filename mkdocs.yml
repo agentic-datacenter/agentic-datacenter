@@ -56,12 +56,14 @@ nav:
       - 0041 A step in progress, the chain, signed readings and receipts: design/adr/0041-in-progress-chain-readings-and-receipts.md
       - 0042 What is free to copy: design/adr/0042-what-is-free-to-copy.md
       - 0043 What a run is held to: design/adr/0043-what-a-run-is-held-to.md
+      - 0044 Connection requirements: design/adr/0044-connection-requirements.md
   - Guides:
       - Your first half hour, for a governance system: guides/first-half-hour.md
       - Propose a scenario: guides/propose-a-scenario.md
       - For data center operators: guides/operators.md
       - Bring your own data center: guides/bring-your-own-datacenter.md
       - Bring your equipment: guides/equipment.md
+      - What the grid sees: guides/grid-requirements.md
       - Bring your agent: guides/bring-your-own-agent.md
       - Run a scenario on measured weather: guides/measured-weather.md
       - Check a result card before release: guides/release-gate.md
