@@ -1,0 +1,78 @@
+name: Grid connection requirements
+description: Add a country's requirements for data centers as consumers of power, correct a value, or supply one that is missing. Words and a link are enough.
+title: "Grid: "
+labels: ["grid-requirements"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The files in `grid/` hold what system operators have set, proposed or recommended for data centers: the voltage dip to stay connected through, how soon consumption must be back, how fast it may change, and the frequency below which it must not rise. Anyone can run them against a facility, and hold a governance system to them.
+
+        A file holds only values that someone has read in the document it names. That is where you come in: you have read a document we have not, or you see a value we read wrongly.
+
+        Issues are public. Give public documents only, and nothing from a connection agreement.
+
+        [What the files are used for, and their format](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/docs/guides/grid-requirements.md)
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What this is
+      options:
+        - A country or operator that has no file yet
+        - A value that is missing from a file (a curve, a time, a ramp limit, a frequency level)
+        - A value that is wrong, or a status that has changed
+        - A scenario for a control to be held to
+        - Something else
+    validations:
+      required: true
+
+  - type: input
+    id: where
+    attributes:
+      label: Country and system operator
+      placeholder: "Norway, Statnett"
+    validations:
+      required: true
+
+  - type: textarea
+    id: document
+    attributes:
+      label: The document
+      description: "Its title, its publisher, its date, a public address, and the sections or pages the values are in."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: status
+    attributes:
+      label: Its status
+      options:
+        - Proposed, in consultation or a draft
+        - Recommended, a guideline or a position
+        - In force
+        - I do not know
+    validations:
+      required: true
+
+  - type: textarea
+    id: values
+    attributes:
+      label: The values
+      description: "As the document gives them, with units. For example: stay connected at 0 pu for 150 ms and 0.35 pu to 550 ms; back within 5 % in 1 s once the voltage is above 0.9 pu; at most 30 MW a minute; no more consumption below 49.5 Hz. Leave out what the document does not say."
+    validations:
+      required: true
+
+  - type: textarea
+    id: file
+    attributes:
+      label: Requirements file (optional)
+      description: "If you wrote one and tried it with `agentic-datacenter grid check your-file.yaml`, paste it here with what it printed."
+      render: yaml
+
+  - type: checkboxes
+    id: credit
+    attributes:
+      label: Credit (optional)
+      options:
+        - label: "Name my GitHub account in the file's header and in the changelog."

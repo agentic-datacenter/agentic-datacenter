@@ -40,6 +40,10 @@ That is a property of an assumed recharge rate in a generic model. It is also th
 - A person who knows another country's requirements can add them as one file, with no code.
 - The check is only as good as the plant's electrical model at fidelity F1. It cannot show oscillations, anything faster than 100 ms, current limits or reactive power, and says so.
 
+## Files from outside
+
+A requirements file written by someone outside the project comes on the terms of a scenario file from outside (ADR 0042): under CC-BY-4.0, with its writer named in its header, as a pull request without the rules for code, or as words in the issue form for grid requirements. The owner asked on 2026-11-27 that contributing on the grid be as easy as contributing a scenario, and these are the terms a scenario has. Like the rest of ADR 0042 they have not been reviewed by a lawyer.
+
 ## What it is not, yet
 
 - **No agent and no control**, in this check. A contract that lets an agent move IT load, and scenarios in which a control must hold it to the grid's limits, came with ADR 0045, outside the benchmark.

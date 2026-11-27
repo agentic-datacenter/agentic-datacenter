@@ -2,7 +2,15 @@
 
 System operators are setting requirements for data centers as consumers of power: stay connected when the voltage dips, be back at your consumption within a time, do not ramp faster than the grid can follow. This page is for anyone who wants to try a facility against one of them.
 
-It is optional and separate from the benchmark. There is no agent in it and no control, and it gives no score.
+It is optional and separate from the benchmark, and it gives no score. It has two parts: [what the grid sees of a facility](#what-you-get) through a voltage dip, with no agent in it, and [a control held to the grid's limits](#hold-a-control-to-the-grids-limits), with one.
+
+| You are | What is here for you | Where to start |
+| --- | --- | --- |
+| At a system operator or a grid company | Your requirements as a file anyone can run, and a place to correct how they were read | [The requirements that can be tried](#the-requirements-that-can-be-tried), then [the form](https://github.com/agentic-datacenter/agentic-datacenter/issues/new?template=grid-requirements.yml) |
+| Building or operating a data center | What your facility's protection settings and battery recharge look like from the grid, against the requirements of the country you build in | [Try a change](#try-a-change), with [a facility of your own](bring-your-own-datacenter.md) |
+| Making UPS or power equipment | The two values the answer turns on, the input range and the recharge rate, tried as you state them | [Try a change](#try-a-change), and [bring your equipment](equipment.md) |
+| Maintaining a governance system | Three scenarios in which only the state of the grid forbids a step | [Hold a control to the grid's limits](#hold-a-control-to-the-grids-limits) |
+| Researching power systems | A list of what the model cannot show, and of what nobody has read yet | [What it cannot show](#what-it-cannot-show), [What is asked for now](#what-is-asked-for-now) |
 
 ```sh
 uv run agentic-datacenter grid list
@@ -117,15 +125,61 @@ A limit in MW a minute says little about a small facility, so the check turns it
 
 A result is not a statement of compliance, and nothing here is advice on a connection agreement.
 
-## Add your country
+## Take part
 
-One file, no code. Copy [`grid/no-nvf-2026-draft.yaml`](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/grid/no-nvf-2026-draft.yaml), and fill in what you have read:
+Nothing here needs a pull request, a setup or a grant of rights. [One form](https://github.com/agentic-datacenter/agentic-datacenter/issues/new?template=grid-requirements.yml) takes all of it, in words.
 
-- who set the requirements, and whether they are `proposed`, `recommended` or `in_force`;
-- the document, its address, the sections, and the day you read it;
-- the curve as points of time and voltage, the recovery asked, and a ramp limit if there is one;
-- what the model leaves out, and why.
+| You have | Give it as | What happens to it |
+| --- | --- | --- |
+| A country or an operator with no file | The document and its values, in the form | It becomes a file in `grid/`, with your name in its header if you want it there |
+| A value that is missing: a curve read off a drawing, a time, a ramp limit, a frequency level | The value and the page it is on | It goes into the file, and the check gives a verdict where it only measured before |
+| A value we read wrongly, or a status that has changed | What it should be, and where it says so | The file is corrected, and the changelog says what changed |
+| A situation a control should be held to | [A scenario, in words](propose-a-scenario.md) | A scenario beside `GR-01` to `GR-03`, run for every control from then on |
+| Values for a UPS or other equipment | [An equipment entry](equipment.md) | A model anyone can try a facility with |
+| Measurements of a real facility through a disturbance | [Privately, by e-mail first](../calibration/contribute-data.md) | A model that is closer to a plant |
 
-Leave out a value you have not read; the check then measures and gives no verdict. `agentic-datacenter grid check path/to/your-file.yaml` tries it before you send it. Reading the points off the drawings in the ENTSO-E paper is a contribution of ten minutes.
+### What is asked for now
 
-The design decision is [ADR 0044](../design/adr/0044-connection-requirements.md).
+Each of these is a document someone has to read. None needs code.
+
+- **Statnett's requirements for data centers**, when they go to consultation. The Norwegian file holds the proposal of April 2026 for all large consumers; it gives no ramp limit and no frequency level.
+- **The points of ENTSO-E's ride-through curves** (figures 4 and 5 of the position paper). Ten minutes with the drawing.
+- **EirGrid's modification MPID 345 itself**: its curve, its times, and the regulator's decision. The Irish file holds one number.
+- **Texas (ERCOT)**: the ride-through tables for large computational loads, and the limit on repeated changes of load.
+- **Australia (AEMC)**: the draft rule for large inverter-based loads.
+- **SPP and ATC**, whose ramp limits are known here only as another operator cites them.
+- **Sweden, Denmark, Germany, the Netherlands, Great Britain**: nothing has been read.
+- **Fingrid's curve** between zero voltage and 0.9 pu, and whether the draft was confirmed.
+
+### Write the file yourself
+
+One file, no code. Copy [`grid/no-nvf-2026-draft.yaml`](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/grid/no-nvf-2026-draft.yaml) and fill in what you have read.
+
+| Field | What it holds |
+| --- | --- |
+| `id`, `jurisdiction`, `authority` | A short name that is also the file's name, the country or area, and who set the requirements |
+| `status`, `status_note` | `proposed`, `recommended` or `in_force`, and in a sentence or two what that rests on |
+| `source`, `read_on` | Title, publisher, date, an `https` address, the sections; and the day you read it |
+| `applies_to`, `nominal_hz` | Which facilities, in the document's own terms; 50 or 60 |
+| `ride_through.curve_ms_pu` | The lowest voltage a facility stays connected through, as points of time and voltage. `null` when the curve was not read |
+| `ride_through.dips_pu_ms` | Single dips the document states in numbers, when there is no curve |
+| `continuous` | The voltage range a facility operates in without limit of time |
+| `recovery` | The voltage that counts as back, and each level asked for: a share of the consumption before, and a time |
+| `ramp` | A limit as a share a second, or in MW a minute, or a largest step; `null` where the operator decides case by case |
+| `low_frequency` | The frequency below which consumption must not rise. `assumed: true` when the number is borrowed from elsewhere |
+| `not_checked` | What the document asks that the model cannot show, and why |
+
+Leave out a value you have not read; the check then measures and gives no verdict. Try the file before you send it:
+
+```sh
+uv run agentic-datacenter grid check path/to/your-file.yaml
+uv run agentic-datacenter grid run path/to/your-file.yaml
+```
+
+A requirements file can come as a pull request without the rules for code, like a scenario file: it is under CC-BY-4.0, with your name in its header ([Contributing](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/CONTRIBUTING.md)). The numbers in it are the operator's; what is yours is the reading.
+
+### What a file never does
+
+It never says a facility complies, it never holds a value that was not read, and it never names a facility. A requirement that is in force is marked so only when the decision that put it in force has been read.
+
+The design decisions are [ADR 0044](../design/adr/0044-connection-requirements.md) and [ADR 0045](../design/adr/0045-a-control-held-to-the-grid.md).

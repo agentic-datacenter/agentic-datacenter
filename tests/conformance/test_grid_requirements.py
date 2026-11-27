@@ -290,3 +290,24 @@ def test_a_limit_in_megawatts_a_minute_is_turned_into_a_size(generic) -> None:
     assert ramp["over_the_limit_above_mw"] > report["facility"]["draw_kw"] / 1000
     assert "would be over the limit" in grid_check.render(report)
     assert report["dips"][0]["levels"][0]["verdict"] == MET
+
+
+@pytest.mark.req("ADC-FAC-013")
+def test_a_country_can_be_added_in_words() -> None:
+    """One form takes a country, a missing value or a correction, and the guide leads to it."""
+    form = yaml.safe_load(
+        (REPO / ".github/ISSUE_TEMPLATE/grid-requirements.yml").read_text("utf-8")
+    )
+    required = {
+        field["id"] for field in form["body"]
+        if field.get("validations", {}).get("required")
+    }  # fmt: skip
+    assert required == {"kind", "where", "document", "status", "values"}
+    address = "issues/new?template=grid-requirements.yml"
+    guide = (REPO / "docs/guides/grid-requirements.md").read_text(encoding="utf-8")
+    assert address in guide and address in (REPO / "CONTRIBUTING.md").read_text("utf-8")
+    assert "## Take part" in guide and "### What is asked for now" in guide
+    for name in ("curve_ms_pu", "low_frequency", "not_checked"):
+        assert f"`{name}`" in guide or f".{name}`" in guide
+    listed = (REPO / "grid/README.md").read_text(encoding="utf-8")
+    assert all(f"`{path.name}`" in listed for path in FILES), "every file is in the table"

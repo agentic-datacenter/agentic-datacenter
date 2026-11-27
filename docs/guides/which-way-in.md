@@ -13,6 +13,8 @@ A project need not be a gate to take part. Start from what yours produces.
 | Makes records of what happened: receipts, attestations, signed logs | **evidence** | Give a receipt with each answer, or export them as JSON lines ([Integration sequence](#integration-sequence)) | Each receipt checked against what happened in the run, and its signature with your key or your own verifier |
 | Checks records others made: a verifier, an auditor, an observer | **verification** | No adapter. Run any scenario, and read its evidence bundle: `manifest.json`, `decisions.jsonl`, `action_trace.jsonl` and `execution.json` ([Evidence model](../reference/evidence-model.md)) | A bundle with known contents to run your verifier against, the same bytes for everyone who makes it |
 
+Coming from the power side, as a system operator, a grid company, a maker of power equipment or a data center developer? There is a way in that needs no governance system at all: [What does the grid see of your data center?](grid-requirements.md)
+
 One project may bring several. Whichever it is, [enrolment](../bench/participants.md) asks the same of everyone: what you bring, what of the interface you use, and how you stand to this project.
 
 ## Try a local adapter
