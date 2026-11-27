@@ -80,10 +80,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # With REMORA and the IEC 61850 package: a test that is skipped verifies nothing, and the
       # requirements of the governed path have no test that runs without REMORA. The whole suite
-      # in one process does not fit the ten-minute budget of this workflow.
+      # in one process does not fit the ten-minute budget of this workflow, nor the hour
+      # of this job on a hosted runner, so it runs in one process per core.
       - run: uv sync --frozen --all-groups
       - name: Whole suite, recording which requirement each test verifies
-        run: uv run pytest --req-report build/requirements.json
+        run: uv run pytest -n auto --dist loadfile --req-report build/requirements.json
       - name: Every requirement due at this stage has a passing test and an owner
         run: uv run python tools/traceability.py --report build/requirements.json
   docs:
