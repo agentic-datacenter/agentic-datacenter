@@ -1,10 +1,15 @@
-# Runs on every pull request. Budget: 10 minutes. Pull requests from forks get no secrets.
+# Runs on every pull request, on every change of the main branch, and on request.
+# Budget: 10 minutes. Pull requests from forks get no secrets.
 # Every job runs in one digest-pinned image with the frozen lock, and every
 # third-party action is pinned by commit SHA (ADC-CI-003, SDD 12.4).
 name: pr
 on:
   pull_request:
   merge_group:
+  # So that the main branch itself carries the result of its checks.
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read

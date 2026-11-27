@@ -95,7 +95,7 @@ The README contains these blocks, in this order:
 
 - **Kept unchanged:** `docs/media/agentic_datacenter_visual.webp` and `.mp4`, unless the maintainer approves a replacement.
 - **The WebP is animated:** it has 300 frames and plays once. That was checked on 2026-11-25.
-- **The README shows a still, not the animation.** The animated WebP is 6.8 MB, and every view of the README loaded it. Since 2026-11-27 the README shows `docs/media/agentic_datacenter_poster.webp`: one frame of the video, taken 2.5 seconds in, 1280 by 720 pixels and about 70 kB. It links to the video. The animated WebP stays in the repository and is not loaded by the README.
+- **The README shows the animation.** A still frame was tried on 2026-11-27 to make the page lighter, and the owner asked for the animated clip back the same day. The animated WebP is 6.8 MB; it links to the video.
 - **The caption:** it says the facility is illustrative and links to the video.
 - **The media is supplementary.** Every action and claim stays understandable without it.
 

@@ -1,0 +1,47 @@
+# Publishes the documentation site to GitHub Pages when the main branch changes,
+# or on request. The site is built in strict mode, as the pull-request check
+# builds it, so a page that does not build is never published.
+# Every job runs in one digest-pinned image with the frozen lock, and every
+# third-party action is pinned by commit SHA (ADC-CI-003, SDD 12.4).
+name: docs
+on:
+  push:
+    branches: [main]
+    paths: ["docs/**", "mkdocs.yml", "equipment/**", "findings/**", ".github/workflows/docs.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+concurrency:
+  group: docs
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
+    timeout-minutes: 10
+    steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: uv sync --frozen --group docs
+      - name: Site builds in strict mode
+        run: uv run mkdocs build --strict --site-dir build/site
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: build/site
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
+    timeout-minutes: 10
+    # The only job that may publish: Pages asks for an identity token of the run.
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

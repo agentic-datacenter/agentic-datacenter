@@ -27,8 +27,6 @@ MEDIA = {
         "787ed2a66da008a6a9fb23bff727ea204e3af028d93e0200b55ff4023f03eafc"
     ),
 }
-#: What the README shows: one frame of the video, light enough to load on every view.
-POSTER = "docs/media/agentic_datacenter_poster.webp"
 
 
 def _links(text: str) -> list[str]:
@@ -45,7 +43,7 @@ def test_the_hero_states_the_purpose_then_one_demo_then_four_roles_then_the_medi
     hero = README.split("## ", 1)[0]
     order = [hero.index(f"docs/media/buttons/{b}") for b in ROUTES]
     assert order == sorted(order), "demo, datacenter, equipment, agent, governance"
-    assert hero.index("buttons/governance.svg") < hero.index("agentic_datacenter_poster.webp")
+    assert hero.index("buttons/governance.svg") < hero.index("agentic_datacenter_visual.webp")
     targets = re.findall(r'<a href="([^"]+)"><img src="docs/media/buttons/', hero)
     assert len(targets) == len(set(targets)) == 5
 
@@ -78,16 +76,13 @@ def test_the_animation_and_the_video_are_kept_and_labelled_illustrative() -> Non
 
 
 @pytest.mark.req("ADC-UX-003")
-def test_the_readme_loads_a_light_still_that_links_to_the_video() -> None:
+def test_the_readme_shows_the_animation_and_links_to_the_video() -> None:
+    """The owner wants the animated clip in the README, not a still (2026-11-27)."""
     hero = README.split("## ", 1)[0]
-    assert f'<a href="docs/media/agentic_datacenter_visual.mp4"><img src="{POSTER}" alt="' in hero
-    assert "agentic_datacenter_visual.webp" not in README, "the animation is 6.8 MB"
-    data = (REPO / POSTER).read_bytes()
-    assert len(data) <= 200 * 1024
-    assert data[:4] == b"RIFF" and data[8:12] == b"WEBP"
-    assert b"ANIM" not in data[:64], "a still, not an animation"
-    for image in re.findall(r'<img src="([^"]+)"', README):
-        assert (REPO / image).stat().st_size <= 1024 * 1024, image
+    shown = "docs/media/agentic_datacenter_visual.webp"
+    assert f'<a href="docs/media/agentic_datacenter_visual.mp4"><img src="{shown}" alt="' in hero
+    data = (REPO / shown).read_bytes()
+    assert data[:4] == b"RIFF" and data[8:12] == b"WEBP" and b"ANIM" in data[:64]
     assert "Illustrative" in README.split("## ", 1)[0]
 
 

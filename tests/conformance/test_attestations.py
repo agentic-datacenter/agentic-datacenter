@@ -21,10 +21,22 @@ def attests(step: dict[str, Any]) -> bool:
     return str(step.get("uses", "")).startswith("actions/attest@")
 
 
+#: The one job that publishes the documentation site: Pages asks for an identity
+#: token of the run, and nothing in that job attests or reads the repository.
+PUBLISHING = {("docs", "deploy"): {"pages": "write", "id-token": "write"}}
+
+
 def test_only_the_two_attesting_jobs_may_ask_for_a_signing_identity() -> None:
     for path in WORKFLOWS:
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
         for name, body in data["jobs"].items():
+            if (path.stem, name) in PUBLISHING:
+                assert body.get("permissions") == PUBLISHING[(path.stem, name)], name
+                assert not any(attests(s) for s in body["steps"])
+                assert [s.get("uses", "").split("@")[0] for s in body["steps"]] == [
+                    "actions/deploy-pages"
+                ]
+                continue
             wanted = SIGNING if (path.stem, name) in ATTESTING else None
             assert body.get("permissions") == wanted, (path.name, name)
             assert any(attests(s) for s in body["steps"]) == (wanted is not None), path.name

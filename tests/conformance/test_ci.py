@@ -15,7 +15,7 @@ REPO = Path(__file__).resolve().parents[2]
 WORKFLOWS = sorted((REPO / ".github/workflows").glob("*.yml"))
 PACKAGES = sorted(p.name for p in (REPO / "packages").iterdir() if p.is_dir())
 EXPECTED_WORKFLOWS = {
-    "pr", "integration", "nightly", "bench", "bench-runner", "pin-bump", "release",
+    "pr", "integration", "nightly", "bench", "bench-runner", "pin-bump", "release", "docs",
 }  # fmt: skip
 
 
