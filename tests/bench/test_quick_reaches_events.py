@@ -51,7 +51,7 @@ def test_only_the_quick_tier_shortens_and_it_says_how_far_it_reaches() -> None:
 @pytest.mark.parametrize(
     ("scenario_id", "length"),
     [
-        ("AD-11", 3800),  # the mandate ends at 2000 s; 30 minutes from there
+        ("AD-11", 4800),  # the mandate ends at 2000 s, the work order comes at 3000 s
         ("AD-12", 5400),  # the narrower mandate is given at 3600 s
         ("OP-03", 3600),  # the chiller trips at 1800 s, the instant a quick run ended
         ("OP-07", 7200),  # decision points 30 minutes apart: as far as the reach goes
@@ -77,14 +77,21 @@ def test_no_event_within_reach_is_cut_off_and_the_reach_is_the_limit() -> None:
         played = min(length, scenario.duration_s)
         cut = [e.at_s for e in scenario.timeline if played <= e.at_s < REACH_S]
         assert not cut, f"{scenario_id}: events at {cut} s are not in a run of {played} s"
-        late = [e.at_s for e in scenario.timeline if QUICK_S <= e.at_s < REACH_S]
+        instants = [e.at_s for e in scenario.timeline]
+        # A mandate that expires by itself ends at an instant no event marks (ADR 0039).
+        instants += [
+            e.at_s + e.authority.expires_after_s
+            for e in scenario.timeline
+            if e.authority is not None and e.authority.expires_after_s is not None
+        ]
+        late = [t for t in instants if QUICK_S <= t < min(REACH_S, scenario.duration_s)]
         paced = DECISION_POINTS_IN_A_SHORTENED_RUN * scenario.decision_every_s
         wanted = max(QUICK_S, paced, max(late) + QUICK_S if late else 0)
         assert length == min(REACH_S, wanted)
         if length != QUICK_S:
             longer.append(scenario_id)
     assert longer == [
-        "AD-01", "AD-05", "AD-09", "AD-11", "AD-12", "AD-14",
+        "AD-01", "AD-05", "AD-09", "AD-11", "AD-12", "AD-14", "AD-16", "AD-17",
         "OP-01", "OP-03", "OP-07", "OP-09", "OP-10", "OP-12",
     ]  # fmt: skip
 
@@ -181,7 +188,7 @@ def test_a_quick_run_shows_the_steps_proposed_after_a_mandate_ended(
     quick_card: dict[str, Any],
 ) -> None:
     runs = _runs(quick_card)
-    assert runs["AD-11"]["duration_s"] == 3800 and runs["AD-12"]["duration_s"] == 5400
+    assert runs["AD-11"]["duration_s"] == 4800 and runs["AD-12"]["duration_s"] == 5400
     for scenario_id in ("AD-11", "AD-12"):
         metrics = runs[scenario_id]["metrics"]
         assert metrics["proposals_without_authority"] > 0, scenario_id
@@ -198,7 +205,7 @@ def test_the_card_says_what_it_was_shortened_to_and_how_far_it_reached(
     assert quick_card["duration_reach_s"] == 7200
     # The run without an agent is as long as the run it is compared with.
     lengths = {(b["scenario"], b["duration_s"]) for b in quick_card["baselines"]}
-    assert lengths == {("AD-11", 3800), ("AD-12", 5400)}
+    assert lengths == {("AD-11", 4800), ("AD-12", 5400)}
 
 
 def test_the_narrower_mandate_of_ad_12_is_in_a_quick_run(quick_card: dict[str, Any]) -> None:

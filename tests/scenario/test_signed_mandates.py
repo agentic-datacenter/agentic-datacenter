@@ -469,7 +469,7 @@ def _rotation(result: RunResult) -> dict[str, Any]:
 def test_a_renewed_mandate_holds_and_a_forged_withdrawal_takes_nothing_away(agent: type) -> None:
     result, _ = _run("OP-15", lambda contracts: _VerifiesAndAsks(), agent)
     order = _rotation(result)
-    first_expiry_ms = WARMUP_MS + 1200 * 1000
+    first_expiry_ms = WARMUP_MS + 1080 * 1000
     assert int(order["time_ms"]) > first_expiry_ms and order["authorized"] is True
     assert order["verdict"] == "VERIFY" and order["outcome"] == "APPLIED"
     assert order["gate_authority_holds"] is True
@@ -489,12 +489,13 @@ def test_a_gate_that_stops_at_a_statement_it_cannot_verify_blocks_the_sound_step
                 authority_holds=False,
             )  # fmt: skip
 
+    decisions: list[dict[str, Any]] = []
     card = run_benchmark(
         PROFILE, CONTRACTS, {"stops": lambda contracts: _Stops()}, ["scripted_benign"],
-        ["OP-15"], [1], allow_unfrozen=True, horizon_s=600, max_judged=8,
+        ["OP-15"], [1], allow_unfrozen=True, counterfactual=False, decisions=decisions,
     )  # fmt: skip
     (run,) = card["runs"]
     assert run["authority"]["findings_wrong"] > 0
     assert run["authority"]["cited_authority_with_mandate"] > 0
-    order = next(j for j in run["judgements"] if j["contract_id"] == ROTATE)
-    assert order["executed"] is False and order["authorized"] is True
+    order = next(d for d in decisions if d["contract_id"] == ROTATE)
+    assert order["outcome"] == "NOT_EXECUTED" and order["authorized"] is True

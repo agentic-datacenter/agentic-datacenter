@@ -555,6 +555,8 @@ def shortened(scenario: Scenario, seconds: int | None, reach_s: int | None) -> i
         for event in scenario.timeline
         if event.authority is not None and event.authority.expires_after_s is not None
     ]
+    # An expiry after the scenario's end is not in any run of it.
+    instants = [at_s for at_s in instants if at_s < scenario.duration_s]
     cut_off = [at_s for at_s in instants if seconds <= at_s < reach_s]
     past_the_last_event = max(cut_off) + seconds if cut_off else 0
     paced = DECISION_POINTS_IN_A_SHORTENED_RUN * scenario.decision_every_s

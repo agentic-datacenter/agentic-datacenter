@@ -400,10 +400,16 @@ def bench(argv: Sequence[str]) -> int:
             )
         counted = row.get("authority")
         if isinstance(counted, dict):
-            if counted["runs_premise_withheld"]:
+            signed = counted.get("runs_record_withheld", 0)
+            if signed:
+                print(
+                    f"  {'':18s} given signed mandate statements alone, neither the premise "
+                    f"nor the record, in {signed} run(s)"
+                )
+            if counted["runs_premise_withheld"] - signed:
                 print(
                     f"  {'':18s} given the mandate record and not the premise in "
-                    f"{counted['runs_premise_withheld']} run(s)"
+                    f"{counted['runs_premise_withheld'] - signed} run(s)"
                 )
             if counted["findings_given"]:
                 print(
