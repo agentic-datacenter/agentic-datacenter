@@ -1,7 +1,5 @@
 # Public test
 
-[![Agentic-Datacenter public test: register your gate](../media/season1-register-banner.webp)](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml)
-
 **Registration is always open.** Seasons follow one another, four weeks each, on a frozen benchmark. [Register your gate](https://github.com/darklordVirtual/agentic-datacenter/issues/new?template=gate-registration.yml) with three fields; installation and the interface check can follow. The [calendar](#seasons) says when the open season closes.
 
 New here? [How the benchmark works](HOW-IT-WORKS.md) explains it on one page, and how to run it at any time without a season.

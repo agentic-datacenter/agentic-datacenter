@@ -128,8 +128,22 @@ def _run(job: Job, repo: Path, docker: bool, log: Path) -> Result:
 
 
 def statuses(results: list[Result]) -> list[dict[str, str]]:
-    """Return one commit status per job name, from the results of its legs."""
+    """Return one commit status per job name, from the results of its legs.
+
+    A job with a matrix also gets one per leg, under the name GitHub gives a
+    leg, ``job (value)``: that is the name a ruleset can require, since a
+    hosted run never reports the bare job name of a matrix.
+    """
     out = []
+    for leg in results:
+        if leg.name != leg.context:
+            out.append(
+                {
+                    "context": leg.name,
+                    "state": "success" if leg.passed else "failure",
+                    "description": f"Run locally on {leg.where}, {leg.seconds:.0f} s"[:140],
+                }
+            )
     for context in dict.fromkeys(r.context for r in results):
         legs = [r for r in results if r.context == context]
         failed = [r.name for r in legs if not r.passed]
