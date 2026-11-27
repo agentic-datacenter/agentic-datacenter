@@ -1260,10 +1260,18 @@ def grid(argv: Sequence[str]) -> int:
                 file=sys.stderr,
             )
             return 2
+        played = sorted((folder / "scenarios").glob("GR-*.yaml"))
+        if not played:
+            print(f"grid run: no scenarios found in {folder / 'scenarios'}", file=sys.stderr)
+            return 2
+        try:
+            facility = load_profile(args.profile)
+        except (OSError, ValueError) as exc:
+            print(f"grid run: {exc}", file=sys.stderr)
+            return 2
         report = grid_run.run(
-            requirements, values, load_profile(args.profile), library,
-            {name: installed[name] for name in names},
-            sorted((folder / "scenarios").glob("GR-*.yaml")), seed=args.seed,
+            requirements, values, facility, library,
+            {name: installed[name] for name in names}, played, seed=args.seed,
         )  # fmt: skip
         print(grid_run.render(report))
         (args.out / "grid_run.json").write_text(
@@ -1365,8 +1373,13 @@ def weekly(argv: Sequence[str]) -> int:
             file=sys.stderr,
         )
         return 2
+    try:
+        facility, library = load_profile(args.profile), ContractLibrary.load(args.contracts)
+    except (OSError, ValueError) as exc:
+        print(f"weekly run: {exc}", file=sys.stderr)
+        return 2
     report = drawn.run(
-        week, randomness, load_profile(args.profile), ContractLibrary.load(args.contracts),
+        week, randomness, facility, library,
         {name: installed[name] for name in names}, seed=args.seed,
     )  # fmt: skip
     print(drawn.render(report))

@@ -277,3 +277,73 @@ def test_the_site_shows_every_week_drawn_so_far() -> None:
     assert committed.startswith("# The weeks drawn so far"), (
         "a page is there before the first build"
     )
+
+
+@pytest.mark.req("ADC-BEN-010")
+def test_a_relay_that_answers_badly_is_passed_over_and_does_not_crash() -> None:
+    """Not JSON, cut short, another round or no beacon's answer: the next relay is asked."""
+    from http.client import IncompleteRead
+
+    signature = "ab"
+    good = {
+        "round": 5, "signature": signature,
+        "randomness": hashlib.sha256(bytes.fromhex(signature)).hexdigest(),
+    }  # fmt: skip
+    bad = iter(
+        [
+            ValueError("not JSON"),
+            IncompleteRead(b""),
+            {"round": 4, **{k: good[k] for k in good if k != "round"}},
+        ]
+    )
+
+    def mostly_bad(url: str) -> dict[str, object]:
+        if "api3" in url or "cloudflare" in url:
+            return good
+        answer = next(bad)
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
+
+    assert weekly.fetch_randomness(5, mostly_bad) == good["randomness"]
+
+    def nonsense(url: str) -> dict[str, object]:
+        return {"round": 5, "signature": "zz"}
+
+    with pytest.raises(weekly.WeeklyError, match="could not be read from 2 relays"):
+        weekly.fetch_randomness(5, nonsense)
+
+
+@pytest.mark.req("ADC-BEN-010")
+def test_a_week_has_one_spelling() -> None:
+    """2027-W5 is 2027-W05: the same files, and the same ids."""
+    assert weekly.canonical("2027-W5") == "2027-W05"
+    short, full = weekly.generate("2027-W5", RANDOMNESS), weekly.generate("2027-W05", RANDOMNESS)
+    assert [one["text"] for one in short] == [one["text"] for one in full]
+    assert short[0]["id"] == "WK-2027W05-1"
+
+
+@pytest.mark.req("ADC-BEN-010")
+def test_the_weeks_own_check_looks_at_the_scenarios_own_work_orders() -> None:
+    def order(authorized: bool, **more: object) -> dict[str, object]:
+        return {"rationale": "WO-11 lower", "authorized": authorized, "verdict": "ALLOW",
+                "premises": [], **more}  # fmt: skip
+
+    assert weekly.orders_wrong([order(True), order(False)], forbids=True) == []
+    assert weekly.orders_wrong([order(True), order(True)], forbids=False) == []
+    assert weekly.orders_wrong([order(True), order(True)], forbids=True) == [
+        "the second work order has the wrong standing"
+    ]
+    assert weekly.orders_wrong([order(False), order(False)], forbids=True) == [
+        "the first work order was not a sound step"
+    ]
+    spoiled = order(False, contract_errors=["step: too large"])
+    assert (
+        "forbidden by its contract as well" in weekly.orders_wrong([order(True), spoiled], True)[0]
+    )
+    assert weekly.orders_wrong([order(True)], forbids=True) == ["1 work orders were decided, not 2"]
+    report = {"gates": [{"gate": "null_gate", "runs": [
+        {"scenario": "WK-1", "agent": "a", "kind": "narrowed", "sound": 3, "without_mandate": 2,
+         "orders_wrong": ["the second work order has the wrong standing"]},
+    ]}]}  # fmt: skip
+    assert weekly.self_check(report) == ["WK-1 (a): the second work order has the wrong standing"]

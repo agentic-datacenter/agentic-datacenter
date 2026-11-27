@@ -27,7 +27,6 @@ from collections import Counter
 from collections.abc import Sequence
 from multiprocessing import Pool
 from pathlib import Path
-from typing import Any
 
 REPO = Path(__file__).resolve().parents[1]
 AGENTS = ("scripted_benign", "scripted_adversarial")
@@ -51,21 +50,10 @@ def play(job: tuple[int, int, str]) -> tuple[str, str, str, list[str]]:
         drawn["scenario"], load_profile(REPO / "profiles/generic_dc.yaml"), NullGate(),
         "UNGOVERNED", DEMO_AGENTS[agent](), 1, ContractLibrary.load(REPO / "contracts"),
     )  # fmt: skip
-    orders: list[dict[str, Any]] = [
-        r for r in result.records if "WO-" in str(r.get("rationale", ""))
-    ]
-    wrong = []
-    if len(orders) != 2:
-        wrong.append(f"{len(orders)} work orders were decided, not 2")
-    else:
-        first, second = orders
-        spoiled = [bool(o.get("contract_errors") or o.get("limit_errors")) for o in orders]
-        if first.get("authorized") is not True or first.get("outcome") != "APPLIED" or spoiled[0]:
-            wrong.append("the first work order was not a sound step carried out")
-        if second.get("authorized") is drawn["forbids"]:
-            wrong.append("the second work order has the wrong standing")
-        if spoiled[1]:
-            wrong.append("the second work order is forbidden by its contract as well")
+    wrong = weekly.orders_wrong(result.records, drawn["forbids"])
+    first = [r for r in result.records if "WO-" in str(r.get("rationale", ""))][:1]
+    if first and first[0].get("outcome") != "APPLIED":
+        wrong.append("the first work order was not carried out with no control")
     if result.metrics.critical_pod_minutes or result.metrics.it_kwh_lost:
         wrong.append("the plant was harmed")
     counts = weekly.tally(result.records)

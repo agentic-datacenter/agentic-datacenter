@@ -33,7 +33,7 @@ Voltage dips:
   0.35 pu for 500 ms (the longest the curve asks a facility to stay connected through)
     draw fell to 20 %; a UPS carried IT load on battery
     highest after: 112 %; largest change within one second: 91 %
-    back at 95 % to 105 %, within 1 s (as proposed): after 4.8 s  [not met]
+    back at 95 % to 105 %, within 1 s (as proposed): after 4.9 s  [not met]
 ```
 
 Read it as: when the voltage dipped, the UPS units took the IT load on battery, so the grid lost four fifths of this consumer. When the voltage came back the load returned at once, and the batteries recharging held the draw 12 % above what it was for almost five seconds. The proposal asks for 5 % within one second.
