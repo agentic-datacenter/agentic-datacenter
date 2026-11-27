@@ -31,7 +31,7 @@ Two states, running and tripped. Running goes to tripped after `shutdown_hold_s`
 
 ## Points
 
-Power served, power asked for, energy lost, a dropped flag, a thermal trip flag and the inlet temperature; all tier `T0`. The thermal trip flag is an urgent alarm.
+Power served, power asked for, energy lost, a dropped flag, a thermal trip flag and the inlet temperature; all tier `T0`. One setting, tier `T3`: `workload_sp_pct`, a ceiling on the workload as a share of what it asks for. At its default of 100 % it changes nothing (ADR 0045). The thermal trip flag is an urgent alarm.
 
 ## Parameters
 

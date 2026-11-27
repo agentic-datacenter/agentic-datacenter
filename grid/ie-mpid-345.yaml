@@ -43,6 +43,15 @@ recovery:
       max_share: null
       within_s: null
 
+low_frequency:
+  # Not in the overview. The level ENTSO-E's position gives for the Irish
+  # synchronous area (A.2.8), used so that the scenarios have a level to run on.
+  threshold_hz: 49.5
+  assumed: true
+  note: >-
+    Not from the overview, which gives no number. The level ENTSO-E's position
+    of December 2025 gives for the Irish synchronous area.
+
 not_checked:
   - what: The voltage-against-time curve of the modification
     why: Not in the overview, and the modification has not been read into this file.

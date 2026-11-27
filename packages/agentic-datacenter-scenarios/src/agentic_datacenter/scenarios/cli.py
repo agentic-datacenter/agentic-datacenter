@@ -1173,6 +1173,35 @@ def grid(argv: Sequence[str]) -> int:
         help="Hold the largest change within one second to this share of the draw, e.g. 0.1.",
     )  # fmt: skip
     run.add_argument("--json", type=Path, help="Write the report to this file as well.")
+    for name, text in (
+        ("contracts", "Write a contract library with the grid contract, filled in from a file."),
+        ("run", "Run the grid scenarios under one or more controls (not a benchmark result)."),
+    ):
+        made = actions.add_parser(name, help=text)
+        made.add_argument("requirements", help="An id from `grid list`, or a file of your own.")
+        made.add_argument("--contracts", type=Path, default=Path("contracts"))
+        made.add_argument(
+            "--low-frequency-hz", type=float,
+            help="The frequency below which consumption is not raised (default: the file's).",
+        )  # fmt: skip
+        made.add_argument(
+            "--ramp-step-pct", type=float,
+            help="The largest ramp in one step, in %% of the workload (default: 10).",
+        )  # fmt: skip
+        made.add_argument(
+            "--steps-per-hour", type=int, help="Steps allowed in an hour (default 6)."
+        )
+        made.add_argument(
+            "--out", type=Path, default=Path("build/grid"),
+            help="Where the contract library, and the report of a run, are written.",
+        )  # fmt: skip
+        if name == "run":
+            made.add_argument("--profile", type=Path, default=Path("profiles/generic_dc.yaml"))
+            made.add_argument(
+                "--gate", action="append", default=[], dest="gates",
+                help="A control to run; repeat for more (default: null_gate, static_allowlist).",
+            )  # fmt: skip
+            made.add_argument("--seed", type=int, default=1)
     run.add_argument(
         "--fail-on-unmet", action="store_true",
         help="Exit with status 1 when something is not met.",
@@ -1200,6 +1229,48 @@ def grid(argv: Sequence[str]) -> int:
     path = Path(args.requirements)
     if not path.is_file():
         path = folder / f"{args.requirements}.yaml"
+    if args.action in ("contracts", "run"):
+        from . import grid_run
+        from .bench import load_gates
+
+        try:
+            requirements = load_requirements(path)
+            values = grid_run.contract_values(
+                requirements, args.low_frequency_hz, args.ramp_step_pct, args.steps_per_hour
+            )
+            template = folder / "contracts" / f"{grid_run.CONTRACT_ID}.yaml"
+            library = grid_run.write_library(
+                args.out / "contracts", args.contracts, template, values
+            )
+        except (OSError, ValueError, yaml.YAMLError) as exc:
+            print(f"grid {args.action}: {exc}", file=sys.stderr)
+            return 2
+        if args.action == "contracts":
+            for value in values.values():
+                print(f"{value['shown']}  [{value['origin']}]")
+            print(f"contract library with {grid_run.CONTRACT_ID}: {args.out / 'contracts'}")
+            return 0
+        installed = load_gates()
+        names = args.gates or ["null_gate", "static_allowlist"]
+        unknown = [name for name in names if name not in installed]
+        if unknown:
+            print(
+                f"grid run: no such gate: {', '.join(unknown)};"
+                f" installed: {', '.join(sorted(installed))}",
+                file=sys.stderr,
+            )
+            return 2
+        report = grid_run.run(
+            requirements, values, load_profile(args.profile), library,
+            {name: installed[name] for name in names},
+            sorted((folder / "scenarios").glob("GR-*.yaml")), seed=args.seed,
+        )  # fmt: skip
+        print(grid_run.render(report))
+        (args.out / "grid_run.json").write_text(
+            json.dumps(report, indent=2) + "\n", encoding="utf-8"
+        )
+        print(f"report: {args.out / 'grid_run.json'}")
+        return 0
     try:
         requirements = load_requirements(path)
         profile = load_profile(args.profile)

@@ -42,6 +42,6 @@ That is a property of an assumed recharge rate in a generic model. It is also th
 
 ## What it is not, yet
 
-- **No agent and no control.** The requirements on ramping and on reducing consumption at low frequency are about load that software moves. The plant has no contract that lets an agent move IT load, so there is no scenario in which an agent ramps faster than allowed and a gate must stop it. That needs a new contract, and so a new benchmark version or a track of its own.
+- **No agent and no control**, in this check. A contract that lets an agent move IT load, and scenarios in which a control must hold it to the grid's limits, came with ADR 0045, outside the benchmark.
 - **No grid that answers.** A source impedance at the incomer would let the load move the voltage. Oscillations between a facility and the grid need more than that, and validation against measurements.
 - **Curves that are drawings.** ENTSO-E's and EirGrid's curves are not in their files, because the points were not read.

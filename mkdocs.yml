@@ -57,6 +57,7 @@ nav:
       - 0042 What is free to copy: design/adr/0042-what-is-free-to-copy.md
       - 0043 What a run is held to: design/adr/0043-what-a-run-is-held-to.md
       - 0044 Connection requirements: design/adr/0044-connection-requirements.md
+      - 0045 A control held to the grid: design/adr/0045-a-control-held-to-the-grid.md
   - Guides:
       - Your first half hour, for a governance system: guides/first-half-hour.md
       - Propose a scenario: guides/propose-a-scenario.md

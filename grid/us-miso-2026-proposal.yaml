@@ -1,0 +1,76 @@
+# What MISO's Large Load Working Group proposed in April 2026 for large loads
+# connecting to its transmission system, as far as this model can try it.
+# A working group's proposal, not a rule: see `status`.
+schema: agentic_datacenter.grid-requirements/1
+id: us-miso-2026-proposal
+jurisdiction: United States, MISO
+authority: MISO, the regional transmission organization
+status: proposed
+status_note: >-
+  Proposed requirements presented to MISO's Large Load Working Group on
+  20 April 2026, with stakeholder feedback asked for. Not adopted in what was
+  read.
+source:
+  title: Large Load Interconnection Reliability Requirements (LLWG)
+  publisher: MISO
+  published: "2026-04-20"
+  url: https://cdn.misoenergy.org/20260420%20LLWG%20Item%2006%20Large%20Load%20Interconnection%20Reliability%20Requirements751448.pdf
+  sections: "Slides 6 to 12, 26, 27 and 35"
+read_on: "2026-11-27"
+applies_to: >-
+  A load of more than 50 MW at one site, connected to the transmission system
+  for the first time after 1 September 2026, or an expansion by 25 MW or more.
+nominal_hz: 60
+
+continuous:
+  # Slide 26: "0.90 - 1.20 pu continuous range. Maintain pre-disturbance
+  # active power. No power reduction is permitted between 0.9 and 1.2 pu."
+  low_pu: 0.9
+  high_pu: 1.2
+
+ride_through:
+  # Slide 26 gives bands and no times: from 0.70 to 0.90 pu a reduction in
+  # proportion is permitted, and below 0.70 pu a flexible one.
+  curve_ms_pu: null
+  note: >-
+    The proposal gives voltage bands without times, so no dip is tried by
+    default. Try one of your own with --dip.
+
+recovery:
+  # Slide 26: "Restoration of >= 90% power is required within 1s of recovery."
+  voltage_back_pu: 0.9
+  levels:
+    - name: as proposed
+      min_share: 0.9
+      max_share: null
+      within_s: 1.0
+
+ramp:
+  # Slide 10: "Ramp rate (increase or decrease) shall be limited to 30 MW/min
+  # at the point of interconnection" and "Repetitive changes in load active
+  # power shall be limited by 10 MW in a sliding 5 second time window".
+  limit_share_per_s: null
+  limit_mw_per_min: 30.0
+  repetitive_mw: 10.0
+  repetitive_window_s: 5.0
+  note: >-
+    At most 30 MW a minute, up or down, at the point of interconnection, unless
+    the transmission provider approves otherwise, and repeated changes of at
+    most 10 MW within any 5 seconds.
+
+low_frequency:
+  # Slide 27: between 58.8 and 61.2 Hz a load maintains its active power; from
+  # 57.0 to 58.8 Hz it stays within 10 % of it. No level is given below which
+  # consumption must not rise.
+  threshold_hz: null
+  note: >-
+    The proposal gives a frequency range to stay connected in, 57.0 to 61.8 Hz,
+    and none below which consumption must not rise.
+
+not_checked:
+  - what: Frequency ride-through, 57.0 to 61.8 Hz, and a rate of change of up to 5 Hz/s (slide 27)
+    why: Nothing in the model reacts to the frequency inside the UPS input range, so a pass would mean nothing.
+  - what: Three voltage disturbances within 10 seconds, and a phase jump of 25 degrees (slide 26)
+    why: One dip is played at a time, and the model has no voltage angle.
+  - what: Repeated changes of at most 10 MW within 5 seconds (slides 10 and 35)
+    why: The generic facility's workload is steady; a facility with a varying workload is not tried here.

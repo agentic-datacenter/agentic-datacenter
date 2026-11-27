@@ -56,6 +56,17 @@ ramp:
     The facility must be able to set how fast its consumption changes. No
     limit is given: the system operator decides case by case.
 
+low_frequency:
+  # The proposal names reduction at low frequency (LFSM) as something the
+  # system operator may ask for case by case (10.7), with no number. The level
+  # here is not from it: it is what ENTSO-E's position gives for the Nordic
+  # synchronous area (A.2.8), used so that the scenarios have a level to run on.
+  threshold_hz: 49.5
+  assumed: true
+  note: >-
+    Not from the Norwegian proposal, which gives no number. The level ENTSO-E's
+    position of December 2025 gives for the Nordic synchronous area.
+
 not_checked:
   - what: Damping of oscillations in voltage and frequency (10.5)
     why: The model has no dynamic grid; the incomer's voltage does not depend on the load.

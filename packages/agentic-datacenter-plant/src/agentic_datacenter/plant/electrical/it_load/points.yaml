@@ -1,4 +1,4 @@
-# Points of the IT load of one POD. All are measurements.
+# Points of the IT load of one POD. All are measurements but the workload ceiling.
 - {name: served_kw, kind: analog_in, default: 0.0, tier: T0, description: "IT power served", unit: kW, range: [0, 100000], assumed: true}
 - {name: demand_kw, kind: analog_in, default: 0.0, tier: T0, description: "IT power the workload asks for", unit: kW, range: [0, 100000], assumed: true}
 - {name: kwh_lost, kind: analog_in, default: 0.0, tier: T0, description: "Energy the load could not draw", unit: kWh, range: [0, 1000000000], assumed: true}
@@ -8,3 +8,4 @@
 - {name: workload_pct, kind: analog_in, default: 100.0, tier: T0, description: "Workload as a share of design", unit: "%", range: [0, 200], assumed: true}
 - {name: airflow_kg_s, kind: analog_in, default: 12.0, tier: T0, description: "Air drawn through the equipment", unit: kg/s, range: [0, 100000], assumed: true}
 - {name: thermal_trip, kind: binary_in, default: false, tier: T0, description: "The servers have shut down on hot inlet air", assumed: true}
+- {name: workload_sp_pct, kind: analog_setting, default: 100.0, tier: T3, description: "Ceiling on the workload, as a share of what it asks for", unit: "%", range: [0, 100], assumed: true}

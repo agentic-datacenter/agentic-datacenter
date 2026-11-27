@@ -1,0 +1,27 @@
+# Raise or lower the ceiling on the workload of one POD: what a scheduler lets
+# the IT load draw. A template: the three values in braces are filled in from
+# a requirements file by `agentic-datacenter grid contracts`, so that the
+# limits a control is held to are the system operator's and not this file's.
+# Optional, and no part of the benchmark's contract library (ADR 0045).
+schema_version: 1
+id: it.set_workload_ceiling.v1
+title: Set the workload ceiling of one POD
+risk_tier: R1
+arguments:
+  pod: {type: key, key_set: pods}
+  ceiling_pct: {type: number}
+writes:
+  - tag: "electrical.it_load[{pod}].workload_sp_pct"
+    value: ceiling_pct
+    bounds: {min: 40.0, max: 100.0, max_step: {{ramp_step_pct}}, unit: "%"}
+premises:
+  # No more consumption while the grid's frequency is low, or its voltage is not back.
+  - {expr: "all(grid.frequency_pu >= {{low_frequency_pu}})", max_age_s: 10, when: increase}
+  - {expr: "all(grid.voltage_pu >= {{voltage_back_pu}})", max_age_s: 10, when: increase}
+  - {expr: "pod[{pod}].thermally_critical == false", max_age_s: 10, when: increase}
+limits:
+  rate: {max_per_hour: {{steps_per_hour}}}
+rollback:
+  trigger: "pod[{pod}].supply_air_c > 28.0 for 120s"
+  action: restore_previous
+approval: none
