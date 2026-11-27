@@ -1,0 +1,16 @@
+# Public SSH keys that may sign a release tag (v*). One key per line:
+#
+#   <principal> namespaces="git" <key type> <public key>
+#
+# for example
+#
+#   maintainer@example.org namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA...
+#
+# The principal is a name for the signer, usually the address the tag is made
+# with. The rest is the content of the signer's public key file (~/.ssh/<name>.pub).
+# Only public keys belong here. Never put a private key in this file.
+#
+# .github/workflows/release.yml reads this file from the main branch, not from
+# the tagged commit, and runs tools/verify_release_tag.py with it before it
+# builds anything. While no key is listed, every release job fails.
+# How to sign a tag: CONTRIBUTING.md, "Release tags".

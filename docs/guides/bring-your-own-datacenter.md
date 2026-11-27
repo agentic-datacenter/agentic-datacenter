@@ -12,7 +12,17 @@ uv run agentic-datacenter facility check examples/byodc
 
 Open `build/facility/facility_report.md`. Start with **Scenarios** to see which tests can run and what each skipped test needs. The five-minute simulated run shows IT load served, power draw and the hottest supply air.
 
-For a one-page comparison, run `uv run agentic-datacenter facility report examples/byodc` and open `build/operator-report/operator_report.md`. It runs additional scenarios to compare the built-in safety control with the no-gate baseline on the example facility.
+For a one-page comparison, run:
+
+```sh
+uv run agentic-datacenter facility report examples/byodc --scenario OP-02 --scenario OP-05 --scenario AD-07 --scenario AD-10
+```
+
+Open `build/operator-report/operator_report.md`. It compares the built-in safety control with the no-gate baseline on the example facility, with a careful and a hostile scripted agent. The four scenarios are a utility loss, an air handler failure, an unsafe human request and an attempt to operate a relay. The report names the scenarios it was made from.
+
+The command prints a line as each of its 20 runs ends. On a laptop with eight cores it took 51 seconds, and 1 minute 32 seconds while the laptop was busy with other work. With `--jobs 1` it took 4 minutes 26 seconds.
+
+Without `--scenario`, the comparison covers every scenario that fits the facility. When this was measured, on 2026-11-27, that was 33 scenarios for the example, in 165 runs. They took 17 minutes with eight processes while the laptop was busy with other work. One process used 35 minutes of processor time for 30 of those scenarios. `--jobs` sets how many runs are made at a time. The default is one per core, and the report is the same whatever the number.
 
 ## Describe your facility
 

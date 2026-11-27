@@ -667,7 +667,10 @@
         "unit",
         "quality",
         "time_ms",
-        "observed_at"
+        "observed_at",
+        "source",
+        "reading",
+        "signature"
       ],
       "properties": {
         "tag": {
@@ -688,8 +691,38 @@
         "observed_at": {
           "type": "string",
           "format": "date-time"
+        },
+        "source": {
+          "type": "string",
+          "description": "The plant module that owns the point and signed the reading (ADR 0041)."
+        },
+        "reading": {
+          "type": "string",
+          "description": "The text that was signed: a JSON object with tag, value, unit, quality and time_ms. Check the signature over the UTF-8 bytes of this text, then that it says what the row says."
+        },
+        "signature": {
+          "type": "object",
+          "required": [
+            "alg",
+            "key_id",
+            "value"
+          ],
+          "properties": {
+            "alg": {
+              "const": "Ed25519"
+            },
+            "key_id": {
+              "type": "string",
+              "description": "sha256: and the SHA-256, in hex, of the raw public key of the source."
+            },
+            "value": {
+              "type": "string",
+              "description": "The signature over the bytes of reading, base64."
+            }
+          }
         }
-      }
+      },
+      "description": "One reading, signed by its source. A reading whose signature does not verify under the key of its source, in sources, did not come from that source."
     },
     "correlation": {
       "type": "object",
@@ -737,7 +770,8 @@
         "interlocks",
         "redundancy",
         "alarms",
-        "permits"
+        "permits",
+        "sources"
       ],
       "properties": {
         "schema": {
@@ -790,6 +824,34 @@
         "permits": {
           "type": "object",
           "description": "Work permits are not modelled as points in this version: {\"modelled\": false, \"items\": []}."
+        },
+        "sources": {
+          "type": "array",
+          "description": "The source of every reading in this context, each with its public key. Test keys, derived from the source's name; never credentials (ADR 0041).",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "alg",
+              "key_id",
+              "public_key"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "alg": {
+                "const": "Ed25519"
+              },
+              "key_id": {
+                "type": "string"
+              },
+              "public_key": {
+                "type": "string",
+                "description": "The raw 32-byte public key, base64."
+              }
+            }
+          }
         }
       }
     }

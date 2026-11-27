@@ -152,7 +152,10 @@ def test_a_sample_of_the_plant_is_sent_only_when_asked_for() -> None:
     for group in ("temperatures", "load", "interlocks"):
         assert context[group], group
         for point in context[group]:
-            assert set(point) == {"tag", "value", "unit", "quality", "time_ms", "observed_at"}
+            assert set(point) == {
+                "tag", "value", "unit", "quality", "time_ms", "observed_at",
+                "source", "reading", "signature",  # signed by its source (ADR 0041)
+            }  # fmt: skip
     assert any(p["tag"].endswith(".supply_air_c") and p["unit"] for p in context["temperatures"])
     assert any(p["tag"].endswith(".alarm_lockout") for p in context["interlocks"])
     assert context["redundancy"] and isinstance(context["alarms"], list)

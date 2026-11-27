@@ -69,6 +69,16 @@ A new feature waits. The owner lifted the freeze once, on 2026-11-25, for the la
 
 A pin bump is its own PR. It changes only `REMORA_PIN` and `uv.lock`, names the new tag, and attaches the scenario-matrix metric difference against the previous pin. The `pin-bump` workflow checks the first and makes the second: `uv run python tools/ci_local.py --workflow pin-bump --base main` runs it on your machine and leaves the difference in `build/pin-diff/pin-diff.md`. The one time it was run, on a replay of the last bump, it took 23 minutes.
 
+## Release tags
+
+A release is a tag `v*` with an SSH signature, made by the maintainer. The `release` workflow verifies the signature before it installs, tests or builds anything, and fails when it does not verify.
+
+- The public keys that may sign a release are in `.github/release-signers/allowed_signers`, one per line, as the first lines of that file describe. The workflow reads the file from the main branch, not from the tagged commit, so a change of keys goes through a pull request like any other change. While the file lists no key, every release fails with a message that says so.
+- Sign with that key: `git config gpg.format ssh`, `git config user.signingkey ~/.ssh/<name>.pub`, then `git tag -s v1.2.3 -m "v1.2.3"`. Add the same key to your GitHub account as a signing key, because the ruleset `.github/rulesets/tags.json` asks GitHub for a verified signature too.
+- Check a tag before you push it: `uv run python tools/verify_release_tag.py v1.2.3 --signers-ref origin/main`.
+
+The workflow file of a release is the one in the tagged commit. The check therefore stops a tag that is unsigned or signed with another key. It does not stop someone who may push tags and changes the workflow itself; the rulesets and the review of `.github/` are what stand against that.
+
 ## Gates from other projects
 
 A gate from another project is not added to this repository. It is loaded through its own `agentic_datacenter.gates` entry point or served over HTTP to the `http_gate` binding; see `docs/guides/bring-your-own-gate.md`. Changes to Agentic-Datacenter that a gate author needs are welcome as issues or pull requests like any other. A result is shared through the "Gate result" issue form, not by pull request.

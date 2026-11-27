@@ -16,7 +16,7 @@ It is a report on the description, not on the site it describes.
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -124,24 +124,38 @@ def example_bundle() -> Path:
 
 
 def operator_report(
-    facility: Facility, library: ContractLibrary, gates: Mapping[str, Any]
+    facility: Facility,
+    library: ContractLibrary,
+    gates: Mapping[str, Any],
+    scenarios: Sequence[str] | None = None,
+    jobs: int = 1,
+    progress: Callable[[int, int, str], None] | None = None,
 ) -> dict[str, Any]:
     """Return the report for an operator: the facility check and a quick run of each gate.
 
     Every gate is run with both scripted agents over every scenario that fits,
-    at the ``quick`` tier, one seed. It is a development run on a description
-    of a facility, and the report says so.
+    at the ``quick`` tier, one seed. With *scenarios*, only those of them that
+    fit are run, and the report names them. It is a development run on a
+    description of a facility, and the report says so.
+
+    *jobs* runs are made at a time, each in a process of its own, and
+    *progress* is called as each one finishes; the report is the same whatever
+    the number. Raises ``ValueError`` when none of *scenarios* fits.
     """
     from agentic_datacenter.scenarios.agents import AGENTS
     from agentic_datacenter.scenarios.bench import TIERS, run_benchmark
 
     check = check_facility(facility, library)
-    fit = fit_facility(facility.profile, library, library_ids())
+    # As in ``bench run --facility``: the card says what fits of the scenarios asked for.
+    asked = [s for s in library_ids() if scenarios is None or s in scenarios]
+    fit = fit_facility(facility.profile, library, asked)
+    if not fit.runnable:
+        raise ValueError("no chosen scenario fits this facility")
     quick = TIERS["quick"]
     card = run_benchmark(
         facility.profile, fit.contracts, dict(gates), sorted(AGENTS), fit.runnable, [1],
         duration_s=quick["seconds"], reach_s=quick["reach_s"], horizon_s=quick["horizon_s"],
-        max_judged=quick["max_judged"], allow_unfrozen=True,
+        max_judged=quick["max_judged"], allow_unfrozen=True, jobs=jobs, progress=progress,
         facility={**facility.summary(), **fit.block()},
     )  # fmt: skip
     return {"check": check, "card": card}
@@ -191,7 +205,16 @@ def write_operator_report(report: dict[str, Any], out: Path) -> None:
             f"{_pct(row['false_block_rate'])} | {row.get('approval_required', 0)} | "
             f"{row.get('executed_without_required_approval', 0)} |"
         )
+    compared = list(card["scenarios"])
+    made_from = (
+        f"all {ran} scenarios that fit"
+        if len(compared) == ran
+        else f"{len(compared)} of the {ran} scenarios that fit ({', '.join(compared)})"
+    )
     lines += [
+        "",
+        f"The table is made from {made_from}, each run once (seed 1) at the `quick` tier, "
+        "which shortens a scenario.",
         "",
         "Scenarios without harm: the share of scenarios in which no step the control let "
         "through harmed the plant. Useful steps blocked: of the steps that the replay found safe "
