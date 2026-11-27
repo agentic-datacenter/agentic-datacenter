@@ -26,7 +26,7 @@ Governance gates and the REMORA binding
 
 Scenarios and benchmark
 
-- Thirty-eight scenarios, eighteen operational and twenty adversarial, played by scripted agents: careful, hostile, drifting and flooding. All of them are in the frozen version `benchmark-v1.5`.
+- Thirty-eight scenarios, eighteen operational and twenty adversarial, played by scripted agents: careful, hostile, drifting and flooding. All of them are in the frozen version `benchmark-v1.6`.
 - Counterfactual replay: a blocked proposal is replayed as if it had been carried out, to show whether the block avoided harm or cost a useful step. Every run is also compared with the same scenario and seed with no agent.
 - `agentic-datacenter bench run` in four tiers (`docs/bench/TIERS.md`), in several processes or split over machines and merged. The result card is the same, byte for byte, however it was made.
 - `agentic-datacenter demo`: three scenarios with no gate and with one, from the same seed, as a page with every decision and its record and as a one-page result report in HTML and Markdown.
@@ -51,7 +51,7 @@ Tooling
 
 - `compose` mode is not built. Everything runs in one process (`inproc`).
 - A language-model agent is an option, not the default, and no result of a model has been published. An agent of one's own served over HTTP is not built.
-- No benchmark result has been reported. Season 1 runs on the frozen version `benchmark-v1.5`; its hidden track is drawn at its deadline, 2027-01-13 12:00 UTC.
+- No benchmark result has been reported. Season 1 runs on the frozen version `benchmark-v1.6`; its hidden track is drawn at its deadline, 2027-01-13 12:00 UTC.
 - No result has been reproduced on a second machine.
 - The other differences from the design document are in its section 14.
 
@@ -59,8 +59,34 @@ Tooling
 
 Entries are newest first. Where an older entry names a benchmark version, a deadline or a number of scenarios, the newest entry is the one that holds.
 
+Added
+
+- Ways in for the power side. The grid guide says what is there for a system operator, a data center developer, a maker of power equipment, a governance maintainer and a researcher, lists the documents nobody has read yet, and gives the requirements file field by field. One issue form takes a new country, a missing value or a correction in words. A requirements file from outside comes on the terms of a scenario file: CC-BY-4.0, its writer named.
+- A control held to a system operator's limits on load that software moves (ADR 0045). The IT load of a POD has a workload ceiling; one contract outside the benchmark's library lets an agent raise or lower it, with premises on the grid's frequency and voltage and a bound on the ramp, filled in from a requirements file by `agentic-datacenter grid contracts <id>`. Three scenarios outside the benchmark's library (`GR-01` to `GR-03`) hand the agent a step that only the grid's state or the ramp limit forbids, and the same step when nothing does; `agentic-datacenter grid run <id> --gate <name>` counts forbidden steps let through and sound steps refused. A value no operator has set is marked assumed. Nothing frozen is changed.
+- The benchmark runner's release check goes through every gate and fails the job only for a system under test. A reference control that does not pass, as expected of it, no longer ends the job before the record and its attestation are made.
+- A facility tried against a system operator's connection requirements (ADR 0044). `agentic-datacenter grid check <id>` dips the voltage at the incomers and reports what they drew, before, during and after, against requirements read from a file in `grid/`: what Statnett proposed for Norway in April 2026, what ENTSO-E recommended in December 2025, what EirGrid's overview states for Ireland, Fingrid's draft for Finland of June 2026 and MISO's proposal of April 2026. A ramp limit in MW a minute is turned into the size above which a facility of the same design would be over it. Each file names its document and says whether it is proposed, recommended or in force; none is in force. Optional, with no agent and no control, and no part of the benchmark: every hash of `benchmark-v1.6` is as it was. A report is not a statement of compliance.
+
+Changed
+
+- What is free to copy (ADR 0042). The wire format, the rule for signed mandate statements and its test vectors are under the MIT licence (`docs/reference/LICENSE`), so that anyone may ship them with their own work. A scenario file proposed from outside is under CC-BY-4.0 with its proposer named, and the contribution terms do not apply to it. `CONTRIBUTING.md` starts with the ways to contribute that take no pull request.
+
+Added
+
+- `bench compare` says where a gate did worse on a new card than on an earlier one. The workflow a maintainer copies runs two tracks, the frozen version and the main branch, compares each with its previous run, and makes its benchmark in four processes. `bench check` without `--gate` checks every gate on the card but the two reference controls; it used to check one named system.
+- A way in for scenarios from outside. `scenario run` takes the path of a scenario file of one's own, there is a form to propose a scenario in words, and `docs/guides/propose-a-scenario.md` says what gets one into a frozen version. `docs/guides/first-half-hour.md` takes a governance maintainer who knows nothing of data centers from a clone to a result for their own system.
+
+Changed
+
+- One structure for every system, whatever it brings. An entry of an enrolled system now says what the system brings (decisions, findings, evidence or verification) and what of the interface it uses, and the page of enrolled systems shows both as tables made from the entries. REMORA, whose maintainer owns this project, is enrolled with the same form and listed under the same rules, with `relation: benchmark_authors`; the reference controls beside every result are the two that belong to no system. "Which way in" starts from what a project produces, so that a project that decides nothing can take part. `gate verify-receipts --verifier` puts each receipt to a verifier of the system's own. A bundle with a served gate's correlation now has `execution.json`, which holds the hash of what the manifest leaves out.
+- The repository moved to an organization of its own on 2026-11-27, the day it became public: `github.com/agentic-datacenter/agentic-datacenter`, with the documentation at `agentic-datacenter.github.io/agentic-datacenter`. The old address redirects. The project is its own home, and no governance system's owner is in its address.
+
+Changed
+
+- The whole suite runs in four parts on four machines at once in the pull-request checks, with one last job that reads their requirement reports together. A change waits about a quarter of the time it did.
+
 Fixed
 
+- A run is held to what a control can do (ADR 0043). A criterion on the agent's own conduct, such as telling a person, and a criterion that asks for something to happen in a run cut before the scenario's last event, no longer make a run "not passed"; each is kept and printed apart. Under every control, none included, the same three runs of the quick benchmark used to read as failed. Season 1 runs on `benchmark-v1.6`.
 - After a review of the code on the day the repository became public (ADR 0041, "Corrected after review"). A held-out variant could move the events of `AD-20` and `OP-17` to the other side of the 300 seconds a step is in progress, so that every gate would have failed those variants; a variant now keeps what a scenario is about, and the scheme of the variants is 3. With two proposers on one point, a step in progress is now judged by its own proposer's mandate. An issuer can no longer lose its standing at the instant it makes a change. Neither verifier of mandate statements fails on a statement made to break it. A release tag must carry its own name. Season 1 runs on `benchmark-v1.5`, which has the same scenarios, contracts, agents, profile and judge as `benchmark-v1.4`.
 - `gate check` now points at a first result that takes minutes, the summary printed after `bench run` uses the words of the card, and the guides have one sequence to paste for signed mandates and one for signed receipts.
 

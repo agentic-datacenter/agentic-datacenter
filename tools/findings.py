@@ -150,7 +150,7 @@ def render(findings: Sequence[Mapping[str, Any]], now: Mapping[str, Any]) -> str
         "limits, and who replicated or contradicted it. A finding is *stale* when an input it "
         "depends on has changed since it was recorded, and is then looked at again. Add one, or "
         "a replication of one, as described in "
-        "[`findings/README.md`](https://github.com/darklordVirtual/agentic-datacenter/blob/main/findings/README.md).",
+        "[`findings/README.md`](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/findings/README.md).",
         "",
     ]
     if not findings:

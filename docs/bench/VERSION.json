@@ -1,5 +1,5 @@
 {
-  "code_commit": "f3e7eb01656da92571453540ee608ae5800659f5",
+  "code_commit": "e0d3bac1a97cf841f929c33693b4c320a014882d",
   "scenarios": [
     "AD-01",
     "AD-02",
@@ -43,7 +43,7 @@
   "version": {
     "agents": "1461558ff0132484d9969fc8689d99af36df5ee297ac8eda4814b413f1ff9ff0",
     "contract_library": "5ba1b074e296c1747e8c0c0abb85d9cd4f321efbf90094c7e6e0495d2ad59e15",
-    "oracle": "4ffea129ea8c17060541ea611a97ab92c015dc2253acfeec6fe2f80682ab16b9",
+    "oracle": "1691b76a3dfa2da316aa695ca0aadf85e7026963c46d36a18701522190947883",
     "profile": "4233e0c2be84a3f227fa1051d1f872674a356c2af89ff2b12838f6618894e487",
     "scenario_library": "a8497971380e77c4068ab4a54194fb78ec673828c2eb89089e38abd9b656e328"
   }

@@ -1,0 +1,78 @@
+# The minimum set of connection requirements for data centers that ENTSO-E
+# recommended to system operators in December 2025, as far as this model can
+# try it. A recommendation, not law: see `status`.
+schema: agentic_datacenter.grid-requirements/1
+id: eu-entsoe-2025-position
+jurisdiction: European Union
+authority: ENTSO-E, the association of transmission system operators
+status: recommended
+status_note: >-
+  A position paper approved on 11 December 2025. It recommends that system
+  operators set national requirements until amended European connection codes
+  are adopted, and leaves several values to each operator. Not law.
+source:
+  title: Position on the need for national connection requirements to ensure EU power system stability
+  publisher: ENTSO-E
+  published: "2025-12-11"
+  url: https://eepublicdownloads.blob.core.windows.net/public-cdn-container/clean-documents/Publications/Position%20papers%20and%20reports/2025/251211_SDC_Position_paper_on_CNC_2.0.pdf
+  sections: "Annex, A.2.2 to A.2.10"
+read_on: "2026-11-27"
+applies_to: >-
+  Data centers connected above 1 kV. The voltage range here is the one for
+  connections above 1 kV and below 110 kV.
+nominal_hz: 50
+
+continuous:
+  # A.2.2 (b): remain connected and operate continuously within 0.9 to 1.1 pu.
+  low_pu: 0.9
+  high_pu: 1.1
+
+ride_through:
+  # A.2.4 and A.2.5 give the curves as drawings (figures 4 and 5). Their
+  # points have not been read into this file, so no dip is tried by default.
+  curve_ms_pu: null
+  note: >-
+    The curve is a drawing in the paper and its points are not in this file
+    yet. Try a dip of your own with --dip.
+
+recovery:
+  # A.2.6: the operator sets a level between 80 % and 100 % of the
+  # consumption before the disturbance, and a time between 0.5 and 5 seconds.
+  voltage_back_pu: 0.9
+  levels:
+    - name: the loosest an operator may set
+      min_share: 0.8
+      max_share: null
+      within_s: 5.0
+    - name: the strictest an operator may set
+      min_share: 1.0
+      max_share: null
+      within_s: 0.5
+
+ramp:
+  # A.2.9: the operator can set limits on ramping up and down. No number.
+  limit_share_per_s: null
+  note: >-
+    The system operator may set limits on ramping up and down. No number is given.
+
+low_frequency:
+  # A.2.8: below the threshold a data center reduces its consumption, and that
+  # setpoint prevails over any other that would raise consumption. 49.8 Hz,
+  # and 49.5 Hz in the Nordic and Irish synchronous areas.
+  threshold_hz: 49.8
+  threshold_hz_nordic_and_ireland: 49.5
+  note: >-
+    A.2.8. In the Nordic and Irish synchronous areas the level is 49.5 Hz; give
+    it with --low-frequency-hz 49.5.
+
+not_checked:
+  - what: Withstanding a rate of change of frequency, up to 4 Hz/s over 0.25 s (A.2.3)
+    why: Nothing in the model reacts to how fast the frequency changes, so a pass would mean nothing.
+  - what: Riding through a high voltage (A.2.5)
+    why: The curve is a drawing whose points are not in this file yet.
+  - what: Oscillations forced by the load, 0.01 to 50 Hz (A.2.7)
+    why: The model has no dynamic grid, and its step is 100 ms.
+  - what: Reducing consumption below 49.8 Hz, or 49.5 Hz in the Nordic and Irish areas (A.2.8)
+    why: The modelled facility has no such function.
+  - what: Reactive power (A.2.10)
+    why: The model carries active power only.

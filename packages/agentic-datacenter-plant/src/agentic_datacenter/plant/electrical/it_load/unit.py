@@ -21,6 +21,7 @@ from .faults import INPUTS
 
 POINTS = load_points(Path(__file__).parent / "points.yaml")
 FEEDS = ("feed_a", "feed_b")
+CEILING = "workload_sp_pct"
 
 
 TRACES = ("steady", "diurnal", "accelerated")
@@ -92,7 +93,9 @@ class ItLoad(SimModule):
         warm = max(0.0, io.number("inlet_c") - self.fan_ref_c)
         self.fan_speed = min(self.fan_max_speed, 1.0 + self.fan_slope * warm)
         fan = self.design_kw * self.fan_fraction * self.fan_speed**3
-        workload = self.design_kw * (1.0 - self.fan_fraction) * self.fraction
+        # The ceiling is what a scheduler allows of the workload; at 100 % it changes nothing.
+        ceiling = min(max(io.number(CEILING), 0.0), 100.0) / 100.0
+        workload = self.design_kw * (1.0 - self.fan_fraction) * self.fraction * ceiling
         wanted = 0.0 if epo.active else workload + fan
         served = wanted if usable and not self.tripped else 0.0
         self._share = {n: served / len(usable) if n in usable else 0.0 for n in FEEDS}
@@ -165,9 +168,18 @@ class ItLoad(SimModule):
         self.ctx.wake()
 
     def snapshot(self) -> JsonValue:
-        """Return the complete state of the load."""
+        """Return the complete state of the load.
+
+        The workload ceiling is left out while it is at its default, so that a
+        facility that never writes it has the state, and the state hash, it had
+        before the ceiling existed (ADR 0045).
+        """
+        io = self.io.snapshot()
+        assert isinstance(io, dict)
+        if io.get(CEILING) == 100.0:
+            del io[CEILING]
         return {
-            "io": self.io.snapshot(),
+            "io": io,
             "fraction": [self.fraction, self.fan_speed, self.next_change_ms],
             "share": [self._share[n] for n in FEEDS],
             "protection": [self.tripped, self.since_ms],
@@ -177,7 +189,9 @@ class ItLoad(SimModule):
         """Put back a state returned by :meth:`snapshot`."""
         if not isinstance(state, Mapping):
             raise ValueError("IT-load snapshot must be a mapping")
-        self.io.restore(state["io"])
+        io = state["io"]
+        assert isinstance(io, Mapping)
+        self.io.restore({CEILING: 100.0, **io})
         share = state["share"]
         assert isinstance(share, list | tuple)
         fraction = state["fraction"]

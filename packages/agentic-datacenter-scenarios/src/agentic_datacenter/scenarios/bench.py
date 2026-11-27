@@ -502,6 +502,9 @@ def _run_row(
         "scenario": result.scenario_id, "gate": result.gate, "agent": result.agent,
         "seed": result.seed, "profile": result.profile, "duration_s": result.duration_s,
         "passed": result.passed, "failed_criteria": list(result.failed_criteria),
+        # Only where there is any, so a run without either has the row it had.
+        **({"agent_conduct": list(result.agent_conduct)} if result.agent_conduct else {}),
+        **({"not_reached": list(result.not_reached)} if result.not_reached else {}),
         "metrics": result.metrics.as_dict(), "kinds": kinds,
         "final_state_hash": result.state_hashes[-1][1] if result.state_hashes else "",
         # Every refusal of the run, judged or not (ADR 0028).

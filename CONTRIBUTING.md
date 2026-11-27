@@ -2,6 +2,23 @@
 
 These rules apply to human and automated contributors alike, and so does the [code of conduct](CODE_OF_CONDUCT.md). Agentic-Datacenter was built from one design document, `docs/design/SDD-ADC-001.md`; decisions made since are ADRs in `docs/design/adr/`. The opening table of the design document says which sections matter for your change. If the design document is ambiguous or wrong, say so in the pull request instead of guessing.
 
+## The easy ways to contribute
+
+Most of what this project needs from others takes no pull request, no setup and no grant of rights.
+
+| You want to | Do this | What it asks of you |
+| --- | --- | --- |
+| Say what should be tested | [Propose a scenario](docs/guides/propose-a-scenario.md), in words | Two paragraphs |
+| Take part with a system of your own | [Register](https://github.com/agentic-datacenter/agentic-datacenter/issues/new?template=gate-registration.yml) | Three fields; your code stays where it is |
+| Share a result | The "Gate result" form | The card your run wrote |
+| Report something that does not work, or is unclear | The "Problem or question" form | What you ran and what you saw |
+| Add a country's grid connection requirements, or correct or complete one | [The grid form](https://github.com/agentic-datacenter/agentic-datacenter/issues/new?template=grid-requirements.yml), in words | The document you read, and its numbers |
+| Offer measured data from a plant | [Contribute data](docs/calibration/contribute-data.md), privately | An e-mail |
+
+Four kinds of file can be sent as a pull request without the rules below for code: a scenario file (CC-BY-4.0, your name in its header), an equipment entry (CC-BY-4.0, ADR 0034), a grid requirements file (CC-BY-4.0, your name in its header, [how to write one](docs/guides/grid-requirements.md#write-the-file-yourself)) and a correction to a page of documentation. The checks still run on them.
+
+Everything from here on is for a change to the simulator's own code.
+
 ## Setup and checks
 
 Requires [uv](https://docs.astral.sh/uv/). Python 3.12 is selected by `.python-version` and fetched by `uv` if missing.
@@ -85,7 +102,7 @@ A gate from another project is not added to this repository. It is loaded throug
 
 ## Licence of contributions
 
-An equipment entry a maker submits for `equipment/` is under CC-BY-4.0 (ADR 0034), with the attribution its source names. The terms below do not apply to it.
+An equipment entry a maker submits for `equipment/` is under CC-BY-4.0 (ADR 0034), with the attribution its source names. The terms below do not apply to it. The same holds for a scenario file someone outside this project proposes for the library: it is under CC-BY-4.0, with its proposer named in the file's header (ADR 0042).
 
 
 Agentic-Datacenter is under the Business Source License 1.1 (`LICENSE`), and the Licensor also issues separate commercial licences, through the representative named in `COMMERCIAL_LICENSING.md`. `packages/agentic-datacenter-iec61850` is GPL-3.0-or-later. So that this stays possible, a contribution from anyone other than the Licensor is merged only after its author has agreed to the following, in words, in the pull request:

@@ -4,7 +4,7 @@
 **Date:** 2026-11-19  
 **Scope:** Agentic-Datacenter, What-if, benchmark, and future cross-industry OT test environments
 
-Related: [What-if ADR 0019](adr/0019-what-if.md), [benchmark tiers](../bench/TIERS.md), [module registry](../reference/modules.md), [generic facility profile](https://github.com/darklordVirtual/agentic-datacenter/blob/main/profiles/generic_dc.yaml), [POD cooling model](modules/cooling.pod.md).
+Related: [What-if ADR 0019](adr/0019-what-if.md), [benchmark tiers](../bench/TIERS.md), [module registry](../reference/modules.md), [generic facility profile](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/profiles/generic_dc.yaml), [POD cooling model](modules/cooling.pod.md).
 
 ## Objective
 

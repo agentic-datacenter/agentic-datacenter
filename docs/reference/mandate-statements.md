@@ -3,7 +3,8 @@
 Who may act, worked out from signed statements. This page is the rule a gate must follow to get it right, in a form that can be implemented in any language. It applies to a gate that authenticates mandates itself (`ADC_GATE_VERIFIES_MANDATES=1`, or `verifies_mandates = True` on a Python gate). Any other gate can ignore it. The decisions behind it are ADR 0039 and ADR 0040.
 
 - Test vectors: [`mandate-vectors.json`](mandate-vectors.json), 30 cases and the answer to every question in them.
-- A reference to copy or to port, under the MIT licence: [`examples/mandate-verifier/verify.py`](https://github.com/darklordVirtual/agentic-datacenter/blob/main/examples/mandate-verifier/verify.py).
+- This page, the vectors and the wire format are under the MIT licence ([LICENSE](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/docs/reference/LICENSE)), so that you can ship them with your own work.
+- A reference to copy or to port, under the MIT licence: [`examples/mandate-verifier/verify.py`](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/examples/mandate-verifier/verify.py).
 
 ```sh
 uv run python examples/mandate-verifier/verify.py docs/reference/mandate-vectors.json

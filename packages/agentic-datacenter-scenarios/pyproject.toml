@@ -38,6 +38,7 @@ scenario = "agentic_datacenter.scenarios.cli:scenario"
 gate = "agentic_datacenter.scenarios.cli:gate"
 facility = "agentic_datacenter.scenarios.cli:facility"
 equipment = "agentic_datacenter.scenarios.cli:equipment"
+grid = "agentic_datacenter.scenarios.cli:grid"
 agent = "agentic_datacenter.scenarios.cli:agent"
 
 [tool.hatch.build.targets.wheel]
@@ -57,4 +58,5 @@ requirements = [
     "ADC-AGT-006", "ADC-AGT-007",
     "ADC-AUT-001", "ADC-AUT-002", "ADC-AUT-003", "ADC-AUT-004", "ADC-AUT-005", "ADC-AUT-006",
     "ADC-AUT-007", "ADC-AUT-008", "ADC-AUT-009", "ADC-AUT-010",
+    "ADC-UX-016",
 ]

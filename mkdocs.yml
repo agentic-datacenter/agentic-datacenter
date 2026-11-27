@@ -1,6 +1,6 @@
 site_name: Agentic-Datacenter
-site_url: https://darklordvirtual.github.io/agentic-datacenter/
-repo_url: https://github.com/darklordVirtual/agentic-datacenter
+site_url: https://agentic-datacenter.github.io/agentic-datacenter/
+repo_url: https://github.com/agentic-datacenter/agentic-datacenter
 site_description: Test autonomous data center operations before they reach production.
 docs_dir: docs
 strict: true
@@ -54,10 +54,17 @@ nav:
       - 0039 Signed mandates and a mandate that expires: design/adr/0039-signed-mandates-and-expiry.md
       - 0040 A mandate passed on, standing and a rotated key: design/adr/0040-delegation-standing-and-rotation.md
       - 0041 A step in progress, the chain, signed readings and receipts: design/adr/0041-in-progress-chain-readings-and-receipts.md
+      - 0042 What is free to copy: design/adr/0042-what-is-free-to-copy.md
+      - 0043 What a run is held to: design/adr/0043-what-a-run-is-held-to.md
+      - 0044 Connection requirements: design/adr/0044-connection-requirements.md
+      - 0045 A control held to the grid: design/adr/0045-a-control-held-to-the-grid.md
   - Guides:
+      - Your first half hour, for a governance system: guides/first-half-hour.md
+      - Propose a scenario: guides/propose-a-scenario.md
       - For data center operators: guides/operators.md
       - Bring your own data center: guides/bring-your-own-datacenter.md
       - Bring your equipment: guides/equipment.md
+      - What the grid sees: guides/grid-requirements.md
       - Bring your agent: guides/bring-your-own-agent.md
       - Run a scenario on measured weather: guides/measured-weather.md
       - Check a result card before release: guides/release-gate.md
@@ -72,7 +79,7 @@ nav:
       - How the benchmark works: bench/HOW-IT-WORKS.md
       - Public test: bench/PUBLIC_TEST.md
       - Comparing gates fairly: bench/FAIRNESS.md
-      - Tiers: bench/TIERS.md
+      - How long a test takes: bench/TIERS.md
   - Calibration:
       - Contribute calibration data: calibration/contribute-data.md
       - Suggested resources: calibration/suggested_resources.md

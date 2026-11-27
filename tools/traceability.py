@@ -130,7 +130,10 @@ def check(
 def main(argv: list[str] | None = None) -> int:
     """Check a requirement report and return the exit status."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--report", type=Path, required=True)
+    parser.add_argument(
+        "--report", type=Path, required=True, action="append",
+        help="A requirement report of a test run. Repeat for a suite that ran in parts.",
+    )  # fmt: skip
     parser.add_argument("--repo", type=Path, default=Path("."))
     parser.add_argument(
         "--verified-elsewhere", action="append", default=[], metavar="ID",
@@ -141,7 +144,11 @@ def main(argv: list[str] | None = None) -> int:
     text = (args.repo / SDD).read_text(encoding="utf-8")
     root = tomllib.loads((args.repo / "pyproject.toml").read_text(encoding="utf-8"))
     stage = int(root["tool"]["agentic-datacenter"]["stage"])
-    report = json.loads(args.report.read_text(encoding="utf-8"))
+    report: dict[str, dict[str, list[str]]] = {}
+    for part in args.report:
+        for req_id, outcomes in json.loads(part.read_text(encoding="utf-8")).items():
+            for outcome, nodeids in outcomes.items():
+                report.setdefault(req_id, {}).setdefault(outcome, []).extend(nodeids)
     problems, notes = check(
         sdd_requirements(text), stage_requirements(text), stage, report, claims(args.repo),
         frozenset(args.verified_elsewhere),

@@ -15,7 +15,9 @@ permissions:
   contents: read
 concurrency:
   group: pr-${{ github.ref }}
-  cancel-in-progress: true
+  # A newer push to a pull request replaces the run of the older one. A run on the
+  # main branch is left to finish, so every commit there carries its own result.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   static:
     runs-on: ubuntu-24.04
@@ -75,25 +77,62 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: uv sync --frozen
       - run: uv run pytest tests/conformance
-  traceability:
+  # The whole suite, in four parts on four machines at once, each recording which
+  # requirement its tests verify. With REMORA and the IEC 61850 package: a test that is
+  # skipped verifies nothing, and the requirements of the governed path have no test that
+  # runs without REMORA. A test that runs for a quarter of an hour prints where every
+  # thread stands, so that a run that hangs can be read afterwards.
+  suite:
     runs-on: ubuntu-24.04
     container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
-    timeout-minutes: 60
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [scenario-1, scenario-2, bench, rest]
     steps:
       - name: Install git
         run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # With REMORA and the IEC 61850 package: a test that is skipped verifies nothing, and the
-      # requirements of the governed path have no test that runs without REMORA. The whole suite
-      # in one process does not fit the ten-minute budget of this workflow, nor the hour
-      # of this job on a hosted runner, so it runs in one process per core.
       - run: uv sync --frozen --all-groups
-      - name: Whole suite, recording which requirement each test verifies
-        run: uv run pytest -n auto --dist loadfile --req-report build/requirements.json
+      - name: This part of the suite, recording which requirement each test verifies
+        run: |
+          case "${{ matrix.part }}" in
+            scenario-1) set -- tests/scenario/test_[a-l]*.py ;;
+            scenario-2) set -- tests/scenario/test_[m-z]*.py ;;
+            bench) set -- tests/bench ;;
+            rest) set -- packages tests --ignore=tests/scenario --ignore=tests/bench ;;
+          esac
+          uv run pytest -n auto --dist loadfile -o faulthandler_timeout=900 --req-report "build/requirements-${{ matrix.part }}.json" "$@"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: requirements-${{ matrix.part }}
+          path: build/requirements-${{ matrix.part }}.json
+  traceability:
+    needs: suite
+    # Also when a part failed: a job that is skipped would count as a check that passed.
+    if: always()
+    runs-on: ubuntu-24.04
+    container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58
+    timeout-minutes: 10
+    steps:
+      - name: Install git
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates && git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: uv sync --frozen
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: requirements-*
+          path: build
+          merge-multiple: true
+      - name: Every part of the suite passed
+        env:
+          SUITE: ${{ needs.suite.result }}
+        run: test "${SUITE:-success}" = "success"
       - name: Every requirement due at this stage has a passing test and an owner
         # The keyed scan for forbidden terms needs a key that no pull request is given, so
         # its test is skipped here. The nightly workflow runs it on every commit with the key.
-        run: uv run python tools/traceability.py --report build/requirements.json --verified-elsewhere ADC-PRV-002
+        run: uv run python tools/traceability.py --report build/requirements-scenario-1.json --report build/requirements-scenario-2.json --report build/requirements-bench.json --report build/requirements-rest.json --verified-elsewhere ADC-PRV-002
   docs:
     runs-on: ubuntu-24.04
     container: ghcr.io/astral-sh/uv:python3.12-bookworm-slim@sha256:e5b65587bce7de595f299855d7385fe7fca39b8a74baa261ba1b7147afa78e58

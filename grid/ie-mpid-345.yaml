@@ -1,0 +1,59 @@
+# The change to the Irish grid code for large energy users, as far as its
+# public overview states it. Incomplete: the curve and the times are in the
+# modification itself, which has not been read into this file.
+schema: agentic_datacenter.grid-requirements/1
+id: ie-mpid-345
+jurisdiction: Ireland
+authority: EirGrid, the transmission system operator
+status: proposed
+status_note: >-
+  The overview read here describes the modification as submitted to the
+  regulator in April 2026. A law firm's summary says the regulator approved
+  it on 22 September 2026; the decision itself has not been read, so this
+  file keeps the status of the document it was written from. The technical
+  values of the modification are not in this file.
+source:
+  title: Fault Ride Through Overview Document
+  publisher: EirGrid
+  published: "2026-04-01"
+  url: https://www.eirgrid.ie/sites/default/files/publications/Fault-Ride-Through-Overview-Document-Plain-English-April-2026.pdf
+  sections: "Background; Proposed Grid Code Modification"
+read_on: "2026-11-27"
+applies_to: >-
+  Large energy users connected to the transmission system.
+nominal_hz: 50
+
+ride_through:
+  curve_ms_pu: null
+  # The overview says faults are normally cleared so that the voltage is back
+  # in its normal range within 100 ms. It gives no depth; a full dip is tried.
+  dips_pu_ms:
+    - [0.0, 100]
+  note: >-
+    The overview gives no curve. It says a fault is normally cleared within
+    100 ms, so one dip of that length is tried, to zero voltage.
+
+recovery:
+  # "remaining connected and recovering quickly to 90% of their pre-fault
+  # demand levels". The overview gives no time.
+  voltage_back_pu: 0.9
+  levels:
+    - name: as the overview states it
+      min_share: 0.9
+      max_share: null
+      within_s: null
+
+low_frequency:
+  # Not in the overview. The level ENTSO-E's position gives for the Irish
+  # synchronous area (A.2.8), used so that the scenarios have a level to run on.
+  threshold_hz: 49.5
+  assumed: true
+  note: >-
+    Not from the overview, which gives no number. The level ENTSO-E's position
+    of December 2025 gives for the Irish synchronous area.
+
+not_checked:
+  - what: The voltage-against-time curve of the modification
+    why: Not in the overview, and the modification has not been read into this file.
+  - what: Withstanding a rate of change of frequency
+    why: Named in summaries of the modification; no value read, and nothing in the model reacts to it.
