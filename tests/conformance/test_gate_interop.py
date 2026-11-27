@@ -358,6 +358,7 @@ def test_the_maintainers_workflow_runs_commands_that_exist() -> None:
     assert used == {
         ("gate", "check"),
         ("scenario", "run"),
+        ("weekly", "run"),
         ("gate", "verify-receipts"),
         ("bench", "run"),
         ("bench", "compare"),

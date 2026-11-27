@@ -39,6 +39,7 @@ gate = "agentic_datacenter.scenarios.cli:gate"
 facility = "agentic_datacenter.scenarios.cli:facility"
 equipment = "agentic_datacenter.scenarios.cli:equipment"
 grid = "agentic_datacenter.scenarios.cli:grid"
+weekly = "agentic_datacenter.scenarios.cli:weekly"
 agent = "agentic_datacenter.scenarios.cli:agent"
 
 [tool.hatch.build.targets.wheel]

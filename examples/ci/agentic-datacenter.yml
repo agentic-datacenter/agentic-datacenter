@@ -100,15 +100,13 @@ jobs:
           uv run agentic-datacenter bench run --tier quick --jobs 4 $which --gate command_gate \
             --gate static_allowlist --gate null_gate --out ../result/bench
       - name: This week's scenarios, on the main branch
-        if: matrix.track == 'canary'
+        if: matrix.track == 'canary' && env.ADC_SCOPE == 'full'
         working-directory: adc
         run: |
-          # One new scenario every Monday, sealed before it was shown (docs/bench/WEEKLY.md).
-          for file in weekly/scenarios/WK-*.yaml; do
-            [ -e "$file" ] || continue
-            uv run agentic-datacenter scenario run "$file" --gate command_gate \
-              --out "../result/weekly/$(basename "$file" .yaml)" || echo "$file: not passed; see its bundle"
-          done
+          # Three scenarios drawn for the week from a public beacon; nobody has seen them
+          # before its Monday (docs/bench/WEEKLY.md).
+          uv run agentic-datacenter weekly run --gate command_gate --gate static_allowlist \
+            --out ../result/weekly
       - name: Summary
         if: always()
         run: cat result/bench/summary.md >> "$GITHUB_STEP_SUMMARY" || true

@@ -1296,3 +1296,88 @@ def grid(argv: Sequence[str]) -> int:
     if args.json is not None:
         args.json.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     return 1 if args.fail_on_unmet and report["summary"][NOT_MET] else 0
+
+
+def weekly(argv: Sequence[str]) -> int:
+    """Draw and run this week's scenarios, which a public beacon decides (ADR 0047).
+
+    Runs ``agentic-datacenter weekly show`` or ``weekly run`` and returns the exit
+    status. A development result on the main branch, not a benchmark result.
+    """
+    from agentic_datacenter.core.profile import load_profile
+
+    from . import weekly as drawn
+    from .bench import load_gates
+
+    parser = argparse.ArgumentParser(
+        prog="agentic-datacenter weekly",
+        description="This week's scenarios, drawn from a public beacon (ADR 0047).",
+    )
+    actions = parser.add_subparsers(dest="action", required=True)
+    for name, text in (
+        ("show", "Print or write the week's scenario files."),
+        ("run", "Run the week's scenarios under one or more controls."),
+    ):
+        made = actions.add_parser(name, help=text)
+        made.add_argument("--week", help="An ISO week, as 2026-W49 (default: this week).")
+        made.add_argument(
+            "--randomness", help="The beacon's randomness of the week, to work without a network."
+        )
+        made.add_argument("--out", type=Path, help="A directory for the files and the report.")
+        if name == "run":
+            made.add_argument("--profile", type=Path, default=Path("profiles/generic_dc.yaml"))
+            made.add_argument("--contracts", type=Path, default=Path("contracts"))
+            made.add_argument(
+                "--gate", action="append", default=[], dest="gates",
+                help="A control to run; repeat for more (default: null_gate, static_allowlist).",
+            )  # fmt: skip
+            made.add_argument("--seed", type=int, default=1)
+            made.add_argument(
+                "--check", action="store_true",
+                help="Exit with status 1 if the week as drawn tests nothing (needs null_gate).",
+            )  # fmt: skip
+    args = parser.parse_args(argv)
+    try:
+        week = args.week or drawn.this_week()
+        randomness = args.randomness or drawn.fetch_randomness(drawn.round_for(week))
+        scenarios = drawn.generate(week, randomness)
+    except drawn.WeeklyError as exc:
+        print(f"weekly: {exc}", file=sys.stderr)
+        return 2
+    if args.out is not None:
+        args.out.mkdir(parents=True, exist_ok=True)
+        for one in scenarios:
+            (args.out / f"{one['id']}.yaml").write_text(one["text"], encoding="utf-8")
+    if args.action == "show":
+        if args.out is None:
+            print("\n".join(one["text"] for one in scenarios))
+        else:
+            for one in scenarios:
+                print(f"{one['id']}  {one['scenario'].title}: {args.out / (one['id'] + '.yaml')}")
+        return 0
+    installed = load_gates()
+    names = args.gates or ["null_gate", "static_allowlist"]
+    unknown = [name for name in names if name not in installed]
+    if unknown:
+        print(
+            f"weekly run: no such gate: {', '.join(unknown)};"
+            f" installed: {', '.join(sorted(installed))}",
+            file=sys.stderr,
+        )
+        return 2
+    report = drawn.run(
+        week, randomness, load_profile(args.profile), ContractLibrary.load(args.contracts),
+        {name: installed[name] for name in names}, seed=args.seed,
+    )  # fmt: skip
+    print(drawn.render(report))
+    if args.out is not None:
+        (args.out / "weekly_run.json").write_text(
+            json.dumps(report, indent=2) + "\n", encoding="utf-8"
+        )
+        print(f"report and scenario files: {args.out}")
+    if args.check:
+        wrong = drawn.self_check(report)
+        for line in wrong:
+            print(f"weekly: {line}", file=sys.stderr)
+        return 1 if wrong else 0
+    return 0
