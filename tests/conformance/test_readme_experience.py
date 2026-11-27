@@ -203,3 +203,16 @@ def test_role_guides_show_the_first_action_and_outcome_before_the_reference(
     start = content.split(before, 1)[0]
     for fragment in expected:
         assert fragment in start, (button, fragment)
+
+
+@pytest.mark.req("ADC-UX-001")
+def test_the_readme_shows_how_the_parts_fit_together() -> None:
+    """One figure after the hero: agent, control path, control under test, network, plant, judge."""
+    assert README.index("## How it fits together") < README.index("## Try it locally")
+    assert 'src="docs/media/how-it-fits.svg" alt="An AI agent proposes' in README
+    figure = (REPO / "docs/media/how-it-fits.svg").read_text(encoding="utf-8")
+    assert "<title" in figure and "<desc" in figure, "the figure says what it shows"
+    assert "<script" not in figure and "http" not in figure.replace("http://www.w3.org", "")
+    for part in ("AI agent", "Control path", "Your control", "Site network", "Simulated plant",
+                 "The judge", "Result card"):  # fmt: skip
+        assert f">{part}<" in figure
