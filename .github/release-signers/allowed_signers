@@ -14,3 +14,4 @@
 # the tagged commit, and runs tools/verify_release_tag.py with it before it
 # builds anything. While no key is listed, every release job fails.
 # How to sign a tag: CONTRIBUTING.md, "Release tags".
+36493828+darklordVirtual@users.noreply.github.com namespaces="git" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ4fSz6tr2K/DWl1nlAbeEDKYI+UOKkQxjiYt6L9N8iz
