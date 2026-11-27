@@ -69,5 +69,5 @@ It can still take part. See [What does your project bring?](which-way-in.md#what
 ## What it costs you, and what it does not
 
 - Running this to develop, test, evaluate or benchmark your system is free under the licence. Your adapter and your system are yours, under your licence; nothing of yours goes into this repository.
-- The wire format, the rule for mandate statements and its test vectors may be implemented by anyone.
+- The wire format, the rule for mandate statements and its test vectors are under the MIT licence: implement them, and copy the vectors into your own tests.
 - A result is a simulation result. It is not a certification, and not a claim about a real facility.

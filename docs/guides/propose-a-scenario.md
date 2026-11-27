@@ -37,6 +37,11 @@ Accepted scenarios wait on the main branch and join the next frozen version, whi
 - **The same scenario in your own tests.** With [the workflow](https://github.com/agentic-datacenter/agentic-datacenter/blob/main/examples/ci/agentic-datacenter.yml) in your repository, a new scenario here is a new test there, without doing anything.
 - **Credit**, in the file and the changelog.
 
+## Whose it is
+
+- **A proposal in words is just that.** Opening the form grants nothing and asks for nothing.
+- **A scenario file you wrote is yours, and joins the library under CC-BY-4.0**, with you named in its header. The contribution terms of `CONTRIBUTING.md`, which let the Licensor relicense a change, do not apply to it. Anyone may reuse your scenario with your name on it, here and elsewhere.
+
 ## What it is not
 
 A scenario is a simulated situation in a generic facility. It is not a description of a real site, and must not be made from one.

@@ -54,6 +54,7 @@ nav:
       - 0039 Signed mandates and a mandate that expires: design/adr/0039-signed-mandates-and-expiry.md
       - 0040 A mandate passed on, standing and a rotated key: design/adr/0040-delegation-standing-and-rotation.md
       - 0041 A step in progress, the chain, signed readings and receipts: design/adr/0041-in-progress-chain-readings-and-receipts.md
+      - 0042 What is free to copy: design/adr/0042-what-is-free-to-copy.md
   - Guides:
       - Your first half hour, for a governance system: guides/first-half-hour.md
       - Propose a scenario: guides/propose-a-scenario.md

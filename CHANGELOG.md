@@ -59,6 +59,10 @@ Tooling
 
 Entries are newest first. Where an older entry names a benchmark version, a deadline or a number of scenarios, the newest entry is the one that holds.
 
+Changed
+
+- What is free to copy (ADR 0042). The wire format, the rule for signed mandate statements and its test vectors are under the MIT licence (`docs/reference/LICENSE`), so that anyone may ship them with their own work. A scenario file proposed from outside is under CC-BY-4.0 with its proposer named, and the contribution terms do not apply to it. `CONTRIBUTING.md` starts with the ways to contribute that take no pull request.
+
 Added
 
 - A way in for scenarios from outside. `scenario run` takes the path of a scenario file of one's own, there is a form to propose a scenario in words, and `docs/guides/propose-a-scenario.md` says what gets one into a frozen version. `docs/guides/first-half-hour.md` takes a governance maintainer who knows nothing of data centers from a clone to a result for their own system.
