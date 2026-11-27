@@ -65,6 +65,7 @@ Changed
 
 Added
 
+- `bench compare` says where a gate did worse on a new card than on an earlier one. The workflow a maintainer copies runs two tracks, the frozen version and the main branch, compares each with its previous run, and makes its benchmark in four processes. `bench check` without `--gate` checks every gate on the card but the two reference controls; it used to check one named system.
 - A way in for scenarios from outside. `scenario run` takes the path of a scenario file of one's own, there is a form to propose a scenario in words, and `docs/guides/propose-a-scenario.md` says what gets one into a frozen version. `docs/guides/first-half-hour.md` takes a governance maintainer who knows nothing of data centers from a clone to a result for their own system.
 
 Changed

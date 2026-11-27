@@ -15,7 +15,9 @@ permissions:
   contents: read
 concurrency:
   group: pr-${{ github.ref }}
-  cancel-in-progress: true
+  # A newer push to a pull request replaces the run of the older one. A run on the
+  # main branch is left to finish, so every commit there carries its own result.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   static:
     runs-on: ubuntu-24.04

@@ -6,7 +6,7 @@ import argparse
 import json
 import os
 import sys
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -223,6 +223,12 @@ def bench(argv: Sequence[str]) -> int:
         "--publication", action="store_true",
         help="Also require the frozen benchmark version: the check for a reported result.",
     )  # fmt: skip
+    compare = actions.add_parser(
+        "compare", help="Say where a gate did worse on a new card than on an earlier one."
+    )
+    compare.add_argument("earlier", type=Path, help="The result_card.json of an earlier run.")
+    compare.add_argument("card", type=Path, help="The result_card.json of this run.")
+    compare.add_argument("--gate", action="append", help="Gate to compare; repeat for several.")
     record = actions.add_parser(
         "record", help="Write the commit and the hash of every file beside a result card."
     )
@@ -234,7 +240,9 @@ def bench(argv: Sequence[str]) -> int:
     args = parser.parse_args(argv)
 
     if args.action == "check":
-        return _check(args.card, args.gate or ["remora_governed"], args.publication)
+        return _check(args.card, args.gate or _own_gates(args.card), args.publication)
+    if args.action == "compare":
+        return _compare(args.earlier, args.card, args.gate)
     if args.action == "record":
         if not (args.directory / CARD_NAME).is_file():
             print(f"agentic-datacenter bench: no {CARD_NAME} in {args.directory}", file=sys.stderr)
@@ -424,6 +432,86 @@ def bench(argv: Sequence[str]) -> int:
                     f"{counted['details_wrong']} of them not what the register holds"
                 )
     return 0
+
+
+#: The two reference controls every card may hold: no control, and limits only.
+REFERENCE_CONTROLS = ("null_gate", "static_allowlist")
+#: What `bench compare` reads of a card's rows, with whether more of it is worse.
+COMPARED = (
+    ("unsafe_execution_rate", "harmful steps let through", True),
+    ("executed_without_authority", "steps executed without a mandate", True),
+    ("executed_without_required_approval", "steps executed without the person asked for", True),
+    ("runs_worse_than_no_agent", "runs worse than with no agent", True),
+    ("false_block_rate", "safe steps blocked", True),
+    ("safety", "scenarios without harm", False),
+)
+
+
+def _own_gates(path: Path) -> list[str]:
+    """Return every gate on a card but the two reference controls: the ones it is about."""
+    card = json.loads(path.read_text(encoding="utf-8"))
+    gates = list(dict.fromkeys(str(row["gate"]) for row in card.get("results", [])))
+    return [g for g in gates if g not in REFERENCE_CONTROLS] or gates
+
+
+def compare_cards(
+    earlier: Mapping[str, Any], card: Mapping[str, Any], gates: Sequence[str] | None = None
+) -> tuple[list[str], list[str]]:
+    """Return (worse, notes): where a gate did worse on *card* than on *earlier*, and the rest.
+
+    A row is one gate with one agent. A figure is worse when more of it is
+    worse and it rose, or less of it is worse and it fell. A difference between
+    two cards of different benchmark versions may be the benchmark's and not
+    the gate's, and a note says so.
+    """
+    worse: list[str] = []
+    notes: list[str] = []
+
+    def version(c: Mapping[str, Any]) -> Any:
+        return c.get("benchmark_version")
+
+    if version(earlier) != version(card):
+        notes.append(
+            "the two cards are of different benchmark versions: a difference may be the "
+            "benchmark's, new scenarios for example, and not the gate's"
+        )
+    before = {(str(r["gate"]), str(r["agent"])): r for r in earlier.get("results", [])}
+    for row in card.get("results", []):
+        key = (str(row["gate"]), str(row["agent"]))
+        if gates and key[0] not in gates:
+            continue
+        if not gates and key[0] in REFERENCE_CONTROLS:
+            continue
+        if key not in before:
+            notes.append(f"{key[0]}, {key[1]}: not on the earlier card")
+            continue
+        for name, title, more_is_worse in COMPARED:
+            was, now = before[key].get(name), row.get(name)
+            if was is None or now is None or float(was) == float(now):
+                continue
+            rose = float(now) > float(was)
+            line = f"{key[0]}, {key[1]}: {title} {was} -> {now}"
+            (worse if rose == more_is_worse else notes).append(
+                line if rose == more_is_worse else line + " (better)"
+            )
+    return worse, notes
+
+
+def _compare(earlier: Path, path: Path, gates: Sequence[str] | None) -> int:
+    """Print where a gate did worse than before; 1 if anywhere."""
+    try:
+        old = json.loads(earlier.read_text(encoding="utf-8"))
+        new = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        print(f"agentic-datacenter bench compare: {exc}", file=sys.stderr)
+        return 2
+    worse, notes = compare_cards(old, new, gates)
+    for line in notes:
+        print(f"note: {line}")
+    for line in worse:
+        print(f"worse: {line}")
+    print("no figure is worse than on the earlier card" if not worse else f"{len(worse)} worse")
+    return 1 if worse else 0
 
 
 def _check(path: Path, gates: Sequence[str], publication: bool = False) -> int:

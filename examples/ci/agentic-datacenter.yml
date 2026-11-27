@@ -4,6 +4,12 @@
 # week against its newest scenarios. Copy this file into .github/workflows/ of
 # your own repository and change the four lines marked "yours".
 #
+# It runs two tracks:
+#   stable   a frozen benchmark version, for figures that compare with everyone's
+#   canary   the main branch, with the newest scenarios and models, to see early
+#            what is coming. A canary that fails does not fail your build.
+# and on each it says where your gate did worse than on its previous run.
+#
 # It needs no key and no account, sends nothing anywhere, and puts nothing of
 # Agentic-Datacenter into your repository: it checks it out beside yours.
 #
@@ -12,8 +18,9 @@
 #   report.html       the same as a page
 #   result_card.json  every figure and every run
 #   decisions.jsonl   each decision with your reasons and its correlation
-# and it fails when your gate let a harmful step through (bench check), or when
-# a receipt you exported does not match the run (gate verify-receipts).
+# and it fails when your gate let a harmful step through (bench check), when a
+# receipt you exported does not match the run (gate verify-receipts), or when a
+# figure is worse than on the previous run of the same track (bench compare).
 
 name: agentic-datacenter
 
@@ -29,9 +36,10 @@ permissions:
   contents: read
 
 env:
-  # main follows what is new. For figures you publish, pin a frozen version's tag or a
-  # commit, so anyone can make the same card again.
-  ADC_REF: main
+  # The frozen version the stable track runs: the tag of the season that is open,
+  # from https://github.com/agentic-datacenter/agentic-datacenter/blob/main/docs/bench/PUBLIC_TEST.md
+  # Figures made on a tag can be made again by anyone.
+  ADC_STABLE_REF: benchmark-v1.5
   # yours: how your gate is run, as a command per decision (or use ADC_GATE_URL for a
   # service you start in a step before the checks). As given it runs the MIT starter,
   # so the workflow is green before you change anything.
@@ -44,6 +52,14 @@ jobs:
   gate:
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        track: [stable, canary]
+    # What is new on main may be ahead of your gate. It is reported, and does not stop you.
+    continue-on-error: ${{ matrix.track == 'canary' }}
+    env:
+      ADC_REF: ${{ matrix.track == 'stable' && 'benchmark-v1.5' || 'main' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -73,16 +89,39 @@ jobs:
       - name: Quick benchmark beside the built-in gates
         working-directory: adc
         run: |
-          uv run agentic-datacenter bench run --tier quick --gate command_gate \
-            --gate static_allowlist --gate null_gate --allow-unfrozen --out ../result/bench
+          uv run agentic-datacenter bench run --tier quick --jobs 4 --gate command_gate \
+            --gate static_allowlist --gate null_gate --out ../result/bench
       - name: Summary
         if: always()
         run: cat result/bench/summary.md >> "$GITHUB_STEP_SUMMARY" || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: agentic-datacenter-${{ github.run_id }}
+          name: agentic-datacenter-${{ matrix.track }}-${{ github.run_id }}
           path: result/
+      - name: The card of this track's previous run, if there is one
+        uses: actions/cache/restore@v4
+        with:
+          path: previous
+          key: agentic-datacenter-card-${{ matrix.track }}-${{ github.run_id }}
+          restore-keys: agentic-datacenter-card-${{ matrix.track }}-
+      - name: Where the gate did worse than last time
+        working-directory: adc
+        run: |
+          if [ -f ../previous/result_card.json ]; then
+            uv run agentic-datacenter bench compare ../previous/result_card.json \
+              ../result/bench/result_card.json --gate command_gate | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "no earlier card of this track yet: the next run is compared with this one"
+          fi
+      - name: Keep this card for the next run to be compared with
+        if: github.event_name != 'pull_request'
+        run: mkdir -p previous && cp result/bench/result_card.json previous/result_card.json
+      - uses: actions/cache/save@v4
+        if: github.event_name != 'pull_request'
+        with:
+          path: previous
+          key: agentic-datacenter-card-${{ matrix.track }}-${{ github.run_id }}
       - name: Refuse a harmful step let through
         working-directory: adc
         run: uv run agentic-datacenter bench check ../result/bench/result_card.json --gate command_gate

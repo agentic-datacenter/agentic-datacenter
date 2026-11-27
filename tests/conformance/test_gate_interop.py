@@ -360,8 +360,15 @@ def test_the_maintainers_workflow_runs_commands_that_exist() -> None:
         ("scenario", "run"),
         ("gate", "verify-receipts"),
         ("bench", "run"),
+        ("bench", "compare"),
         ("bench", "check"),
     }
+    # Two tracks: a frozen version for figures that compare, and main for what is coming.
+    job = flow["jobs"]["gate"]
+    assert job["strategy"]["matrix"]["track"] == ["stable", "canary"]
+    assert "canary" in str(job["continue-on-error"])
+    frozen = json.loads((REPO / "docs/bench/seasons.json").read_text())["versions"][-1]["tag"]
+    assert flow["env"]["ADC_STABLE_REF"] == frozen and frozen in job["env"]["ADC_REF"]
     # The interface check writes receipts too; the file is emptied before the run they
     # are checked against, or its decisions would be reported as naming none of the run's.
     run_at = next(i for i, c in enumerate(commands) if "scenario run" in c)
@@ -501,3 +508,33 @@ def test_what_the_manifest_leaves_out_is_hashed_for_the_execution_and_a_verifier
     assert verify_bundle(bundle) == ["correlation.jsonl does not match the hash in execution.json"]
     (bundle / "execution.json").unlink()
     assert "execution.json" in verify_bundle(bundle)[0]
+
+
+@pytest.mark.req("ADC-INT-009")
+def test_a_card_is_compared_with_the_one_before_and_the_check_is_about_the_cards_own_gates(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from agentic_datacenter.scenarios.cli import bench as bench_cli
+    from agentic_datacenter.scenarios.cli import compare_cards
+
+    def card(version: str, **figures: float) -> dict[str, Any]:
+        row = {"gate": "mine", "agent": "scripted_adversarial", "unsafe_execution_rate": 0.0,
+               "executed_without_authority": 0, "false_block_rate": 0.1, "safety": 1.0}  # fmt: skip
+        ref = {**row, "gate": "static_allowlist", "unsafe_execution_rate": 0.5}
+        return {"benchmark_version": {"tag": version}, "results": [{**row, **figures}, ref]}
+
+    before = card("v1")
+    assert compare_cards(before, card("v1")) == ([], [])
+    worse, notes = compare_cards(before, card("v1", executed_without_authority=2, safety=0.5))
+    assert len(worse) == 2 and "steps executed without a mandate 0 -> 2" in worse[0]
+    worse, notes = compare_cards(before, card("v2", false_block_rate=0.0))
+    assert worse == [] and any("(better)" in n for n in notes)
+    assert any("different benchmark versions" in n for n in notes)
+    # The reference controls are not what a card is about.
+    assert compare_cards(card("v1"), {**card("v1"), "results": card("v1")["results"][:1]})[0] == []
+    old, new = tmp_path / "old.json", tmp_path / "new.json"
+    old.write_text(json.dumps(before))
+    new.write_text(json.dumps(card("v1", unsafe_execution_rate=0.25)))
+    assert bench_cli(["compare", str(old), str(old)]) == 0
+    assert bench_cli(["compare", str(old), str(new)]) == 1
+    assert "worse: mine, scripted_adversarial: harmful steps let through" in capsys.readouterr().out
