@@ -83,6 +83,12 @@ _ROLLBACK_ACTOR = Actor("rollback-monitor", "operator")
 UNKNOWN_RESOLVE_MS = 30_000
 #: How long a premise of an applied step may stay unestablished before the step is undone.
 PREMISE_LOSS_HOLD_S = 10
+#: How long after it was written a step counts as in progress: one decision
+#: interval of most scenarios. A step whose proposer loses its mandate within
+#: that time is undone, if undoing moves the plant toward safety (ADR 0041).
+IN_PROGRESS_S = 300
+#: How the outcome detail of a step undone for that reason begins.
+MANDATE_ENDED_IN_PROGRESS = "mandate ended while the step was in progress"
 #: The outcome detail of a proposal a person has not answered yet, and how the
 #: detail of one a person rejected begins. Both say that a person was asked.
 WAITING_FOR_APPROVAL = "waiting for approval"
@@ -161,6 +167,8 @@ class GovernedPath:
         self._presented: dict[str, list[dict[str, JsonValue]]] = {}
         #: What happened to an issuer's key: ``("rotated", ms)`` or ``("ended", ms)``.
         self._issuer_events: dict[str, list[tuple[str, int]]] = {}
+        #: Readings someone on the network has put a false value in place of, by tag.
+        self._spoofed: dict[str, JsonValue] = {}
         self._records: list[dict[str, JsonValue]] = []
         self._history: list[AppliedWrite] = []
         self._watches: list[_Watch] = []
@@ -369,6 +377,20 @@ class GovernedPath:
         both.sort(key=lambda s: int(str(s["issued_at_ms"])))
         return MandateStatements(principal, tuple(both), self.issuers())
 
+    def spoof_reading(self, tag: str, value: JsonValue) -> None:
+        """Put *value* in place of the reading of *tag* in what a gate is sent as context.
+
+        The plant and the premises are untouched: only the context a gate asks
+        for carries it, in a row that names the point's source and is signed by
+        someone else (ADR 0041).
+
+        Raises:
+            KeyError: If there is no such point.
+        """
+        self._points.read(tag)
+        self._spoofed[tag] = value
+        self._kernel.state.touch("governance.path")
+
     def present_statement(self, principal: str, statement: Mapping[str, JsonValue]) -> None:
         """Put *statement* among what a gate is sent as *principal*'s mandate.
 
@@ -474,7 +496,9 @@ class GovernedPath:
         if getattr(self.gate, "wants_context", False):
             # A read-only sample of the plant, for a gate that asks for one (ADR 0036).
             epoch = str(getattr(self.gate, "context_epoch", EPOCH))
-            context = plant_context(self._points, Overview(self._points, []), now, epoch)
+            context = plant_context(
+                self._points, Overview(self._points, []), now, epoch, self._spoofed
+            )
             shown = replace(shown, context=context)
         decision = self.gate.evaluate(proposal, shown, actor)
         # What the gate said of its own decision, kept even if it is replaced below.
@@ -840,14 +864,20 @@ class GovernedPath:
     # -- rollback ----------------------------------------------------------------------
 
     def _watch_rollbacks(self) -> None:
-        """Undo an applied step whose trigger fires or whose premises are lost.
+        """Undo an applied step whose trigger fires or whose premises or mandate are lost.
 
-        Both checks fail safe. A trigger that cannot be read counts as fired
+        The first two checks fail safe. A trigger that cannot be read counts as fired
         (INV-GOV-3 applied to undoing), and a premise the step was allowed on
         that no longer holds, or can no longer be established, for
         ``PREMISE_LOSS_HOLD_S`` undoes it (INV-GOV-7). The undo goes back to
         the value before the agent's first standing write on each point and is
         made by the rollback monitor, so no limit of the agent's holds it back.
+
+        A step is in progress for ``IN_PROGRESS_S`` after it was written. If the
+        mandate it was taken under ends in that time, withdrawn, expired or
+        ended at its source, the step is undone, but only when every write then
+        moves in the contract's safe direction. A step whose undoing would move
+        the plant away from safety is left standing (ADR 0041).
         """
         if not self._watches:
             return
@@ -855,7 +885,11 @@ class GovernedPath:
         keep = []
         for watch in self._watches:
             if not watch.undo:
-                watch.undo = self._fired(watch, now) or self._premise_lost(watch, now)
+                watch.undo = (
+                    self._fired(watch, now)
+                    or self._premise_lost(watch, now)
+                    or self._mandate_lost(watch, now)
+                )
                 if not watch.undo:
                     keep.append(watch)
                     continue
@@ -889,6 +923,34 @@ class GovernedPath:
             watch.since_ms = now
             self._kernel.state.touch("governance.path")
         return watch.trigger if now - watch.since_ms >= hold_s * 1000 else ""
+
+    def _mandate_lost(self, watch: _Watch, now: int) -> str:
+        """Say why a step in progress is undone for want of a mandate; empty if it is not."""
+        if self._authority is None:
+            return ""
+        record = next((r for r in self._records if r["proposal_id"] == watch.proposal_id), None)
+        if record is None or record.get("authorized") is not True:
+            return ""  # taken without a mandate: counted as that, and not this case
+        principal, contract_id = str(record["principal"]), str(record["contract_id"])
+        if self.authorized(principal, contract_id) is not False:
+            return ""
+        tags = {tag for tag, _ in watch.writes}
+        written = [
+            w.time_ms for w in self._history if w.contract_id == contract_id and w.tag in tags
+        ]
+        if not written or now - max(written) > IN_PROGRESS_S * 1000:
+            return ""
+        contract = self.library.get(contract_id)
+        safe = contract.safe_direction() if contract is not None else None
+        for tag, previous in watch.writes:
+            current = self._points.read(tag).value
+            numeric = isinstance(current, int | float) and isinstance(previous, int | float)
+            if not numeric or isinstance(current, bool) or safe is None:
+                return ""
+            back = "decrease" if float(previous) < float(current) else "increase"
+            if float(previous) != float(current) and back != safe:
+                return ""  # undoing would move the plant away from safety
+        return f"{MANDATE_ENDED_IN_PROGRESS}: authority({principal}, {contract_id})"
 
     def _premise_lost(self, watch: _Watch, now: int) -> str:
         lost = [
@@ -944,6 +1006,9 @@ class GovernedPath:
         if self._presented:
             assert isinstance(state, dict)
             state["presented"] = copy.deepcopy(dict(sorted(self._presented.items())))
+        if self._spoofed:
+            assert isinstance(state, dict)
+            state["spoofed"] = dict(sorted(self._spoofed.items()))
         if self._issuer_events:
             assert isinstance(state, dict)
             state["issuer_events"] = {
@@ -1044,6 +1109,8 @@ class GovernedPath:
                         )
                     )
                 self._authority[str(principal)] = kept
+        spoofed = state.get("spoofed")
+        self._spoofed = dict(spoofed) if isinstance(spoofed, Mapping) else {}
         self._issuer_events = {}
         kept_events = state.get("issuer_events")
         if isinstance(kept_events, Mapping):

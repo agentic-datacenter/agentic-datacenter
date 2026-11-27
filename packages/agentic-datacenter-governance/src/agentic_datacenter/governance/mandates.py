@@ -473,6 +473,7 @@ def vectors() -> dict[str, JsonValue]:
     fork = sign(who, both, "operator-2", 1500, None, gid, "a second statement on the same one")
     dangling = sign(who, both, "operator-1", 0, None, "sha256:" + "0" * 64, "follows nothing known")
     relabelled = {**grant, "contracts": [air]}
+    worded = sign(who, [air], "operator-1", 0, reason='Skiftleder sa "kjør", ±1 °C\ttil kl. 14')
     trusted = [issuer_record("operator-1"), issuer_record("operator-2")]
 
     # Delegation: operator-1 gives the orchestrator its mandate, and the
@@ -525,6 +526,14 @@ def vectors() -> dict[str, JsonValue]:
             "one statement", "A mandate holds what it lists, and nothing else was ever held.",
             [grant],
             ask(air, 100, True, True), ask("no.such.contract.v1", 100, True, False, "never_held"),
+        ),
+        case(
+            "canonical bytes",
+            "A reason with characters outside ASCII, quotation marks and a tab. Characters "
+            "outside ASCII are written as they are, in UTF-8; the quotation mark, the "
+            "backslash and control characters are escaped. For this body that is RFC 8785.",
+            [worded],
+            ask(air, 100, True, True),
         ),
         case(
             "supersession", "A later statement replaces the earlier one whole.",

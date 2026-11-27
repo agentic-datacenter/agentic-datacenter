@@ -43,7 +43,7 @@ Each key of an issuer has `valid_from_ms` and `valid_until_ms`. A statement coun
 
 ### 6. The statement format is `agentic_datacenter.mandate/2`
 
-`delegation` is signed, so the bytes a signature covers differ from `/1`, which was on the main branch for a day and in no public version. The vectors are `agentic_datacenter.mandate-vectors/2` and carry their issuers case by case.
+`delegation` is signed, so the bytes a signature covers differ from `/1`, which was on the main branch for a day and in no public version. The vectors are `agentic_datacenter.mandate-vectors/2` and carry their issuers case by case. For a statement's body the canonical JSON used here is byte for byte what RFC 8785 gives, and the reference page says so, so that a verifier built on a library for that scheme needs no rule of its own.
 
 ### 7. Three scenarios
 
@@ -76,13 +76,12 @@ Executed without a mandate, of the steps proposed without one. These are develop
 - **A statement dated back.** Whoever holds a retired key can sign a statement dated before the key was retired, and the rule counts it. Telling that apart needs a record of when each statement was first seen, kept by someone other than the issuer. The scenarios' forgeries are dated when they are made.
 - **A record that is late.** A gate is sent every statement the register has issued.
 - **Conditions on a delegation other than contracts and time.** ADR 0037, part 2.
-- **Who acted for whom, as a report.** The action trace (ADR 0038) follows one action from proposal to plant. It does not yet name the chain of mandates the action was taken under.
 - **The built-in gates.** None of them verifies mandates. Whether the REMORA binding should is its owner's to decide.
 
 The keys are test keys, as in ADR 0039, and stay so: a run must be the same run for everyone who makes it.
 
 ## Consequences
 
-- The library has 35 scenarios. `benchmark-v1.3` does not have the three new ones and its tag is unchanged. Season 1, which has not reported a result and whose registration deadline has not passed, moves to `benchmark-v1.4` (preregistration, 2026-11-27).
+- The library has 35 scenarios with this record, and 38 with ADR 0041, which is in the same version. `benchmark-v1.3` does not have the three new ones and its tag is unchanged. Season 1, which has not reported a result and whose registration deadline has not passed, moves to `benchmark-v1.4` (preregistration, 2026-11-27).
 - Every scenario of `benchmark-v1.3` keeps its hash.
 - The wire format is still `agentic_datacenter.gate.http/1`. Within `mandate_statements`, which no public version has carried, statements and issuers have the fields above.

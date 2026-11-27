@@ -2,7 +2,7 @@
 
 Who may act, worked out from signed statements. This page is the rule a gate must follow to get it right, in a form that can be implemented in any language. It applies to a gate that authenticates mandates itself (`ADC_GATE_VERIFIES_MANDATES=1`, or `verifies_mandates = True` on a Python gate). Any other gate can ignore it. The decisions behind it are ADR 0039 and ADR 0040.
 
-- Test vectors: [`mandate-vectors.json`](mandate-vectors.json), 25 cases and the answer to every question in them.
+- Test vectors: [`mandate-vectors.json`](mandate-vectors.json), 26 cases and the answer to every question in them.
 - A reference to copy or to port, under the MIT licence: [`examples/mandate-verifier/verify.py`](https://github.com/darklordVirtual/agentic-datacenter/blob/main/examples/mandate-verifier/verify.py).
 
 ```sh
@@ -39,7 +39,7 @@ A statement:
 
 - **The body** is the first nine fields. `contracts` is the whole mandate from `issued_at_ms` on, sorted. An empty list withdraws it.
 - **`delegation`** is true when the issuer passes on part of its own mandate, and false when the issuer gives a mandate of its own.
-- **`id`** is `sha256:` and the SHA-256, in hex, of the body as canonical JSON: keys sorted, no whitespace, UTF-8, non-ASCII characters not escaped. The body holds only strings, integers, booleans, null and a list of strings, so there is one way to write it.
+- **`id`** is `sha256:` and the SHA-256, in hex, of the body as canonical JSON: keys sorted, no whitespace, UTF-8, non-ASCII characters not escaped. The body holds only strings, integers, booleans, null and a list of strings, so there is one way to write it, and it is the bytes the JSON Canonicalization Scheme of RFC 8785 gives for the same object. A vector has a reason with quotation marks, a tab and characters outside ASCII.
 - **`signature.value`** is the Ed25519 signature over the same bytes, in base64. `key_id` is `sha256:` and the SHA-256, in hex, of the raw 32-byte public key it is signed with.
 - **Times** are simulated milliseconds on the clock of `premises.time_ms`. Decide on that time, never on the wall clock.
 

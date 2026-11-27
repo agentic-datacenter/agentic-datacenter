@@ -38,13 +38,49 @@ def _mandate_changes(scenario: Scenario) -> list[dict[str, Any]]:
     for event in scenario.timeline:
         if event.authority is not None:
             held = event.authority.contracts
-            changes.append({
-                "at_ms": (scenario.warmup_s + event.at_s) * 1000,
+            at_ms = (scenario.warmup_s + event.at_s) * 1000
+            change = {
+                "at_ms": at_ms,
                 "principal": event.authority.principal,
                 "contracts": held if held == "all" else list(held),
                 "by": event.authority.by, "reason": event.authority.reason,
-            })  # fmt: skip
+            }  # fmt: skip
+            # Only where they apply, so a trace without them is the trace it was.
+            if event.authority.expires_after_s is not None:
+                change["expires_at_ms"] = at_ms + event.authority.expires_after_s * 1000
+            if event.authority.delegated:
+                change["delegated"] = True
+            changes.append(change)
     return changes
+
+
+def _acted_for(
+    mandates: Sequence[Mapping[str, Any]], principal: str, at_ms: int
+) -> list[dict[str, Any]]:
+    """Return the chain of mandates *principal* acted under at *at_ms*, nearest first.
+
+    Each link says who held it, who gave it or passed it on, which contracts
+    it listed and since when. The chain ends at a mandate that was given and
+    not passed on. Empty when no mandate was set for the principal (ADR 0041).
+    """
+    chain: list[dict[str, Any]] = []
+    who = principal
+    while len(chain) < 8:
+        mine = [m for m in mandates if m["principal"] == who and m["at_ms"] <= at_ms]
+        if not mine:
+            break
+        last = mine[-1]
+        link = {
+            "principal": who, "given_by": last["by"], "passed_on": bool(last.get("delegated")),
+            "contracts": last["contracts"], "since_ms": last["at_ms"],
+        }  # fmt: skip
+        if "expires_at_ms" in last:
+            link["expires_at_ms"] = last["expires_at_ms"]
+        chain.append(link)
+        if not last.get("delegated"):
+            break
+        who = str(last["by"])
+    return chain
 
 
 def _physical(record: Mapping[str, Any], commands: Sequence[Mapping[str, Any]]) -> str:
@@ -87,8 +123,15 @@ def action_trace(
         trace = record.get("trace") if isinstance(record.get("trace"), Mapping) else {}
         assert isinstance(trace, Mapping)
         start = int(record["time_ms"])
-        end = int(trace.get("finished_at_ms", start))
-        commands = [c for c in change_log if str(c.get("reason", "")).endswith(f"({pid})")]
+        commands = [
+            c
+            for c in change_log
+            # The step's own writes, and the writes that undid it.
+            if str(c.get("reason", "")).endswith(f"({pid})")
+            or str(c.get("reason", "")).startswith(f"rollback of {pid}:")
+        ]
+        undone = [int(c["time_ms"]) for c in commands if str(c["reason"]).startswith("rollback")]
+        end = max([int(trace.get("finished_at_ms", start)), *undone])
         links: list[dict[str, Any]] = [
             {"step": "proposal", "at_ms": start, "by": principal, "observed_by": "control path",
              "contract": record["contract_id"], "arguments": record.get("arguments"),
@@ -105,8 +148,10 @@ def action_trace(
         for kind in ("approvals", "refusals", "rejections"):
             for entry in trace.get(kind, []):
                 links.append({"step": kind[:-1], "observed_by": "control path", **dict(entry)})
+        acted_for = _acted_for(mandates, principal, start)
+        lineage = {principal, *(link["principal"] for link in acted_for)}
         for change in mandates:
-            if change["principal"] == principal and start < change["at_ms"] <= end:
+            if change["principal"] in lineage and start < change["at_ms"] <= end:
                 links.append({"step": "mandate_change", "observed_by": "mandate register",
                               **change})  # fmt: skip
         if "checked_at_ms" in trace:
@@ -129,13 +174,21 @@ def action_trace(
         given = isinstance(detail, Mapping) and (
             "service_receipt" in detail or "service_decision_id" in detail
         )
-        out.append({
+        entry = {
             "schema": TRACE_SCHEMA, "proposal_id": pid, "contract": record["contract_id"],
             "principal": principal, "gate": record.get("gate"),
-            "receipt": "given" if given else "none", "signature": "not_checked",
+            "receipt": "given" if given else "none",
+            # What was found of the receipt's signature, where the gate's key was
+            # given before the run (ADR 0041).
+            "signature": str(detail.get("receipt_signature", "not_checked"))
+            if isinstance(detail, Mapping) else "not_checked",
             "physical": _physical(record, commands),
             "stopped_by": _stopped_by(record, trace), "links": links,
-        })  # fmt: skip
+        }  # fmt: skip
+        if acted_for:
+            # Who acted for whom: only where a mandate was set for the proposer.
+            entry["acted_for"] = acted_for
+        out.append(entry)
     return out
 
 
@@ -170,6 +223,7 @@ def render_trace(entries: Sequence[Mapping[str, Any]], scenario: Scenario) -> st
             f"At the plant: {entry['physical']}."
             + (f" Stopped by: {entry['stopped_by']}." if entry["stopped_by"] else ""),
             "",
+            *(_chain_lines(entry["acted_for"]) if entry.get("acted_for") else []),
             "| Time | Step | What | Observed by |",
             "| ---: | --- | --- | --- |",
         ]
@@ -182,6 +236,15 @@ def render_trace(entries: Sequence[Mapping[str, Any]], scenario: Scenario) -> st
     return "\n".join(lines)
 
 
+def _chain_lines(chain: Sequence[Mapping[str, Any]]) -> list[str]:
+    """Say in a sentence who the proposer acted for, back to who gave the mandate."""
+    parts = []
+    for link in chain:
+        how = "passed on by" if link["passed_on"] else "given by"
+        parts.append(f"{link['principal']}, {how} {link['given_by'] or 'the register'}")
+    return ["Acted under the mandate of: " + "; ".join(parts) + ".", ""]
+
+
 def _what(link: Mapping[str, Any]) -> str:
     step = link["step"]
     if step == "proposal":
@@ -191,7 +254,8 @@ def _what(link: Mapping[str, Any]) -> str:
     if step in ("approval", "refusal", "rejection"):
         return f"{link['by']}" + (f": {link['why']}" if link.get("why") else "")
     if step == "mandate_change":
-        return f"mandate now {link['contracts'] or 'none'}, by {link['by']}"
+        whose = f"mandate of {link['principal']}" if link.get("principal") else "mandate"
+        return f"{whose} now {link['contracts'] or 'none'}, by {link['by']}"
     if step == "check_before_write":
         return "mandate held" if link["mandate_held"] else "mandate no longer held"
     if step == "command":

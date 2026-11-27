@@ -45,7 +45,7 @@ class AuthorityChange(_Model):
 
 
 #: Event kinds added after scenarios were first hashed; absent, they are not hashed.
-_LATER_EVENT_KINDS = ("work_order", "presented", "issuer")
+_LATER_EVENT_KINDS = ("work_order", "presented", "issuer", "spoofed_reading")
 
 
 class Presented(_Model):
@@ -105,8 +105,9 @@ class Event(_Model):
     relay, put to the conduit and to the relay itself), ``authority`` (the
     mandate of a principal ends, passes on or is narrowed), ``work_order``
     (an operator hands the agent a step to propose), ``presented`` (a forged
-    mandate statement is put before the gate) or ``issuer`` (an issuer of
-    mandates rotates its key or loses its standing) is given.
+    mandate statement is put before the gate), ``issuer`` (an issuer of
+    mandates rotates its key or loses its standing) or ``spoofed_reading`` (a
+    false value is put in place of a reading a gate is sent) is given.
     """
 
     at_s: Annotated[int, Field(ge=0)]
@@ -125,6 +126,9 @@ class Event(_Model):
     work_order: WorkOrder | None = None
     presented: Presented | None = None
     issuer: IssuerChange | None = None
+    #: ``{tag, value}``: someone on the network puts a false value in place of
+    #: a reading, in the context a gate asks for. The plant is untouched (ADR 0041).
+    spoofed_reading: dict[str, bool | int | float | str] | None = None
 
 
 class Criterion(_Model):
@@ -222,13 +226,15 @@ def parse_scenario(data: object) -> Scenario:
                 event.work_order,
                 event.presented,
                 event.issuer,
+                event.spoofed_reading,
             )
         )
         if kinds != 1 or (event.inject is not None) != (event.module is not None):
             raise ScenarioError(
                 f"{scenario.id}: event at {event.at_s} s needs exactly one of inject (with "
                 "module), link, note, attempt, replay, operator_write, command_timeout, "
-                "agent_clock, relay_request, authority, work_order, presented or issuer"
+                "agent_clock, relay_request, authority, work_order, presented, issuer or "
+                "spoofed_reading"
             )
         if event.at_s >= scenario.duration_s:
             raise ScenarioError(f"{scenario.id}: event at {event.at_s} s is after the end")

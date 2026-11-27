@@ -71,6 +71,63 @@
       ]
     },
     {
+      "name": "canonical bytes",
+      "about": "A reason with characters outside ASCII, quotation marks and a tab. Characters outside ASCII are written as they are, in UTF-8; the quotation mark, the backslash and control characters are escaped. For this body that is RFC 8785.",
+      "principal": "agent-1",
+      "issuers": [
+        {
+          "name": "operator-1",
+          "root": true,
+          "alg": "Ed25519",
+          "key_id": "sha256:34b542ff1c3b08c74a4d4f5dc193ad663c02f912dacce0cec7321f562c1e56d4",
+          "public_key": "vTkUhyXy1bEuJdzEoeltH5eODRzR2zHtmHaPA4jcqmc=",
+          "valid_from_ms": 0,
+          "valid_until_ms": null
+        },
+        {
+          "name": "operator-2",
+          "root": true,
+          "alg": "Ed25519",
+          "key_id": "sha256:364684273c9bff8daf6f4a28d10a7867a1afd487c18d2e03958a4b9624a6d476",
+          "public_key": "uEJtD2zhjbTVdZBN53PFIZ7DOceCGpCanzjs30tdDu4=",
+          "valid_from_ms": 0,
+          "valid_until_ms": null
+        }
+      ],
+      "statements": [
+        {
+          "schema": "agentic_datacenter.mandate/2",
+          "principal": "agent-1",
+          "contracts": [
+            "pod.set_supply_air_setpoint.v1"
+          ],
+          "issuer": "operator-1",
+          "issued_at_ms": 0,
+          "expires_at_ms": null,
+          "supersedes": null,
+          "delegation": false,
+          "reason": "Skiftleder sa \"kjør\", ±1 °C\ttil kl. 14",
+          "id": "sha256:c86d69e82e4d33eafe4e59360d53bd4f153bf7c12369ea55e99d1201f003ef7c",
+          "signature": {
+            "alg": "Ed25519",
+            "key_id": "sha256:34b542ff1c3b08c74a4d4f5dc193ad663c02f912dacce0cec7321f562c1e56d4",
+            "value": "4zeYJpLU3agfO7WPxlQP8BwtXYDcnvUQO3TG8ggFlrADu1tyh3/XvKcNMsbuULMt3XnbB2Gc2DA7U2S1SCt8Ag=="
+          }
+        }
+      ],
+      "queries": [
+        {
+          "contract": "pod.set_supply_air_setpoint.v1",
+          "time_ms": 100,
+          "expect": {
+            "established": true,
+            "holds": true,
+            "kind": ""
+          }
+        }
+      ]
+    },
+    {
       "name": "supersession",
       "about": "A later statement replaces the earlier one whole.",
       "principal": "agent-1",

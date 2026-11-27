@@ -151,7 +151,7 @@ def _path() -> Any:
 def test_the_committed_vectors_are_the_ones_the_code_gives() -> None:
     committed = json.loads((REPO / "docs/reference/mandate-vectors.json").read_text())
     assert committed == mandates.vectors()
-    assert len(committed["cases"]) >= 25
+    assert len(committed["cases"]) >= 26
 
 
 @pytest.mark.req("ADC-AUT-004")

@@ -41,7 +41,13 @@ configures every process the same way:
 ``ADC_GATE_CONTEXT``
     Set to ``1`` for a service that wants a read-only sample of the plant with
     each request: temperatures, load, interlocks, margins and alarms, each with
-    value, unit, quality and simulated time (``context``, ADR 0036).
+    value, unit, quality and simulated time (``context``, ADR 0036). Each
+    reading is signed by its source (ADR 0041).
+``ADC_GATE_RECEIPT_KEY``
+    The public key the service signs its receipts with: raw Ed25519 in base64,
+    several separated by commas. The signature of the ``receipt`` in each answer
+    is then checked, and the decision record and the action trace say what was
+    found (ADR 0041). Without it no signature is checked.
 ``ADC_GATE_EPOCH``
     The UTC instant simulated time 0 is given as in ``issued_at`` and
     ``observed_at``. Default ``2026-01-01T00:00:00Z``. Fixed, never the wall
@@ -77,6 +83,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from agentic_datacenter.core.state import JsonValue
+from agentic_datacenter.governance import attest
 from agentic_datacenter.governance.envelope_ref import DECISION_TTL_MS, decision_ref
 from agentic_datacenter.governance.gate import (
     OUTCOMES,
@@ -350,6 +357,9 @@ class HttpGate:
             raise HttpGateConfigError(f"ADC_GATE_EPOCH: {exc}") from exc
         #: The control path sends a sample of the plant to a gate that wants one.
         self.wants_context = wants_context
+        #: Public keys the service's receipts are checked against, raw Ed25519 in
+        #: base64; empty when none was given, and then no signature is checked.
+        self.receipt_keys: tuple[str, ...] = ()
         self.context_epoch = epoch
         #: What ties each decision reference to its request, for the outcome message.
         self._correlated: dict[str, dict[str, JsonValue]] = {}
@@ -450,6 +460,11 @@ class HttpGate:
         receipt = receipt_kept(answer.get("receipt"))
         if receipt is not None:
             detail["service_receipt"] = receipt
+        if self.receipt_keys:
+            # Only for a gate whose key was given before the run (ADR 0041).
+            detail["receipt_signature"] = attest.receipt_signature(
+                answer.get("receipt"), self.receipt_keys
+            )
         writes = premises.writes if verdict is Verdict.ALLOW else ()
         ref = decision_ref(
             self.name,
@@ -562,17 +577,26 @@ def _common(env: Mapping[str, str], default_name: str) -> dict[str, Any]:
 def from_environment(environ: Mapping[str, str] | None = None) -> HttpGate:
     """Build the binding from ``ADC_GATE_*`` variables."""
     env = os.environ if environ is None else environ
-    return HttpGate(
+    gate = HttpGate(
         env.get("ADC_GATE_URL", ""),
         allow_remote=env.get("ADC_GATE_ALLOW_REMOTE", "") == "1",
         **_common(env, "http_gate"),
     )
+    gate.receipt_keys = _receipt_keys(env)
+    return gate
+
+
+def _receipt_keys(env: Mapping[str, str]) -> tuple[str, ...]:
+    """Return the public keys of ``ADC_GATE_RECEIPT_KEY``: one or more, separated by commas."""
+    return tuple(k.strip() for k in env.get("ADC_GATE_RECEIPT_KEY", "").split(",") if k.strip())
 
 
 def command_from_environment(environ: Mapping[str, str] | None = None) -> CommandGate:
     """Build the command binding from ``ADC_GATE_*`` variables."""
     env = os.environ if environ is None else environ
-    return CommandGate(env.get("ADC_GATE_COMMAND", ""), **_common(env, "command_gate"))
+    gate = CommandGate(env.get("ADC_GATE_COMMAND", ""), **_common(env, "command_gate"))
+    gate.receipt_keys = _receipt_keys(env)
+    return gate
 
 
 def create(contracts: object) -> HttpGate:

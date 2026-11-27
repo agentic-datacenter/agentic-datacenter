@@ -26,7 +26,7 @@ To try your own control, set `ADC_GATE_URL` and `ADC_GATE_NAME` for your service
 
 For a first local run, use the [command adapter quickstart](which-way-in.md#try-a-local-adapter). If you maintain a governance system, [For maintainers of governance systems](for-governance-maintainers.md) says what you get, what it costs, and how to keep testing as this project grows.
 
-Every request carries a `correlation` that its outcome message carries too, with a content address of the action and the time as UTC from a fixed anchor, and a gate can ask for a read-only sample of the plant (`ADC_GATE_CONTEXT=1`). Receipts you export are checked against the run with `gate verify-receipts`. See [Preserve the policy's meaning](which-way-in.md#preserve-the-policys-meaning) and ADR 0036.
+Every request carries a `correlation` that its outcome message carries too, with a content address of the action and the time as UTC from a fixed anchor, and a gate can ask for a read-only sample of the plant (`ADC_GATE_CONTEXT=1`), in which every reading is signed by its source and carries the text that was signed, so that you can check where it came from. Receipts you export are checked against the run with `gate verify-receipts`, and their signatures too when you give your public key (`--key`, or `ADC_GATE_RECEIPT_KEY` for a check during the run; ADR 0041). See [Preserve the policy's meaning](which-way-in.md#preserve-the-policys-meaning) and ADR 0036.
 
 ## How a gate is driven
 

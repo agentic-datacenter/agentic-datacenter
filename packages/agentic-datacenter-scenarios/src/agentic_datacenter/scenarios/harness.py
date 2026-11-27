@@ -291,6 +291,12 @@ def apply_event(world: World, event: Mapping[str, JsonValue]) -> None:
                 issued.issuers,
             ),
         )  # fmt: skip
+    elif event.get("spoofed_reading") is not None:
+        false = event["spoofed_reading"]
+        assert isinstance(false, Mapping)
+        value = false["value"]
+        assert isinstance(value, bool | int | float | str)
+        world.path.spoof_reading(str(false["tag"]), value)
     elif event.get("issuer") is not None:
         what = event["issuer"]
         assert isinstance(what, Mapping)
